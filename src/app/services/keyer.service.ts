@@ -201,6 +201,7 @@ export class KeyerService implements OnDestroy {
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
     const s = this.settings.settings();
+    if (!s.keyboardKeyerEnabled) return;
 
     if (e.code === s.straightKeyCode) {
       e.preventDefault();
@@ -223,6 +224,7 @@ export class KeyerService implements OnDestroy {
   private onKeyUp(e: KeyboardEvent): void {
     if (!this.enabled) return;
     const s = this.settings.settings();
+    if (!s.keyboardKeyerEnabled) return;
 
     if (e.code === s.straightKeyCode) {
       e.preventDefault();

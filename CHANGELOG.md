@@ -4,6 +4,39 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.6] - 2026-03-01
+
+### Changed
+
+- **Touch keyer enabled by default** — the touch keyer (straight-key
+  mode) is now enabled out of the box on devices that support touch
+  input, so new users on phones/tablets can start keying immediately.
+- **Vibration enabled by default** — haptic vibration feedback is now
+  enabled by default on supported devices (Android).
+- **Keyboard keyer is now optional** — the keyboard keyer section in
+  settings now has an enable/disable toggle switch (replacing the
+  former "Always On" badge). It defaults to enabled. When disabled,
+  keyboard keys no longer act as straight key or paddles.
+- **Encoder mode label shortened** — the main-screen encoder mode
+  dropdown now shows "Send on Enter" / "Live" instead of
+  "Send on Enter" / "Live (as you type)", matching the fullscreen
+  modal wording.
+- **Consistent icon-button spacing** — horizontal gaps between
+  adjacent icon buttons are now a uniform 10 px throughout the app:
+  main-screen header, decoder actions, encoder actions, and
+  fullscreen modal toolbar (including mobile and landscape
+  breakpoints). Edge padding on the fullscreen toolbar is also
+  normalised to 10 px at every breakpoint.
+
+### Fixed
+
+- **Reset button now restores modal display settings** — pressing
+  "Reset" in the settings dialog now also resets the fullscreen
+  modal display settings (font size, bold, line spacing, and all
+  foreground/background colours) back to their defaults. Previously
+  only the main `AppSettings` were reset; modal display settings
+  were left unchanged.
+
 ## [0.8.5] - 2026-02-28
 
 ### Changed

@@ -175,7 +175,7 @@
         Mode:
         <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
           <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
-          <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live (as you type)</option>
+          <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
         </select>
       </label>
       <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="!encoder.isSending() && (encoderInputHasText || encoder.buffer().length > encoder.sentIndex())" (click)="toggleEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">

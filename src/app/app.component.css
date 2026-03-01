@@ -9,7 +9,7 @@
 .app-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   margin: 0 0 1rem;
 }
 
@@ -395,7 +395,7 @@
 .decoded-actions {
   display: flex;
   align-items: center;
-  gap: .5rem;
+  gap: 10px;
   margin-top: 1rem;
 }
 .decoded-actions .level-meter-group.inline-meter {
@@ -481,7 +481,7 @@
 
 .encoder-actions {
   display: flex;
-  gap: .5rem;
+  gap: 10px;
   margin-top: 1rem;
   align-items: center;
 }

@@ -117,6 +117,8 @@ export interface AppSettings {
   encoderMode: EncoderMode;
 
   // --- Keyer ---
+  /** Enable/disable keyboard keyer input */
+  keyboardKeyerEnabled: boolean;
   /** Decoder source: which calibration pool keyboard keyer feeds ('rx' or 'tx') */
   keyboardKeyerSource: DecoderSource;
   straightKeyCode: string;
@@ -230,7 +232,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   sidetoneEnabled: true,
   sidetoneForward: 'both',
 
-  vibrateEnabled: false,
+  vibrateEnabled: true,
   vibrateForward: 'both',
   vibrateEnhanced: true,
 
@@ -240,6 +242,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   encoderWpm: 12,
   encoderMode: 'enter',
 
+  keyboardKeyerEnabled: true,
   keyboardKeyerSource: 'tx',
   straightKeyCode: 'Space',
   leftPaddleKeyCode: 'BracketLeft',
@@ -255,7 +258,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   mouseRightAction: 'none',
   mouseReversePaddles: false,
 
-  touchKeyerEnabled: false,
+  touchKeyerEnabled: true,
   touchKeyerSource: 'tx',
   touchKeyerMode: 'straight',
   touchLeftPaddle: 'dit',
@@ -522,6 +525,8 @@ export class SettingsService {
 
   resetToDefaults(): void {
     this.settings.set({ ...DEFAULT_SETTINGS });
+    this.modalDisplay.set({ ...DEFAULT_MODAL_DISPLAY });
+    localStorage.setItem(MODAL_DISPLAY_KEY, JSON.stringify(DEFAULT_MODAL_DISPLAY));
     this.isDirty.set(true);
   }
 

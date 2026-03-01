@@ -249,7 +249,7 @@
         </div>
 
         <!-- ===== 3. KEYBOARD KEYER ===== -->
-        <div class="settings-card">
+        <div class="settings-card" [class.disabled-card]="!settings.settings().keyboardKeyerEnabled">
           <div class="settings-card-header" (click)="toggleSection('keyer')">
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('keyer') ? '&#9660;' : '&#9654;' }}</span>
@@ -257,7 +257,11 @@
               <span class="source-badge" [class.source-rx]="settings.settings().keyboardKeyerSource === 'rx'" [class.source-tx]="settings.settings().keyboardKeyerSource === 'tx'">{{ settings.settings().keyboardKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
               <span class="settings-card-subtitle">Paddle &amp; Straight Key</span>
             </div>
-            <span class="settings-card-always-on">Always On</span>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().keyboardKeyerEnabled"
+                     (change)="onBoolChange('keyboardKeyerEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
           </div>
           @if (isSectionExpanded('keyer')) {
             <div class="settings-card-body">

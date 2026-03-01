@@ -220,16 +220,6 @@
 .settings-card.disabled-card .settings-card-subtitle {
   color: #998;
 }
-.settings-card-always-on {
-  font-size: .72rem;
-  color: #6a8;
-  background: #1a2a1a;
-  border: 1px solid #2a4a2a;
-  border-radius: 4px;
-  padding: .15rem .45rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
 
 /* Decoder source badge (RX / TX) shown on input card headers */
 .source-badge {
