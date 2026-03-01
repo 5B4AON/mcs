@@ -147,6 +147,10 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     this.showResetConfirm = false;
     if (confirmed) {
       this.settings.resetToDefaults();
+
+      // Stop any active RTDB connections since defaults have both disabled
+      this.rtdbService.stopInput();
+      this.rtdbService.stopOutput();
     }
   }
 
