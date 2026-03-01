@@ -1,0 +1,80 @@
+<!-- ================================================================ -->
+<!-- Chapter 3 — The Encoder                                        -->
+<!-- ================================================================ -->
+
+<!-- 3.1 Sending Modes -->
+<h2 id="s3-1">3.1 &nbsp;Sending Modes</h2>
+
+<p>
+  The encoder converts typed text into perfectly timed Morse code. Audio plays
+  through the sidetone speaker and key signals are sent through every enabled
+  output (optocoupler, serial port).
+</p>
+
+<table>
+  <tr><th>Mode</th><th>How it works</th><th>Best for</th></tr>
+  <tr>
+    <td><strong>Send on Enter</strong></td>
+    <td>Type your full message, then press Enter to send it all at once.</td>
+    <td>Composing careful messages, contest exchanges</td>
+  </tr>
+  <tr>
+    <td><strong>Live</strong></td>
+    <td>Each character is sent immediately as you type it.</td>
+    <td>Casual QSOs, real-time ragchew</td>
+  </tr>
+</table>
+
+<p>
+  <strong>TX ON / TX OFF:</strong> Click the TX button (or press Enter in
+  "Send on Enter" mode) to begin sending. Click TX OFF or press Escape to
+  abort immediately.
+</p>
+
+<!-- 3.2 Encoder Speed -->
+<h2 id="s3-2">3.2 &nbsp;Encoder Speed</h2>
+
+<p>
+  Adjust the <strong>Encoder WPM</strong> pill on the main screen to set your
+  sending speed. The encoder uses standard PARIS timing (one PARIS word =
+  50 dit units).
+</p>
+
+<p>
+  The encoder WPM is independent of the keyer WPM and both decoder WPMs. This
+  lets you compose text messages at one speed while manually keying at another.
+</p>
+
+<!-- 3.3 Fullscreen Encoder -->
+<h2 id="s3-3">3.3 &nbsp;Fullscreen Encoder</h2>
+
+<p>
+  Click the <strong>⛶</strong> button on the Encoder panel to open a
+  fullscreen view. The conversation history is displayed alongside your
+  encoder buffer so you can read and type in one place. In this view, every
+  keystroke is captured directly &mdash; you do not need to click a text box.
+</p>
+
+<p>
+  The fullscreen encoder has its own <strong>independent text buffer</strong>,
+  separate from both the main encoder display and the fullscreen decoder.
+  Clearing the conversation in one window does not affect any other.
+  See <a href="#" class="help-link" data-section="s2-5">§&nbsp;2.5</a> for
+  details on the clear-menu options (<em>This log</em>,
+  <em>All logs</em>, and <em>Text area</em>).
+</p>
+
+<p>
+  On mobile and tablet devices, a floating <strong>keyboard</strong> button
+  (⌨) appears in the bottom-right corner. Tap it to open your device's
+  on-screen virtual keyboard for text entry. Tap again to dismiss.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example — Calling CQ</div>
+  <p>
+    Set Encoder WPM to 20. Type <code>CQ CQ CQ DE G3XYZ G3XYZ K</code> and
+    press Enter. The encoder sends perfect Morse at 20 WPM through your
+    sidetone and any enabled key outputs to key your transmitter.
+  </p>
+</div>

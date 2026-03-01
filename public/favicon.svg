@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!--
+    Morse Code Studio favicon
+    Design: dit (dot) and dah (dash) symbols on a dark background,
+    representing the fundamental elements of Morse code.
+    Colour: amber/gold on dark navy — evocative of vintage telegraphy.
+  -->
+  <!-- Background: dark navy rounded square -->
+  <rect width="128" height="128" rx="20" ry="20" fill="#1a1a2e"/>
+
+  <!-- Row 1: dah-dit (top) — the letter "A" in Morse -->
+  <!-- Dah (long bar) -->
+  <rect x="18" y="32" width="52" height="16" rx="8" fill="#e8a838"/>
+  <!-- Dit (dot) -->
+  <circle cx="94" cy="40" r="10" fill="#e8a838"/>
+
+  <!-- Row 2: dit-dah (bottom) — visual balance / mirror -->
+  <!-- Dit (dot) -->
+  <circle cx="34" cy="88" r="10" fill="#e8a838"/>
+  <!-- Dah (long bar) -->
+  <rect x="58" y="80" width="52" height="16" rx="8" fill="#e8a838"/>
+</svg>

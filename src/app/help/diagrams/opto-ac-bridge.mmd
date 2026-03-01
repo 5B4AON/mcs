@@ -1,0 +1,29 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    SC["🔊 Sound Card<br/>Audio Output"]
+    SC_GND["Sound Card<br/>GND"]
+
+    subgraph BRIDGE["Bridge Rectifier"]
+        direction TB
+        DIODES["4× BAT43<br/>Schottky Diodes"]
+    end
+
+    subgraph OPTO["Optocoupler"]
+        direction TB
+        LED["💡 LED"]
+    end
+
+    RADIO["📻 Radio<br/>Key Jack"]
+
+    SC -->|"AC square<br/>wave"| DIODES
+    SC_GND -->|"GND"| DIODES
+    DIODES -->|"rectified<br/>DC"| LED
+    LED -->|"isolated<br/>contact"| RADIO
+
+    style SC fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style SC_GND fill:#333,stroke:#888,color:#aaa
+    style DIODES fill:#4a3a5a,stroke:#aa88cc,color:#fff
+    style BRIDGE fill:#1a1e24,stroke:#666,color:#ccc
+    style LED fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style OPTO fill:#1a1e24,stroke:#666,color:#ccc
+    style RADIO fill:#5a3a2a,stroke:#cc8844,color:#fff

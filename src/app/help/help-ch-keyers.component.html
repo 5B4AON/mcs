@@ -1,0 +1,204 @@
+<!-- ================================================================ -->
+<!-- Chapter 4 — Keyers (Manual Sending)                            -->
+<!-- ================================================================ -->
+
+<!-- 4.1 Keyboard Keyer -->
+<h2 id="s4-1">4.1 &nbsp;Keyboard Keyer</h2>
+
+<p>
+  The keyboard keyer turns your computer keyboard into a Morse key. It is
+  always available — no hardware required.
+</p>
+
+<h3>Straight Key</h3>
+<p>
+  A single assigned key acts as a manual Morse key. Press and hold to key
+  down; release to key up. You control all timing by hand, just like a
+  traditional straight key.
+</p>
+
+<h3>Paddle Modes</h3>
+<p>
+  Two assigned keys act as dit and dah paddles. The keyer auto-generates
+  correctly timed elements at the configured <strong>Keyer WPM</strong>.
+  Four paddle modes are available:
+</p>
+<table>
+  <tr><th>Mode</th><th>Behaviour</th></tr>
+  <tr>
+    <td><strong>Iambic B</strong></td>
+    <td>Squeezing both paddles alternates dit-dah. Releasing completes
+        the current alternating element. This is the most common iambic mode
+        used by amateur radio operators.</td>
+  </tr>
+  <tr>
+    <td><strong>Iambic A</strong></td>
+    <td>Same as Iambic B, but releasing both paddles stops immediately after
+        the in-progress element finishes — no extra element is added.</td>
+  </tr>
+  <tr>
+    <td><strong>Ultimatic</strong></td>
+    <td>When both paddles are held, the <em>last pressed</em> paddle repeats
+        continuously. Useful for fast runs of dits or dahs.</td>
+  </tr>
+  <tr>
+    <td><strong>Single Lever</strong></td>
+    <td>Each paddle repeats only its own element. No automatic alternation or
+        memory. Works like two independent straight keys with automatic
+        element timing.</td>
+  </tr>
+</table>
+
+<h3>Key Bindings</h3>
+<p>
+  In the <em>Keyboard Keyer</em> section of Settings, click the button next to
+  "Straight Key", "Left Paddle" or "Right Paddle" and press the keyboard key
+  you want to assign. Common choices: <strong>Space</strong> for straight key,
+  <strong>[</strong> and <strong>]</strong> for paddles.
+</p>
+
+<h3>Dit/Dah Memory</h3>
+<p>
+  In Iambic modes, if you tap the opposite paddle while an element is playing,
+  that request is remembered ("latched") and will play next. This enables
+  faster, cleaner keying at high speeds.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example — Iambic B keying</div>
+  <p>
+    Assign [ = dit, ] = dah. Select Iambic B, 15 WPM. To send "C"
+    (dah-dit-dah-dit): press ], then while the dah sounds, squeeze [, then ],
+    then [. The keyer handles all element timing automatically.
+  </p>
+</div>
+
+<!-- 4.2 Mouse Keyer -->
+<h2 id="s4-2">4.2 &nbsp;Mouse Keyer</h2>
+
+<p>
+  The mouse keyer lets you use your mouse buttons to send Morse code. This is
+  useful when you want to key without a physical key or paddle, or as a quick
+  alternative to the keyboard.
+</p>
+
+<p>
+  Enable the mouse keyer in Settings under <em>Mouse Keyer</em>. Each of the
+  three mouse buttons (left, middle, right) can be independently assigned to
+  one of four actions:
+</p>
+<table>
+  <tr><th>Action</th><th>Behaviour</th></tr>
+  <tr>
+    <td><strong>None</strong></td>
+    <td>Button does nothing (normal browser behaviour).</td>
+  </tr>
+  <tr>
+    <td><strong>Straight Key</strong></td>
+    <td>Press-and-hold keys down; release keys up. You control timing.</td>
+  </tr>
+  <tr>
+    <td><strong>Dit</strong></td>
+    <td>Press activates the dit paddle. Works with the selected paddle
+        mode (Iambic, Ultimatic, etc.) at Keyer WPM.</td>
+  </tr>
+  <tr>
+    <td><strong>Dah</strong></td>
+    <td>Press activates the dah paddle. Same paddle mode behaviour.</td>
+  </tr>
+</table>
+
+<p>
+  When the mouse keyer is enabled, assigned mouse buttons are captured by the
+  application and will not perform their normal browser actions (e.g. context
+  menu on right-click is suppressed).
+</p>
+
+<p>
+  The mouse keyer shares the <strong>Paddle Mode</strong> and
+  <strong>Keyer WPM</strong> settings with the keyboard and touch keyers.
+</p>
+
+<!-- 4.3 Touch Keyer -->
+<h2 id="s4-3">4.3 &nbsp;Touch Keyer</h2>
+
+<p>
+  The touch keyer provides on-screen touch buttons for sending Morse on
+  tablets and phones. Enable it in Settings under <em>Touch Keyer</em>.
+</p>
+
+<p>
+  Two operating modes are available:
+</p>
+<table>
+  <tr><th>Mode</th><th>Behaviour</th></tr>
+  <tr>
+    <td><strong>Straight</strong></td>
+    <td>A single large touch area acts as a straight key. Touch = key down,
+        release = key up.</td>
+  </tr>
+  <tr>
+    <td><strong>Paddle</strong></td>
+    <td>The screen is split into left and right touch zones, each acting as
+        a paddle. Works with the selected paddle mode at Keyer WPM.</td>
+  </tr>
+</table>
+
+<h3>Button Assignment (Paddle Mode)</h3>
+<p>
+  In paddle mode, you can assign which element each side sends:
+</p>
+<ul>
+  <li><strong>Left button</strong> — Dit or Dah (default: Dit)</li>
+  <li><strong>Right button</strong> — Dit or Dah (default: Dah)</li>
+</ul>
+
+<p>
+  The touch keyer shares <strong>Paddle Mode</strong> and
+  <strong>Keyer WPM</strong> with the keyboard and mouse keyers.
+</p>
+
+<h3>Haptic Vibration</h3>
+<p>
+  Vibration output is configured in the <strong>Outputs</strong> tab of
+  Settings, not in the Touch Keyer section. When enabled, the device vibrates
+  while the key is down &mdash; for <em>any</em> input source (keyboard,
+  mouse, touch, mic pilot, CW tone detector, or encoder), and for both
+  TX and RX events, mirroring the sidetone output.
+</p>
+<p>
+  <strong>Android only.</strong> The Vibration API
+  (<code>navigator.vibrate()</code>) is supported on Android browsers
+  (Chrome, Firefox, Edge) but <em>not</em> on iOS Safari or desktop
+  browsers. On unsupported platforms, the toggle has no effect.
+</p>
+
+<!-- 4.4 Shared Keyer Settings -->
+<h2 id="s4-4">4.4 &nbsp;Shared Keyer Settings</h2>
+
+<p>
+  The following settings are shared across all three keyers (keyboard, mouse,
+  touch):
+</p>
+<ul>
+  <li><strong>Paddle Mode</strong> — Iambic B, Iambic A, Ultimatic or Single
+      Lever. Applies to all paddle inputs regardless of source.</li>
+  <li><strong>Keyer WPM</strong> — The speed at which the iambic keyer generates
+      dits and dahs. Adjustable from the main screen via the Keyer WPM pill.</li>
+</ul>
+
+<!-- 4.5 Reverse Paddles -->
+<h2 id="s4-5">4.5 &nbsp;Reverse Paddles</h2>
+
+<p>
+  Each keyer type has its own independent <strong>Reverse Paddles</strong>
+  toggle in Settings. When enabled, the dit and dah paddle assignments are
+  swapped for that keyer only.
+</p>
+
+<p>
+  This is useful for left-handed operators or for matching the paddle
+  orientation of a physical key. Each keyer (keyboard, mouse, touch) can be
+  reversed independently — reversing the keyboard paddles does not affect the
+  mouse or touch paddles.
+</p>

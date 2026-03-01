@@ -1,0 +1,128 @@
+<!-- ================================================================ -->
+<!-- Chapter 6 — Audio Inputs                                       -->
+<!-- ================================================================ -->
+
+<!-- 6.1 Pilot Tone (Mic Input) -->
+<h2 id="s6-1">6.1 &nbsp;Straight Key via Mic (Pilot Tone) <span class="help-experimental">Experimental</span></h2>
+
+<p>
+  This input method connects a physical Morse key (straight key or bug)
+  through the microphone input of your sound card using an
+  <strong>ultrasonic pilot tone</strong>.
+  This feature is <strong>experimental</strong> &mdash; AC coupling behaviour
+  varies across sound cards and USB audio adapters, and results may be
+  unreliable on some hardware.
+</p>
+
+<h3>How It Works</h3>
+<ol>
+  <li>The application sends a constant high-frequency tone (default 18 kHz —
+      inaudible to most people) out of one audio channel to a simple external
+      circuit.</li>
+  <li>The circuit routes the tone through your Morse key and into the mic
+      input.</li>
+  <li>When the key is closed, the tone reaches the microphone. When the key
+      is open — silence. A Goertzel filter detects the tone with high
+      precision.</li>
+</ol>
+
+<figure class="diagram-figure">
+  <figcaption>Pilot Tone Key Detection &mdash; Wiring</figcaption>
+  <img src="help/diagrams/pilot-tone-wiring.svg"
+       alt="Pilot Tone Key Detection — Wiring"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>pilot-tone-wiring.mmd</code></p>
+</figure>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Mic Device</strong> — The microphone or sound card input that
+      receives the pilot tone.</li>
+  <li><strong>Pilot Output Device</strong> — The sound card that generates the
+      pilot tone. Can be the same card or a different one.</li>
+  <li><strong>Pilot Output Channel</strong> — Left or Right. Must not conflict
+      with sidetone or opto on the same device.</li>
+  <li><strong>Pilot Frequency</strong> — Default 18,000 Hz (above human
+      hearing). Lower this if your sound card does not pass 18 kHz
+      cleanly.</li>
+  <li><strong>Pilot Amplitude</strong> — Volume of the pilot tone. Usually
+      1.0 is best for reliable detection.</li>
+  <li><strong>Threshold</strong> — Detection threshold. Use the Calibrate
+      buttons (described below) to set automatically.</li>
+  <li><strong>Debounce</strong> — Minimum time (ms) between state changes.
+      Filters contact bounce from mechanical keys. 5–15 ms is typical.</li>
+  <li><strong>Invert key sense</strong> — Swap key-open/key-closed. Useful if
+      your wiring is inverted.</li>
+  <li><strong>Used for</strong> — Decoder source (RX or TX). See
+      <em>Chapter 5: Decoder Source Routing</em>.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Calibrating the threshold</div>
+  <p>
+    1. Click <strong>Start Audio</strong>.
+    2. Ensure your key is <em>open</em> (not pressed) and click
+    <strong>1. Key Open</strong> — wait for the measurement.
+    3. <em>Close</em> the key (press and hold) and click
+    <strong>2. Key Closed</strong>.
+    4. Click <strong>Apply threshold</strong>. The threshold is now set
+    midway between the open and closed levels.
+  </p>
+</div>
+
+<!-- 6.2 CW Tone Detector -->
+<h2 id="s6-2">6.2 &nbsp;Straight Key via Audio Channel (CW Tone)</h2>
+
+<p>
+  This input decodes CW audio tones directly — no pilot tone circuit needed.
+  Feed audio from a radio receiver, virtual audio cable, or any source
+  carrying CW tones into a sound card input.
+</p>
+
+<h3>How It Works</h3>
+<p>
+  A narrow-band Goertzel filter is tuned to the configured CW frequency
+  (default 600 Hz). When the tone amplitude exceeds the threshold, the key
+  is considered down.
+</p>
+
+<figure class="diagram-figure">
+  <figcaption>CW Audio Input &mdash; From Radio</figcaption>
+  <img src="help/diagrams/cw-audio-input.svg"
+       alt="CW Audio Input — From Radio"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>cw-audio-input.mmd</code></p>
+</figure>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Audio Input Device</strong> — The sound card receiving radio
+      audio.</li>
+  <li><strong>Input Channel</strong> — Left or Right.</li>
+  <li><strong>CW Tone Frequency</strong> — Match your radio's sidetone / BFO
+      offset. Typically 500–700 Hz.</li>
+  <li><strong>Bandwidth</strong> — Width of the detection filter in Hz. Narrower
+      = more selective but needs more precise frequency setting.</li>
+  <li><strong>Auto Threshold</strong> — When enabled, the detector
+      automatically tracks the noise floor and signal level, adjusting the
+      threshold dynamically. Recommended for most use.</li>
+  <li><strong>Manual Threshold</strong> — Available when Auto Threshold is off.
+      Set by hand using the slider for fixed-level signals.</li>
+  <li><strong>Debounce</strong> — Filters brief noise spikes. 5–10 ms is
+      typical for clean signals.</li>
+  <li><strong>Used for</strong> — Decoder source (RX or TX). See
+      <em>Chapter 5: Decoder Source Routing</em>.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example — Decoding with a virtual audio cable</div>
+  <p>
+    On Windows, install "VB-Cable" or "Virtual Audio Cable". Route your SDR
+    receiver's audio output to the virtual cable. In Morse Code Studio, select
+    the virtual cable as the Audio Input Device. Set the CW frequency to match
+    your SDR's BFO offset. Enable Auto Threshold. The decoder now shows
+    decoded CW text live.
+  </p>
+</div>

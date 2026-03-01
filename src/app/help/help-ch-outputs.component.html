@@ -1,0 +1,373 @@
+<!-- ================================================================ -->
+<!-- Chapter 7 — Key & Audio Outputs                                -->
+<!-- ================================================================ -->
+
+<!-- 7.1 Optocoupler -->
+<h2 id="s7-1">7.1 &nbsp;Key via Audio Channel (Optocoupler) <span class="help-experimental">Experimental</span></h2>
+
+<p>
+  This output keys your transmitter through an <strong>optocoupler</strong>
+  driven by a sound card audio channel. The optocoupler provides electrical
+  isolation between your computer and radio &mdash; important for safety and
+  to prevent ground loops.
+  This feature is <strong>experimental</strong> &mdash; AC coupling on many
+  sound cards distorts the DC component of the keying signal, which can
+  produce unreliable timing. USB-serial keying (&sect;7.2) is generally
+  more reliable.
+</p>
+
+<h3>Drive Modes</h3>
+<table>
+  <tr><th>Mode</th><th>Signal</th><th>Best for</th></tr>
+  <tr>
+    <td><strong>DC Offset</strong></td>
+    <td>Steady DC voltage when keyed, zero when not keyed.</td>
+    <td>USB sound cards that pass DC. Simplest wiring — try this first.</td>
+  </tr>
+  <tr>
+    <td><strong>AC Tone</strong></td>
+    <td>Square wave at the configured frequency when keyed.</td>
+    <td>Sound cards that block DC (capacitor-coupled outputs).</td>
+  </tr>
+</table>
+
+<figure class="diagram-figure">
+  <figcaption>Optocoupler Key Output &mdash; DC Mode</figcaption>
+  <img src="help/diagrams/opto-dc-mode.svg"
+       alt="Optocoupler Key Output — DC Mode"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>opto-dc-mode.mmd</code></p>
+</figure>
+
+<figure class="diagram-figure">
+  <figcaption>Optocoupler Key Output &mdash; AC Mode with Bridge Rectifier</figcaption>
+  <img src="help/diagrams/opto-ac-bridge.svg"
+       alt="Optocoupler Key Output — AC Mode with Bridge Rectifier"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>opto-ac-bridge.mmd</code></p>
+</figure>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Audio Device</strong> — The sound card driving the
+      optocoupler.</li>
+  <li><strong>Channel</strong> — Left or Right. Must not conflict with sidetone
+      or pilot tone on the same device.</li>
+  <li><strong>Mode</strong> — DC Offset or AC Tone.</li>
+  <li><strong>Frequency</strong> — (AC mode only) Square wave frequency.
+      400–1000 Hz usually works well.</li>
+  <li><strong>Amplitude</strong> — Set to 1.0 for maximum drive voltage.</li>
+  <li><strong>Forward</strong> — Controls which signals activate the
+      optocoupler:
+    <ul>
+      <li><strong>TX only</strong> (default) — Fires only for transmitted
+          morse (encoder, keyer inputs tagged as TX).</li>
+      <li><strong>RX only</strong> — Fires only for received morse
+          (decoded audio inputs, Firebase RTDB).</li>
+      <li><strong>Both</strong> — Fires for all morse activity.</li>
+    </ul>
+  </li>
+  <li><strong>Test Output</strong> — Keys the output for 1 second to verify
+      wiring.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example — Simple DC wiring</div>
+  <p>
+    Get a PC817 or 4N25 optocoupler. Connect the sound card's audio output
+    to the LED anode (pin 1) and GND to the cathode (pin 2). Connect the
+    phototransistor pins (4 and 5) to your radio's key jack. Set mode to
+    DC Offset, amplitude 1.0. Click "Test Output" — your radio should key.
+  </p>
+</div>
+
+<!-- 7.2 Serial Port -->
+<h2 id="s7-2">7.2 &nbsp;Key via Serial Port (DTR/RTS)</h2>
+
+<p>
+  This output keys your transmitter using the <strong>DTR</strong> or
+  <strong>RTS</strong> control line of a USB-serial adapter. These lines
+  switch in under a millisecond, making them ideal for CW keying at any
+  speed.
+</p>
+
+<h3>Requirements</h3>
+<ul>
+  <li>A <strong>Chromium-based browser</strong> (Chrome or Edge) — Firefox and
+      Safari do not support the Web Serial API.</li>
+  <li>A <strong>desktop operating system</strong> (Windows, macOS, Linux or
+      ChromeOS). <strong>Android is not supported</strong> — Chrome on Android
+      does not provide access to USB-serial adapters, even when connected via
+      USB OTG. The Web Serial API flag exists in Android Chrome but
+      USB-to-serial devices are not enumerated.</li>
+  <li>A <strong>USB-serial adapter</strong> such as FTDI FT232, CH340, CP2102
+      or similar.</li>
+  <li>An <strong>optocoupler or transistor</strong> between the adapter and
+      your radio, unless your radio accepts ±5–12 V keying directly.</li>
+</ul>
+
+<figure class="diagram-figure">
+  <figcaption>Serial Port Key Output &mdash; DTR/RTS</figcaption>
+  <img src="help/diagrams/serial-port-output.svg"
+       alt="Serial Port Key Output — DTR/RTS"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>serial-port-output.mmd</code></p>
+</figure>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Add Serial Port</strong> — Opens the browser's serial port
+      picker. Select your adapter. You must grant access each time the page
+      loads.</li>
+  <li><strong>Output Pin</strong> — DTR (Data Terminal Ready) or RTS (Request
+      To Send). Either works; DTR is more common for CW keying.</li>
+  <li><strong>Invert Output</strong> — Swaps logic: pin is active when
+      <em>not</em> keyed and inactive when keyed. Useful for circuits that
+      need inverted logic.</li>
+  <li><strong>Forward</strong> — Controls which signals activate the serial
+      port output:
+    <ul>
+      <li><strong>TX only</strong> (default) — Keys only for transmitted
+          morse.</li>
+      <li><strong>RX only</strong> — Keys only for received morse.</li>
+      <li><strong>Both</strong> — Keys for all morse activity.</li>
+    </ul>
+  </li>
+  <li><strong>Test Output</strong> — Keys the output for 1 second.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example — FTDI adapter keying</div>
+  <p>
+    Plug an FTDI FT232 USB adapter in. Click "Add Serial Port" and select it.
+    Set Output Pin to DTR. Wire DTR through a 1 kΩ resistor to the base of an
+    NPN transistor (2N2222). Collector to radio key line, emitter to ground.
+    Enable serial output and click "Test Output".
+  </p>
+</div>
+
+<!-- 7.3 WinKeyer -->
+<h2 id="s7-3">7.3 &nbsp;WinKeyer Output (K1EL WinKeyer)</h2>
+
+<p>
+  This output forwards decoded text to a
+  <strong>K1EL WinKeyer</strong> device (WK2, WK3 or WKUSB) connected via a
+  virtual COM port. WinKeyer generates <strong>perfectly timed CW
+  keying</strong> on its output pin — the host simply sends plain ASCII
+  characters and WinKeyer handles the morse element timing internally at
+  the configured WPM speed.
+</p>
+
+<h3>How It Works</h3>
+<p>
+  Morse Code Studio decodes incoming key events (from any input source)
+  into text characters tagged as <strong>RX</strong> (received morse) or
+  <strong>TX</strong> (transmitted morse). The WinKeyer output watches for
+  these decoded characters and forwards them to the WinKeyer device, which
+  re-keys the morse with clean timing. The <strong>Forward</strong>
+  setting controls which characters are relayed:
+</p>
+<ul>
+  <li><strong>RX only</strong> — Only characters decoded from incoming audio
+      inputs (mic pilot tone, CW tone detector) or inputs configured as RX.</li>
+  <li><strong>TX only</strong> — Only characters from the encoder (typed text)
+      and from keyer inputs (keyboard, mouse, touch) configured as TX.</li>
+  <li><strong>Both</strong> — All decoded characters regardless of source.</li>
+</ul>
+
+<h3>Input Sources in Detail</h3>
+<table>
+  <tr><th>Input</th><th>Straight Key</th><th>Paddle</th><th>Tag</th></tr>
+  <tr>
+    <td><strong>Mic (Pilot Tone)</strong></td>
+    <td>Key events decoded → tagged text</td>
+    <td>N/A</td>
+    <td>Per <em>micInputSource</em> setting (RX or TX)</td>
+  </tr>
+  <tr>
+    <td><strong>CW Audio Input</strong></td>
+    <td>Goertzel tone detection → tagged text</td>
+    <td>N/A</td>
+    <td>Per <em>cwInputSource</em> setting</td>
+  </tr>
+  <tr>
+    <td><strong>Keyboard Keyer</strong></td>
+    <td>Operator-timed → auto-calibrated decode</td>
+    <td>Iambic keyer → perfect-timed decode</td>
+    <td>Per <em>keyboardKeyerSource</em> setting</td>
+  </tr>
+  <tr>
+    <td><strong>Mouse Keyer</strong></td>
+    <td>Operator-timed → auto-calibrated decode</td>
+    <td>Iambic keyer → perfect-timed decode</td>
+    <td>Per <em>mouseKeyerSource</em> setting</td>
+  </tr>
+  <tr>
+    <td><strong>Touch Keyer</strong></td>
+    <td>Operator-timed → auto-calibrated decode</td>
+    <td>Iambic keyer → perfect-timed decode</td>
+    <td>Per <em>touchKeyerSource</em> setting</td>
+  </tr>
+  <tr>
+    <td><strong>Encoder (typed text)</strong></td>
+    <td colspan="2">Characters sent directly (no decoding needed)</td>
+    <td>Always TX</td>
+  </tr>
+</table>
+
+<h3>Connection</h3>
+<p>
+  WinKeyer uses <strong>1200 baud, 8 data bits, no parity, 2 stop
+  bits</strong> (8N2). The WKUSB or a WinKeyer IC with a USB-serial
+  adapter appears as a virtual COM port. Morse Code Studio uses the
+  <strong>Web Serial API</strong> to communicate with it, so a
+  Chromium-based browser (Chrome or Edge) on a <strong>desktop operating
+  system</strong> is required. <strong>Android is not supported</strong> —
+  USB-to-serial devices like WinKeyer are not accessible from Chrome on
+  Android, even via USB OTG.
+</p>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Add Serial Port</strong> — Opens the browser's serial port
+      picker. Select the WinKeyer's COM port.</li>
+  <li><strong>WPM Speed</strong> — Sets WinKeyer's internal keying speed
+      (5–99 WPM). Changes are sent to the device in real time.</li>
+  <li><strong>Forward</strong> — Which decoded text to relay: RX only,
+      TX only, or Both.</li>
+  <li><strong>Test</strong> — Sends the word "TEST" to WinKeyer to verify
+      the connection.</li>
+  <li><strong>Clear Buffer</strong> — Aborts any pending text in WinKeyer's
+      internal transmit buffer.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example — Re-keying received morse</div>
+  <p>
+    Connect a WKUSB to your computer. In Outputs → WinKeyer Output, click
+    "Add Serial Port" and select the WKUSB COM port. Set Forward to
+    "RX only" and WPM to match the incoming station. Enable WinKeyer
+    output. Received morse from your CW audio input or mic is decoded,
+    forwarded to WinKeyer, and re-keyed with clean timing on WinKeyer's
+    output — useful for relay, practice copying, or driving a second
+    transmitter.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Example — Clean TX keying</div>
+  <p>
+    Set Forward to "TX only". Type text in the Encoder panel and send it.
+    The typed characters are forwarded to WinKeyer, which generates
+    perfectly timed CW keying — ideal when you want WinKeyer's hardware
+    timing precision for your transmitted morse rather than software-generated
+    audio keying.
+  </p>
+</div>
+
+<!-- 7.4 Sidetone -->
+<h2 id="s7-4">7.4 &nbsp;Sidetone (Speaker Audio)</h2>
+
+<p>
+  The sidetone is the audible tone you hear through your speakers or
+  headphones when Morse code is being sent or received. The
+  <strong>Active on</strong> selector controls which events produce a
+  sidetone:
+</p>
+<ul>
+  <li><strong>Both</strong> (default) — Plays for TX <em>and</em> RX events,
+      so you always hear what is happening.</li>
+  <li><strong>TX only</strong> — Plays only when you are sending
+      (keyer, encoder, typed text).</li>
+  <li><strong>RX only</strong> — Plays only for decoded incoming signals
+      (audio inputs, Firebase RTDB).</li>
+</ul>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Audio Device</strong> — Which speakers or headphones to use.</li>
+  <li><strong>Channel</strong> — Left or Right.</li>
+  <li><strong>Frequency</strong> — Tone pitch in Hz. 500–800 Hz is typical.
+      Choose a frequency that is comfortable for long operating sessions.</li>
+  <li><strong>Amplitude</strong> — Volume level. Start at 0.3–0.5 and adjust
+      to taste.</li>
+  <li><strong>Active on</strong> — TX only, RX only, or Both (see above).</li>
+</ul>
+
+<!-- 7.5 Vibration -->
+<h2 id="s7-5">7.5 &nbsp;Vibration (Haptic Feedback)</h2>
+
+<p>
+  The vibration output mirrors the sidetone: the device vibrates while the
+  key is down and stops when it goes up. Like the sidetone, the
+  <strong>Active on</strong> selector controls which events trigger
+  vibration:
+</p>
+<ul>
+  <li><strong>Both</strong> (default) — Vibrates for TX and RX events.</li>
+  <li><strong>TX only</strong> — Vibrates only when you are sending.</li>
+  <li><strong>RX only</strong> — Vibrates only for decoded incoming signals.</li>
+</ul>
+
+<p>
+  <strong>Android only.</strong> The Vibration API
+  (<code>navigator.vibrate()</code>) is supported in most Android browsers
+  (Chrome, Firefox, Edge). iOS Safari does not support it, and desktop
+  browsers silently ignore it. Vibration is <strong>disabled by
+  default</strong> and can be enabled in the
+  <strong>Outputs</strong> tab of Settings.
+</p>
+
+<h3>Enhanced Haptic Timing</h3>
+<p>
+  Android vibration motors have a physical spin-up delay of 20&ndash;50&thinsp;ms,
+  which makes short dits imperceptible at higher speeds. When the
+  <strong>Enhanced haptic timing</strong> option is enabled (default: on),
+  the app sends a brief pre-pulse pattern that starts the motor spinning
+  before the main pulse begins, and uses a short delayed cancel on key-up.
+  This dramatically improves tactile clarity at 10+ WPM. You can disable
+  it if you notice any timing artefacts on your device.
+</p>
+
+<!-- 7.6 Loop Detection -->
+<h2 id="s7-6">7.6 &nbsp;Loop Detection</h2>
+
+<p>
+  When an output is configured to activate on RX signals, and the resulting
+  morse is picked up by an input (e.g. via a microphone, CW audio input, or
+  even a network round-trip through Firebase RTDB), a <strong>feedback
+  loop</strong> can form. The same characters are decoded, sent back out,
+  re-decoded, and the cycle continues endlessly.
+</p>
+
+<p>
+  Morse Code Studio includes an automatic <strong>loop-detection
+  mechanism</strong>. It continuously compares the most recent characters
+  sent to outputs with those arriving from inputs. When <strong>six or more
+  consecutive characters</strong> match within a sliding five-second window,
+  the application concludes that a loop is occurring and temporarily
+  <strong>suppresses all output routing</strong> for an eight-second
+  cooldown period. If the loop triggers again immediately after the
+  cooldown expires, the cooldown doubles (up to a maximum of 30 seconds).
+</p>
+
+<p>
+  While a loop is suppressed a <strong>yellow warning banner</strong>
+  appears at the top of the page with a brief explanation. You can dismiss
+  the banner manually by clicking the &times; button, which also clears
+  the suppression immediately.
+</p>
+
+<h3>Avoiding Loops</h3>
+<ul>
+  <li>Use <strong>TX only</strong> on outputs that feed back into an input
+      you are monitoring (e.g. if your radio's sidetone goes into the CW
+      audio input, set the optocoupler or serial output to TX only).</li>
+  <li>When using Firebase RTDB, ensure the channel is configured so that
+      received characters are not re-published back to the same channel.</li>
+  <li>When re-keying received morse through a WinKeyer or serial port,
+      make sure the resulting signal does not reach an active input.</li>
+</ul>

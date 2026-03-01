@@ -1,0 +1,137 @@
+/* ===== Confirm Dialog Overlay ===== */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;               /* above settings modal (8000) */
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: confirmFadeIn .15s ease-out;
+}
+
+@keyframes confirmFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Dialog box */
+.confirm-dialog {
+  background: #1a1a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: confirmSlideIn .15s ease-out;
+  overflow: hidden;
+}
+
+@keyframes confirmSlideIn {
+  from { transform: translateY(-12px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Header */
+.confirm-header {
+  padding: .85rem 1.25rem .5rem;
+}
+.confirm-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #8cf;
+  font-weight: 600;
+}
+
+/* Body */
+.confirm-body {
+  padding: .25rem 1.25rem .75rem;
+}
+.confirm-body p {
+  margin: 0;
+  font-size: .92rem;
+  color: #bbc;
+  line-height: 1.45;
+  white-space: pre-line;
+}
+
+/* Actions row */
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: .6rem;
+  padding: .65rem 1.25rem .85rem;
+  border-top: 1px solid #333;
+}
+
+/* Shared button base */
+.confirm-btn {
+  padding: .45rem 1.1rem;
+  font-size: .88rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #555;
+  cursor: pointer;
+  transition: background .12s, transform .08s;
+  min-height: 36px;
+}
+.confirm-btn:active {
+  transform: scale(0.96);
+}
+
+/* Cancel button */
+.cancel-btn {
+  background: #282c34;
+  color: #bbc;
+}
+.cancel-btn:hover {
+  background: #3a4050;
+}
+
+/* OK / Confirm button */
+.ok-btn {
+  background: #1e4a6e;
+  color: #cdf;
+  border-color: #3a6a9a;
+}
+.ok-btn:hover {
+  background: #285a80;
+}
+
+/* Danger variant (destructive actions) */
+.ok-btn.danger {
+  background: #6e2020;
+  color: #fcc;
+  border-color: #944;
+}
+.ok-btn.danger:hover {
+  background: #833030;
+}
+
+/* ===== TOUCH IMPROVEMENTS ===== */
+@media (pointer: coarse) {
+  .confirm-btn {
+    min-height: 44px;
+    padding: .55rem 1.3rem;
+    font-size: .92rem;
+  }
+}
+
+/* ===== MOBILE ===== */
+@media (max-width: 480px) {
+  .confirm-overlay {
+    padding: 1rem;
+  }
+  .confirm-dialog {
+    max-width: 100%;
+  }
+  .confirm-actions {
+    flex-direction: column-reverse;
+    gap: .45rem;
+  }
+  .confirm-btn {
+    width: 100%;
+    text-align: center;
+  }
+}

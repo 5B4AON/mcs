@@ -1,0 +1,216 @@
+<div class="app-container">
+  <div class="app-header">
+    <h1>Morse Code Studio</h1>
+    <span class="header-spacer"></span>
+    <span class="rtdb-status-icon" [class.rtdb-connected]="rtdbService.inputListening() || rtdbService.outputActive()" title="Firebase RTDB">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+      <span class="rtdb-label">RTDB</span>
+    </span>
+    <button class="audio-toggle-btn" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
+            [title]="audioStarting ? (audioRunning ? 'Stopping…' : 'Starting…') : (audioRunning ? 'Stop Audio' : 'Start Audio')">
+      @if (audioStarting) {
+        <span class="spinner"></span>
+      } @else if (audioRunning) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
+      }
+    </button>
+    <button class="header-icon-btn settings-btn" (click)="openSettings()" title="Settings">
+      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    </button>
+    <div class="kebab-wrapper" (click)="$event.stopPropagation()">
+      <button class="kebab-btn" (click)="controlsKebabOpen = !controlsKebabOpen" title="Speed controls">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+          <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+        </svg>
+      </button>
+      <div class="kebab-items" [class.open]="controlsKebabOpen">
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" (click)="adjustWpm('rxDecoderWpm', -1)">-</button>
+          <span class="wpm-pill-label">RX</span>
+          <span class="wpm-pill-value">{{ decoder.rxEstimatedWpm() }}</span>
+          <button class="wpm-btn" (click)="adjustWpm('rxDecoderWpm', 1)">+</button>
+          <button class="wpm-cal-btn" (click)="decoder.resetRxCalibration()" title="Reset RX Calibration">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" (click)="adjustWpm('txDecoderWpm', -1)">-</button>
+          <span class="wpm-pill-label">TX</span>
+          <span class="wpm-pill-value">{{ decoder.txEstimatedWpm() }}</span>
+          <button class="wpm-btn" (click)="adjustWpm('txDecoderWpm', 1)">+</button>
+          <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" (click)="adjustEncoderWpm(-1)">-</button>
+          <span class="wpm-pill-label">Encoder</span>
+          <span class="wpm-pill-value">{{ settings.settings().encoderWpm }}</span>
+          <button class="wpm-btn" (click)="adjustEncoderWpm(1)">+</button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" (click)="adjustWpm('keyerWpm', -1)">-</button>
+          <span class="wpm-pill-label">Keyer</span>
+          <span class="wpm-pill-value">{{ settings.settings().keyerWpm }}</span>
+          <button class="wpm-btn" (click)="adjustWpm('keyerWpm', 1)">+</button>
+        </span>
+        <button class="kebab-help-btn" (click)="openHelp(); controlsKebabOpen = false" title="Help &amp; Documentation">
+          Help
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loop detection warning banner -->
+  @if (loopDetection.loopDetected()) {
+    <div class="loop-warning-banner">
+      <span class="loop-warning-icon">&#x26A0;</span>
+      <span class="loop-warning-text">{{ loopDetection.loopMessage() }}</span>
+      <button class="loop-warning-dismiss" (click)="loopDetection.clearLoop()" title="Dismiss and re-enable outputs">&times;</button>
+    </div>
+  }
+
+  <!-- RTDB connection warning banner -->
+  @if (rtdbService.connectionWarning()) {
+    <div class="rtdb-warning-banner">
+      <span class="rtdb-warning-icon">&#x26A0;</span>
+      <span class="rtdb-warning-text">{{ rtdbService.connectionWarning() }}</span>
+      <button class="rtdb-warning-dismiss" (click)="rtdbService.dismissWarning()" title="Dismiss">&times;</button>
+    </div>
+  }
+
+  <!-- ========== Morse Decoder ========== -->
+  <section class="panel">
+    <div class="panel-title-row">
+      <h2>Decoder</h2>
+      <div class="wpm-indicators">
+        <span class="wpm-indicator" title="RX Decoder WPM">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="wpm-indicator-label">RX</span>
+          <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
+        </span>
+        <span class="wpm-indicator" title="TX Decoder WPM">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="wpm-indicator-label">TX</span>
+          <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
+        </span>
+        <span class="wpm-indicator" title="Keyer WPM">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
+          <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Level meters -->
+    @if (settings.settings().micInputEnabled) {
+      <div class="level-meter-group">
+        <span class="level-label">Key:</span>
+        <div class="level-meter-track">
+          <div class="level-meter-fill" [style.width.%]="micLevel * 100 / levelMeterMax"></div>
+          <div class="level-meter-threshold"
+               [style.left.%]="settings.settings().inputThreshold * 100 / levelMeterMax"
+               title="Threshold"></div>
+        </div>
+      </div>
+    }
+
+    <div class="decoded-text" #decoderBox>{{ displayBuffers.mainDecoder.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+    <div class="decoded-actions">
+      @if (settings.settings().cwInputEnabled) {
+        <div class="level-meter-group inline-meter">
+          <svg class="level-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="8" width="4" height="12" rx="1"/></svg>
+          <div class="level-meter-track">
+            <div class="level-meter-fill cw-fill" [style.width.%]="cwLevel * 100 / cwLevelMax"></div>
+            <div class="level-meter-threshold"
+                 [style.left.%]="cwThreshold * 100 / cwLevelMax"
+                 title="Auto Threshold"></div>
+          </div>
+        </div>
+      }
+      <div class="clear-menu-wrapper action-right" (click)="$event.stopPropagation()">
+        <button class="clear-icon-btn" (click)="toggleClearMenu('decoder')" title="Clear">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+        @if (clearMenuOpen === 'decoder') {
+          <div class="clear-menu">
+            <button class="clear-menu-btn clear-this" (click)="clearMainDecoder(); closeClearMenu()">This log</button>
+            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All logs</button>
+          </div>
+        }
+      </div>
+      <button class="expand-btn" (click)="openModal('decoder')" title="Fullscreen">&#x26F6;</button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-title-row">
+      <h2>Encoder</h2>
+      <div class="wpm-indicators">
+        <span class="wpm-indicator" title="Encoder WPM">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="wpm-indicator-label">Encoder</span>
+          <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
+        </span>
+      </div>
+    </div>
+
+    <div class="encoder-buffer">
+      @for (char of encoderChars(); track $index) {
+        <span [class.sent]="$index < encoder.sentIndex()"
+              [class.sending]="$index === encoder.sentIndex() && encoder.isSending()">{{ char }}</span>
+      }
+    </div>
+
+    <div class="encoder-input-row">
+      <textarea #encoderInput rows="2" placeholder="Type text to encode..."
+                (keydown)="onEncoderKeydown($event, encoderInput)"
+                (input)="onEncoderInput(encoderInput)"></textarea>
+    </div>
+
+    <div class="encoder-actions">
+      <label class="encoder-mode-label">
+        Mode:
+        <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+          <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
+          <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live (as you type)</option>
+        </select>
+      </label>
+      <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="!encoder.isSending() && (encoderInputHasText || encoder.buffer().length > encoder.sentIndex())" (click)="toggleEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+      </button>
+      <div class="clear-menu-wrapper action-right" (click)="$event.stopPropagation()">
+        <button class="clear-icon-btn" (click)="toggleClearMenu('encoder')" title="Clear">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+        @if (clearMenuOpen === 'encoder') {
+          <div class="clear-menu">
+            <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Text area</button>
+            <button class="clear-menu-btn clear-this" (click)="clearEncoder(encoderInput); closeClearMenu()">This log</button>
+            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All logs</button>
+          </div>
+        }
+      </div>
+      <button class="expand-btn" (click)="openModal('encoder')" title="Fullscreen">&#x26F6;</button>
+    </div>
+  </section>
+
+  <!-- Settings are now in a modal, opened via the gear icon in the header -->
+</div>
+
+<!-- ========== SETTINGS MODAL ========== -->
+@if (showSettings) {
+  <app-settings-modal [audioRunning]="audioRunning" (closed)="closeSettings()"></app-settings-modal>
+}
+
+<!-- ========== FULLSCREEN MODAL ========== -->
+@if (activeModal) {
+  <app-fullscreen-modal [mode]="activeModal" (closed)="closeModal()" (helpRequested)="openHelp()"></app-fullscreen-modal>
+}
+
+<!-- ========== HELP MODAL ========== -->
+@if (showHelp) {
+  <app-help (closed)="closeHelp()"></app-help>
+}

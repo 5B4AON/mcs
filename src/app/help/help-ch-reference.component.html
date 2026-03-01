@@ -1,0 +1,234 @@
+<!-- ================================================================ -->
+<!-- Chapter 11 — Reference                                         -->
+<!-- ================================================================ -->
+
+<!-- 11.1 Common Use Cases -->
+<h2 id="s11-1">11.1 &nbsp;Common Use Cases</h2>
+
+<div class="example-box">
+  <div class="example-title">Practice — Learning Morse Code</div>
+  <p>
+    Use the encoder to send yourself test messages. Type words and listen to
+    the Morse audio through your speakers. Try to decode by ear before looking
+    at the Decoded Output. Gradually increase the WPM as you improve.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">On-Air CW — Computer-Keyed Transmission</div>
+  <p>
+    Connect a USB sound card to your radio via an optocoupler, or use a
+    USB-serial adapter. Type messages in the encoder and let the computer send
+    perfect CW. Use the CW audio input to decode incoming signals.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">On-Air CW — Manual Key with Computer Decode</div>
+  <p>
+    Build the pilot tone circuit and connect your straight key. The computer
+    decodes your sending and displays it. Incoming CW from the radio is fed
+    into the CW audio input and decoded alongside. Both sides of the QSO
+    appear on screen with RX/TX colour coding.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Contest / POTA / SOTA</div>
+  <p>
+    Pre-type your exchange (e.g. <code>5NN 042</code>) and send it with one
+    keypress using "Send on Enter" mode. The keyboard keyer handles freeform
+    Morse between exchanges.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">SDR + Virtual Cable — All-Software Station</div>
+  <p>
+    Route audio from your SDR application through a virtual audio cable into
+    Morse Code Studio. Decoded CW appears live. Use the encoder + serial
+    output to key your SDR transceiver. No physical audio cables needed.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Tablet / Phone Operating</div>
+  <p>
+    Enable the touch keyer in Settings and open the fullscreen decoder. Use
+    the on-screen touch buttons to send CW in straight key or paddle mode.
+    Enable Vibration in the Outputs tab for haptic feedback as you key
+    (Android only). In the fullscreen encoder, tap the floating keyboard button (⌨)
+    to open your device's on-screen keyboard for composing messages.
+    The touch keyer works well on tablets propped up next to a radio.
+  </p>
+</div>
+
+<!-- 11.2 Troubleshooting -->
+<h2 id="s11-2">11.2 &nbsp;Troubleshooting</h2>
+
+<table>
+  <tr><th>Problem</th><th>Solution</th></tr>
+  <tr>
+    <td>"Start Audio" does nothing</td>
+    <td>Check that you allowed microphone permission. Some browsers require
+        HTTPS — make sure you are not on an insecure HTTP page.</td>
+  </tr>
+  <tr>
+    <td>Key level meter stays at zero</td>
+    <td>Verify the pilot tone output channel and device. Check external
+        circuit wiring. Try pilot amplitude 1.0. Run the calibration
+        sequence.</td>
+  </tr>
+  <tr>
+    <td>CW level meter stays at zero</td>
+    <td>Check input device and channel selection. Verify the CW frequency
+        matches your radio's sidetone. Try disabling Auto Threshold and
+        setting a low manual threshold.</td>
+  </tr>
+  <tr>
+    <td>Decoder shows wrong characters</td>
+    <td>Reset calibration (Reset RX Cal / Reset TX Cal) and set the Decoder
+        WPM close to the actual sending speed. Increase debounce if you see
+        extra dits from contact bounce.</td>
+  </tr>
+  <tr>
+    <td>Opto does not key the radio</td>
+    <td>Check wiring polarity. Try DC mode if AC doesn't work (or vice
+        versa). Set amplitude to 1.0. Use "Test Output". Consider a
+        transistor buffer if sound card voltage is too low.</td>
+  </tr>
+  <tr>
+    <td>Serial port not available</td>
+    <td>Web Serial API requires Chrome or Edge on a <strong>desktop</strong>
+        operating system (Windows, macOS, Linux or ChromeOS). Click
+        "Add Serial Port" — you must grant access each session.
+        <strong>Android is not supported</strong> — Chrome on Android does
+        not provide access to USB-serial adapters even via USB OTG.</td>
+  </tr>
+  <tr>
+    <td>Channel conflict warning</td>
+    <td>Two outputs are on the same channel on the same device. Change one
+        to a different channel or device, or disable it.</td>
+  </tr>
+  <tr>
+    <td>Audio cuts out or is choppy</td>
+    <td>Close other browser tabs using audio. Try a different browser. On
+        mobile, keep the screen on — some devices throttle background
+        audio.</td>
+  </tr>
+  <tr>
+    <td>Mouse keyer not responding</td>
+    <td>Ensure the mouse keyer is enabled in Settings and at least one button
+        is assigned an action other than "None".</td>
+  </tr>
+  <tr>
+    <td>Touch buttons not visible</td>
+    <td>Enable the touch keyer in Settings. Touch buttons appear in the
+        fullscreen decoder view.</td>
+  </tr>
+  <tr>
+    <td>Vibration not working</td>
+    <td>Haptic vibration requires Android with Chrome, Firefox or Edge.
+        iOS Safari does not support the Vibration API. Ensure the
+        Vibration toggle is enabled in the Outputs tab of Settings.
+        Some devices may have vibration disabled in system settings.</td>
+  </tr>
+</table>
+
+<!-- 11.3 Browser Compatibility -->
+<h2 id="s11-3">11.3 &nbsp;Browser Compatibility</h2>
+
+<table>
+  <tr><th>Feature</th><th>Chrome / Edge</th><th>Firefox</th><th>Safari</th></tr>
+  <tr>
+    <td>Audio input / output</td>
+    <td>✅ Full</td>
+    <td>✅ Full</td>
+    <td>✅ Full</td>
+  </tr>
+  <tr>
+    <td>AudioWorklet (detection)</td>
+    <td>✅ Full</td>
+    <td>✅ Full</td>
+    <td>✅ Since 14.1</td>
+  </tr>
+  <tr>
+    <td>Device selection (setSinkId)</td>
+    <td>✅ Full</td>
+    <td>⚠️ Limited</td>
+    <td>❌ No</td>
+  </tr>
+  <tr>
+    <td>Web Serial API</td>
+    <td>✅ Full</td>
+    <td>❌ No</td>
+    <td>❌ No</td>
+  </tr>
+  <tr>
+    <td>Vibration API (haptic)</td>
+    <td>✅ Android only</td>
+    <td>✅ Android only</td>
+    <td>❌ No</td>
+  </tr>
+</table>
+
+<p>
+  For the best experience, use <strong>Google Chrome</strong> or
+  <strong>Microsoft Edge</strong> on a desktop or laptop. These are the only
+  browsers that support all features including device selection and serial
+  port access.
+</p>
+
+<!-- 11.4 Running Multiple Tabs -->
+<h2 id="s11-4">11.4 &nbsp;Running Multiple Tabs</h2>
+
+<p>
+  You can open Morse Code Studio in multiple browser tabs simultaneously.
+  Each tab runs its own independent instance — audio processing, encoder,
+  decoder and keyer state are completely isolated.
+</p>
+
+<h3>Fully Independent (no interference)</h3>
+<ul>
+  <li><strong>Audio</strong> — Each tab creates its own Web Audio contexts,
+      worklet nodes and oscillators. There is no cross-tab conflict.</li>
+  <li><strong>Encoder / Decoder</strong> — All runtime state lives in
+      per-tab Angular services. Nothing leaks between tabs.</li>
+  <li><strong>Firebase RTDB</strong> — Each tab opens its own connection.
+      Two tabs listening on the same channel will both receive the data
+      (by design).</li>
+</ul>
+
+<h3>Shared Resources</h3>
+<ul>
+  <li><strong>Settings &amp; Profiles</strong> — Stored in
+      <code>localStorage</code>, which is shared across all tabs on the
+      same origin. Changes saved in one tab are not automatically reflected
+      in another tab until it is reloaded. Saving settings in two tabs at
+      the same time may cause one save to overwrite the other.</li>
+  <li><strong>Web Serial (WinKeyer)</strong> — A serial port can only be
+      opened by <em>one tab at a time</em>. If one tab already holds the
+      port, another tab will fail to open it.</li>
+  <li><strong>Service Worker</strong> — The Angular service worker is shared
+      across tabs but only caches assets — it does not relay app-level
+      messages, so there is no interference.</li>
+</ul>
+
+<!-- 11.5 About -->
+<h2 id="s11-5">11.5 &nbsp;About</h2>
+
+<p>
+  This software was developed by <strong>5B4AON, Mike</strong>, while testing
+  the capabilities of AI model <strong>Claude Opus 4.6</strong> on
+  <strong>22/02/2026</strong> (World Scout Day).
+</p>
+<p>
+  The inspiration was to create a simple-to-use, no-installation-required
+  Morse code encoder and decoder that could be connected to simple external
+  keying devices and used by scouts during
+  <strong>Jamboree On The Air 2026</strong>.
+</p>
+<p class="about-footer">
+  Morse Code Studio v{{ version }} · © 2026 5B4AON — Mike ·
+  Licensed under the <strong>GNU General Public License v3.0</strong>.
+</p>

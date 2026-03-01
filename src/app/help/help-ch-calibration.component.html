@@ -1,0 +1,113 @@
+<!-- ================================================================ -->
+<!-- Chapter 5 — Decoder Source Routing                             -->
+<!-- ================================================================ -->
+
+<!-- 5.1 What Are RX and TX? -->
+<h2 id="s5-1">5.1 &nbsp;What Are RX and TX?</h2>
+
+<p>
+  Every input in Morse Code Studio feeds its timing events into the decoder.
+  The decoder needs to know whether each input represents
+  <strong>received Morse</strong> (from another operator) or
+  <strong>transmitted Morse</strong> (your own sending). This distinction is
+  called the <em>decoder source</em> and it determines two things:
+</p>
+<ol>
+  <li><strong>Calibration pool</strong> — Which set of adaptive timing averages
+      the input feeds into (RX pool or TX pool).</li>
+  <li><strong>Colour tag</strong> — Whether decoded text appears as RX
+      (green by default) or TX (yellow by default) in the fullscreen
+      conversation view.</li>
+</ol>
+
+<!-- 5.2 Per-Input Source Assignment -->
+<h2 id="s5-2">5.2 &nbsp;Per-Input Source Assignment</h2>
+
+<p>
+  Each of the five input types has a <strong>"Used for:"</strong> selector in
+  its Settings section. You can set each one independently to either
+  <strong>RX</strong> or <strong>TX</strong>:
+</p>
+
+<table>
+  <tr><th>Input</th><th>Setting Name</th><th>Default</th></tr>
+  <tr>
+    <td>Straight Key via Mic (Pilot Tone)</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>Straight Key via Audio Channel (CW Tone)</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>Keyboard Keyer</td>
+    <td>Used for</td>
+    <td><strong>TX</strong></td>
+  </tr>
+  <tr>
+    <td>Mouse Keyer</td>
+    <td>Used for</td>
+    <td><strong>TX</strong></td>
+  </tr>
+  <tr>
+    <td>Touch Keyer</td>
+    <td>Used for</td>
+    <td><strong>TX</strong></td>
+  </tr>
+</table>
+
+<p>
+  A colour-coded badge in each Settings section header shows the current
+  assignment at a glance: <span style="color:#8cf;">blue for RX</span>,
+  <span style="color:#fc8;">amber for TX</span>.
+</p>
+
+<!-- 5.3 Default Assignments and Reasoning -->
+<h2 id="s5-3">5.3 &nbsp;Default Assignments and Reasoning</h2>
+
+<p>
+  The defaults are chosen for the most common use case: audio inputs receive
+  Morse from other operators (RX), while manual keyers generate your own
+  Morse (TX).
+</p>
+
+<p>
+  However, you may want to change these assignments in certain scenarios:
+</p>
+<ul>
+  <li><strong>Practice with a physical key:</strong> If you connect a straight
+      key via the pilot tone and want to practise your own sending, set the
+      mic input to <strong>TX</strong> so your keying shows as TX text and
+      calibrates the TX pool.</li>
+  <li><strong>Remote keyer:</strong> If someone is keying remotely through an
+      audio feed, their input is RX even though it comes through what might
+      normally be a "local" source.</li>
+</ul>
+
+<!-- 5.4 Why It Matters -->
+<h2 id="s5-4">5.4 &nbsp;Why Separate Pools Matter</h2>
+
+<p>
+  Without separate calibration pools, your 25 WPM keyboard keying would be
+  averaged together with a 15 WPM signal coming from the radio. The
+  threshold would drift to somewhere around 20 WPM, causing the decoder to
+  misclassify dahs as dits (or vice versa) for <em>both</em> sources.
+</p>
+
+<p>
+  With dual pools, each source maintains its own accurate speed estimate
+  regardless of what the other is doing. The decoder always uses the correct
+  pool's threshold when classifying elements from a given input.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example — QSO at different speeds</div>
+  <p>
+    You are sending at 22 WPM using the keyboard keyer (TX pool). The station
+    you are working sends at 14 WPM via your radio's CW tone input (RX pool).
+    Each pool auto-calibrates independently: TX settles at ~22 WPM,
+    RX at ~14 WPM. Both decode correctly without interfering with each other.
+  </p>
+</div>

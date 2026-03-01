@@ -1,0 +1,15 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    RADIO["📻 Radio<br/>(speaker /<br/>line out)"]
+    CABLE["🔌 Audio Cable<br/>3.5 mm or RCA"]
+    USB_SC["🔊 USB Sound Card<br/>Input"]
+    BROWSER["🖥️ Browser<br/>(Morse Code<br/>Studio)"]
+
+    RADIO -->|"CW audio<br/>tones"| CABLE
+    CABLE --> USB_SC
+    USB_SC -->|"USB"| BROWSER
+
+    style RADIO fill:#5a3a2a,stroke:#cc8844,color:#fff
+    style CABLE fill:#3a3a3a,stroke:#999,color:#ccc
+    style USB_SC fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style BROWSER fill:#2a5a2a,stroke:#66cc66,color:#fff

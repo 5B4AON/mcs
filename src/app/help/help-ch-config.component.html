@@ -1,0 +1,155 @@
+<!-- ================================================================ -->
+<!-- Chapter 8 — Configuration & Display                            -->
+<!-- ================================================================ -->
+
+<!-- 8.1 Sound Card Channel Routing -->
+<h2 id="s8-1">8.1 &nbsp;Sound Card Channel Routing</h2>
+
+<p>
+  Each stereo sound card has two channels: <strong>Left</strong> and
+  <strong>Right</strong>. Morse Code Studio routes each output (sidetone,
+  opto, pilot) to a specific channel on a specific device. This lets you
+  use a single sound card for multiple purposes.
+</p>
+
+<p>
+  <strong>The rule:</strong> Two outputs must not share the same channel on the
+  same device. If there is a conflict, the application shows a warning.
+</p>
+
+<figure class="diagram-figure">
+  <figcaption>Single Sound Card &mdash; Channel Allocation Example</figcaption>
+  <img src="help/diagrams/single-soundcard.svg"
+       alt="Single Sound Card — Channel Allocation Example"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>single-soundcard.mmd</code></p>
+</figure>
+
+<p>
+  <strong>Single sound card — choose 2 of 3:</strong> A stereo card has only
+  two channels but there are three possible outputs (sidetone, opto, pilot).
+  You can enable any two. To use all three, add a second USB sound card.
+</p>
+
+<figure class="diagram-figure">
+  <figcaption>Two Sound Cards &mdash; Full Setup</figcaption>
+  <img src="help/diagrams/dual-soundcard.svg"
+       alt="Two Sound Cards — Full Setup"
+       class="diagram-img"
+       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
+  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>dual-soundcard.mmd</code></p>
+</figure>
+
+<!-- 8.2 Device Profiles -->
+<h2 id="s8-2">8.2 &nbsp;Device Profiles</h2>
+
+<p>
+  When you save settings, they are stored against the current set of audio
+  devices connected to your computer. This is called a
+  <strong>device profile</strong>.
+</p>
+
+<p>
+  If you later connect a different set of devices (e.g. plugging in a USB
+  sound card at home vs. a portable station), the application detects the
+  change and loads the matching profile automatically. Each hardware
+  configuration is remembered separately.
+</p>
+
+<p>
+  If no profile matches the current devices, the application creates a new
+  profile with default settings and shows a <strong>yellow banner</strong>
+  asking you to review and save.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example — Home vs. portable</div>
+  <p>
+    At home: desktop PC with a built-in sound card plus a USB card for keying.
+    Portable: laptop with only its built-in audio. Each setup has different
+    device IDs, so Morse Code Studio saves and loads the correct settings
+    automatically.
+  </p>
+</div>
+
+<!-- 8.3 Fullscreen Mode -->
+<h2 id="s8-3">8.3 &nbsp;Fullscreen Mode</h2>
+
+<p>
+  Both the Decoder and Encoder panels have a <strong>⛶</strong> button. Clicking
+  it opens a fullscreen overlay optimised for operating.
+</p>
+
+<h3>Independent Display Buffers</h3>
+<p>
+  The application maintains <strong>four independent FIFO text buffers</strong>:
+</p>
+<ul>
+  <li><strong>Main Decoder</strong> &mdash; the Morse Decoder panel on the main screen.</li>
+  <li><strong>Main Encoder</strong> &mdash; the sent-character display in the Encoder panel.</li>
+  <li><strong>Fullscreen Decoder</strong> &mdash; the conversation log in the fullscreen decoder view.</li>
+  <li><strong>Fullscreen Encoder</strong> &mdash; the conversation log in the fullscreen encoder view.</li>
+</ul>
+<p>
+  Each buffer receives text from the same data sources (decoded characters,
+  sent encoder characters, and Firebase RTDB input) but can be
+  <strong>cleared independently</strong>. Pressing the Clear button (🗑)
+  opens a context menu with <strong>This log</strong> (clears the current
+  buffer only) and <strong>All logs</strong> (clears all four buffers at
+  once). The encoder&rsquo;s clear menu adds a <strong>Text area</strong>
+  option to empty the text-entry field without affecting any log.
+</p>
+<p>
+  Buffers are capped at approximately <strong>5 000 characters</strong>
+  (~2× a full screen of text). When the limit is reached, the oldest
+  characters are silently discarded (FIFO). Both fullscreen buffers persist
+  across close/reopen &mdash; you will not lose your conversation history by
+  switching between views.
+</p>
+
+<h3>Decoder Fullscreen</h3>
+<p>
+  Large, scrollable decoded text with RX/TX colour coding. The toolbar
+  provides WPM adjustment (RX, TX, Keyer), calibration reset
+  buttons, and level meters for the Key and CW inputs.
+  When Firebase RTDB input or output is active, a small
+  <strong>RTDB status indicator</strong> (wifi icon) turns green in
+  the toolbar.
+</p>
+
+<h3>Encoder Fullscreen</h3>
+<p>
+  Conversation history plus your encoder buffer inline. Every keystroke is
+  captured directly &mdash; no need to click a text box. The toolbar shows encoder
+  WPM, sending mode, and TX ON/OFF controls. On mobile/tablet devices, a
+  floating keyboard button (⌨) appears to toggle the on-screen virtual
+  keyboard. The RTDB status indicator is also visible here.
+</p>
+
+<h3>Responsive Toolbars</h3>
+<p>
+  On narrow screens, the main controls bar and each fullscreen modal toolbar
+  automatically collapse overflow controls into a <strong>kebab menu</strong>
+  (⋮). Essential buttons — <em>Start Audio</em> on the main screen, and
+  <em>Close</em> / <em>Clear</em> in fullscreen modals — remain visible at
+  all times. Tap the ⋮ button to access the remaining controls in a dropdown.
+  A <strong>Help</strong> (?) entry at the bottom of each kebab menu opens
+  the built-in help system.
+  The toolbar restores to its full inline layout when the window is wide
+  enough.
+</p>
+
+<h3>Display Customisation</h3>
+<p>
+  The following display settings are available in both fullscreen views and
+  are persisted independently of device profiles:
+</p>
+<ul>
+  <li><strong>Font size</strong> — Adjustable from 24 to 184 px.</li>
+  <li><strong>Bold</strong> — Toggle bold text.</li>
+  <li><strong>Line spacing</strong> — Vertical spacing between conversation
+      lines.</li>
+  <li><strong>Colours</strong> — Custom colours for RX text, TX text, buffered
+      text, currently-sending character, and background.</li>
+</ul>

@@ -1,0 +1,298 @@
+﻿/* ===== Help Modal Overlay ===== */
+:host {
+  display: block;
+}
+
+.help-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #181c20;
+  color: #e0e0e0;
+  overflow-y: auto;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.help-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 28px 80px;
+}
+
+/* ---- Title ---- */
+.help-title {
+  margin: 0 0 24px;
+  font-size: 22px;
+  color: #66ccff;
+}
+
+/* ---- Table of Contents ---- */
+.toc {
+  background: #1e2228;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px 22px 18px;
+  margin-bottom: 32px;
+}
+
+.toc-heading {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #a8d8ff;
+}
+
+.toc-chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.toc a {
+  color: #88bbdd;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background 0.12s;
+}
+.toc a:hover {
+  background: #282c34;
+  color: #b8deff;
+}
+.toc a.toc-ch {
+  font-weight: 600;
+  font-size: 15px;
+  color: #a8d8ff;
+  margin-top: 4px;
+}
+
+/* ---- Chapter blocks ---- */
+.help-chapter {
+  margin-bottom: 36px;
+  padding-top: 8px;
+}
+
+.chapter-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: #66ccff;
+  margin: 0 0 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #333;
+}
+
+/* Section headings inside chapters (h2 in child components) */
+::ng-deep .help-chapter h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #a8d8ff;
+  margin: 24px 0 10px;
+  padding-top: 8px;
+}
+
+::ng-deep .help-chapter h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #c8e8ff;
+  margin: 16px 0 8px;
+}
+
+/* ---- Prose ---- */
+::ng-deep .help-chapter p {
+  margin: 0 0 12px;
+}
+
+::ng-deep .help-chapter ul,
+::ng-deep .help-chapter ol {
+  margin: 0 0 12px;
+  padding-left: 22px;
+}
+::ng-deep .help-chapter li {
+  margin-bottom: 6px;
+}
+
+::ng-deep .help-chapter strong {
+  color: #e8e8e8;
+}
+
+::ng-deep .help-chapter em {
+  color: #88bbdd;
+  font-style: italic;
+}
+
+::ng-deep .help-chapter code {
+  background: #282c34;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+  color: #e0b050;
+}
+
+/* ---- Diagram figures (image-based) ---- */
+::ng-deep .diagram-figure {
+  background: #1a1e24;
+  border: 1px solid #444;
+  border-radius: 6px;
+  padding: 14px 18px;
+  margin: 12px 0 16px;
+  text-align: center;
+}
+
+::ng-deep .diagram-figure figcaption {
+  color: #66ccff;
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+::ng-deep .diagram-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 4px;
+}
+
+::ng-deep .diagram-placeholder {
+  display: none;
+  color: #cc8844;
+  font-style: italic;
+  padding: 24px 12px;
+  font-size: 13px;
+}
+
+::ng-deep .diagram-figure.img-missing .diagram-placeholder {
+  display: block;
+}
+
+::ng-deep .diagram-placeholder code {
+  background: #282c34;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: #e0b050;
+}
+
+/* ---- Example boxes ---- */
+::ng-deep .example-box {
+  border-left: 3px solid #66ccff;
+  background: #1c2028;
+  padding: 10px 16px;
+  margin: 10px 0 14px;
+  border-radius: 0 6px 6px 0;
+}
+::ng-deep .example-box .example-title {
+  font-weight: 600;
+  color: #66ccff;
+  margin-bottom: 4px;
+}
+
+/* ---- Experimental badge ---- */
+::ng-deep .help-experimental {
+  font-size: .65em;
+  font-weight: 600;
+  color: #f5c542;
+  background: #3a2e10;
+  border: 1px solid #f5c542;
+  border-radius: 4px;
+  padding: 1px 6px;
+  margin-left: 6px;
+  vertical-align: middle;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+/* ---- Tables ---- */
+::ng-deep .help-chapter table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0 14px;
+  font-size: 14px;
+}
+::ng-deep .help-chapter th {
+  text-align: left;
+  padding: 6px 10px;
+  background: #282c34;
+  border: 1px solid #444;
+  color: #a8d8ff;
+  font-weight: 600;
+}
+::ng-deep .help-chapter td {
+  padding: 6px 10px;
+  border: 1px solid #333;
+}
+
+/* ---- About footer ---- */
+::ng-deep .about-footer {
+  margin-top: 1rem;
+  font-size: .85rem;
+  color: #889;
+}
+
+/* ---- Close button ---- */
+.help-close-btn {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 10100;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+}
+.help-close-btn:hover {
+  background: #3a4050;
+}
+.help-close-btn:active {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+
+/* ---- Floating "Help Home" button ---- */
+.help-home-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10100;
+  background: #282c34;
+  color: #88bbdd;
+  border: 1px solid #555;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,.4);
+  transition: background 0.15s, color 0.15s;
+}
+.help-home-btn:hover {
+  background: #3a3f4b;
+  color: #b8deff;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .help-container {
+    padding: 16px 12px 48px;
+  }
+  .help-title {
+    font-size: 18px;
+  }
+  ::ng-deep .diagram-figure {
+    padding: 8px 10px;
+  }
+}

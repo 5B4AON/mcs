@@ -1,0 +1,21 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    subgraph USB_SC["USB Sound Card (Stereo)"]
+        direction TB
+        L["⬅ Left Channel"]
+        R["➡ Right Channel"]
+    end
+
+    SIDE["🔊 Sidetone<br/>(speaker)"]
+    OPTO["🔑 Opto Output<br/>(key)"]
+    NOTE["⚠️ Pilot tone needs<br/>a third channel —<br/>use a second sound<br/>card, or use the<br/>keyboard keyer"]
+
+    L --> SIDE
+    R --> OPTO
+
+    style USB_SC fill:#1a1e24,stroke:#666,color:#ccc
+    style L fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style R fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style SIDE fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style OPTO fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style NOTE fill:#4a3a1a,stroke:#cc8833,color:#ffd

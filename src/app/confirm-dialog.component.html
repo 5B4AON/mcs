@@ -1,0 +1,21 @@
+<div class="confirm-overlay" (click)="cancel()">
+  <div class="confirm-dialog" (click)="$event.stopPropagation()" role="alertdialog"
+       [attr.aria-label]="title">
+
+    <!-- Header -->
+    <div class="confirm-header">
+      <h3>{{ title }}</h3>
+    </div>
+
+    <!-- Body -->
+    <div class="confirm-body">
+      <p>{{ message }}</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="confirm-actions">
+      <button class="confirm-btn cancel-btn" (click)="cancel()">{{ cancelLabel }}</button>
+      <button class="confirm-btn ok-btn" [class.danger]="danger" (click)="confirm()">{{ confirmLabel }}</button>
+    </div>
+  </div>
+</div>

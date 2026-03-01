@@ -1,0 +1,1111 @@
+<div class="settings-overlay" (click)="close()">
+  <div class="settings-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal header -->
+    <div class="settings-modal-header">
+      <h2>Settings</h2>
+      <div class="settings-header-actions">
+        <button (click)="onRefreshDevices()" class="settings-action-btn" title="Refresh audio devices">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="1" width="11" height="9" rx="1.5" stroke-width="2"/><line x1="3" y1="5" x2="8" y2="5" stroke-width="2"/><line x1="3" y1="7.5" x2="7" y2="7.5" stroke-width="2"/><circle cx="15.5" cy="13" r="6.5" stroke-width="2"/><line x1="20" y1="17.5" x2="23.5" y2="21" stroke-width="3"/></svg>
+        </button>
+        <button (click)="confirmReset()" class="settings-action-btn" title="Reset all settings to defaults">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" overflow="visible" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M-2.2 12a14.2 14.2 0 1 1 14.2 14.2 14.85 14.85 0 0 1-10.4-4.3L-2.2 18.3" stroke-width="1.6"/><polygon points="-3.1 23.2 -3.1 18.3 2.3 18.3" fill="currentColor" stroke="none"/><g transform="translate(12,12) scale(0.828)"><circle cx="0" cy="0" r="3" stroke-width="2.2"/><path d="M7.4 3a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 3 7.32a1.65 1.65 0 0 0-1 1.51V9a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0-3 7.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0-7.32 3a1.65 1.65 0 0 0-1.51-1H-9a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0-7.4-3a1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0-3-7.32a1.65 1.65 0 0 0-1-1.51V-9a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 7.4-3a1.65 1.65 0 0 0 1.51 1H9a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2.2"/></g></svg>
+        </button>
+        <button class="settings-close-btn" (click)="close()" title="Close settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Validation banner -->
+    @if (settings.needsValidation()) {
+      <div class="validation-banner">
+        New device configuration detected. Please review your settings and click <strong>Save Settings</strong>.
+      </div>
+    }
+
+    <!-- Conflict warnings -->
+    @for (warn of settings.channelConflict() ?? []; track $index) {
+      <div class="conflict-warning">{{ warn }}</div>
+    }
+
+    <!-- Tab navigation -->
+    <div class="settings-tabs">
+      <button class="settings-tab" [class.active]="settingsTab === 'inputs'" (click)="settingsTab = 'inputs'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        Inputs
+      </button>
+      <button class="settings-tab" [class.active]="settingsTab === 'outputs'" (click)="settingsTab = 'outputs'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7V7"/><path d="M7 17 17 7"/></svg>
+        Outputs
+      </button>
+    </div>
+
+    <!-- Tab content -->
+    <div class="settings-tab-content">
+
+      <!-- ==================== INPUTS TAB ==================== -->
+      @if (settingsTab === 'inputs') {
+
+        <!-- ===== 1. STRAIGHT KEY VIA MIC (PILOT TONE) ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().micInputEnabled">
+          <div class="settings-card-header" (click)="toggleSection('mic')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('mic') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Straight Key via Mic</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().micInputSource === 'rx'" [class.source-tx]="settings.settings().micInputSource === 'tx'">{{ settings.settings().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Pilot Tone</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().micInputEnabled"
+                     (change)="onMicEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('mic')) {
+            <div class="settings-card-body">
+              <div class="experimental-banner">&#x26A0; Experimental &mdash; AC coupling varies across sound cards; results may be unreliable.</div>
+              <label>Used for:
+                <select [value]="settings.settings().micInputSource" (change)="onSettingChange('micInputSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Mic Device:
+                <select [value]="settings.settings().inputDeviceId" (change)="onSettingChange('inputDeviceId', $event)">
+                  <option value="default" [selected]="settings.settings().inputDeviceId === 'default'">System Default</option>
+                  @for (dev of devices.inputDevices(); track dev.deviceId) {
+                    <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().inputDeviceId">{{ dev.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <div class="pilot-settings">
+                <label>Pilot Output Device:
+                  <select [value]="settings.settings().pilotOutputDeviceId" (change)="onSettingChange('pilotOutputDeviceId', $event)">
+                    <option value="default" [selected]="settings.settings().pilotOutputDeviceId === 'default'">System Default</option>
+                    @for (dev of devices.outputDevices(); track dev.deviceId) {
+                      <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().pilotOutputDeviceId">{{ dev.label }}</option>
+                    }
+                  </select>
+                </label>
+
+                <label>Pilot Output Channel:
+                  <select [value]="settings.settings().pilotOutputChannel" (change)="onSettingChange('pilotOutputChannel', $event)">
+                    <option value="left" [selected]="settings.settings().pilotOutputChannel === 'left'">Left</option>
+                    <option value="right" [selected]="settings.settings().pilotOutputChannel === 'right'">Right</option>
+                  </select>
+                </label>
+
+                <label>Pilot Frequency (Hz):
+                  <input type="number" min="10000" max="22000" step="500"
+                         [value]="settings.settings().pilotFrequency"
+                         (change)="onInputParamChange('pilotFrequency', $event)">
+                </label>
+
+                <label>Pilot Amplitude:
+                  <input type="range" min="0.05" max="1" step="0.05"
+                         [value]="settings.settings().pilotAmplitude"
+                         (input)="onSettingChange('pilotAmplitude', $event)">
+                  {{ settings.settings().pilotAmplitude }}
+                </label>
+
+                <div class="pilot-wiring-hint">
+                  Wire: Pilot output → 10kΩ resistor → junction → mic input.
+                  Morse key from junction to ground.
+                </div>
+              </div>
+
+              <label>Threshold:
+                <input type="range" min="0.0001" max="0.2" step="0.0001" [value]="settings.settings().inputThreshold"
+                       (input)="onInputParamChange('inputThreshold', $event)">
+                {{ (settings.settings().inputThreshold * 1000).toFixed(2) }}m
+              </label>
+
+              <div class="calibration-row">
+                <span class="calibration-label">Calibrate:</span>
+                <button [disabled]="!audioRunning || calibrating" (click)="calibrateOpen()">
+                  {{ calibrating === 'open' ? 'Measuring...' : '1. Key Open' }}
+                </button>
+                <button [disabled]="!audioRunning || calibrating" (click)="calibrateClosed()">
+                  {{ calibrating === 'closed' ? 'Measuring...' : '2. Key Closed' }}
+                </button>
+                @if (calibOpenRms !== null || calibClosedRms !== null) {
+                  <span class="calibration-values">
+                    @if (calibOpenRms !== null) { Open: {{ (calibOpenRms * 1000).toFixed(3) }}m }
+                    @if (calibClosedRms !== null) { &nbsp;Closed: {{ (calibClosedRms * 1000).toFixed(3) }}m }
+                  </span>
+                }
+                @if (calibOpenRms !== null && calibClosedRms !== null) {
+                  <button (click)="applyCalibration()">Apply threshold</button>
+                }
+              </div>
+
+              <label>Debounce (ms):
+                <input type="number" min="1" max="100" [value]="settings.settings().inputDebounceMs"
+                       (change)="onInputParamChange('inputDebounceMs', $event)">
+              </label>
+
+              <label>
+                <input type="checkbox" [checked]="settings.settings().inputInvert"
+                       (change)="onInputInvertChange($event)">
+                Invert key sense
+              </label>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 2. CW TONE DETECTOR ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().cwInputEnabled">
+          <div class="settings-card-header" (click)="toggleSection('cw')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('cw') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">CW Tone Detector</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().cwInputSource === 'rx'" [class.source-tx]="settings.settings().cwInputSource === 'tx'">{{ settings.settings().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Audio Channel</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().cwInputEnabled"
+                     [disabled]="!!cwInputConflict()"
+                     (change)="onCwEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('cw')) {
+            <div class="settings-card-body">
+              @if (cwInputConflict()) {
+                <div class="conflict-warning">{{ cwInputConflict() }}</div>
+              }
+
+              <label>Used for:
+                <select [value]="settings.settings().cwInputSource" (change)="onSettingChange('cwInputSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Audio Input Device:
+                <select [value]="settings.settings().cwInputDeviceId" (change)="onSettingChange('cwInputDeviceId', $event)">
+                  <option value="default" [selected]="settings.settings().cwInputDeviceId === 'default'">System Default</option>
+                  @for (dev of devices.inputDevices(); track dev.deviceId) {
+                    <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().cwInputDeviceId">{{ dev.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <label>Input Channel:
+                <select [value]="settings.settings().cwInputChannel" (change)="onCwParamChange('cwInputChannel', $event)">
+                  <option value="left" [selected]="settings.settings().cwInputChannel === 'left'">Left</option>
+                  <option value="right" [selected]="settings.settings().cwInputChannel === 'right'">Right</option>
+                </select>
+              </label>
+
+              <label>CW Tone Frequency (Hz):
+                <input type="number" min="200" max="2000" step="10"
+                       [value]="settings.settings().cwInputFrequency"
+                       (change)="onCwParamChange('cwInputFrequency', $event)">
+              </label>
+
+              <div class="cw-hint">
+                Typical CW audio tone: 500–700 Hz. Match to your radio's sidetone or BFO offset.
+              </div>
+
+              <label>
+                <input type="checkbox" [checked]="settings.settings().cwInputAutoThreshold"
+                       (change)="onCwParamChange('cwInputAutoThreshold', $event)">
+                Auto Threshold
+              </label>
+
+              @if (!settings.settings().cwInputAutoThreshold) {
+                <label>Manual Threshold:
+                  <input type="range" min="0.0001" max="0.5" step="0.0001"
+                         [value]="settings.settings().cwInputThreshold"
+                         (input)="onCwParamChange('cwInputThreshold', $event)">
+                  {{ (settings.settings().cwInputThreshold * 1000).toFixed(2) }}m
+                </label>
+              }
+
+              @if (cwNoiseFloor > 0 || cwSignalPeak > 0) {
+                <div class="cw-auto-info">
+                  Noise: {{ (cwNoiseFloor * 1000).toFixed(2) }}m
+                  &nbsp;|&nbsp; Peak: {{ (cwSignalPeak * 1000).toFixed(2) }}m
+                  &nbsp;|&nbsp; Threshold: {{ (cwThreshold * 1000).toFixed(2) }}m
+                </div>
+              }
+
+              <label>Debounce (ms):
+                <input type="number" min="1" max="100"
+                       [value]="settings.settings().cwInputDebounceMs"
+                       (change)="onCwParamChange('cwInputDebounceMs', $event)">
+              </label>
+
+              <div class="cw-hint">
+                Feed audio from your radio receiver, virtual audio cable, or any audio source carrying CW tones.
+                The detector uses a narrow Goertzel filter at the configured frequency with automatic gain tracking.
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 3. KEYBOARD KEYER ===== -->
+        <div class="settings-card">
+          <div class="settings-card-header" (click)="toggleSection('keyer')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('keyer') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Keyboard Keyer</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().keyboardKeyerSource === 'rx'" [class.source-tx]="settings.settings().keyboardKeyerSource === 'tx'">{{ settings.settings().keyboardKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Paddle &amp; Straight Key</span>
+            </div>
+            <span class="settings-card-always-on">Always On</span>
+          </div>
+          @if (isSectionExpanded('keyer')) {
+            <div class="settings-card-body">
+              <label>Used for:
+                <select [value]="settings.settings().keyboardKeyerSource" (change)="onSettingChange('keyboardKeyerSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Straight Key:
+                <button class="key-capture"
+                        (keydown)="onCaptureKeyDown($event, 'straightKeyCode')">
+                  {{ settings.settings().straightKeyCode }}
+                </button>
+              </label>
+
+              <label>Left Paddle {{ settings.settings().keyboardReversePaddles ? '(dah)' : '(dit)' }}:
+                <button class="key-capture"
+                        (keydown)="onCaptureKeyDown($event, 'leftPaddleKeyCode')">
+                  {{ settings.settings().leftPaddleKeyCode }}
+                </button>
+              </label>
+
+              <label>Right Paddle {{ settings.settings().keyboardReversePaddles ? '(dit)' : '(dah)' }}:
+                <button class="key-capture"
+                        (keydown)="onCaptureKeyDown($event, 'rightPaddleKeyCode')">
+                  {{ settings.settings().rightPaddleKeyCode }}
+                </button>
+              </label>
+
+              <label>
+                <input type="checkbox" [checked]="settings.settings().keyboardReversePaddles"
+                       (change)="onBoolChange('keyboardReversePaddles', $event)">
+                Reverse Paddles
+              </label>
+
+              <label>Paddle Mode:
+                <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+                  <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+                  <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+                  <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+                  <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+                </select>
+              </label>
+
+              @if (settings.settings().paddleMode === 'iambic-a' || settings.settings().paddleMode === 'iambic-b') {
+                <div class="keyer-hint">
+                  Dit/dah memory active &mdash; press the opposite paddle during an element to queue it.
+                  @if (settings.settings().paddleMode === 'iambic-b') {
+                    In Iambic B, releasing both paddles completes the alternating element.
+                  } @else {
+                    In Iambic A, releasing both paddles stops immediately.
+                  }
+                </div>
+              } @else if (settings.settings().paddleMode === 'ultimatic') {
+                <div class="keyer-hint">
+                  Ultimatic: when both paddles are held, the <em>last pressed</em> paddle repeats.
+                </div>
+              } @else {
+                <div class="keyer-hint">
+                  Single Lever: each paddle sends only its element. No alternation or memory.
+                </div>
+              }
+
+            </div>
+          }
+        </div>
+
+        <!-- ===== 4. MOUSE KEYER ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().mouseKeyerEnabled">
+          <div class="settings-card-header" (click)="toggleSection('mouse')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('mouse') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Mouse Keyer</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().mouseKeyerSource === 'rx'" [class.source-tx]="settings.settings().mouseKeyerSource === 'tx'">{{ settings.settings().mouseKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Click to Key</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().mouseKeyerEnabled"
+                     (change)="onBoolChange('mouseKeyerEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('mouse')) {
+            <div class="settings-card-body">
+              <label>Used for:
+                <select [value]="settings.settings().mouseKeyerSource" (change)="onSettingChange('mouseKeyerSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Left Button:
+                <select [value]="settings.settings().mouseLeftAction"
+                        (change)="onMouseActionChange('mouseLeftAction', $event)">
+                  <option value="none">None</option>
+                  <option value="straightKey">Straight Key</option>
+                  <option value="dit">Dit</option>
+                  <option value="dah">Dah</option>
+                </select>
+              </label>
+
+              <label>Middle Button:
+                <select [value]="settings.settings().mouseMiddleAction"
+                        (change)="onMouseActionChange('mouseMiddleAction', $event)">
+                  <option value="none">None</option>
+                  <option value="straightKey">Straight Key</option>
+                  <option value="dit">Dit</option>
+                  <option value="dah">Dah</option>
+                </select>
+              </label>
+
+              <label>Right Button:
+                <select [value]="settings.settings().mouseRightAction"
+                        (change)="onMouseActionChange('mouseRightAction', $event)">
+                  <option value="none">None</option>
+                  <option value="straightKey">Straight Key</option>
+                  <option value="dit">Dit</option>
+                  <option value="dah">Dah</option>
+                </select>
+              </label>
+
+              @if (mouseActionConflict()) {
+                <div class="conflict-warning">{{ mouseActionConflict() }}</div>
+              }
+
+              <label>
+                <input type="checkbox" [checked]="settings.settings().mouseReversePaddles"
+                       (change)="onBoolChange('mouseReversePaddles', $event)">
+                Reverse Paddles
+              </label>
+
+              <label>Paddle Mode:
+                <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+                  <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+                  <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+                  <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+                  <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+                </select>
+              </label>
+
+              <div class="keyer-hint">
+                Mouse clicks are captured in the Morse Decoder area and the fullscreen decoder view.
+                Right-click context menu is suppressed when mapped.
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 5. TOUCH KEYER ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().touchKeyerEnabled">
+          <div class="settings-card-header" (click)="toggleSection('touch')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('touch') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Touch Keyer</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().touchKeyerSource === 'rx'" [class.source-tx]="settings.settings().touchKeyerSource === 'tx'">{{ settings.settings().touchKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Fullscreen Overlay</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().touchKeyerEnabled"
+                     (change)="onBoolChange('touchKeyerEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('touch')) {
+            <div class="settings-card-body">
+              <label>Used for:
+                <select [value]="settings.settings().touchKeyerSource" (change)="onSettingChange('touchKeyerSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Touch Mode:
+                <select [value]="settings.settings().touchKeyerMode"
+                        (change)="onSettingChange('touchKeyerMode', $event)">
+                  <option value="straight">Straight Key</option>
+                  <option value="paddle">Paddle</option>
+                </select>
+              </label>
+
+              <div class="keyer-hint">
+                @if (settings.settings().touchKeyerMode === 'straight') {
+                  Shows a single touch button in the fullscreen decoder view.
+                  Press and hold to key down, release to key up.
+                } @else {
+                  Shows two touch buttons in the fullscreen decoder view.
+                }
+              </div>
+
+              @if (settings.settings().touchKeyerMode === 'paddle') {
+                <label>Left Button:
+                  <select [value]="settings.settings().touchLeftPaddle"
+                          (change)="onSettingChange('touchLeftPaddle', $event)">
+                    <option value="dit">Dit</option>
+                    <option value="dah">Dah</option>
+                  </select>
+                </label>
+
+                <label>Right Button:
+                  <select [value]="settings.settings().touchRightPaddle"
+                          (change)="onSettingChange('touchRightPaddle', $event)">
+                    <option value="dit">Dit</option>
+                    <option value="dah">Dah</option>
+                  </select>
+                </label>
+
+                <label>
+                  <input type="checkbox" [checked]="settings.settings().touchReversePaddles"
+                         (change)="onBoolChange('touchReversePaddles', $event)">
+                  Reverse Paddles
+                </label>
+
+                <label>Paddle Mode:
+                  <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+                    <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+                    <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+                    <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+                    <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+                  </select>
+                </label>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- ===== 6. FIREBASE RTDB INPUT ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().rtdbInputEnabled">
+          <div class="settings-card-header" (click)="toggleSection('rtdbInput')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('rtdbInput') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Firebase RTDB</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().rtdbInputSource === 'rx'" [class.source-tx]="settings.settings().rtdbInputSource === 'tx'">{{ settings.settings().rtdbInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+              <span class="settings-card-subtitle">Realtime Database Input</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().rtdbInputEnabled"
+                     (change)="onRtdbInputEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('rtdbInput')) {
+            <div class="settings-card-body">
+              @if (!rtdbService.isOnline()) {
+                <div class="conflict-warning">
+                  You are currently offline. Firebase Realtime Database requires an internet connection.
+                </div>
+              }
+
+              <label>Used for:
+                <select [value]="settings.settings().rtdbInputSource" (change)="onSettingChange('rtdbInputSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
+              <label>Channel Name:
+                <input type="text" [value]="settings.settings().rtdbInputChannelName"
+                       (input)="onTextSettingChange('rtdbInputChannelName', $event)"
+                       placeholder="e.g. cw-practice-40m"
+                       maxlength="50">
+              </label>
+
+              <label>Channel Secret:
+                <input type="password" [value]="settings.settings().rtdbInputChannelSecret"
+                       (input)="onTextSettingChange('rtdbInputChannelSecret', $event)"
+                       placeholder="shared secret"
+                       maxlength="50">
+              </label>
+
+              <div class="cw-hint">
+                Subscribe to a Firebase Realtime Database channel to receive morse letters
+                from remote stations. Letters arrive as already-decoded characters and are
+                fed into the encoder as if typed on the keyboard.<br><br>
+                Both sender and receiver must share the same <strong>Channel Name</strong>
+                and <strong>Channel Secret</strong>. Only the last letter per channel is
+                stored &mdash; no chat history is retained.<br><br>
+                <strong>Requires an internet connection.</strong> Offline caching is disabled.
+              </div>
+
+              <label class="checkbox-label">
+                <input type="checkbox" [checked]="settings.settings().rtdbInputOverrideWpm"
+                       (change)="onBoolChange('rtdbInputOverrideWpm', $event)">
+                Override remote WPM with local encoder WPM
+              </label>
+              <div class="cw-hint">
+                Each character sent via RTDB carries the WPM speed that was used to
+                generate it. By default, received characters are played back at the
+                sender's original speed for realistic timing. Enable this option to
+                ignore the remote WPM and use your local Encoder WPM instead.
+              </div>
+
+              @if (rtdbService.lastError()) {
+                <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
+              }
+
+              <div class="serial-port-row">
+                @if (rtdbService.inputListening()) {
+                  <span class="serial-status connected">&#x2714; Listening</span>
+                } @else if (settings.settings().rtdbInputEnabled) {
+                  <span class="serial-status">&#x2716; Not connected</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+      }
+      @if (settingsTab === 'outputs') {
+
+        <!-- ===== 1. KEY OUTPUT VIA AUDIO (OPTOCOUPLER) ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().optoEnabled">
+          <div class="settings-card-header" (click)="toggleSection('opto')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('opto') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Key Output</span>
+              <span class="settings-card-subtitle">Optocoupler (Audio)</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().optoEnabled"
+                     (change)="onBoolChange('optoEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('opto')) {
+            <div class="settings-card-body">
+              <div class="experimental-banner">&#x26A0; Experimental &mdash; AC coupling on some sound cards may produce unreliable keying.</div>
+              <label>Forward:
+                <select [value]="settings.settings().optoForward"
+                        (change)="onSettingChange('optoForward', $event)">
+                  <option value="tx" [selected]="settings.settings().optoForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().optoForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="both" [selected]="settings.settings().optoForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
+              <label>Audio Device:
+                <select [value]="settings.settings().optoOutputDeviceId" (change)="onSettingChange('optoOutputDeviceId', $event)">
+                  <option value="default" [selected]="settings.settings().optoOutputDeviceId === 'default'">System Default</option>
+                  @for (dev of devices.outputDevices(); track dev.deviceId) {
+                    <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().optoOutputDeviceId">{{ dev.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <label>Channel:
+                <select [value]="settings.settings().optoOutputChannel" (change)="onSettingChange('optoOutputChannel', $event)">
+                  <option value="left" [selected]="settings.settings().optoOutputChannel === 'left'">Left</option>
+                  <option value="right" [selected]="settings.settings().optoOutputChannel === 'right'">Right</option>
+                </select>
+              </label>
+
+              <label>Mode:
+                <select [value]="settings.settings().optoMode" (change)="onSettingChange('optoMode', $event)">
+                  <option value="dc" [selected]="settings.settings().optoMode === 'dc'">DC Offset</option>
+                  <option value="ac" [selected]="settings.settings().optoMode === 'ac'">AC Tone</option>
+                </select>
+              </label>
+
+              @if (settings.settings().optoMode === 'ac') {
+                <label>Frequency (Hz):
+                  <input type="number" min="100" max="20000" [value]="settings.settings().optoFrequency"
+                         (change)="onSettingChange('optoFrequency', $event)">
+                </label>
+              }
+
+              <label>Amplitude:
+                <input type="range" min="0" max="1" step="0.05" [value]="settings.settings().optoAmplitude"
+                       (input)="onSettingChange('optoAmplitude', $event)">
+                {{ settings.settings().optoAmplitude }}
+              </label>
+
+              <div class="opto-wiring-hint">
+                @if (settings.settings().optoMode === 'dc') {
+                  <strong>DC Offset mode:</strong> Outputs a steady DC voltage when keyed.
+                  Only works with <em>DC-coupled</em> sound cards (rare). Set amplitude to
+                  1.0 for maximum voltage.<br><br>
+                  <strong>Getting only ~100&ndash;200 mV?</strong> Most sound cards have
+                  <em>AC coupling capacitors</em> that block DC &mdash; the output decays to
+                  near-zero regardless of amplitude setting. This is a hardware limitation,
+                  not a software issue (the digital output is already at 0&nbsp;dBFS full
+                  scale).<br><br>
+                  <strong>&rarr; Switch to AC Tone mode</strong> for AC-coupled sound cards.
+                  A square wave passes through coupling caps at full amplitude (1&ndash;2&nbsp;V
+                  peak). The opto LED half-wave rectifies it automatically; add a Schottky
+                  bridge rectifier (4&times; BAT43) for full-wave rectification and maximum
+                  drive current.<br><br>
+                  <strong>True DC-coupled cards:</strong> If your card does pass DC (some pro
+                  audio interfaces and certain USB sound cards), this mode produces a clean
+                  DC level. Consider a transistor buffer if voltage is still insufficient:
+                  NPN (2N2222 / BC547), base via 1&nbsp;kΩ from audio output,
+                  collector &rarr; opto LED &rarr; 5&nbsp;V supply, emitter &rarr; GND.
+                } @else {
+                  <strong>Wiring:</strong> Sound card channel → optocoupler LED anode.
+                  Cathode → sound card GND. Set amplitude to 1.0.<br><br>
+                  <strong>Low voltage (&lt;2V peak)?</strong> Most headphone outputs are only 1–2V.
+                  With an opto LED Vf of ~1.1V, there is very little headroom.<br>
+                  &bull; <em>Remove any series resistor</em> &mdash; the sound card&rsquo;s output impedance
+                  (10–50Ω) already limits current. Connect the LED directly.<br>
+                  &bull; <em>Bridge rectifier:</em> Use 4&times; small-signal Schottky diodes (e.g. BAT43,
+                  Vf&asymp;0.3V) in a full-bridge to use both half-cycles, doubling average
+                  current. This is the most effective approach for low-voltage outputs.<br>
+                  &bull; <em>Transistor buffer:</em> Use a 2N2222/BC547 with base via 1kΩ from the
+                  audio output, collector → opto LED → 5V supply, emitter → GND.
+                  This uses external power and works reliably at any audio voltage.<br>
+                  &bull; A 1N4148 reverse-protection diode across the LED is recommended.
+                }
+              </div>
+
+              <button [disabled]="!audioRunning" (click)="audioOutput.testOpto()" class="test-btn">
+                Test Output (1s)
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 2. KEY OUTPUT VIA SERIAL PORT ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().serialEnabled">
+          <div class="settings-card-header" (click)="toggleSection('serial')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('serial') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Key Output</span>
+              <span class="settings-card-subtitle">Serial Port (DTR/RTS)</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()"
+                   [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
+              <input type="checkbox" [checked]="settings.settings().serialEnabled"
+                     [disabled]="!webSerialSupported || isAndroid"
+                     (change)="onSerialEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('serial')) {
+            <div class="settings-card-body">
+              @if (!webSerialSupported) {
+                <div class="conflict-warning">
+                  Web Serial API is not supported in this browser. Serial port features require a
+                  Chromium-based browser (Chrome or Edge).
+                </div>
+              } @else if (isAndroid) {
+                <div class="conflict-warning">
+                  Serial port access is not available on Android. USB-to-serial adapters are not
+                  supported by Chrome on Android even via USB OTG. This feature requires Chrome or
+                  Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+                </div>
+              }
+
+              <label>Forward:
+                <select [value]="settings.settings().serialForward"
+                        (change)="onSettingChange('serialForward', $event)">
+                  <option value="tx" [selected]="settings.settings().serialForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().serialForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="both" [selected]="settings.settings().serialForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
+              <div class="serial-port-row">
+                <button (click)="serialOutput.requestPort()" class="test-btn">
+                  Add Serial Port…
+                </button>
+                <button (click)="serialOutput.refreshPorts()" class="test-btn">
+                  Refresh
+                </button>
+              </div>
+
+              @if (serialOutput.ports().length === 0) {
+                <div class="cw-hint">
+                  No serial ports available. Click "Add Serial Port…" to grant access to a COM port.
+                  Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
+                </div>
+              }
+
+              @if (serialOutput.ports().length > 0) {
+                <label>Serial Port:
+                  <select [value]="settings.settings().serialPortIndex"
+                          (change)="onSerialPortChange($event)">
+                    <option [value]="-1">&mdash; Select &mdash;</option>
+                    @for (port of serialOutput.ports(); track $index) {
+                      <option [value]="$index" [selected]="$index === settings.settings().serialPortIndex">
+                        {{ serialOutput.portLabel(port) }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+
+              <label>Output Pin:
+                <select [value]="settings.settings().serialPin"
+                        (change)="onSettingChange('serialPin', $event)">
+                  <option value="dtr" [selected]="settings.settings().serialPin === 'dtr'">DTR (Data Terminal Ready)</option>
+                  <option value="rts" [selected]="settings.settings().serialPin === 'rts'">RTS (Request To Send)</option>
+                </select>
+              </label>
+
+              <label>
+                <input type="checkbox" [checked]="settings.settings().serialInvert"
+                       (change)="onBoolChange('serialInvert', $event)">
+                Invert Output
+              </label>
+
+              <div class="cw-hint">
+                Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
+                DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
+                Wire the selected pin to your transmitter's keying circuit.
+                Most adapters provide &plusmn;5–12V on DTR/RTS; use a transistor or optocoupler
+                between the adapter and your radio if needed.
+              </div>
+
+              @if (serialOutput.lastError()) {
+                <div class="conflict-warning">{{ serialOutput.lastError() }}</div>
+              }
+
+              <div class="serial-port-row">
+                <button [disabled]="!serialOutput.connected()"
+                        (click)="serialOutput.test()" class="test-btn">
+                  Test Output (1s)
+                </button>
+                @if (serialOutput.connected()) {
+                  <span class="serial-status connected">&#x2714; Connected</span>
+                } @else {
+                  <span class="serial-status">&#x2716; Disconnected</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 2b. WINKEYER OUTPUT ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().winkeyerEnabled">
+          <div class="settings-card-header" (click)="toggleSection('winkeyer')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('winkeyer') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">WinKeyer Output</span>
+              <span class="settings-card-subtitle">K1EL WinKeyer (Serial)</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()"
+                   [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
+              <input type="checkbox" [checked]="settings.settings().winkeyerEnabled"
+                     [disabled]="!webSerialSupported || isAndroid"
+                     (change)="onWinkeyerEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('winkeyer')) {
+            <div class="settings-card-body">
+              @if (!webSerialSupported) {
+                <div class="conflict-warning">
+                  Web Serial API is not supported in this browser. WinKeyer features require a
+                  Chromium-based browser (Chrome or Edge).
+                </div>
+              } @else if (isAndroid) {
+                <div class="conflict-warning">
+                  Serial port access is not available on Android. USB-to-serial devices like WinKeyer
+                  are not supported by Chrome on Android even via USB OTG. This feature requires
+                  Chrome or Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+                </div>
+              }
+              <div class="serial-port-row">
+                <button (click)="winkeyerOutput.requestPort()" class="test-btn">
+                  Add Serial Port&hellip;
+                </button>
+                <button (click)="winkeyerOutput.refreshPorts()" class="test-btn">
+                  Refresh
+                </button>
+              </div>
+
+              @if (winkeyerOutput.ports().length === 0) {
+                <div class="cw-hint">
+                  No serial ports available. Click "Add Serial Port&hellip;" to grant access to the WinKeyer's COM port.
+                  Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
+                </div>
+              }
+
+              @if (winkeyerOutput.ports().length > 0) {
+                <label>WinKeyer Port:
+                  <select [value]="settings.settings().winkeyerPortIndex"
+                          (change)="onWinkeyerPortChange($event)">
+                    <option [value]="-1">&mdash; Select &mdash;</option>
+                    @for (port of winkeyerOutput.ports(); track $index) {
+                      <option [value]="$index" [selected]="$index === settings.settings().winkeyerPortIndex">
+                        {{ winkeyerOutput.portLabel(port) }}
+                      </option>
+                    }
+                  </select>
+                </label>
+              }
+
+              <label>WPM Speed:
+                <input type="number" min="5" max="99" [value]="settings.settings().winkeyerWpm"
+                       (change)="onWinkeyerWpmChange($event)">
+              </label>
+
+              <label>Forward:
+                <select [value]="settings.settings().winkeyerForward"
+                        (change)="onSettingChange('winkeyerForward', $event)">
+                  <option value="rx" [selected]="settings.settings().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="tx" [selected]="settings.settings().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="both" [selected]="settings.settings().winkeyerForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
+              <div class="cw-hint">
+                Forwards decoded text to a K1EL WinKeyer (WK2/WK3/WKUSB) device.
+                WinKeyer generates perfectly timed CW keying on its output &mdash; the host
+                sends plain ASCII characters and WinKeyer handles the morse timing internally.<br><br>
+                <strong>Connection:</strong> 1200 baud, 8N2. The WinKeyer appears as a virtual
+                COM port (USB-serial). Select which decoded text to forward: RX (received),
+                TX (transmitted by the encoder/keyer), or both.<br><br>
+                <strong>Use case:</strong> Re-key received or transmitted morse through a
+                WinKeyer for relay, practice, or driving an external transmitter with
+                clean timing.
+              </div>
+
+              @if (winkeyerOutput.lastError()) {
+                <div class="conflict-warning">{{ winkeyerOutput.lastError() }}</div>
+              }
+
+              <div class="serial-port-row">
+                <button [disabled]="!winkeyerOutput.connected()"
+                        (click)="winkeyerOutput.test()" class="test-btn">
+                  Test (send "TEST")
+                </button>
+                <button [disabled]="!winkeyerOutput.connected()"
+                        (click)="winkeyerOutput.clearBuffer()" class="test-btn">
+                  Clear Buffer
+                </button>
+                @if (winkeyerOutput.connected()) {
+                  <span class="serial-status connected">&#x2714; Connected
+                    @if (winkeyerOutput.firmwareVersion()) {
+                      (v{{ winkeyerOutput.firmwareVersion() }})
+                    }
+                  </span>
+                } @else {
+                  <span class="serial-status">&#x2716; Disconnected</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 2c. FIREBASE RTDB OUTPUT ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().rtdbOutputEnabled">
+          <div class="settings-card-header" (click)="toggleSection('rtdbOutput')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('rtdbOutput') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Firebase RTDB</span>
+              <span class="settings-card-subtitle">Realtime Database Output</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().rtdbOutputEnabled"
+                     (change)="onRtdbOutputEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('rtdbOutput')) {
+            <div class="settings-card-body">
+              @if (!rtdbService.isOnline()) {
+                <div class="conflict-warning">
+                  You are currently offline. Firebase Realtime Database requires an internet connection.
+                </div>
+              }
+
+              <label>Channel Name:
+                <input type="text" [value]="settings.settings().rtdbOutputChannelName"
+                       (input)="onTextSettingChange('rtdbOutputChannelName', $event)"
+                       placeholder="e.g. cw-practice-40m"
+                       maxlength="50">
+              </label>
+
+              <label>Channel Secret:
+                <input type="password" [value]="settings.settings().rtdbOutputChannelSecret"
+                       (input)="onTextSettingChange('rtdbOutputChannelSecret', $event)"
+                       placeholder="shared secret"
+                       maxlength="50">
+              </label>
+
+              <label>User Name:
+                <input type="text" [value]="settings.settings().rtdbOutputUserName"
+                       (input)="onTextSettingChange('rtdbOutputUserName', $event)"
+                       placeholder="e.g. 5B4AON"
+                       maxlength="20">
+              </label>
+
+              <label>Forward:
+                <select [value]="settings.settings().rtdbOutputForward"
+                        (change)="onSettingChange('rtdbOutputForward', $event)">
+                  <option value="rx" [selected]="settings.settings().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="tx" [selected]="settings.settings().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="both" [selected]="settings.settings().rtdbOutputForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
+              <div class="cw-hint">
+                Publishes decoded morse characters to a Firebase Realtime Database channel.
+                Remote stations subscribed to the same channel and secret will receive
+                each letter as it is decoded.<br><br>
+                <strong>User Name</strong> is attached to each posted letter (typically your
+                callsign). Select which decoded text to forward: RX (received), TX
+                (transmitted by the encoder/keyer), or both.<br><br>
+                Only the <strong>last letter</strong> per channel is stored &mdash; no message
+                history is retained. Channel limits and automatic expiry are configured
+                externally via Firebase Security Rules and Cloud Functions.<br><br>
+                <strong>Requires an internet connection.</strong> Offline caching is disabled.
+              </div>
+
+              @if (rtdbService.lastError()) {
+                <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
+              }
+
+              <div class="serial-port-row">
+                @if (rtdbService.outputActive()) {
+                  <span class="serial-status connected">&#x2714; Active</span>
+                } @else if (settings.settings().rtdbOutputEnabled) {
+                  <span class="serial-status">&#x2716; Not active</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 3. SIDETONE / SPEAKER ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().sidetoneEnabled">
+          <div class="settings-card-header" (click)="toggleSection('sidetone')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('sidetone') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Sidetone</span>
+              <span class="settings-card-subtitle">Speaker Output</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().sidetoneEnabled"
+                     (change)="onBoolChange('sidetoneEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('sidetone')) {
+            <div class="settings-card-body">
+              <label>Active on:
+                <select [value]="settings.settings().sidetoneForward"
+                        (change)="onSettingChange('sidetoneForward', $event)">
+                  <option value="both" [selected]="settings.settings().sidetoneForward === 'both'">Both RX and TX</option>
+                  <option value="tx" [selected]="settings.settings().sidetoneForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().sidetoneForward === 'rx'">RX only &mdash; received morse</option>
+                </select>
+              </label>
+
+              <label>Audio Device:
+                <select [value]="settings.settings().sidetoneOutputDeviceId" (change)="onSettingChange('sidetoneOutputDeviceId', $event)">
+                  <option value="default" [selected]="settings.settings().sidetoneOutputDeviceId === 'default'">System Default</option>
+                  @for (dev of devices.outputDevices(); track dev.deviceId) {
+                    <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().sidetoneOutputDeviceId">{{ dev.label }}</option>
+                  }
+                </select>
+              </label>
+
+              <label>Channel:
+                <select [value]="settings.settings().sidetoneOutputChannel" (change)="onSettingChange('sidetoneOutputChannel', $event)">
+                  <option value="left" [selected]="settings.settings().sidetoneOutputChannel === 'left'">Left</option>
+                  <option value="right" [selected]="settings.settings().sidetoneOutputChannel === 'right'">Right</option>
+                </select>
+              </label>
+
+              <label>Frequency (Hz):
+                <input type="number" min="500" max="800" [value]="settings.settings().sidetoneFrequency"
+                       (change)="onSettingChange('sidetoneFrequency', $event)">
+              </label>
+
+              <label>Amplitude:
+                <input type="range" min="0" max="1" step="0.05" [value]="settings.settings().sidetoneAmplitude"
+                       (input)="onSettingChange('sidetoneAmplitude', $event)">
+                {{ settings.settings().sidetoneAmplitude }}
+              </label>
+
+              <button [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="test-btn">
+                Test Output (1s)
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 4. VIBRATION (HAPTIC) ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().vibrateEnabled">
+          <div class="settings-card-header" (click)="toggleSection('vibrate')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('vibrate') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Vibration</span>
+              <span class="settings-card-subtitle">Haptic Feedback</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().vibrateEnabled"
+                     (change)="onBoolChange('vibrateEnabled', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('vibrate')) {
+            <div class="settings-card-body">
+              <label>Active on:
+                <select [value]="settings.settings().vibrateForward"
+                        (change)="onSettingChange('vibrateForward', $event)">
+                  <option value="both" [selected]="settings.settings().vibrateForward === 'both'">Both RX and TX</option>
+                  <option value="tx" [selected]="settings.settings().vibrateForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().vibrateForward === 'rx'">RX only &mdash; received morse</option>
+                </select>
+              </label>
+
+              <div class="cw-hint">
+                Haptic vibration feedback while keying, mirroring the sidetone output.
+                Works for both TX and RX key events from any input source.<br><br>
+                <strong>Android only.</strong> The Vibration API is supported in most
+                Android browsers (Chrome, Firefox, Edge). iOS Safari and most desktop
+                browsers do not support haptic vibration.
+              </div>
+
+              <label class="checkbox-row">
+                <input type="checkbox" [checked]="settings.settings().vibrateEnhanced"
+                       (change)="onBoolChange('vibrateEnhanced', $event)">
+                Enhanced haptic timing
+              </label>
+              <div class="cw-hint">
+                Compensates for the physical spin-up delay of vibration motors on
+                Android devices. Fires a short pre-pulse when the key goes down to
+                prime the motor, and extends vibration slightly past key-up so short
+                elements (dits) are more perceptible. Disable this if vibration feels
+                out of sync or you prefer the standard behaviour.
+              </div>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Save button (sticky footer) -->
+    <div class="settings-modal-footer">
+      <button class="save-btn" (click)="saveSettings()" [disabled]="!settings.isDirty()">
+        {{ settings.isDirty() ? 'Save Settings' : 'Saved ✓' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+@if (showResetConfirm) {
+  <app-confirm-dialog
+    title="Reset Settings"
+    message="Reset all settings to their default values?
+This cannot be undone."
+    confirmLabel="Reset"
+    cancelLabel="Cancel"
+    [danger]="true"
+    (confirmed)="onResetConfirmed($event)">
+  </app-confirm-dialog>
+}

@@ -1,0 +1,333 @@
+<div class="fs-modal-overlay" [style.height]="overlayHeight" [style.top]="overlayTop">
+  <div class="fs-modal">
+
+    <!-- ---- Top bar ---- -->
+    <div class="fs-toolbar">
+      <!-- Left: Close button -->
+      <button class="fs-close-btn" (click)="close()" title="Close fullscreen">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+
+      <!-- CW level meter (left-aligned) -->
+      @if (settings.settings().cwInputEnabled) {
+        <div class="level-meter-group fs-inline-meter">
+          <svg class="level-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="8" width="4" height="12" rx="1"/></svg>
+          <div class="level-meter-track">
+            <div class="level-meter-fill cw-fill" [style.width.%]="cwLevel * 100 / cwLevelMax"></div>
+            <div class="level-meter-threshold"
+                 [style.left.%]="cwThreshold * 100 / cwLevelMax"
+                 title="Auto Threshold"></div>
+          </div>
+        </div>
+      }
+
+      <!-- Right spacer -->
+      <div class="fs-toolbar-spacer"></div>
+
+      <!-- Right: WPM pills, Clear, Kebab -->
+      <div class="wpm-indicators">
+        @if (mode === 'decoder') {
+          <span class="wpm-indicator" title="RX Decoder WPM">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+            <span class="wpm-indicator-label">RX</span>
+            <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
+          </span>
+          <span class="wpm-indicator" title="TX Decoder WPM">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+            <span class="wpm-indicator-label">TX</span>
+            <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
+          </span>
+          <span class="wpm-indicator" title="Keyer WPM">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+            <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
+            <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
+          </span>
+        } @else {
+          <span class="wpm-indicator" title="Encoder WPM">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+            <span class="wpm-indicator-label">Encoder</span>
+            <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
+          </span>
+        }
+      </div>
+      <span class="rtdb-status-icon" [class.rtdb-connected]="rtdb.inputListening() || rtdb.outputActive()" title="Firebase RTDB">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+        <span class="rtdb-label">RTDB</span>
+      </span>
+      <div class="clear-menu-wrapper" (click)="$event.stopPropagation()">
+        <button class="fs-clear-btn" (click)="toggleClearMenu()" title="Clear">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        </button>
+        @if (clearMenuOpen) {
+          <div class="clear-menu">
+            <button class="clear-menu-btn clear-this" (click)="clearConversation(); closeClearMenu()">This log</button>
+            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All logs</button>
+          </div>
+        }
+      </div>
+      <div class="fs-kebab-wrapper" (click)="$event.stopPropagation()">
+        <button class="kebab-btn" (click)="fsKebabOpen = !fsKebabOpen" title="More controls">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+            <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+          </svg>
+        </button>
+        <div class="fs-kebab-items" [class.open]="fsKebabOpen">
+          <!-- WPM controls + mode -->
+          <div class="fs-toolbar-controls">
+            @if (mode === 'decoder') {
+              <span class="wpm-pill wpm-pill-interactive">
+                <button class="wpm-btn" (click)="adjustWpm('rxDecoderWpm', -1)">-</button>
+                <span class="wpm-pill-label">RX</span>
+                <span class="wpm-pill-value">{{ decoder.rxEstimatedWpm() }}</span>
+                <button class="wpm-btn" (click)="adjustWpm('rxDecoderWpm', 1)">+</button>
+                <button class="wpm-cal-btn" (click)="decoder.resetRxCalibration()" title="Reset RX Calibration">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </button>
+              </span>
+              <span class="wpm-pill wpm-pill-interactive">
+                <button class="wpm-btn" (click)="adjustWpm('txDecoderWpm', -1)">-</button>
+                <span class="wpm-pill-label">TX</span>
+                <span class="wpm-pill-value">{{ decoder.txEstimatedWpm() }}</span>
+                <button class="wpm-btn" (click)="adjustWpm('txDecoderWpm', 1)">+</button>
+                <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+                </button>
+              </span>
+              <span class="wpm-pill wpm-pill-interactive">
+                <button class="wpm-btn" (click)="adjustWpm('keyerWpm', -1)">-</button>
+                <span class="wpm-pill-label">Keyer</span>
+                <span class="wpm-pill-value">{{ settings.settings().keyerWpm }}</span>
+                <button class="wpm-btn" (click)="adjustWpm('keyerWpm', 1)">+</button>
+              </span>
+            } @else {
+              <span class="wpm-pill wpm-pill-interactive">
+                <button class="wpm-btn" (click)="adjustEncoderWpm(-1)">-</button>
+                <span class="wpm-pill-label">Encoder</span>
+                <span class="wpm-pill-value">{{ settings.settings().encoderWpm }}</span>
+                <button class="wpm-btn" (click)="adjustEncoderWpm(1)">+</button>
+              </span>
+              <label class="fs-mode-select">
+                <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+                  <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
+                  <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
+                </select>
+              </label>
+            }
+          </div>
+
+          <!-- Display settings -->
+          <div class="fs-toolbar-display">
+            <label class="fs-font-ctl" title="Font size">
+              <span>Aa</span>
+              <input type="range" min="24" max="184" step="1"
+                     [value]="settings.modalDisplay().fontSize"
+                     (input)="onModalDisplayChange('fontSize', $event)">
+              <span>{{ settings.modalDisplay().fontSize }}px</span>
+            </label>
+            <label class="fs-font-ctl" title="Row spacing">
+              <span>↕</span>
+              <input type="range" min="-0.3" max="0.5" step="0.02"
+                     [value]="settings.modalDisplay().lineSpacing"
+                     (input)="onModalDisplayChange('lineSpacing', $event)">
+            </label>
+
+            <div class="fs-color-row">
+              <label class="fs-color-ctl" title="RX text colour">
+                <span class="fs-color-label">RX</span>
+                <input type="color" [value]="settings.modalDisplay().rxForeground"
+                       (input)="onModalDisplayChange('rxForeground', $event)">
+              </label>
+              <label class="fs-color-ctl" title="TX text colour">
+                <span class="fs-color-label">TX</span>
+                <input type="color" [value]="settings.modalDisplay().txForeground"
+                       (input)="onModalDisplayChange('txForeground', $event)">
+              </label>
+              <label class="fs-color-ctl" title="Background colour">
+                <span class="fs-color-label">BG</span>
+                <input type="color" [value]="settings.modalDisplay().rxBackground"
+                       (input)="onModalDisplayChange('rxBackground', $event)">
+              </label>
+            </div>
+            @if (mode === 'encoder') {
+              <div class="fs-color-row">
+                <label class="fs-color-ctl" title="Buffered text colour">
+                  <span class="fs-color-label">BUF</span>
+                  <input type="color" [value]="settings.modalDisplay().bufferForeground"
+                         (input)="onModalDisplayChange('bufferForeground', $event)">
+                </label>
+                <label class="fs-color-ctl" title="Currently sending colour">
+                  <span class="fs-color-label">CUR</span>
+                  <input type="color" [value]="settings.modalDisplay().sendingForeground"
+                         (input)="onModalDisplayChange('sendingForeground', $event)">
+                </label>
+              </div>
+            }
+          </div>
+          <button class="kebab-help-btn" (click)="requestHelp(); fsKebabOpen = false" title="Help &amp; Documentation">
+            Help
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Main content area ---- -->
+    <div class="fs-body"
+         [style.background]="settings.modalDisplay().rxBackground"
+         [style.fontSize.px]="settings.modalDisplay().fontSize"
+         [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'"
+         [style.lineHeight]="1.15 + settings.modalDisplay().lineSpacing">
+
+      @if (mode === 'decoder') {
+        <!-- Decoder-only: live decoded text -->
+        <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea>
+          @for (line of conversationLines; track $index) {
+            @if ($last && line.type === decoder.currentSource()) {
+              <!-- Last line matches cursor source: cursor stays inline -->
+              <span class="fs-line fs-line-inline"
+                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                    [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span><span class="cursor"
+                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+            } @else if ($last) {
+              <!-- Last line differs from cursor source: block, cursor on new line -->
+              <div class="fs-line"
+                   [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+              @if (decoder.currentPattern()) {
+                <span class="cursor"
+                      [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+              }
+            } @else {
+              <div class="fs-line"
+                   [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+            }
+          }
+          @if (!conversationLines.length) {
+            <span class="cursor"
+                  [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+          }
+        </div>
+
+        <!-- Touch keyer overlay (decoder mode only) -->
+        @if (settings.settings().touchKeyerEnabled) {
+          <div class="touch-overlay">
+            @if (settings.settings().touchKeyerMode === 'straight') {
+              <div class="touch-btn touch-btn-straight"
+                   (touchstart)="onTouchKey('straight', true, $event)"
+                   (touchend)="onTouchKey('straight', false, $event)"
+                   (touchcancel)="onTouchKey('straight', false, $event)"
+                   (contextmenu)="$event.preventDefault()"
+                   (mousedown)="onTouchMouseKey('straight', true, $event)"
+                   (mouseup)="onTouchMouseKey('straight', false, $event)"
+                   (mouseleave)="onTouchMouseKey('straight', false, $event)">
+                <span class="touch-btn-icon">&#x25CF;</span>
+              </div>
+            } @else {
+              <div class="touch-btn touch-btn-left"
+                   (touchstart)="onTouchKey('left', true, $event)"
+                   (touchend)="onTouchKey('left', false, $event)"
+                   (touchcancel)="onTouchKey('left', false, $event)"
+                   (contextmenu)="$event.preventDefault()"
+                   (mousedown)="onTouchMouseKey('left', true, $event)"
+                   (mouseup)="onTouchMouseKey('left', false, $event)"
+                   (mouseleave)="onTouchMouseKey('left', false, $event)">
+                <span class="touch-btn-icon">{{ effectiveTouchElement('left') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
+                <span class="touch-btn-label">{{ effectiveTouchElement('left') }}</span>
+              </div>
+              <div class="touch-btn touch-btn-right"
+                   (touchstart)="onTouchKey('right', true, $event)"
+                   (touchend)="onTouchKey('right', false, $event)"
+                   (touchcancel)="onTouchKey('right', false, $event)"
+                   (contextmenu)="$event.preventDefault()"
+                   (mousedown)="onTouchMouseKey('right', true, $event)"
+                   (mouseup)="onTouchMouseKey('right', false, $event)"
+                   (mouseleave)="onTouchMouseKey('right', false, $event)">
+                <span class="touch-btn-icon">{{ effectiveTouchElement('right') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
+                <span class="touch-btn-label">{{ effectiveTouchElement('right') }}</span>
+              </div>
+            }
+          </div>
+        }
+      } @else {
+        <!-- Encoder mode: conversation + inline encoder buffer -->
+        <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea
+             tabindex="0" (keydown)="onEncoderModalKeydown($event)">
+          @for (line of conversationLines; track $index) {
+            @if ($last && line.type === 'rx') {
+              <!-- RX last line: cursor inline, encoder buffer on new line -->
+              <span class="fs-line fs-line-inline"
+                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                    [style.color]="settings.modalDisplay().rxForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span><span class="cursor"
+                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+              @if (encoderPendingChars().length) {
+                <div class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+                      [class.sending]="$first && encoder.isSending()"
+                      [style.color]="$first && encoder.isSending()
+                        ? settings.modalDisplay().sendingForeground
+                        : settings.modalDisplay().bufferForeground">{{ char }}</span>}</div>
+              }
+            } @else if ($last && line.type === 'tx') {
+              <!-- TX last line: encoder buffer inline, cursor on new line -->
+              <span class="fs-line fs-line-inline"
+                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                    [style.color]="settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span>@if (encoderPendingChars().length) {<span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+                    [class.sending]="$first && encoder.isSending()"
+                    [style.color]="$first && encoder.isSending()
+                      ? settings.modalDisplay().sendingForeground
+                      : settings.modalDisplay().bufferForeground">{{ char }}</span>}</span>}
+              @if (decoder.currentPattern()) {
+                <div><span class="cursor"
+                      [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span></div>
+              }
+            } @else {
+              <!-- Non-last line: block -->
+              <div class="fs-line"
+                   [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+            }
+          }
+          @if (!conversationLines.length) {
+            <span class="cursor"
+                  [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+            @if (encoderPendingChars().length) {
+              <span class="fs-encoder-inline">
+                @for (char of encoderPendingChars(); track $index) {
+                  <span [class.sending]="$first && encoder.isSending()"
+                        [style.color]="$first && encoder.isSending()
+                          ? settings.modalDisplay().sendingForeground
+                          : settings.modalDisplay().bufferForeground">{{ char }}</span>
+                }
+              </span>
+            }
+          }
+        </div>
+
+        <!-- Virtual keyboard support for touch/mobile devices -->
+        @if (hasTouchInput) {
+          <input #virtualKeyInput
+                 type="text"
+                 inputmode="text"
+                 class="virtual-key-input"
+                 value=" "
+                 autocomplete="off"
+                 autocorrect="off"
+                 autocapitalize="off"
+                 spellcheck="false"
+                 (input)="onVirtualKeyInput($event)"
+                 (keydown)="onVirtualKeyKeydown($event)"
+                 (blur)="virtualKeyboardVisible = false">
+          <button class="vk-toggle-btn"
+                  [class.vk-active]="virtualKeyboardVisible"
+                  (mousedown)="$event.preventDefault()"
+                  (click)="toggleVirtualKeyboard()"
+                  title="Toggle virtual keyboard">
+            <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+              <path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+            </svg>
+          </button>
+        }
+      }
+
+    </div>
+  </div>
+</div>

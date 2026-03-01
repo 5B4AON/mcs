@@ -1,0 +1,15 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    PC["🖥️ Computer<br/>(browser)"]
+    ADAPTER["🔌 USB-Serial<br/>Adapter<br/>(FTDI / CH340 /<br/>CP2102)"]
+    SWITCH["⚡ Opto or<br/>Transistor<br/>Switch"]
+    RADIO["📻 Radio<br/>Key Jack"]
+
+    PC -->|"USB"| ADAPTER
+    ADAPTER -->|"DTR / RTS<br/>±5 – 12 V"| SWITCH
+    SWITCH -->|"keying<br/>contact"| RADIO
+
+    style PC fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style ADAPTER fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style SWITCH fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style RADIO fill:#5a3a2a,stroke:#cc8844,color:#fff

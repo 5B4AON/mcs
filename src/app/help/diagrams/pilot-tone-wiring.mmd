@@ -1,0 +1,21 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    SC_OUT["🔊 Sound Card<br/>Audio Output<br/>(pilot channel)"]
+    RES["10 kΩ<br/>Resistor"]
+    JUNC(("Junction"))
+    KEY["🎹 Morse Key<br/>(straight key<br/>or bug)"]
+    GND["⏚ GND"]
+    SC_IN["🎤 Sound Card<br/>Mic Input"]
+
+    SC_OUT -->|"pilot tone<br/>18 kHz"| RES
+    RES --- JUNC
+    JUNC -->|"tone when<br/>key closed"| SC_IN
+    JUNC --- KEY
+    KEY --- GND
+
+    style SC_OUT fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style SC_IN fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style KEY fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style RES fill:#3a3a3a,stroke:#999,color:#ccc
+    style JUNC fill:#444,stroke:#aaa,color:#fff
+    style GND fill:#333,stroke:#888,color:#aaa

@@ -1,0 +1,129 @@
+<!-- ================================================================ -->
+<!-- Chapter 2 — The Decoder                                        -->
+<!-- ================================================================ -->
+
+<!-- 2.1 How It Works -->
+<h2 id="s2-1">2.1 &nbsp;How the Decoder Works</h2>
+
+<p>
+  The decoder listens for key-down / key-up timing events from every enabled
+  input source and converts the resulting dit-dah patterns into text. Decoded
+  characters appear in the <strong>Morse Decoder</strong> panel.
+</p>
+
+<p>
+  Each incoming interval (key-press duration or silence gap) is measured in
+  milliseconds and classified as a dit, dah, intra-character gap,
+  inter-character gap or word space using adaptive timing thresholds.
+</p>
+
+<!-- 2.2 Dual Calibration — RX and TX Pools -->
+<h2 id="s2-2">2.2 &nbsp;Dual Calibration — RX and TX Pools</h2>
+
+<p>
+  The decoder maintains <strong>two independent calibration pools</strong>:
+</p>
+
+<table>
+  <tr><th>Pool</th><th>Purpose</th><th>Colour Tag</th></tr>
+  <tr>
+    <td><strong>RX</strong> (Receive)</td>
+    <td>Incoming Morse from another operator — audio inputs such as the
+        pilot-tone mic or CW tone detector.</td>
+    <td>RX text colour (green by default)</td>
+  </tr>
+  <tr>
+    <td><strong>TX</strong> (Transmit)</td>
+    <td>Morse you are sending — keyboard, mouse or touch keyer input.</td>
+    <td>TX text colour (yellow by default)</td>
+  </tr>
+</table>
+
+<p>
+  Each pool tracks its own rolling average of dit/dah durations and derives
+  its own WPM estimate independently. This is essential because the person
+  you are working will almost certainly send at a different speed to you.
+  If both speeds were mixed into a single pool, the adaptive thresholds would
+  drift and produce decoding errors.
+</p>
+
+<p>
+  The main screen shows four WPM pill badges: <strong>RX</strong>,
+  <strong>TX</strong>, <strong>Encoder</strong> and
+  <strong>Keyer</strong>. You can click ▲/▼ to adjust the initial WPM for
+  each, and use <em>Reset RX Cal</em> / <em>Reset TX Cal</em> to clear the
+  accumulated calibration samples and restart auto-calibration from the
+  current WPM setting.
+</p>
+
+<!-- 2.3 Auto-Calibration -->
+<h2 id="s2-3">2.3 &nbsp;Auto-Calibration</h2>
+
+<p>
+  When a human operates a key (straight key or hand-sent paddle), element
+  durations are never mathematically perfect. The auto-calibration algorithm
+  measures each interval and, by dividing by the expected unit count (1 for
+  dit, 3 for dah, etc.), estimates the current dit-unit length. A rolling
+  average of these estimates converges on the sender's actual speed within a
+  few characters.
+</p>
+
+<p>
+  <strong>Tip:</strong> Set the initial Decoder WPM reasonably close to the
+  expected speed. The auto-calibrator works faster when it starts near the
+  right value.
+</p>
+
+<!-- 2.4 Perfect Timing (Keyer-Generated Elements) -->
+<h2 id="s2-4">2.4 &nbsp;Perfect Timing (Keyer-Generated Elements)</h2>
+
+<p>
+  When you use any of the iambic paddle modes (Iambic A, Iambic B, Ultimatic
+  or Single Lever), the keyer generates dits and dahs with mathematically
+  exact durations derived from the Keyer WPM setting. These
+  <em>perfect-timing</em> elements must <strong>not</strong> be fed into the
+  auto-calibration pool because their artificially precise durations would
+  skew the adaptive averages that are meant to track natural human variation.
+</p>
+
+<p>
+  The application handles this automatically: when the iambic keyer produces
+  an element, it sets a <em>perfect-timing</em> flag. The decoder then uses a
+  fixed threshold calculated from the Keyer WPM instead of the adaptive
+  threshold, and does not record any calibration samples. You do not need to
+  configure anything — it just works.
+</p>
+
+<p>
+  <strong>Note:</strong> Straight-key input is always human-timed, even when
+  sent from the keyboard, mouse or touch keyer. Straight-key events
+  <em>do</em> feed into the calibration pool assigned to that input.
+</p>
+
+<!-- 2.5 Fullscreen Decoder -->
+<h2 id="s2-5">2.5 &nbsp;Fullscreen Decoder</h2>
+
+<p>
+  Click the <strong>⛶</strong> button on the Morse Decoder panel to open a
+  fullscreen view optimised for on-air operating. Decoded text is shown in
+  large, customisable fonts. RX and TX text appear in different colours so you
+  can follow the conversation at a glance.
+</p>
+
+<p>
+  The fullscreen decoder has its own <strong>independent text buffer</strong>.
+  Clearing text in the fullscreen view does not affect the main decoder panel,
+  and vice versa. Both buffers accumulate text continuously and survive
+  closing and reopening the fullscreen modal &mdash; your conversation history
+  is preserved until you explicitly clear the buffer.
+</p>
+
+<p>
+  Pressing the <strong>Clear</strong> button (🗑) opens a small context menu
+  with two options: <strong>This log</strong> clears only the current
+  buffer, while <strong>All logs</strong> clears all four display buffers
+  at once (main decoder, main encoder, fullscreen decoder, fullscreen
+  encoder). The encoder&rsquo;s clear menu additionally offers a
+  <strong>Text area</strong> option that empties the text-entry field
+  without touching any conversation log.
+</p>

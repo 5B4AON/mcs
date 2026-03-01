@@ -1,0 +1,36 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    subgraph SC1["Sound Card #1 (speakers)"]
+        direction TB
+        L1["⬅ Left"]
+        R1["➡ Right"]
+    end
+
+    subgraph SC2["Sound Card #2 (keying)"]
+        direction TB
+        L2["⬅ Left"]
+        R2["➡ Right (unused)"]
+        MIC["🎤 Mic Input"]
+    end
+
+    SIDE["🔊 Sidetone"]
+    PILOT["📡 Pilot<br/>Output"]
+    OPTO["🔑 Opto<br/>Output"]
+    KEY["🎹 Key<br/>(pilot detection)"]
+
+    L1 --> SIDE
+    R1 --> PILOT
+    L2 --> OPTO
+    KEY -->|"pilot tone<br/>through key"| MIC
+
+    style SC1 fill:#1a1e24,stroke:#666,color:#ccc
+    style SC2 fill:#1a1e24,stroke:#666,color:#ccc
+    style L1 fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style R1 fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style L2 fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style R2 fill:#333,stroke:#666,color:#888
+    style MIC fill:#2a3a6a,stroke:#6688cc,color:#fff
+    style SIDE fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style PILOT fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style OPTO fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style KEY fill:#5a4a2a,stroke:#ccaa44,color:#fff

@@ -1,0 +1,364 @@
+<!-- ================================================================ -->
+<!-- Chapter 10 — Firebase Realtime Database                        -->
+<!-- ================================================================ -->
+
+<!-- 10.1 What Is It? -->
+<h2 id="s10-1">10.1 &nbsp;What Is Firebase RTDB?</h2>
+
+<p>
+  Firebase Realtime Database (RTDB) lets two or more instances of Morse Code
+  Studio exchange decoded Morse characters <strong>in real time over the
+  internet</strong>. When one station decodes or types a letter, it is
+  instantly relayed to every other station that shares the same
+  <em>channel name</em> and <em>channel secret</em>.
+</p>
+
+<p>
+  Typical uses:
+</p>
+<ul>
+  <li><strong>Remote practice</strong> — two operators practise CW together
+      without radios or antennas.</li>
+  <li><strong>CW relay</strong> — forward decoded off-air CW to a remote
+      operator who can read it in real time.</li>
+  <li><strong>Demonstration</strong> — show live Morse decoding on a remote
+      screen or projector at a club meeting.</li>
+</ul>
+
+<p>
+  Firebase RTDB requires an internet connection. Only the last letter per
+  channel is stored — there is no message history or offline caching.
+</p>
+
+<!-- 10.2 How Channels Work -->
+<h2 id="s10-2">10.2 &nbsp;How Channels Work</h2>
+
+<p>
+  A <strong>channel</strong> is identified by two values:
+</p>
+
+<table>
+  <tr><th>Field</th><th>Purpose</th></tr>
+  <tr>
+    <td><strong>Channel Name</strong></td>
+    <td>A human-readable name (e.g. <code>cw-practice</code>). This is
+        the public identifier — share it freely.</td>
+  </tr>
+  <tr>
+    <td><strong>Channel Secret</strong></td>
+    <td>A shared password that restricts who can read or write the
+        channel. Only clients that know <em>both</em> the name and
+        secret can participate.</td>
+  </tr>
+</table>
+
+<p>
+  Both values are used as path segments in the database
+  (<code>/morse-code-studio/channels/&lbrace;name&rbrace;/&lbrace;secret&rbrace;</code>), so they
+  are effectively a two-part access key. Choose a secret that is hard to
+  guess.
+</p>
+
+<!-- 10.3 Input (Receive) -->
+<h2 id="s10-3">10.3 &nbsp;Input (Receive)</h2>
+
+<p>
+  The Firebase RTDB <strong>Input</strong> section appears in the
+  <em>Inputs</em> tab of Settings. When enabled, the app subscribes to
+  the configured channel and displays incoming characters in the decoder
+  panel and fullscreen conversation view.
+</p>
+
+<h3>Settings</h3>
+<table>
+  <tr><th>Setting</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Enable toggle</strong></td>
+    <td>Start / stop listening to the channel.</td>
+  </tr>
+  <tr>
+    <td><strong>Used for</strong></td>
+    <td>Assigns incoming characters to the <em>RX</em> or <em>TX</em>
+        decoder pool. This controls the colour tag in the fullscreen
+        conversation view (same as other input source routing).</td>
+  </tr>
+  <tr>
+    <td><strong>Channel Name</strong></td>
+    <td>The channel to subscribe to.</td>
+  </tr>
+  <tr>
+    <td><strong>Channel Secret</strong></td>
+    <td>The shared secret for the channel.</td>
+  </tr>
+  <tr>
+    <td><strong>Override remote WPM</strong></td>
+    <td>When enabled, incoming characters are played back at your local
+        Encoder WPM instead of the sender&rsquo;s original speed.
+        Default: off (remote WPM is respected for realistic timing).</td>
+  </tr>
+</table>
+
+<p>
+  Each character received from RTDB carries the <strong>WPM speed</strong>
+  that was used to generate it at the sending station. By default, the
+  receiving app plays back each character at the sender&rsquo;s original
+  speed &mdash; dits, dahs, inter-character gaps, and word spaces are all
+  timed to match the remote operator&rsquo;s rhythm. This provides a
+  realistic listening experience. If you prefer a constant local speed,
+  enable <strong>Override remote WPM</strong> to use your Encoder WPM
+  instead.
+</p>
+
+<p>
+  Received characters are routed to <strong>every output whose forward /
+  active-on mode includes RX</strong>. By default the sidetone and
+  vibration outputs are set to "Both", so you will hear the incoming morse
+  and feel a haptic pulse. If you also set the optocoupler, serial port or
+  WinKeyer output to "RX" or "Both", the received characters will key those
+  outputs as well — useful for relaying an RTDB-received signal to a
+  transmitter. Characters received from RTDB are <em>never</em> echoed back
+  to the RTDB output, preventing network loops.
+</p>
+
+<!-- 10.4 Output (Transmit) -->
+<h2 id="s10-4">10.4 &nbsp;Output (Transmit)</h2>
+
+<p>
+  The Firebase RTDB <strong>Output</strong> section appears in the
+  <em>Outputs</em> tab of Settings. When enabled, each decoded or
+  encoded character is written to the configured channel for remote
+  listeners to receive.
+</p>
+
+<h3>Settings</h3>
+<table>
+  <tr><th>Setting</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Enable toggle</strong></td>
+    <td>Start / stop publishing to the channel.</td>
+  </tr>
+  <tr>
+    <td><strong>Channel Name</strong></td>
+    <td>The channel to publish to.</td>
+  </tr>
+  <tr>
+    <td><strong>Channel Secret</strong></td>
+    <td>The shared secret for the channel.</td>
+  </tr>
+  <tr>
+    <td><strong>User Name</strong></td>
+    <td>Your callsign or name. This is shown as a prefix
+        (e.g. <strong>[5B4AON]</strong>) on each line in the remote
+        station's fullscreen conversation view, so they know who is
+        sending.</td>
+  </tr>
+  <tr>
+    <td><strong>Forward</strong></td>
+    <td>Which decoded characters to publish:
+      <ul>
+        <li><strong>RX</strong> — only received (off-air) characters</li>
+        <li><strong>TX</strong> — only transmitted (encoder/keyer) characters</li>
+        <li><strong>Both</strong> — all decoded characters</li>
+      </ul>
+    </td>
+  </tr>
+</table>
+<p>
+  Every character published to RTDB includes the <strong>WPM speed</strong>
+  used to generate it. For keyboard encoder characters this is the Encoder
+  WPM; for paddle/keyer characters it is the Keyer WPM; for characters
+  decoded from CW audio (RX or TX pools) it is the auto-calibrated
+  estimated WPM. The remote station uses this value to play back each
+  character at its original speed.
+</p>
+<!-- 10.5 User Name Prefix -->
+<h2 id="s10-5">10.5 &nbsp;User Name Prefix in Conversation</h2>
+
+<p>
+  When Firebase RTDB is active, each line in the fullscreen conversation
+  view is prefixed with the sender's <strong>User Name</strong> in
+  square brackets, for example:
+</p>
+
+<pre style="background:#1a1a2e; color:#e0e0e0; padding:0.8em 1em; border-radius:6px; font-size:0.95em; line-height:1.6">
+<span style="opacity:0.6; font-size:0.85em">[5B4AON]</span> CQ CQ CQ DE 5B4AON K
+<span style="opacity:0.6; font-size:0.85em">[G3XYZ]</span> 5B4AON DE G3XYZ GM OM
+</pre>
+
+<p>
+  The prefix uses a smaller, dimmed style so it does not interfere with
+  reading the Morse text. Lines from your own station show your own
+  User Name; lines from remote stations show theirs.
+</p>
+
+<!-- 10.6 Bidirectional Setup -->
+<h2 id="s10-6">10.6 &nbsp;Bidirectional Setup</h2>
+
+<p>
+  For a full two-way conversation, <strong>both stations</strong> need
+  Firebase RTDB enabled on both Input and Output, using the
+  <strong>same channel name and secret</strong>. A typical setup:
+</p>
+
+<table>
+  <tr><th></th><th>Station A</th><th>Station B</th></tr>
+  <tr>
+    <td><strong>Input Channel</strong></td>
+    <td><code>cw-practice</code></td>
+    <td><code>cw-practice</code></td>
+  </tr>
+  <tr>
+    <td><strong>Input Secret</strong></td>
+    <td><code>my-secret-123</code></td>
+    <td><code>my-secret-123</code></td>
+  </tr>
+  <tr>
+    <td><strong>Input Used for</strong></td>
+    <td>RX</td>
+    <td>RX</td>
+  </tr>
+  <tr>
+    <td><strong>Output Channel</strong></td>
+    <td><code>cw-practice</code></td>
+    <td><code>cw-practice</code></td>
+  </tr>
+  <tr>
+    <td><strong>Output Secret</strong></td>
+    <td><code>cw-practice</code></td>
+    <td><code>cw-practice</code></td>
+  </tr>
+  <tr>
+    <td><strong>Output Forward</strong></td>
+    <td>TX</td>
+    <td>TX</td>
+  </tr>
+  <tr>
+    <td><strong>Output User Name</strong></td>
+    <td><code>5B4AON</code></td>
+    <td><code>G3XYZ</code></td>
+  </tr>
+</table>
+
+<p>
+  With this configuration, each station sees the other's typed text
+  appear in the decoder, colour-coded as RX, with the remote callsign
+  prefix.
+</p>
+
+<!-- 10.7 Requirements -->
+<h2 id="s10-7">10.7 &nbsp;Requirements</h2>
+
+<ul>
+  <li>A <strong>Firebase project</strong> with Realtime Database enabled.
+      See the <a href="https://firebase.google.com/docs/database" target="_blank"
+      rel="noopener">Firebase documentation</a> for setup instructions.</li>
+  <li>The Firebase configuration values must be entered in
+      <code>src/app/firebase.config.ts</code> before building the app.</li>
+  <li>An <strong>internet connection</strong> on both stations. Firebase
+      RTDB does not work offline.</li>
+  <li><strong>Security Rules</strong> should be configured in the Firebase
+      Console to validate data shape and prevent abuse. Example rules are
+      documented in <code>firebase.config.ts</code>.</li>
+</ul>
+
+<!-- 10.8 Auto-Reconnect -->
+<h2 id="s10-8">10.8 &nbsp;Auto-Reconnect</h2>
+
+<p>
+  If the Firebase RTDB connection drops (network interruption, server error),
+  the app automatically attempts to reconnect using <strong>exponential
+  backoff</strong> &mdash; retrying after 2&thinsp;s, 4&thinsp;s, and
+  8&thinsp;s. Input (listener) and output (publisher) channels are retried
+  independently.
+</p>
+
+<p>
+  If all three attempts fail, a persistent <strong>amber warning
+  banner</strong> appears at the top of the main screen. The banner can be
+  dismissed manually. When the browser comes back online (e.g. after
+  toggling airplane mode or reconnecting to Wi-Fi), the app immediately
+  restarts any input or output channel that should be active, resetting
+  the retry counter.
+</p>
+
+<p>
+  If you manually disable and re-enable the input or output toggle in
+  Settings, the retry counter is also reset.
+</p>
+
+<!-- 10.9 Time Synchronisation & Stale-Character Guard -->
+<h2 id="s10-9">10.9 &nbsp;Time Synchronisation &amp; Stale-Character Guard</h2>
+
+<p>
+  Firebase RTDB stamps every outgoing character with an authoritative
+  <strong>UTC server timestamp</strong> provided by Google's
+  infrastructure. When the app connects to Firebase, it also obtains a
+  <strong>server-time offset</strong> — the difference between your
+  device clock and the Firebase server clock. This works like an
+  <strong>NTP</strong> (Network Time Protocol) query: the SDK
+  automatically computes the offset so the app always knows the accurate
+  universal time, regardless of your local time zone or clock drift.
+</p>
+
+<p>
+  If the server-time offset is not available within about one second
+  (very slow network), the app falls back to your device's own clock.
+  Because <code>Date.now()</code> returns UTC milliseconds (timezone-independent),
+  the fallback is still reliable in practice.
+</p>
+
+<h3>Stale-character guard</h3>
+
+<p>
+  Firebase RTDB stores the <strong>last character</strong> written to each
+  channel. When you first subscribe to a channel (or reconnect after a
+  network interruption), the listener immediately receives that stored
+  value — even if it was written hours or days ago.
+</p>
+
+<p>
+  To prevent old characters from appearing in the decoder, the app
+  performs a <strong>one-time freshness check</strong> on the very first
+  character received after each connection:
+</p>
+
+<ul>
+  <li>The character's server timestamp is compared with the current
+      NTP-synchronised UTC time.</li>
+  <li>If the character is <strong>older than one second</strong>, it is
+      silently discarded.</li>
+  <li>If the character is fresh (within one second), it is displayed
+      normally.</li>
+</ul>
+
+<p>
+  After the first character passes (or is discarded), all subsequent
+  characters are accepted immediately as they arrive — no further
+  timestamp checks are performed. This ensures zero added latency
+  during normal real-time operation.
+</p>
+
+<p>
+  This behaviour is fully automatic and transparent — there are no
+  settings to configure.
+</p>
+
+<!-- 10.10 RTDB Status Indicator -->
+<h2 id="s10-10">10.10 &nbsp;RTDB Status Indicator</h2>
+
+<p>
+  A small <strong>wifi-style icon</strong> labelled <strong>RTDB</strong>
+  appears in the main toolbar and in both fullscreen modal toolbars.
+  It provides at-a-glance feedback about the Firebase connection:
+</p>
+
+<ul>
+  <li><strong>Grey</strong> — RTDB input and output are both inactive
+      (disabled or not configured).</li>
+  <li><strong>Green</strong> — at least one RTDB direction (input
+      listening or output sending) is currently active.</li>
+</ul>
+
+<p>
+  The indicator is purely informational and requires no interaction.
+</p>

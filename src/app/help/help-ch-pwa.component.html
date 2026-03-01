@@ -1,0 +1,94 @@
+<!-- ================================================================ -->
+<!-- Chapter 9 — Install &amp; Offline Use (Progressive Web App)      -->
+<!-- ================================================================ -->
+
+<!-- 9.1 What Is a PWA? -->
+<h2 id="s9-1">9.1 &nbsp;What Is a PWA?</h2>
+
+<p>
+  Morse Code Studio is a <strong>Progressive Web App (PWA)</strong> — a website
+  that can be <em>installed</em> on your device like a native app, complete with
+  a home-screen icon, its own window and the ability to
+  <strong>work fully offline</strong>. A service worker caches all code and
+  assets on first visit, so subsequent launches are instant with or without
+  an internet connection.
+</p>
+
+<!-- 9.2 Installing on Mobile -->
+<h2 id="s9-2">9.2 &nbsp;Installing on Mobile</h2>
+
+<h3>Android (Chrome / Edge / Brave)</h3>
+<ol>
+  <li>Open the app in Chrome.</li>
+  <li>Tap the <strong>three-dot menu</strong> (⋮) →
+      <strong>"Install app"</strong> (or "Add to Home screen").</li>
+  <li>Tap <strong>"Install"</strong> to confirm.</li>
+</ol>
+
+<h3>iOS / iPadOS (Safari only)</h3>
+<ol>
+  <li>Open the app in <strong>Safari</strong>.</li>
+  <li>Tap the <strong>Share</strong> button
+      (<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"
+        style="vertical-align:-2px">
+        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/>
+        <polyline points="16 6 12 2 8 6"/>
+        <line x1="12" y1="2" x2="12" y2="15"/>
+      </svg>) → <strong>"Add to Home Screen"</strong> →
+      <strong>"Add"</strong>.</li>
+</ol>
+
+<p>
+  The app icon appears alongside your other apps and launches in a
+  standalone window.
+</p>
+
+<!-- 9.3 Installing on Desktop -->
+<h2 id="s9-3">9.3 &nbsp;Installing on Desktop</h2>
+
+<p>In Chrome, Edge or another Chromium browser:</p>
+<ul>
+  <li>Click the <strong>install icon</strong> (⊕) in the address bar, or</li>
+  <li><strong>Chrome:</strong> Menu → <em>Save and Share</em> →
+      <em>Install Morse Code Studio…</em></li>
+  <li><strong>Edge:</strong> Menu → <em>Apps</em> →
+      <em>Install Morse Code Studio</em></li>
+</ul>
+
+<p>
+  The app opens in its own window without browser chrome, giving you more
+  screen space.
+</p>
+
+<!-- 9.4 Offline Benefits for Field Operation -->
+<h2 id="s9-4">9.4 &nbsp;Offline Benefits for Field Operation</h2>
+
+<p>
+  Once cached, <strong>no internet connection is needed</strong>. This is
+  especially valuable for amateur radio field operation:
+</p>
+
+<ul>
+  <li><strong>POTA / SOTA / Field Day</strong> — Decode, encode and key CW
+      from remote locations with no cellular or Wi-Fi coverage.</li>
+  <li><strong>Emergency comms</strong> — One fewer dependency on external
+      infrastructure when networks are down.</li>
+  <li><strong>Instant startup &amp; battery savings</strong> — Everything
+      loads from local cache; no network traffic means longer battery
+      life.</li>
+  <li><strong>No account or subscription</strong> — Free, open-source and
+      runs entirely on-device with no data sent anywhere.</li>
+  <li><strong>Any device you already carry</strong> — Your phone or tablet
+      becomes a capable CW tool without extra equipment.</li>
+</ul>
+
+<!-- 9.5 Updating the App -->
+<h2 id="s9-5">9.5 &nbsp;Updating the App</h2>
+
+<p>
+  When you open the app while online, the service worker checks for updates
+  automatically. New versions download in the background and activate the
+  next time you restart the app — no reinstall needed.
+</p>

@@ -1,0 +1,23 @@
+%%{init: {'theme': 'dark', 'themeVariables': { 'fontSize': '14px' }}}%%
+graph LR
+    SC["🔊 Sound Card<br/>Audio Output<br/>(opto channel)"]
+    SC_GND["Sound Card<br/>GND"]
+
+    subgraph OPTO["Optocoupler (e.g. PC817)"]
+        direction TB
+        LED["💡 LED<br/>(pin 1 ← pin 2)"]
+        PT["📡 Photo-<br/>transistor<br/>(pin 4 → pin 5)"]
+    end
+
+    RADIO["📻 Radio<br/>Key Jack"]
+
+    SC -->|"DC voltage<br/>when keyed"| LED
+    SC_GND -->|"GND"| LED
+    PT -->|"isolated<br/>contact"| RADIO
+
+    style SC fill:#2a5a2a,stroke:#66cc66,color:#fff
+    style SC_GND fill:#333,stroke:#888,color:#aaa
+    style LED fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style PT fill:#5a4a2a,stroke:#ccaa44,color:#fff
+    style OPTO fill:#1a1e24,stroke:#666,color:#ccc
+    style RADIO fill:#5a3a2a,stroke:#cc8844,color:#fff
