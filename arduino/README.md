@@ -66,7 +66,7 @@ flowchart TB
 
 ### nRF52840 Pin Overview
 
-The nRF52840 Pro Micro has the same pin layout plus 3 bottom pads (B+, B−, RST for battery). It has a **single** onboard LED that lights on any input or output activity.
+The nRF52840 Pro Micro has the same pin layout plus 3 bottom pads (B+, B−, RST for battery). The onboard LEDs are **not used** by this sketch — the PCA10056 board definition maps LED constants to different GPIO pins than those on the Supermini/nice!nano, causing conflicts.
 
 ```mermaid
 flowchart TB
@@ -87,8 +87,8 @@ flowchart TB
             GND_OUT["GND → Common ground for optocouplers"]
         end
 
-        subgraph leds["💡 ONBOARD LED"]
-            LED["LED_BUILTIN → Lights on any input or output activity"]
+        subgraph leds["💡 ONBOARD LEDs"]
+            LED_NOTE["Neither LED is used — PCA10056 BSP pin conflict"]
         end
 
         subgraph bottom["⬇️ BOTTOM PADS"]
@@ -105,9 +105,16 @@ flowchart TB
 |-----------|-------|
 | Channel | 1 (shown as 0 in some software) |
 | Velocity | 127 |
-| Straight Key note | 60 (C4) |
-| Dit note | 62 (D4) |
-| Dah note | 64 (E4) |
+| **Input** notes (Arduino → PC): | |
+| Straight Key | 60 (C4) |
+| Dit | 62 (D4) |
+| Dah | 64 (E4) |
+| **Output** notes (PC → Arduino): | |
+| Straight Key | 66 (F#4) |
+| Dit | 68 (G#4) |
+| Dah | 70 (A#4) |
+
+Input and output notes are deliberately different to prevent feedback loops when both MIDI input and MIDI output are enabled on the same device.
 
 All values are configurable at the top of each sketch before uploading.
 
@@ -208,7 +215,8 @@ flowchart LR
 - **Libraries:**
   - [Adafruit TinyUSB Library](https://github.com/adafruit/Adafruit_TinyUSB_Arduino)
   - [MIDI Library](https://github.com/FortySevenEffects/arduino_midi_library) by Forty Seven Effects
-- **Arduino IDE:** Tools → Board → Adafruit nRF52 Boards → select your board; Tools → USB Stack → "TinyUSB"
+- **Arduino IDE:** Tools → Board → Adafruit nRF52 Boards → **"Nordic Semiconductor nRF52840 DK (PCA10056)"**; Tools → USB Stack → "TinyUSB"
+- **Important:** Do NOT select "Adafruit Feather" or "ItsyBitsy" — they remap pin numbers and cause hard faults on clone boards. The Nordic DK definition uses raw GPIO numbers, which the sketch is configured for.
 
 ---
 

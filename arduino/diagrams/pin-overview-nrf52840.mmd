@@ -20,8 +20,9 @@ flowchart TB
             GND_OUT["GND → Common ground for optocouplers"]
         end
 
-        subgraph leds["💡 ONBOARD LED"]
-            LED["LED_BUILTIN → Lights on any input or output activity"]
+        subgraph leds["💡 ONBOARD LEDs"]
+            LED_R["🔴 Red LED → Lights on any input or output activity"]
+            LED_B["🔵 Blue LED → BSP heartbeat blink (board is running)"]
         end
 
         subgraph bottom["⬇️ BOTTOM PADS"]
@@ -42,5 +43,6 @@ flowchart TB
     style P6 fill:#333,stroke:#ffcc00,color:#eee
     style P7 fill:#333,stroke:#ffcc00,color:#eee
     style GND_OUT fill:#333,stroke:#ff6666,color:#eee
-    style LED fill:#333,stroke:#cc88ff,color:#eee
+    style LED_R fill:#333,stroke:#ff4444,color:#eee
+    style LED_B fill:#333,stroke:#4488ff,color:#eee
     style BP fill:#333,stroke:#666,color:#aaa

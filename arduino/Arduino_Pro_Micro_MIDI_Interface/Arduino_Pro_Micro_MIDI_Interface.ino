@@ -118,12 +118,11 @@ const byte NOTE_IN_DIT      = 62;   // D4
 const byte NOTE_IN_DAH      = 64;   // E4
 
 // --- Output note numbers (received FROM the PC to drive pins) ---
-// These can be the same as the input notes (no collision — they
-// travel in opposite directions). Change them independently if
-// your setup requires different mappings.
-const byte NOTE_OUT_STRAIGHT = 60;  // C4
-const byte NOTE_OUT_DIT      = 62;  // D4
-const byte NOTE_OUT_DAH      = 64;  // E4
+// These MUST differ from the input notes to prevent feedback loops
+// when both MIDI input and output are enabled simultaneously.
+const byte NOTE_OUT_STRAIGHT = 66;  // F#4
+const byte NOTE_OUT_DIT      = 68;  // G#4
+const byte NOTE_OUT_DAH      = 70;  // A#4
 
 // ============================================================
 // DEBOUNCE

@@ -27,7 +27,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
     (pin 4) with internal pull-ups — short to GND to activate
   - Outputs: straight key (pin 5), dit (pin 6), dah (pin 7) — driven
     HIGH on incoming MIDI note, for use with optocouplers
-  - Onboard LED indicators for input/output activity
+  - ATmega32U4: onboard RX/TX LED indicators for input/output activity
+  - nRF52840: uses nRF HAL GPIO directly to bypass PCA10056 pin map
+    conflicts (onboard LEDs not used)
   - Mermaid wiring diagrams for straight key, paddles, and
     optocoupler output
   - Comprehensive README with inline rendered diagrams

@@ -384,10 +384,16 @@
     Flash an Arduino Pro Micro with a MIDIUSB sketch that reads incoming
     MIDI notes and drives pins 2, 3, and 4 (straight key, dit, dah).
     In Outputs &rarr; MIDI Output, select the Arduino MIDI device, set
-    Channel 1, and assign notes C4 (60), D4 (62), E4 (64) to the three
+    Channel 1, and assign notes F&sharp;4 (66), G&sharp;4 (68), A&sharp;4 (70) to the three
     outputs. Enable MIDI Output. When you send text via the Encoder or
     key with any input, the decoded characters are played back as properly
     timed morse elements on the Arduino&rsquo;s output pins.
+  </p>
+  <p>
+    <strong>Note:</strong> The output notes (66/68/70) deliberately differ
+    from the input notes (60/62/64) used for MIDI Input (&sect;6.3).
+    This prevents a feedback loop when both MIDI Input and MIDI Output
+    are enabled on the same device simultaneously.
   </p>
 </div>
 
@@ -396,10 +402,12 @@
   <p>
     Enable both MIDI Input (&sect;6.3) and MIDI Output on the same
     Arduino. The Arduino reads physical paddle switches and sends MIDI
-    notes to the app (input), while the app decodes those key events into
-    characters and plays them back on the MIDI output to drive an LED,
-    buzzer, or relay. This creates a complete hardware interface with no
-    serial port drivers or custom protocols needed.
+    notes to the app (input on notes 60/62/64), while the app decodes
+    those key events into characters and plays them back on different
+    MIDI output notes (66/68/70) to drive an LED, buzzer, or relay.
+    Using separate note numbers for input and output prevents feedback
+    loops. This creates a complete hardware interface with no serial port
+    drivers or custom protocols needed.
   </p>
 </div>
 

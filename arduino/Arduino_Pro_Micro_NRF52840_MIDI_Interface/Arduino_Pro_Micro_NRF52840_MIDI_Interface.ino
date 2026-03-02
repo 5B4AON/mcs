@@ -24,9 +24,10 @@
  *           drive an optocoupler that keys a radio transmitter).
  *           On Note Off the pin goes LOW again.
  *
- * LED     — The onboard LED blinks on any input or output
- *           activity. (nRF52840 boards typically have a single
- *           LED, unlike the ATmega32U4's separate RX/TX LEDs.)
+ * The onboard LEDs are NOT used by this sketch — the PCA10056
+ *           board definition maps LED constants to different GPIO
+ *           pins than those on the Supermini/nice!nano, causing
+ *           conflicts. GPIO operations use the nRF HAL directly.
  *
  * ============================================================
  * REQUIRED LIBRARIES
@@ -49,40 +50,50 @@
  *
  * 2. Select your board:
  *    - Tools → Board → Adafruit nRF52 Boards →
- *      "Adafruit Feather nRF52840 Express" (or the closest
- *      match for your specific board)
+ *      "Nordic Semiconductor nRF52840 DK (PCA10056)"
+ *
+ *    NOTE: The Adafruit BSP doesn't include a board definition
+ *    for the Supermini or nice!nano. Do NOT select "Adafruit
+ *    Feather" or "ItsyBitsy" — they remap pin numbers and
+ *    cause hard faults on clone boards. The Nordic DK definition
+ *    is used here, but its Arduino pin map does NOT match the
+ *    Supermini GPIO layout. This sketch therefore bypasses
+ *    Arduino's pinMode/digitalWrite/digitalRead and calls the
+ *    nRF HAL GPIO functions directly with the real hardware
+ *    GPIO numbers.
  *
  * 3. Tools → USB Stack → "TinyUSB"
  *
  * ============================================================
  * PIN LAYOUT
  * ============================================================
- * The nRF52840 Pro Micro has the same physical footprint as
- * the ATmega32U4 Pro Micro: 13 pins on each side, USB at top,
- * plus 3 pads at the bottom (typically B+, B−, RST).
+ * The nRF52840 Pro Micro (Supermini / nice!nano) has the same
+ * physical footprint as the ATmega32U4 Pro Micro, but the
+ * silkscreen labels do NOT match the nRF52840 GPIO numbers.
+ * This sketch uses raw GPIO numbers for the Nordic DK board
+ * definition.
  *
- * The pins labelled 2–7 are in the same physical positions as
- * the ATmega32U4 variant, so the wiring is identical:
+ * Silkscreen → nRF52840 GPIO mapping (nice!nano / Supermini):
  *
- *   ┌─────────────────────────────────────┐
- *   │            USB Connector            │
- *   ├──────────┬──────────────────────────┤
- *   │  D1/TX   │     RAW / VIN           │
- *   │  D0/RX   │     GND ← output ground │
- *   │  GND ◄── │ ── input ground         │
- *   │  GND     │     RST                 │
- *   │  Pin 2 ← │ ── Straight Key IN      │
- *   │  Pin 3 ← │ ── Dit Paddle IN        │
- *   │  Pin 4 ← │ ── Dah Paddle IN        │
- *   │  Pin 5 → │ ── Straight Key OUT     │
- *   │  Pin 6 → │ ── Dit OUT              │
- *   │  Pin 7 → │ ── Dah OUT              │
- *   │  Pin 8   │     ...                 │
- *   │  Pin 9   │     ...                 │
- *   │  ...     │     ...                 │
- *   ├──────────┴──────────────────────────┤
- *   │     (B+)    (B−)    (RST)           │
- *   └─────────────────────────────────────┘
+ *   ┌─────────────────────────────────────────────────────┐
+ *   │                  USB Connector                      │
+ *   ├────────────────┬────────────────────────────────────┤
+ *   │  D1/TX         │     RAW / VIN                     │
+ *   │  D0/RX         │     GND  ← output ground          │
+ *   │  GND     ◄──── │ ── input ground                   │
+ *   │  GND           │     RST                           │
+ *   │  "2"  P0.17 ← │ ── Straight Key IN   (GPIO 17)    │
+ *   │  "3"  P0.20 ← │ ── Dit Paddle IN     (GPIO 20)    │
+ *   │  "4"  P0.22 ← │ ── Dah Paddle IN     (GPIO 22)    │
+ *   │  "5"  P0.24 → │ ── Straight Key OUT  (GPIO 24)    │
+ *   │  "6"  P1.00 → │ ── Dit OUT           (GPIO 32)    │
+ *   │  "7"  P0.11 → │ ── Dah OUT           (GPIO 11)    │
+ *   │  "8"  P1.04   │     ...                            │
+ *   │  "9"  P1.06   │     ...                            │
+ *   │  ...          │     ...                            │
+ *   ├────────────────┴────────────────────────────────────┤
+ *   │       (B+)      (B−)      (RST)                    │
+ *   └─────────────────────────────────────────────────────┘
  *
  *   Input pins use internal pull-up resistors (no external
  *   components needed — just wire the key between the pin
@@ -96,6 +107,38 @@
 
 #include <Adafruit_TinyUSB.h>
 #include <MIDI.h>
+#include <nrf_gpio.h>
+
+// ============================================================
+// nRF GPIO HELPERS
+// ============================================================
+// The PCA10056 board definition has its own pin-number-to-GPIO
+// mapping (g_ADigitalPinMap). Arduino's pinMode/digitalWrite/
+// digitalRead use that table, so pin 24 does NOT mean GPIO 24.
+//
+// To use the actual hardware GPIO numbers for the Supermini /
+// nice!nano, we call the nRF HAL functions directly. These
+// helper functions wrap them with an Arduino-like API.
+
+inline void gpioMode(uint32_t gpio, bool output) {
+  if (output) {
+    nrf_gpio_cfg_output(gpio);
+  } else {
+    nrf_gpio_cfg_input(gpio, NRF_GPIO_PIN_PULLUP);
+  }
+}
+
+inline void gpioWrite(uint32_t gpio, bool high) {
+  if (high) {
+    nrf_gpio_pin_set(gpio);
+  } else {
+    nrf_gpio_pin_clear(gpio);
+  }
+}
+
+inline bool gpioRead(uint32_t gpio) {
+  return (nrf_gpio_pin_read(gpio) != 0);
+}
 
 // ============================================================
 // USB MIDI SETUP
@@ -104,37 +147,39 @@ Adafruit_USBD_MIDI usbMidi;
 MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usbMidi, MIDI);
 
 // ============================================================
-// PIN CONFIGURATION
+// PIN CONFIGURATION  —  RAW GPIO NUMBERS
 // ============================================================
-// Change these if you wire your board differently.
-// The physical positions match the ATmega32U4 Pro Micro,
-// so existing wiring works with either board.
+// Because the Nordic DK board definition is selected (no pin
+// remapping), we must use the actual nRF52840 GPIO numbers,
+// NOT the silkscreen labels printed on the board.
+//
+// The table below maps silkscreen → GPIO for the nice!nano /
+// Supermini nRF52840. If your board differs, update these.
+//
+//   Silkscreen "2" → P0.17 → GPIO 17
+//   Silkscreen "3" → P0.20 → GPIO 20
+//   Silkscreen "4" → P0.22 → GPIO 22
+//   Silkscreen "5" → P0.24 → GPIO 24
+//   Silkscreen "6" → P1.00 → GPIO 32  (32 + 0)
+//   Silkscreen "7" → P0.11 → GPIO 11
 
-/** Straight key input — wire between this pin and GND */
-const int PIN_IN_STRAIGHT = 2;
+/** Straight key input — silkscreen "2", GPIO P0.17 */
+const int PIN_IN_STRAIGHT = 17;
 
-/** Dit (dot) paddle input — wire between this pin and GND */
-const int PIN_IN_DIT      = 3;
+/** Dit (dot) paddle input — silkscreen "3", GPIO P0.20 */
+const int PIN_IN_DIT      = 20;
 
-/** Dah (dash) paddle input — wire between this pin and GND */
-const int PIN_IN_DAH      = 4;
+/** Dah (dash) paddle input — silkscreen "4", GPIO P0.22 */
+const int PIN_IN_DAH      = 22;
 
-/** Straight key output — drives optocoupler or indicator */
-const int PIN_OUT_STRAIGHT = 5;
+/** Straight key output — silkscreen "5", GPIO P0.24 */
+const int PIN_OUT_STRAIGHT = 24;
 
-/** Dit output — drives optocoupler or indicator */
-const int PIN_OUT_DIT      = 6;
+/** Dit output — silkscreen "6", GPIO P1.00 */
+const int PIN_OUT_DIT      = 32;
 
-/** Dah output — drives optocoupler or indicator */
-const int PIN_OUT_DAH      = 7;
-
-// ============================================================
-// ONBOARD LED
-// ============================================================
-// nRF52840 Pro Micro boards typically have a single onboard LED.
-// LED_BUILTIN is defined by the board package. If your board
-// uses a different pin, change this.
-const int PIN_LED = LED_BUILTIN;
+/** Dah output — silkscreen "7", GPIO P0.11 */
+const int PIN_OUT_DAH      = 11;
 
 // ============================================================
 // MIDI CONFIGURATION
@@ -159,9 +204,11 @@ const byte NOTE_IN_DIT      = 62;   // D4
 const byte NOTE_IN_DAH      = 64;   // E4
 
 // --- Output note numbers (received FROM the PC to drive pins) ---
-const byte NOTE_OUT_STRAIGHT = 60;  // C4
-const byte NOTE_OUT_DIT      = 62;  // D4
-const byte NOTE_OUT_DAH      = 64;  // E4
+// These MUST differ from the input notes to prevent feedback loops
+// when both MIDI input and output are enabled simultaneously.
+const byte NOTE_OUT_STRAIGHT = 66;  // F#4
+const byte NOTE_OUT_DIT      = 68;  // G#4
+const byte NOTE_OUT_DAH      = 70;  // A#4
 
 // ============================================================
 // DEBOUNCE
@@ -204,10 +251,10 @@ void handleNoteOn(byte channel, byte note, byte velocity) {
   if (channel != MIDI_CH) return;
   int pin = outputPinForNote(note);
   if (pin >= 0 && velocity > 0) {
-    digitalWrite(pin, HIGH);
+    gpioWrite(pin, true);
   } else if (pin >= 0) {
     // Velocity 0 = Note Off
-    digitalWrite(pin, LOW);
+    gpioWrite(pin, false);
   }
 }
 
@@ -216,7 +263,7 @@ void handleNoteOff(byte channel, byte note, byte velocity) {
   if (channel != MIDI_CH) return;
   int pin = outputPinForNote(note);
   if (pin >= 0) {
-    digitalWrite(pin, LOW);
+    gpioWrite(pin, false);
   }
 }
 
@@ -225,21 +272,19 @@ void handleNoteOff(byte channel, byte note, byte velocity) {
 // ============================================================
 void setup() {
   // Configure input pins with internal pull-up resistors
-  pinMode(PIN_IN_STRAIGHT, INPUT_PULLUP);
-  pinMode(PIN_IN_DIT,      INPUT_PULLUP);
-  pinMode(PIN_IN_DAH,      INPUT_PULLUP);
+  // Using nRF HAL directly to bypass PCA10056 pin map
+  gpioMode(PIN_IN_STRAIGHT, false);
+  gpioMode(PIN_IN_DIT,      false);
+  gpioMode(PIN_IN_DAH,      false);
 
   // Configure output pins — start LOW (off)
-  pinMode(PIN_OUT_STRAIGHT, OUTPUT);
-  pinMode(PIN_OUT_DIT,      OUTPUT);
-  pinMode(PIN_OUT_DAH,      OUTPUT);
-  digitalWrite(PIN_OUT_STRAIGHT, LOW);
-  digitalWrite(PIN_OUT_DIT,      LOW);
-  digitalWrite(PIN_OUT_DAH,      LOW);
+  gpioMode(PIN_OUT_STRAIGHT, true);
+  gpioMode(PIN_OUT_DIT,      true);
+  gpioMode(PIN_OUT_DAH,      true);
+  gpioWrite(PIN_OUT_STRAIGHT, false);
+  gpioWrite(PIN_OUT_DIT,      false);
+  gpioWrite(PIN_OUT_DAH,      false);
 
-  // Onboard LED
-  pinMode(PIN_LED, OUTPUT);
-  digitalWrite(PIN_LED, LOW);
 
   // Initialise input state tracking
   inputs[0] = { PIN_IN_STRAIGHT, NOTE_IN_STRAIGHT, false, false, 0 };
@@ -248,14 +293,16 @@ void setup() {
 
   // Initialise USB MIDI
   usbMidi.setStringDescriptor("MCS MIDI Interface");
-  MIDI.begin(MIDI_CH);
-  MIDI.setHandleNoteOn(handleNoteOn);
-  MIDI.setHandleNoteOff(handleNoteOff);
+  usbMidi.begin();  // Register MIDI interface with TinyUSB
 
   // Wait for USB to be ready
   while (!TinyUSBDevice.mounted()) {
     delay(1);
   }
+
+  // Initialise MIDI Library (used for sending only)
+  MIDI.begin(MIDI_CHANNEL_OMNI);
+  MIDI.turnThruOff();
 }
 
 // ============================================================
@@ -267,7 +314,7 @@ void loop() {
 
   // --- 1. Scan input pins (debounced) ---
   for (int i = 0; i < 3; i++) {
-    bool raw = (digitalRead(inputs[i].pin) == LOW);
+    bool raw = !gpioRead(inputs[i].pin);  // active LOW: pressed = pin reads 0
 
     if (raw != inputs[i].rawLast) {
       inputs[i].rawLast  = raw;
@@ -288,14 +335,24 @@ void loop() {
     if (inputs[i].pressed) anyInputPressed = true;
   }
 
-  // --- 2. Process incoming MIDI messages (triggers callbacks) ---
-  MIDI.read();
+  // --- 2. Process incoming MIDI via raw TinyUSB C API ---
+  // The MIDI Library's read() does not reliably receive on
+  // the Adafruit nRF52 TinyUSB transport, so we read raw
+  // USB MIDI packets directly.
+  uint8_t packet[4];
+  while (tud_midi_available()) {
+    if (tud_midi_packet_read(packet)) {
+      uint8_t status  = packet[1];
+      uint8_t note    = packet[2];
+      uint8_t vel     = packet[3];
+      uint8_t msgType = status & 0xF0;
+      uint8_t chan    = (status & 0x0F) + 1;  // 1-based
 
-  // --- 3. LED: on while any input OR output is active ---
-  bool anyOutputActive =
-    (digitalRead(PIN_OUT_STRAIGHT) == HIGH) ||
-    (digitalRead(PIN_OUT_DIT)      == HIGH) ||
-    (digitalRead(PIN_OUT_DAH)      == HIGH);
-
-  digitalWrite(PIN_LED, (anyInputPressed || anyOutputActive) ? HIGH : LOW);
+      if (msgType == 0x90 && vel > 0) {
+        handleNoteOn(chan, note, vel);
+      } else if (msgType == 0x80 || (msgType == 0x90 && vel == 0)) {
+        handleNoteOff(chan, note, vel);
+      }
+    }
+  }
 }
