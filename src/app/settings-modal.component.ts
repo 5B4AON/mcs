@@ -15,6 +15,7 @@ import { CwInputService, CwLevelEvent } from './services/cw-input.service';
 import { SerialKeyOutputService } from './services/serial-key-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
+import { MidiInputService, midiNoteName } from './services/midi-input.service';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 
 /**
@@ -59,6 +60,12 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   cwSignalPeak = 0;
   cwThreshold = 0;
 
+  // ---- MIDI capture state ----
+  /** Which MIDI setting is currently being captured (null = not capturing) */
+  midiCapturing: string | null = null;
+  /** MIDI channel numbers 1-16 for the channel select dropdown */
+  readonly midiChannels = Array.from({ length: 16 }, (_, i) => i + 1);
+
   private subs: Subscription[] = [];
 
   /** Debounce timer for RTDB input restart on text field changes */
@@ -102,6 +109,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     public serialOutput: SerialKeyOutputService,
     public winkeyerOutput: WinkeyerOutputService,
     public rtdbService: FirebaseRtdbService,
+    public midiInput: MidiInputService,
   ) {}
 
   ngOnInit(): void {
@@ -412,5 +420,67 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
       this.devices.inputDevices(),
       this.devices.outputDevices()
     );
+  }
+
+  // ---- MIDI handlers ----
+
+  async onMidiEnabledChange(event: Event): Promise<void> {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked && !this.midiInput.supported) {
+      (event.target as HTMLInputElement).checked = false;
+      return;
+    }
+    this.settings.update({ midiInputEnabled: checked });
+    if (checked) {
+      await this.midiInput.start();
+    } else {
+      this.midiInput.shutdown();
+    }
+  }
+
+  onMidiDeviceChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.settings.update({ midiInputDeviceId: value });
+    this.midiInput.reattach();
+  }
+
+  /**
+   * Start MIDI learn/capture mode for the given setting key.
+   * When the user presses a MIDI key, the note number is stored
+   * in the corresponding setting (similar to keyboard key capture).
+   */
+  onMidiCapture(settingKey: string): void {
+    // If already capturing this key, cancel
+    if (this.midiCapturing === settingKey) {
+      this.midiInput.cancelLearn();
+      this.midiCapturing = null;
+      return;
+    }
+
+    // Ensure MIDI access is started for capture even if not yet enabled
+    if (!this.midiInput.connected()) {
+      this.midiInput.start().then(() => this.beginCapture(settingKey));
+    } else {
+      this.beginCapture(settingKey);
+    }
+  }
+
+  private beginCapture(settingKey: string): void {
+    this.midiCapturing = settingKey;
+    this.midiInput.startLearn((note: number) => {
+      this.settings.update({ [settingKey]: note } as Partial<AppSettings>);
+      this.midiCapturing = null;
+    });
+  }
+
+  /** Clear a MIDI note assignment */
+  clearMidiNote(settingKey: string): void {
+    this.settings.update({ [settingKey]: -1 } as Partial<AppSettings>);
+  }
+
+  /** Display a MIDI note number as a human-readable name */
+  midiNoteDisplay(note: number): string {
+    if (note < 0) return '(none)';
+    return `${midiNoteName(note)} (${note})`;
   }
 }

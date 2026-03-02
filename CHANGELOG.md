@@ -4,6 +4,35 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2026-03-02
+
+### Added
+
+- **MIDI Input** — new input method in the Inputs settings tab. Connect a
+  MIDI pedal, foot switch, keyboard, or any MIDI controller and map
+  specific notes to straight key, dit paddle, and dah paddle using
+  capture buttons (click the button, then press a MIDI key). MIDI
+  input works even when the app is in the background, another window
+  is focused, or the screen is locked / showing a screensaver — unlike
+  keyboard and mouse input which require DOM focus. Supports device
+  selection, MIDI channel filtering (omni or specific channel), reverse
+  paddles, and all paddle modes. Requires Chrome or Edge (Web MIDI API).
+- **MIDI permission via Start Audio** — MIDI access is requested
+  transparently alongside the audio permission when you click
+  Start Audio, so there is no separate permission prompt.
+- **MIDI help documentation** — new section 6.3 in the help chapter
+  covering settings, capture workflow, background operation, browser
+  compatibility, and a quick-reference table for MIDI emulators /
+  devices that use raw channel (0–15), intensity (0–127), and
+  value (0–127) parameters.
+- **MIDI keep-alive** — a background timer re-attaches MIDI listeners
+  every 5 seconds, preventing browser throttling from silently
+  dropping the MIDI connection during idle periods.
+- **Auto-reconnect on refresh** — audio and MIDI now automatically
+  reconnect after a browser refresh if they were previously running.
+  The running state is persisted in localStorage; Chrome remembers
+  granted permissions so no user gesture is needed on reload.
+
 ## [0.8.6] - 2026-03-01
 
 ### Changed

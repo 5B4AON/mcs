@@ -126,3 +126,108 @@
     decoded CW text live.
   </p>
 </div>
+
+<!-- 6.3 MIDI Input -->
+<h2 id="s6-3">6.3 &nbsp;MIDI Input</h2>
+
+<p>
+  Connect a MIDI pedal, foot switch, keyboard, or any MIDI controller to your
+  computer and use it as a morse key or paddles. MIDI input has a key
+  advantage over keyboard and mouse input: <strong>it works even when the
+  app is in the background</strong>, another window is focused, or the
+  screen is locked / showing a screensaver.
+</p>
+
+<h3>How It Works</h3>
+<p>
+  The Web MIDI API delivers <code>note-on</code> and <code>note-off</code>
+  messages from MIDI hardware at the browser level, independent of DOM focus.
+  Morse Code Studio maps specific MIDI notes to keyer actions &mdash;
+  straight key, dit paddle, or dah paddle &mdash; using the same keyer
+  engine as the keyboard and mouse keyers.
+</p>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>MIDI Device</strong> &mdash; Select a specific MIDI input, or
+      leave on &ldquo;Any&rdquo; to accept messages from the first available
+      device.</li>
+  <li><strong>MIDI Channel</strong> &mdash; Filter by MIDI channel (1&ndash;16),
+      or &ldquo;Omni&rdquo; to accept all channels.</li>
+  <li><strong>Straight Key</strong> &mdash; Click the capture button and press
+      a key/pad on your MIDI controller. That note will act as a straight
+      key (press = key down, release = key up).</li>
+  <li><strong>Dit Paddle</strong> &mdash; Capture a MIDI note for the dit
+      paddle. Used with iambic keyer modes.</li>
+  <li><strong>Dah Paddle</strong> &mdash; Capture a MIDI note for the dah
+      paddle.</li>
+  <li><strong>Reverse Paddles</strong> &mdash; Swap dit and dah paddle
+      assignments.</li>
+  <li><strong>Paddle Mode</strong> &mdash; Iambic A, Iambic B, Ultimatic,
+      or Single Lever (shared with keyboard and mouse keyers).</li>
+  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX). See
+      <em>Chapter 5: Decoder Source Routing</em>.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Assigning MIDI notes</div>
+  <p>
+    1. Enable MIDI Input and expand the settings card.<br>
+    2. Click the &ldquo;Straight Key&rdquo; capture button &mdash; it shows
+    &ldquo;Press a MIDI key&hellip;&rdquo;.<br>
+    3. Press the desired key or pedal on your MIDI controller.<br>
+    4. The button updates to show the captured note name (e.g.
+    &ldquo;C4 (60)&rdquo;).<br>
+    5. Repeat for Dit and Dah paddles if using paddle mode.<br>
+    6. Click the &times; button next to any assignment to clear it.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Background operation</div>
+  <p>
+    Unlike keyboard or mouse input, MIDI messages are delivered by the
+    browser even when the tab is not focused. Combined with the audio
+    keep-alive that Morse Code Studio maintains, your MIDI key/pedal
+    continues to work during screensaver, lock screen, or while another
+    application has focus.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Browser compatibility</div>
+  <p>
+    Web MIDI API is supported in <strong>Chrome</strong>, <strong>Edge</strong>,
+    and <strong>Opera</strong>. Firefox and Safari do not support it.
+    MIDI permission is requested transparently when you click
+    <strong>Start Audio</strong> &mdash; no separate permission step is
+    needed.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">MIDI emulator / device reference values</div>
+  <p>
+    Some MIDI devices or software emulators ask for raw MIDI parameters
+    instead of musical note names. The mapping is:
+  </p>
+  <table class="help-table">
+    <tr><th>Parameter</th><th>MIDI meaning</th><th>Suggested values</th></tr>
+    <tr><td><strong>Channel</strong> (0&ndash;15)</td><td>MIDI channel</td><td><code>0</code> &mdash; app defaults to Omni (all channels)</td></tr>
+    <tr><td><strong>Intensity</strong> (0&ndash;127)</td><td>Velocity</td><td><code>127</code> = key down, <code>0</code> = key up</td></tr>
+    <tr><td><strong>Value</strong> (0&ndash;127)</td><td>Note number</td><td>Any distinct number per key (see below)</td></tr>
+  </table>
+  <p>Suggested note assignments:</p>
+  <table class="help-table">
+    <tr><th>Action</th><th>Value (note)</th><th>Name</th></tr>
+    <tr><td>Straight key</td><td><code>60</code></td><td>C4</td></tr>
+    <tr><td>Dit paddle</td><td><code>62</code></td><td>D4</td></tr>
+    <tr><td>Dah paddle</td><td><code>64</code></td><td>E4</td></tr>
+  </table>
+  <p>
+    To key <strong>down</strong>: send channel=0, intensity=127, value=60.<br>
+    To key <strong>up</strong>: send channel=0, intensity=0, value=60.<br>
+    The exact note numbers do not matter &mdash; just use three different
+    values and capture them with the buttons in Settings.
+  </p>
+</div>

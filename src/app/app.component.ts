@@ -11,6 +11,7 @@ import { KeyerService } from './services/keyer.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { SerialKeyOutputService } from './services/serial-key-output.service';
 import { MouseKeyerService } from './services/mouse-keyer.service';
+import { MidiInputService } from './services/midi-input.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
@@ -119,6 +120,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public devices: AudioDeviceService,
     public serialOutput: SerialKeyOutputService,
     public mouseKeyer: MouseKeyerService,
+    public midiInput: MidiInputService,
     public winkeyerOutput: WinkeyerOutputService,
     public rtdbService: FirebaseRtdbService,
     public displayBuffers: DisplayBufferService,
@@ -247,6 +249,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.encoder.enqueueRxPlayback(char, source, playbackWpm);
       })
     );
+
+    // Start MIDI independently of audio — it must survive audio failures.
+    // On page refresh Chrome remembers the MIDI permission grant, so no
+    // user gesture is needed. start() is idempotent (no-op if already started).
+    if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
+      this.midiInput.start();
+    }
+
+    // Auto-reconnect audio if it was running before the page reload.
+    if (localStorage.getItem('morseAudioRunning') === '1') {
+      this.autoStartAudio();
+    }
   }
 
   ngOnDestroy(): void {
@@ -317,18 +331,55 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         await this.audioInput.stop();
         await this.cwInput.stop();
         await this.audioOutput.stop();
+        this.midiInput.stop();
         this.audioRunning = false;
         this.micKeyDown = false;
         this.cwKeyDown = false;
+        localStorage.removeItem('morseAudioRunning');
       } else {
         if (this.settings.settings().micInputEnabled) {
           await this.audioInput.start();
         }
         await this.cwInput.start();
         await this.audioOutput.start();
+        // Start MIDI independently — fire-and-forget so MIDI issues
+        // can never block audio from starting
+        if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
+          this.midiInput.start().catch(() => {});
+        }
         this.audioRunning = true;
+        localStorage.setItem('morseAudioRunning', '1');
         await this.refreshDeviceConfig();
       }
+    } finally {
+      this.audioStarting = false;
+    }
+  }
+
+  /**
+   * Auto-start audio and MIDI after a browser refresh.
+   * Called from ngOnInit when we detect the session was previously running.
+   * Chrome remembers granted permissions so this works without a user gesture.
+   */
+  private async autoStartAudio(): Promise<void> {
+    this.audioStarting = true;
+    try {
+      if (this.settings.settings().micInputEnabled) {
+        await this.audioInput.start();
+      }
+      await this.cwInput.start();
+      await this.audioOutput.start();
+      // Start MIDI independently — fire-and-forget so MIDI issues
+      // can never block audio from starting
+      if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
+        this.midiInput.start().catch(() => {});
+      }
+      this.audioRunning = true;
+      await this.refreshDeviceConfig();
+    } catch {
+      // Permission may have been revoked — clear the flag so we don't retry
+      localStorage.removeItem('morseAudioRunning');
+      this.audioRunning = false;
     } finally {
       this.audioStarting = false;
     }

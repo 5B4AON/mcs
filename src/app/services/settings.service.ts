@@ -146,6 +146,23 @@ export interface AppSettings {
   touchRightPaddle: PaddleElement;
   touchReversePaddles: boolean;
 
+  // --- MIDI Input ---
+  midiInputEnabled: boolean;
+  /** Decoder source: which calibration pool MIDI input feeds ('rx' or 'tx') */
+  midiInputSource: DecoderSource;
+  /** MIDI input device ID (empty = any/first available) */
+  midiInputDeviceId: string;
+  /** MIDI channel filter: 0 = omni (all channels), 1-16 = specific channel */
+  midiInputChannel: number;
+  /** MIDI note number for straight key (-1 = not assigned) */
+  midiStraightKeyNote: number;
+  /** MIDI note number for dit paddle (-1 = not assigned) */
+  midiDitNote: number;
+  /** MIDI note number for dah paddle (-1 = not assigned) */
+  midiDahNote: number;
+  /** Reverse paddles for MIDI paddle input */
+  midiReversePaddles: boolean;
+
   // --- Firebase RTDB Input ---
   rtdbInputEnabled: boolean;
   /** Decoder source: which pool RTDB input characters are tagged with ('rx' or 'tx') */
@@ -264,6 +281,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchLeftPaddle: 'dit',
   touchRightPaddle: 'dah',
   touchReversePaddles: false,
+
+  midiInputEnabled: false,
+  midiInputSource: 'tx',
+  midiInputDeviceId: '',
+  midiInputChannel: 0,
+  midiStraightKeyNote: -1,
+  midiDitNote: -1,
+  midiDahNote: -1,
+  midiReversePaddles: false,
 
   rtdbInputEnabled: false,
   rtdbInputSource: 'rx',
