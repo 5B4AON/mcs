@@ -17,6 +17,7 @@ import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { MidiInputService, midiNoteName } from './services/midi-input.service';
 import { MidiOutputService, midiOutputNoteName } from './services/midi-output.service';
+import { WakeLockService } from './services/wake-lock.service';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 
 /**
@@ -41,7 +42,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   @Output() closed = new EventEmitter<void>();
 
   // ---- UI state ----
-  settingsTab: 'inputs' | 'outputs' = 'inputs';
+  settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
   expandedSections: Record<string, boolean> = {};
   showResetConfirm = false;
 
@@ -112,6 +113,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     public rtdbService: FirebaseRtdbService,
     public midiInput: MidiInputService,
     public midiOutput: MidiOutputService,
+    public wakeLock: WakeLockService,
   ) {}
 
   ngOnInit(): void {
@@ -188,6 +190,12 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   onBoolChange(key: keyof AppSettings, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.settings.update({ [key]: checked } as Partial<AppSettings>);
+  }
+
+  onWakeLockChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.settings.update({ wakeLockEnabled: checked });
+    this.wakeLock.onSettingChanged(checked);
   }
 
   onInputParamChange(key: keyof AppSettings, event: Event): void {

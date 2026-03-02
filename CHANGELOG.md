@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.2] - 2026-03-02
+
+### Added
+
+- **Screen Wake Lock** — new setting in the "Other" settings tab. Uses
+  the Screen Wake Lock API to prevent the device screen from locking
+  due to inactivity. On mobile devices, screen lock suspends network
+  connectivity which interrupts Firebase RTDB relay and other live
+  features. The lock is automatically released when switching apps and
+  re-acquired on return. Supported in Chrome 84+, Edge 84+, and
+  Safari 16.4+.
+- **"Other" settings tab** — new third tab in the settings modal
+  (alongside Inputs and Outputs) for settings that are not
+  input- or output-specific. Screen Wake Lock is the first entry.
+- **Arduino Pro Micro MIDI Interface** — new `arduino/` folder with
+  complete sketches for building a USB MIDI hardware interface:
+  - ATmega32U4 variant (classic Pro Micro) using the MIDIUSB library
+  - nRF52840 variant (Supermini / nice!nano) using Adafruit TinyUSB +
+    MIDI Library
+  - Inputs: straight key (pin 2), dit paddle (pin 3), dah paddle
+    (pin 4) with internal pull-ups — short to GND to activate
+  - Outputs: straight key (pin 5), dit (pin 6), dah (pin 7) — driven
+    HIGH on incoming MIDI note, for use with optocouplers
+  - Onboard LED indicators for input/output activity
+  - Mermaid wiring diagrams for straight key, paddles, and
+    optocoupler output
+  - Comprehensive README with inline rendered diagrams
+
+### Changed
+
+- **Copilot instructions** — added version bump checklist (version.ts,
+  package.json, package-lock.json, CHANGELOG.md, help docs, README
+  review) and arduino/README.md to the review list.
+
 ## [0.9.1] - 2026-03-02
 
 ### Added

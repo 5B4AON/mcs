@@ -39,6 +39,10 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7V7"/><path d="M7 17 17 7"/></svg>
         Outputs
       </button>
+      <button class="settings-tab" [class.active]="settingsTab === 'other'" (click)="settingsTab = 'other'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Other
+      </button>
     </div>
 
     <!-- Tab content -->
@@ -1379,6 +1383,46 @@
                 prime the motor, and extends vibration slightly past key-up so short
                 elements (dits) are more perceptible. Disable this if vibration feels
                 out of sync or you prefer the standard behaviour.
+              </div>
+            </div>
+          }
+        </div>
+
+      }
+
+      <!-- ==================== OTHER TAB ==================== -->
+      @if (settingsTab === 'other') {
+
+        <!-- ===== 1. SCREEN WAKE LOCK ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().wakeLockEnabled">
+          <div class="settings-card-header" (click)="toggleSection('wakeLock')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('wakeLock') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Screen Wake Lock</span>
+              <span class="settings-card-subtitle">Keep Screen Active</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().wakeLockEnabled"
+                     (change)="onWakeLockChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('wakeLock')) {
+            <div class="settings-card-body">
+              <div class="cw-hint">
+                Prevents the device screen from locking due to inactivity.
+                On mobile devices, screen lock suspends network connectivity
+                which interrupts Firebase RTDB relay and other live features.<br><br>
+                When enabled, the app requests a screen wake lock to keep the
+                display active while the page is in the foreground. The lock is
+                automatically released when you switch to another app or tab, and
+                re-acquired when you return.<br><br>
+                @if (!wakeLock.supported) {
+                  <strong>Not supported</strong> by this browser. The Screen Wake Lock
+                  API requires Chrome 84+, Edge 84+, or Safari 16.4+.
+                } @else {
+                  <strong>Status:</strong> {{ wakeLock.active ? 'Active — screen will stay on' : 'Inactive' }}
+                }
               </div>
             </div>
           }

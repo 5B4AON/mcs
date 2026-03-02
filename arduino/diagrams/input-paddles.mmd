@@ -1,0 +1,29 @@
+%% Arduino Pro Micro MIDI Interface — Iambic Paddle Input Wiring
+%% Copyright (c) 2026 5B4AON — Mike
+%% Licensed under the GNU General Public License v3.0.
+
+flowchart LR
+    subgraph paddles["🎛️ Iambic Paddles"]
+        LP["Left Paddle<br/>(Dit)"]
+        RP["Right Paddle<br/>(Dah)"]
+        COM["Common"]
+    end
+
+    subgraph board["Arduino Pro Micro"]
+        P3["Pin 3"]
+        P4["Pin 4"]
+        GND["GND"]
+    end
+
+    LP -- "wire" --> P3
+    RP -- "wire" --> P4
+    COM -- "wire" --> GND
+
+    style paddles fill:#2a2a3e,stroke:#00ff88,stroke-width:2px,color:#eee
+    style board fill:#1a1a2e,stroke:#ffcc00,stroke-width:2px,color:#eee
+    style LP fill:#333,stroke:#00ff88,color:#eee
+    style RP fill:#333,stroke:#00ff88,color:#eee
+    style COM fill:#333,stroke:#00ff88,color:#eee
+    style P3 fill:#333,stroke:#ffcc00,color:#eee
+    style P4 fill:#333,stroke:#ffcc00,color:#eee
+    style GND fill:#333,stroke:#ff6666,color:#eee

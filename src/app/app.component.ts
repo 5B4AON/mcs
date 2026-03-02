@@ -17,6 +17,7 @@ import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
+import { WakeLockService } from './services/wake-lock.service';
 import { HelpComponent } from './help.component';
 import { SettingsModalComponent } from './settings-modal.component';
 import { FullscreenModalComponent } from './fullscreen-modal.component';
@@ -127,6 +128,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public rtdbService: FirebaseRtdbService,
     public displayBuffers: DisplayBufferService,
     public loopDetection: LoopDetectionService,
+    public wakeLock: WakeLockService,
   ) {
     // Watch for new decoded characters and forward to WinKeyer and Firebase RTDB
     // Also push every entry (including RTDB-sourced) into the display buffers.
@@ -271,6 +273,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (localStorage.getItem('morseAudioRunning') === '1') {
       this.autoStartAudio();
     }
+
+    // Acquire screen wake lock if enabled (keeps mobile screen active)
+    this.wakeLock.acquire();
   }
 
   ngOnDestroy(): void {

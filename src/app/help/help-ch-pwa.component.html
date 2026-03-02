@@ -92,3 +92,54 @@
   automatically. New versions download in the background and activate the
   next time you restart the app — no reinstall needed.
 </p>
+
+<!-- 9.6 Screen Wake Lock -->
+<h2 id="s9-6">9.6 &nbsp;Screen Wake Lock</h2>
+
+<p>
+  Mobile devices and laptops dim and lock the screen after a period of
+  inactivity. During a CW session — especially when decoding or waiting for
+  traffic — you may not be touching the screen for extended periods, yet you
+  still need the display to stay on.
+</p>
+
+<p>
+  Morse Code Studio can use the browser's
+  <strong>Screen Wake Lock API</strong> to prevent the device from turning
+  off the display while the app is in the foreground. This is particularly
+  useful for:
+</p>
+
+<ul>
+  <li><strong>Decoding sessions</strong> — watching incoming CW text without
+      needing to tap the screen periodically.</li>
+  <li><strong>Keyer practice</strong> — using a paddle or straight key
+      connected via MIDI or serial while the phone sits on the desk.</li>
+  <li><strong>Field operation</strong> — keeping the screen readable in
+      sunlight without it dimming mid-QSO.</li>
+</ul>
+
+<h3>Enabling Screen Wake Lock</h3>
+<p>
+  Open <strong>Settings</strong> → <strong>Other</strong> tab and toggle
+  <strong>Screen Wake Lock</strong> on. The setting is saved per device
+  profile and persists across sessions.
+</p>
+
+<h3>How It Works</h3>
+<ul>
+  <li>When enabled, the app requests a wake lock as soon as it starts.</li>
+  <li>If you switch to another app or tab, the lock is automatically
+      released by the browser. When you return, the app re-acquires it.</li>
+  <li>Disabling the toggle releases the lock immediately.</li>
+  <li>The app indicates whether the wake lock is currently
+      <strong>active</strong> next to the toggle.</li>
+</ul>
+
+<h3>Browser Support</h3>
+<p>
+  The Screen Wake Lock API is supported in <strong>Chrome</strong>,
+  <strong>Edge</strong> and <strong>Safari 16.4+</strong> (including iOS).
+  Firefox does not yet support this API. If the browser lacks support, the
+  toggle is hidden and a note is shown instead.
+</p>

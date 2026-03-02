@@ -311,8 +311,14 @@
   appears as a native USB MIDI device &mdash; no drivers needed. The Arduino
   sketch monitors incoming MIDI notes and maps them to digital output
   pins, which in turn drive keying circuits, paddle jacks, or relay
-  boards. Combined with MIDI Input (&sect;6.6), the same Arduino can
+  boards. Combined with MIDI Input (&sect;6.3), the same Arduino can
   provide bidirectional real-time interfacing with the application.
+</p>
+<p>
+  Ready-made sketches for both the classic ATmega32U4 Pro Micro (using
+  MIDIUSB) and the nRF52840 variant (Supermini / nice!nano, using
+  Adafruit TinyUSB) are included in the <code>arduino/</code> folder of
+  the source repository, along with wiring diagrams and setup instructions.
 </p>
 
 <h3>Three Output Notes</h3>
@@ -388,7 +394,7 @@
 <div class="example-box">
   <div class="example-title">Example — Bidirectional MIDI interface</div>
   <p>
-    Enable both MIDI Input (&sect;6.6) and MIDI Output on the same
+    Enable both MIDI Input (&sect;6.3) and MIDI Output on the same
     Arduino. The Arduino reads physical paddle switches and sends MIDI
     notes to the app (input), while the app decodes those key events into
     characters and plays them back on the MIDI output to drive an LED,

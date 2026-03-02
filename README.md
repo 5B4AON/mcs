@@ -20,9 +20,15 @@ A browser-based Morse code encoder, decoder and keyer that runs entirely in the 
 
 **Haptic Vibration** — Optional vibration output mirrors the sidetone: the device vibrates while the key is down. Configurable via the "Active on" selector (TX only, RX only, or Both). Enhanced haptic timing overcomes Android motor spin-up latency for clear dits at higher speeds. Android only — supported in Chrome, Firefox and Edge for Android.
 
+**Screen Wake Lock** — Optional setting (under the "Other" tab) that prevents the device screen from locking due to inactivity. On mobile devices, screen lock suspends network connectivity which interrupts Firebase RTDB relay and other live features. Uses the Screen Wake Lock API (Chrome 84+, Edge 84+, Safari 16.4+).
+
 **Per-Output Routing** — Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase RTDB) has an independent forward / active-on selector controlling whether it fires on TX signals, RX signals, or both. Automatic loop detection suppresses output routing when a feedback loop is detected between outputs and inputs.
 
 **Decoder Source Routing** — Each input (Mic, CW Tone, Keyboard, Mouse, Touch) can be independently assigned to the RX or TX decoder pool, controlling both calibration and colour tagging in the fullscreen conversation view.
+
+## Arduino MIDI Hardware Interface
+
+The [`arduino/`](arduino/) folder contains ready-made sketches that turn an Arduino Pro Micro into a USB MIDI device for keying and paddle input/output. Two board variants are supported: ATmega32U4 (classic Pro Micro) and nRF52840 (Supermini / nice!nano). Includes wiring diagrams for straight keys, iambic paddles, and optocoupler output circuits. See the [Arduino README](arduino/README.md) for details.
 
 ## Progressive Web App
 

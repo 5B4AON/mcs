@@ -188,6 +188,10 @@ export interface AppSettings {
   rtdbInputChannelSecret: string;
   /** When true, ignore remote WPM and use local encoder WPM for playback */
   rtdbInputOverrideWpm: boolean;
+
+  // --- Screen Wake Lock ---
+  /** Keep the screen active to prevent idle sleep (mobile devices) */
+  wakeLockEnabled: boolean;
 }
 
 /**
@@ -322,6 +326,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbInputChannelName: '',
   rtdbInputChannelSecret: '',
   rtdbInputOverrideWpm: false,
+
+  wakeLockEnabled: false,
 };
 
 const PROFILES_KEY = 'morseProfiles';

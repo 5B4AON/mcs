@@ -1,0 +1,43 @@
+%% Arduino Pro Micro MIDI Interface — Output Optocoupler Wiring
+%% Copyright (c) 2026 5B4AON — Mike
+%% Licensed under the GNU General Public License v3.0.
+%%
+%% This diagram shows ONE output channel (e.g. Straight Key on Pin 5).
+%% Repeat the same circuit for Pin 6 (Dit) and Pin 7 (Dah) if needed.
+
+flowchart LR
+    subgraph board["Arduino Pro Micro"]
+        P5["Pin 5<br/>(or 6 / 7)"]
+        GND["GND"]
+    end
+
+    P5 -- "220 Ω resistor" --> ANODE
+
+    subgraph opto["Optocoupler (e.g. 4N25)"]
+        ANODE["Pin 1<br/>Anode (+)"]
+        CATHODE["Pin 2<br/>Cathode (−)"]
+        COLLECTOR["Pin 5<br/>Collector"]
+        EMITTER["Pin 4<br/>Emitter"]
+    end
+
+    CATHODE -- "wire" --> GND
+
+    subgraph radio["Radio / Device"]
+        KEY_LINE["Key Line"]
+        KEY_GND["Key Ground"]
+    end
+
+    COLLECTOR -- "wire" --> KEY_LINE
+    EMITTER -- "wire" --> KEY_GND
+
+    style board fill:#1a1a2e,stroke:#ffcc00,stroke-width:2px,color:#eee
+    style opto fill:#2a2a3e,stroke:#cc88ff,stroke-width:2px,color:#eee
+    style radio fill:#2a2a3e,stroke:#ff8844,stroke-width:2px,color:#eee
+    style P5 fill:#333,stroke:#ffcc00,color:#eee
+    style GND fill:#333,stroke:#ff6666,color:#eee
+    style ANODE fill:#333,stroke:#cc88ff,color:#eee
+    style CATHODE fill:#333,stroke:#cc88ff,color:#eee
+    style COLLECTOR fill:#333,stroke:#cc88ff,color:#eee
+    style EMITTER fill:#333,stroke:#cc88ff,color:#eee
+    style KEY_LINE fill:#333,stroke:#ff8844,color:#eee
+    style KEY_GND fill:#333,stroke:#ff8844,color:#eee

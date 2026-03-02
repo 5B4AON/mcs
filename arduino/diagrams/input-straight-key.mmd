@@ -1,0 +1,24 @@
+%% Arduino Pro Micro MIDI Interface — Straight Key Input Wiring
+%% Copyright (c) 2026 5B4AON — Mike
+%% Licensed under the GNU General Public License v3.0.
+
+flowchart LR
+    subgraph key["🔘 Straight Key"]
+        T1["Terminal 1"]
+        T2["Terminal 2"]
+    end
+
+    subgraph board["Arduino Pro Micro"]
+        P2["Pin 2"]
+        GND["GND"]
+    end
+
+    T1 -- "wire" --> P2
+    T2 -- "wire" --> GND
+
+    style key fill:#2a2a3e,stroke:#00ff88,stroke-width:2px,color:#eee
+    style board fill:#1a1a2e,stroke:#ffcc00,stroke-width:2px,color:#eee
+    style T1 fill:#333,stroke:#00ff88,color:#eee
+    style T2 fill:#333,stroke:#00ff88,color:#eee
+    style P2 fill:#333,stroke:#ffcc00,color:#eee
+    style GND fill:#333,stroke:#ff6666,color:#eee

@@ -1,0 +1,46 @@
+%% Arduino Pro Micro (nRF52840) MIDI Interface — Pin Assignment Overview
+%% Copyright (c) 2026 5B4AON — Mike
+%% Licensed under the GNU General Public License v3.0.
+
+flowchart TB
+    subgraph board["Pro Micro nRF52840 — Pin Assignments"]
+        direction TB
+
+        subgraph inputs["⬅️ INPUTS (active LOW, internal pull-up)"]
+            P2["Pin 2 → Straight Key"]
+            P3["Pin 3 → Dit Paddle"]
+            P4["Pin 4 → Dah Paddle"]
+            GND_IN["GND → Common ground for keys/paddles"]
+        end
+
+        subgraph outputs["➡️ OUTPUTS (active HIGH)"]
+            P5["Pin 5 → Straight Key Out"]
+            P6["Pin 6 → Dit Out"]
+            P7["Pin 7 → Dah Out"]
+            GND_OUT["GND → Common ground for optocouplers"]
+        end
+
+        subgraph leds["💡 ONBOARD LED"]
+            LED["LED_BUILTIN → Lights on any input or output activity"]
+        end
+
+        subgraph bottom["⬇️ BOTTOM PADS"]
+            BP["B+ (battery)  ·  B− (battery)  ·  RST"]
+        end
+    end
+
+    style board fill:#1a1a2e,stroke:#888,stroke-width:2px,color:#eee
+    style inputs fill:#1e2a1e,stroke:#00ff88,stroke-width:2px,color:#eee
+    style outputs fill:#2a2a1e,stroke:#ffcc00,stroke-width:2px,color:#eee
+    style leds fill:#2a1e2a,stroke:#cc88ff,stroke-width:2px,color:#eee
+    style bottom fill:#222,stroke:#666,stroke-width:1px,color:#aaa
+    style P2 fill:#333,stroke:#00ff88,color:#eee
+    style P3 fill:#333,stroke:#00ff88,color:#eee
+    style P4 fill:#333,stroke:#00ff88,color:#eee
+    style GND_IN fill:#333,stroke:#ff6666,color:#eee
+    style P5 fill:#333,stroke:#ffcc00,color:#eee
+    style P6 fill:#333,stroke:#ffcc00,color:#eee
+    style P7 fill:#333,stroke:#ffcc00,color:#eee
+    style GND_OUT fill:#333,stroke:#ff6666,color:#eee
+    style LED fill:#333,stroke:#cc88ff,color:#eee
+    style BP fill:#333,stroke:#666,color:#aaa
