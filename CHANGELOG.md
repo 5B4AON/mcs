@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-03-02
+
+### Added
+
+- **MIDI Output** — new character-based output in the Outputs settings tab.
+  Select a MIDI device, channel, velocity, and assign three output notes
+  (Straight Key, Dit Paddle, Dah Paddle) using a note/octave picker or
+  raw 0–127 value entry. Decoded characters from **any input source** are
+  played back as individual morse elements (dits and dahs) at the Encoder
+  WPM speed — similar to WinKeyer output. Works with encoder text, keyer
+  paddles, straight key, audio inputs, MIDI input, and Firebase RTDB.
+  For straight key sources, the raw hand-timed morse is decoded into
+  characters and replayed with clean timing. Requires Chrome or Edge
+  (Web MIDI API).
+- **MIDI Output help documentation** — new §7.4 in the help chapter
+  covering character-based operation, all input source support, three
+  output notes, independent lifecycle, settings, browser requirements,
+  and worked examples (Arduino keyer, bidirectional interface, straight
+  key clean-up).
+
+### Changed
+
+- **MIDI Output independent of audio** — MIDI output starts
+  independently when enabled and is not tied to Start / Stop Audio.
+  This avoids USB MIDI device locking issues caused by rapid
+  teardown and re-request of MIDI access during browser refresh.
+- **Help section renumbering** — Sidetone is now §7.5, Vibration §7.6,
+  and Loop Detection §7.7 (previously §7.4 / §7.5 / §7.6) to
+  accommodate the new §7.4 MIDI Output section.
+
 ## [0.9.0] - 2026-03-02
 
 ### Added

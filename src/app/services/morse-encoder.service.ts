@@ -11,6 +11,7 @@ import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { VibrationOutputService } from './vibration-output.service';
 import { WinkeyerOutputService } from './winkeyer-output.service';
+import { MidiOutputService } from './midi-output.service';
 import { FirebaseRtdbService } from './firebase-rtdb.service';
 import { LoopDetectionService } from './loop-detection.service';
 
@@ -59,6 +60,7 @@ export class MorseEncoderService {
     private audioOutput: AudioOutputService,
     private serialOutput: SerialKeyOutputService,
     private vibrationOutput: VibrationOutputService,
+    private midiOutput: MidiOutputService,
     private winkeyerOutput: WinkeyerOutputService,
     private rtdbOutput: FirebaseRtdbService,
     private loopDetection: LoopDetectionService,
@@ -148,6 +150,9 @@ export class MorseEncoderService {
 
         // Forward to WinKeyer (as TX source) — WinKeyer handles its own timing
         this.winkeyerOutput.forwardDecodedChar(char, 'tx');
+
+        // Forward to MIDI output (as TX source) — plays elements at encoder WPM
+        this.midiOutput.forwardDecodedChar(char, 'tx');
 
         // Forward to Firebase RTDB output (as TX source)
         this.rtdbOutput.forwardEncoderChar(char, this.settings.settings().encoderWpm);

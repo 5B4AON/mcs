@@ -16,6 +16,7 @@ import { SerialKeyOutputService } from './services/serial-key-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { MidiInputService, midiNoteName } from './services/midi-input.service';
+import { MidiOutputService, midiOutputNoteName } from './services/midi-output.service';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
 
 /**
@@ -110,6 +111,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     public winkeyerOutput: WinkeyerOutputService,
     public rtdbService: FirebaseRtdbService,
     public midiInput: MidiInputService,
+    public midiOutput: MidiOutputService,
   ) {}
 
   ngOnInit(): void {
@@ -482,5 +484,86 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   midiNoteDisplay(note: number): string {
     if (note < 0) return '(none)';
     return `${midiNoteName(note)} (${note})`;
+  }
+
+  /** Display a MIDI output note number as a human-readable name */
+  midiOutputNoteDisplay(note: number): string {
+    if (note < 0) return '(none)';
+    return `${midiOutputNoteName(note)} (${note})`;
+  }
+
+  // ---- MIDI Output handlers ----
+
+  /** Note names for the MIDI output note picker dropdowns */
+  readonly noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
+  /** Octave range for MIDI output picker (-1 to 9) */
+  readonly octaves = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+  /** Whether to show the raw 0-127 input for each MIDI output note (vs note/octave picker) */
+  midiOutputRawMode: Record<string, boolean> = {};
+
+  /** Get note name index (0-11) from a MIDI note number */
+  midiOutputNoteNameIndex(note: number): number {
+    return note >= 0 ? note % 12 : 0;
+  }
+
+  /** Get octave from a MIDI note number */
+  midiOutputNoteOctave(note: number): number {
+    return note >= 0 ? Math.floor(note / 12) - 1 : 4;
+  }
+
+  /** Update a MIDI output note from the note name picker */
+  onMidiOutputNoteNameChange(settingKey: string, event: Event): void {
+    const nameIdx = parseInt((event.target as HTMLSelectElement).value, 10);
+    const current = (this.settings.settings() as any)[settingKey] as number;
+    const octave = current >= 0 ? Math.floor(current / 12) - 1 : 4;
+    const note = (octave + 1) * 12 + nameIdx;
+    if (note >= 0 && note <= 127) {
+      this.settings.update({ [settingKey]: note } as Partial<AppSettings>);
+    }
+  }
+
+  /** Update a MIDI output note from the octave picker */
+  onMidiOutputOctaveChange(settingKey: string, event: Event): void {
+    const octave = parseInt((event.target as HTMLSelectElement).value, 10);
+    const current = (this.settings.settings() as any)[settingKey] as number;
+    const nameIdx = current >= 0 ? current % 12 : 0;
+    const note = (octave + 1) * 12 + nameIdx;
+    if (note >= 0 && note <= 127) {
+      this.settings.update({ [settingKey]: note } as Partial<AppSettings>);
+    }
+  }
+
+  /** Update a MIDI output note from raw 0-127 input */
+  onMidiOutputRawNoteChange(settingKey: string, event: Event): void {
+    const value = parseInt((event.target as HTMLInputElement).value, 10);
+    if (!isNaN(value) && value >= 0 && value <= 127) {
+      this.settings.update({ [settingKey]: value } as Partial<AppSettings>);
+    }
+  }
+
+  /** Toggle between note/octave picker and raw value for a MIDI output note */
+  toggleMidiOutputRawMode(key: string): void {
+    this.midiOutputRawMode[key] = !this.midiOutputRawMode[key];
+  }
+
+  async onMidiOutputEnabledChange(event: Event): Promise<void> {
+    const checked = (event.target as HTMLInputElement).checked;
+    if (checked && !this.midiOutput.supported) {
+      (event.target as HTMLInputElement).checked = false;
+      return;
+    }
+    this.settings.update({ midiOutputEnabled: checked });
+    if (checked) {
+      await this.midiOutput.start();
+    } else {
+      this.midiOutput.shutdown();
+    }
+  }
+
+  onMidiOutputDeviceChange(event: Event): void {
+    const value = (event.target as HTMLSelectElement).value;
+    this.settings.update({ midiOutputDeviceId: value });
+    this.midiOutput.reattach();
   }
 }

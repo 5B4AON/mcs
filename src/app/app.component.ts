@@ -12,6 +12,7 @@ import { AudioDeviceService } from './services/audio-device.service';
 import { SerialKeyOutputService } from './services/serial-key-output.service';
 import { MouseKeyerService } from './services/mouse-keyer.service';
 import { MidiInputService } from './services/midi-input.service';
+import { MidiOutputService } from './services/midi-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
@@ -121,6 +122,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public serialOutput: SerialKeyOutputService,
     public mouseKeyer: MouseKeyerService,
     public midiInput: MidiInputService,
+    public midiOutput: MidiOutputService,
     public winkeyerOutput: WinkeyerOutputService,
     public rtdbService: FirebaseRtdbService,
     public displayBuffers: DisplayBufferService,
@@ -154,6 +156,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
           // Forward to WinKeyer (all entries including RTDB-sourced)
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
+
+          // Forward to MIDI output (all entries — plays elements at encoder WPM)
+          this.midiOutput.forwardDecodedChar(entry.char, entry.type);
 
           // Forward to RTDB output only for non-RTDB chars (prevent echo)
           if (!entry.fromRtdb) {
@@ -255,6 +260,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // user gesture is needed. start() is idempotent (no-op if already started).
     if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
       this.midiInput.start();
+    }
+
+    // Start MIDI output independently if enabled
+    if (this.settings.settings().midiOutputEnabled && this.midiOutput.supported) {
+      this.midiOutput.start();
     }
 
     // Auto-reconnect audio if it was running before the page reload.
@@ -369,7 +379,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       await this.cwInput.start();
       await this.audioOutput.start();
-      // Start MIDI independently — fire-and-forget so MIDI issues
+      // Start MIDI input independently — fire-and-forget so MIDI issues
       // can never block audio from starting
       if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
         this.midiInput.start().catch(() => {});

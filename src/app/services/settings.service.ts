@@ -163,6 +163,23 @@ export interface AppSettings {
   /** Reverse paddles for MIDI paddle input */
   midiReversePaddles: boolean;
 
+  // --- MIDI Output ---
+  midiOutputEnabled: boolean;
+  /** MIDI output device ID (empty = first available) */
+  midiOutputDeviceId: string;
+  /** MIDI channel for output (1-16) */
+  midiOutputChannel: number;
+  /** MIDI note number for straight key output (-1 = not assigned) */
+  midiOutputStraightKeyNote: number;
+  /** MIDI note number for dit paddle output (-1 = not assigned) */
+  midiOutputDitNote: number;
+  /** MIDI note number for dah paddle output (-1 = not assigned) */
+  midiOutputDahNote: number;
+  /** MIDI velocity for note-on messages (0-127, default 127) */
+  midiOutputVelocity: number;
+  /** Output forwarding mode: which signal source drives MIDI output */
+  midiOutputForward: OutputForward;
+
   // --- Firebase RTDB Input ---
   rtdbInputEnabled: boolean;
   /** Decoder source: which pool RTDB input characters are tagged with ('rx' or 'tx') */
@@ -290,6 +307,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   midiDitNote: -1,
   midiDahNote: -1,
   midiReversePaddles: false,
+
+  midiOutputEnabled: false,
+  midiOutputDeviceId: '',
+  midiOutputChannel: 1,
+  midiOutputStraightKeyNote: 60,
+  midiOutputDitNote: 62,
+  midiOutputDahNote: 64,
+  midiOutputVelocity: 127,
+  midiOutputForward: 'both',
 
   rtdbInputEnabled: false,
   rtdbInputSource: 'rx',

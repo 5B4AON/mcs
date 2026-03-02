@@ -268,8 +268,149 @@
   </p>
 </div>
 
-<!-- 7.4 Sidetone -->
-<h2 id="s7-4">7.4 &nbsp;Sidetone (Speaker Audio)</h2>
+<!-- 7.4 MIDI Output -->
+<h2 id="s7-4">7.4 &nbsp;MIDI Output (Key via MIDI)</h2>
+
+<p>
+  The MIDI output sends <strong>note-on</strong> and <strong>note-off</strong>
+  messages to a MIDI device for each decoded character's morse elements.
+  Unlike the serial and audio outputs which key in real time with the input,
+  MIDI output is <strong>character-based</strong> &mdash; it receives decoded
+  characters and <em>plays them back</em> as individual dits and dahs using
+  the <strong>Encoder WPM</strong> timing setting. This is similar to how
+  WinKeyer output (&sect;7.3) works: the application sends characters, and
+  the output produces properly timed morse elements.
+</p>
+
+<h3>All Input Sources Supported</h3>
+<p>
+  MIDI output works with <strong>every input type</strong>:
+</p>
+<ul>
+  <li><strong>Encoder (typed text)</strong> &mdash; Characters are forwarded
+      directly from the encoder send loop for real-time TX playback.</li>
+  <li><strong>Keyer paddles</strong> (keyboard, mouse, touch) &mdash;
+      Characters are decoded first, then forwarded and played back at
+      encoder WPM timing.</li>
+  <li><strong>Straight key</strong> (keyboard, mouse, touch) &mdash;
+      The operator's raw keying is decoded into characters, which are then
+      played back as clean dits and dahs at encoder WPM &mdash; effectively
+      "cleaning up" the timing.</li>
+  <li><strong>Audio inputs</strong> (mic pilot tone, CW tone detector)
+      &mdash; Decoded characters are played back at encoder WPM.</li>
+  <li><strong>MIDI input</strong> &mdash; Decoded characters from incoming
+      MIDI are played back on the MIDI output.</li>
+  <li><strong>Firebase RTDB</strong> &mdash; Characters received from a
+      remote station are played back at encoder WPM.</li>
+</ul>
+
+<h3>Intended Use Case</h3>
+<p>
+  Connect an <strong>Arduino Pro Micro</strong> (or similar ATmega32U4
+  board) running the <strong>MIDIUSB library</strong>. The Arduino
+  appears as a native USB MIDI device &mdash; no drivers needed. The Arduino
+  sketch monitors incoming MIDI notes and maps them to digital output
+  pins, which in turn drive keying circuits, paddle jacks, or relay
+  boards. Combined with MIDI Input (&sect;6.6), the same Arduino can
+  provide bidirectional real-time interfacing with the application.
+</p>
+
+<h3>Three Output Notes</h3>
+<p>
+  Each decoded character is broken into its morse elements (dits and dahs).
+  During each element, one or more MIDI notes are held:
+</p>
+<ul>
+  <li><strong>Straight Key</strong> &mdash; Note-on during <em>every</em>
+      element (dit or dah), note-off during the gap between elements.
+      Provides a single "key down / key up" signal for simple keying
+      circuits.</li>
+  <li><strong>Dit Paddle</strong> &mdash; Note-on during dit elements only.
+      Allows the Arduino to distinguish dit from dah.</li>
+  <li><strong>Dah Paddle</strong> &mdash; Note-on during dah elements only.</li>
+</ul>
+<p>
+  During a dit element, both the Straight Key and Dit Paddle notes fire
+  simultaneously. During a dah element, the Straight Key and Dah Paddle
+  notes fire together. The Arduino can use just the straight key note for
+  simple keying, or the individual paddle notes for more advanced control.
+</p>
+
+<h3>Independent Lifecycle</h3>
+<p>
+  MIDI output starts independently when enabled &mdash; it is
+  <strong>not tied to the audio start/stop</strong> button. This avoids
+  issues with USB MIDI devices (which can become locked when MIDI access
+  is rapidly torn down and re-requested, such as during a browser refresh).
+  The browser remembers the MIDI access grant across sessions, so MIDI
+  output reconnects automatically on page load.
+</p>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Forward</strong> &mdash; Which signal sources drive the MIDI
+      output: TX only, RX only, or Both.</li>
+  <li><strong>MIDI Device</strong> &mdash; Select the target MIDI output
+      device. &ldquo;Any (first available)&rdquo; uses the first connected
+      output.</li>
+  <li><strong>MIDI Channel</strong> &mdash; Output channel (1&ndash;16).</li>
+  <li><strong>Velocity</strong> &mdash; Note-on velocity (1&ndash;127).
+      Default is 127 (maximum intensity).</li>
+  <li><strong>Note assignments</strong> &mdash; Each output (Straight Key,
+      Dit Paddle, Dah Paddle) has a configurable MIDI note. Use the
+      note/octave picker or click <strong>#</strong> to switch to raw
+      0&ndash;127 value entry.</li>
+  <li><strong>Test Output</strong> &mdash; Sends a 1-second note-on/off on
+      the Straight Key note to verify the connection.</li>
+</ul>
+
+<h3>Browser Requirements</h3>
+<ul>
+  <li>Requires a <strong>Chromium-based browser</strong> (Chrome, Edge,
+      Opera). Firefox and Safari do not support the Web MIDI API.</li>
+  <li>The browser prompts for MIDI access permission the first time.
+      The grant is remembered across sessions.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example — Arduino Pro Micro MIDI keyer</div>
+  <p>
+    Flash an Arduino Pro Micro with a MIDIUSB sketch that reads incoming
+    MIDI notes and drives pins 2, 3, and 4 (straight key, dit, dah).
+    In Outputs &rarr; MIDI Output, select the Arduino MIDI device, set
+    Channel 1, and assign notes C4 (60), D4 (62), E4 (64) to the three
+    outputs. Enable MIDI Output. When you send text via the Encoder or
+    key with any input, the decoded characters are played back as properly
+    timed morse elements on the Arduino&rsquo;s output pins.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Example — Bidirectional MIDI interface</div>
+  <p>
+    Enable both MIDI Input (&sect;6.6) and MIDI Output on the same
+    Arduino. The Arduino reads physical paddle switches and sends MIDI
+    notes to the app (input), while the app decodes those key events into
+    characters and plays them back on the MIDI output to drive an LED,
+    buzzer, or relay. This creates a complete hardware interface with no
+    serial port drivers or custom protocols needed.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Example — Straight key clean-up</div>
+  <p>
+    Connect a straight key via any input method (keyboard, MIDI input, or
+    audio). The app decodes the operator&rsquo;s hand-timed morse into characters.
+    MIDI output then replays those characters as perfectly timed dits and
+    dahs at the configured Encoder WPM speed &mdash; effectively
+    &ldquo;cleaning up&rdquo; the timing before it reaches the keying
+    hardware.
+  </p>
+</div>
+
+<!-- 7.5 Sidetone -->
+<h2 id="s7-5">7.5 &nbsp;Sidetone (Speaker Audio)</h2>
 
 <p>
   The sidetone is the audible tone you hear through your speakers or
@@ -297,8 +438,8 @@
   <li><strong>Active on</strong> — TX only, RX only, or Both (see above).</li>
 </ul>
 
-<!-- 7.5 Vibration -->
-<h2 id="s7-5">7.5 &nbsp;Vibration (Haptic Feedback)</h2>
+<!-- 7.6 Vibration -->
+<h2 id="s7-6">7.6 &nbsp;Vibration (Haptic Feedback)</h2>
 
 <p>
   The vibration output mirrors the sidetone: the device vibrates while the
@@ -332,8 +473,8 @@
   it if you notice any timing artefacts on your device.
 </p>
 
-<!-- 7.6 Loop Detection -->
-<h2 id="s7-6">7.6 &nbsp;Loop Detection</h2>
+<!-- 7.7 Loop Detection -->
+<h2 id="s7-7">7.7 &nbsp;Loop Detection</h2>
 
 <p>
   When an output is configured to activate on RX signals, and the resulting

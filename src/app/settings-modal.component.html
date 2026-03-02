@@ -1098,6 +1098,184 @@
           }
         </div>
 
+        <!-- ===== 2d. MIDI OUTPUT ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().midiOutputEnabled">
+          <div class="settings-card-header" (click)="toggleSection('midiOutput')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('midiOutput') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">MIDI Output</span>
+              <span class="settings-card-subtitle">Key via MIDI</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().midiOutputEnabled"
+                     [disabled]="!midiOutput.supported"
+                     (change)="onMidiOutputEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('midiOutput')) {
+            <div class="settings-card-body">
+              @if (!midiOutput.supported) {
+                <div class="conflict-warning">
+                  Web MIDI API is not supported in this browser. Use Chrome or Edge.
+                </div>
+              }
+
+              @if (midiOutput.lastError()) {
+                <div class="conflict-warning">{{ midiOutput.lastError() }}</div>
+              }
+
+              <label>Forward:
+                <select [value]="settings.settings().midiOutputForward"
+                        (change)="onSettingChange('midiOutputForward', $event)">
+                  <option value="tx" [selected]="settings.settings().midiOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().midiOutputForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="both" [selected]="settings.settings().midiOutputForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
+              <label>MIDI Device:
+                <select [value]="settings.settings().midiOutputDeviceId" (change)="onMidiOutputDeviceChange($event)">
+                  <option value="">Any (first available)</option>
+                  @for (dev of midiOutput.midiOutputs(); track dev.id) {
+                    <option [value]="dev.id" [selected]="dev.id === settings.settings().midiOutputDeviceId">{{ dev.name }}</option>
+                  }
+                </select>
+              </label>
+
+              <label>MIDI Channel:
+                <select [value]="settings.settings().midiOutputChannel" (change)="onSettingChange('midiOutputChannel', $event)">
+                  @for (ch of midiChannels; track ch) {
+                    <option [value]="ch" [selected]="ch === settings.settings().midiOutputChannel">Channel {{ ch }}</option>
+                  }
+                </select>
+              </label>
+
+              <label>Velocity:
+                <input type="number" min="1" max="127" [value]="settings.settings().midiOutputVelocity"
+                       (change)="onSettingChange('midiOutputVelocity', $event)">
+              </label>
+
+              <!-- Straight Key Note -->
+              <div class="midi-output-note-row">
+                <span class="midi-output-note-label">Straight Key:</span>
+                @if (!midiOutputRawMode['midiOutputStraightKeyNote']) {
+                  <select class="midi-note-select"
+                          [value]="midiOutputNoteNameIndex(settings.settings().midiOutputStraightKeyNote)"
+                          (change)="onMidiOutputNoteNameChange('midiOutputStraightKeyNote', $event)">
+                    @for (name of noteNames; track $index) {
+                      <option [value]="$index">{{ name }}</option>
+                    }
+                  </select>
+                  <select class="midi-octave-select"
+                          [value]="midiOutputNoteOctave(settings.settings().midiOutputStraightKeyNote)"
+                          (change)="onMidiOutputOctaveChange('midiOutputStraightKeyNote', $event)">
+                    @for (oct of octaves; track oct) {
+                      <option [value]="oct">{{ oct }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input type="number" class="midi-raw-input" min="0" max="127"
+                         [value]="settings.settings().midiOutputStraightKeyNote"
+                         (change)="onMidiOutputRawNoteChange('midiOutputStraightKeyNote', $event)">
+                }
+                <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputStraightKeyNote')"
+                        title="Toggle between note/octave picker and raw MIDI value">
+                  {{ midiOutputRawMode['midiOutputStraightKeyNote'] ? '&#9835;' : '#' }}
+                </button>
+                <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputStraightKeyNote) }}</span>
+              </div>
+
+              <!-- Dit Paddle Note -->
+              <div class="midi-output-note-row">
+                <span class="midi-output-note-label">Dit Paddle:</span>
+                @if (!midiOutputRawMode['midiOutputDitNote']) {
+                  <select class="midi-note-select"
+                          [value]="midiOutputNoteNameIndex(settings.settings().midiOutputDitNote)"
+                          (change)="onMidiOutputNoteNameChange('midiOutputDitNote', $event)">
+                    @for (name of noteNames; track $index) {
+                      <option [value]="$index">{{ name }}</option>
+                    }
+                  </select>
+                  <select class="midi-octave-select"
+                          [value]="midiOutputNoteOctave(settings.settings().midiOutputDitNote)"
+                          (change)="onMidiOutputOctaveChange('midiOutputDitNote', $event)">
+                    @for (oct of octaves; track oct) {
+                      <option [value]="oct">{{ oct }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input type="number" class="midi-raw-input" min="0" max="127"
+                         [value]="settings.settings().midiOutputDitNote"
+                         (change)="onMidiOutputRawNoteChange('midiOutputDitNote', $event)">
+                }
+                <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputDitNote')"
+                        title="Toggle between note/octave picker and raw MIDI value">
+                  {{ midiOutputRawMode['midiOutputDitNote'] ? '&#9835;' : '#' }}
+                </button>
+                <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputDitNote) }}</span>
+              </div>
+
+              <!-- Dah Paddle Note -->
+              <div class="midi-output-note-row">
+                <span class="midi-output-note-label">Dah Paddle:</span>
+                @if (!midiOutputRawMode['midiOutputDahNote']) {
+                  <select class="midi-note-select"
+                          [value]="midiOutputNoteNameIndex(settings.settings().midiOutputDahNote)"
+                          (change)="onMidiOutputNoteNameChange('midiOutputDahNote', $event)">
+                    @for (name of noteNames; track $index) {
+                      <option [value]="$index">{{ name }}</option>
+                    }
+                  </select>
+                  <select class="midi-octave-select"
+                          [value]="midiOutputNoteOctave(settings.settings().midiOutputDahNote)"
+                          (change)="onMidiOutputOctaveChange('midiOutputDahNote', $event)">
+                    @for (oct of octaves; track oct) {
+                      <option [value]="oct">{{ oct }}</option>
+                    }
+                  </select>
+                } @else {
+                  <input type="number" class="midi-raw-input" min="0" max="127"
+                         [value]="settings.settings().midiOutputDahNote"
+                         (change)="onMidiOutputRawNoteChange('midiOutputDahNote', $event)">
+                }
+                <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputDahNote')"
+                        title="Toggle between note/octave picker and raw MIDI value">
+                  {{ midiOutputRawMode['midiOutputDahNote'] ? '&#9835;' : '#' }}
+                </button>
+                <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputDahNote) }}</span>
+              </div>
+
+              <div class="cw-hint">
+                Decoded characters from any input are played back as individual
+                morse elements (dits and dahs) at Encoder WPM speed. Ideal for an
+                Arduino Pro Micro with MIDIUSB library &mdash; the Arduino's digital
+                pins can be wired to keying circuits.<br><br>
+                <strong>Straight Key</strong> note fires during every element (dit or dah).
+                <strong>Dit Paddle</strong> fires during dits only.
+                <strong>Dah Paddle</strong> fires during dahs only.
+                During each element, both the Straight Key and the element-specific
+                note fire simultaneously.<br><br>
+                Use the <strong>&#9835;</strong> button to switch between note/octave picker
+                and raw 0&ndash;127 value entry. Velocity defaults to 127 (maximum).
+              </div>
+
+              <button [disabled]="!midiOutput.connected()"
+                      (click)="midiOutput.test()" class="test-btn">
+                Test Output (1s)
+              </button>
+
+              <div class="serial-port-row">
+                @if (midiOutput.connected()) {
+                  <span class="serial-status connected">&#x2714; Connected</span>
+                } @else if (settings.settings().midiOutputEnabled) {
+                  <span class="serial-status">&#x2716; Not connected</span>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
         <!-- ===== 3. SIDETONE / SPEAKER ===== -->
         <div class="settings-card" [class.disabled-card]="!settings.settings().sidetoneEnabled">
           <div class="settings-card-header" (click)="toggleSection('sidetone')">
