@@ -4,7 +4,7 @@
  * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
  */
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { PROSIGN_TO_PUNCTUATION } from '../morse-table';
 
@@ -98,14 +98,30 @@ export class WinkeyerOutputService {
   /** Background reader loop abort flag */
   private readLoopRunning = false;
 
+  /** Bound handler for navigator.serial connect events */
+  private readonly onSerialConnect = () => this.handleSerialConnect();
+
+  /** Bound handler for port disconnect events (bound per-port in open()) */
+  private portDisconnectHandler: (() => void) | null = null;
+
+  /** Whether auto-reconnect is in progress */
+  private reconnecting = false;
+
   /** Latest status byte from WinKeyer */
   readonly status = signal(0);
 
   /** Whether WinKeyer is currently sending (busy bit in status) */
   readonly busy = signal(false);
 
-  constructor(private settings: SettingsService) {
+  constructor(
+    private settings: SettingsService,
+    private zone: NgZone,
+  ) {
     this.refreshPorts();
+    // Listen for newly connected serial devices for auto-reconnect
+    if ('serial' in navigator) {
+      navigator.serial.addEventListener('connect', this.onSerialConnect);
+    }
   }
 
   // ---- Port Management ----
@@ -188,6 +204,26 @@ export class WinkeyerOutputService {
 
       this.activePort = port;
 
+      // Listen for physical disconnection of this port
+      this.portDisconnectHandler = () => {
+        this.zone.run(() => {
+          this.readLoopRunning = false;
+          try { this.reader?.cancel(); } catch { /* ignore */ }
+          try { this.reader?.releaseLock(); } catch { /* ignore */ }
+          this.reader = null;
+          try { this.writer?.releaseLock(); } catch { /* ignore */ }
+          this.writer = null;
+          this.activePort = null;
+          this.connected.set(false);
+          this.firmwareVersion.set(0);
+          this.status.set(0);
+          this.busy.set(false);
+          this.portDisconnectHandler = null;
+          this.refreshPorts();
+        });
+      };
+      port.addEventListener('disconnect', this.portDisconnectHandler);
+
       // Get writer
       if (!port.writable) {
         throw new Error('Port opened but writable stream not available.');
@@ -224,6 +260,12 @@ export class WinkeyerOutputService {
    */
   async close(): Promise<void> {
     if (!this.activePort) return;
+
+    // Remove disconnect listener
+    if (this.portDisconnectHandler) {
+      this.activePort.removeEventListener('disconnect', this.portDisconnectHandler);
+      this.portDisconnectHandler = null;
+    }
 
     try {
       // Clear any pending text
@@ -444,5 +486,29 @@ export class WinkeyerOutputService {
 
   private sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
+  }
+
+  /**
+   * Handle a serial device being physically connected.
+   * If the service is enabled and currently disconnected, attempt to
+   * re-open the configured port after a short settling delay.
+   */
+  private handleSerialConnect(): void {
+    if (!this.settings.settings().winkeyerEnabled) return;
+    if (this.connected()) return;
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+    // Allow the port to settle before attempting to open
+    setTimeout(async () => {
+      try {
+        await this.refreshPorts();
+        const idx = this.settings.settings().winkeyerPortIndex;
+        if (idx >= 0 && idx < this.ports().length && !this.connected()) {
+          await this.open(idx);
+        }
+      } finally {
+        this.reconnecting = false;
+      }
+    }, 1000);
   }
 }

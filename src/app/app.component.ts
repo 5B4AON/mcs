@@ -257,16 +257,27 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
-    // Start MIDI independently of audio — it must survive audio failures.
-    // On page refresh Chrome remembers the MIDI permission grant, so no
-    // user gesture is needed. start() is idempotent (no-op if already started).
-    if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
-      this.midiInput.start();
+    // MIDI cannot reliably auto-reconnect after a browser refresh because
+    // Chrome's MIDI subsystem returns stale/empty data from requestMIDIAccess().
+    // Disable MIDI on page load so the user must explicitly re-enable it.
+    // Their settings (device, channel, notes) are preserved — only the
+    // enabled flag is cleared.
+    if (this.settings.settings().midiInputEnabled) {
+      this.settings.update({ midiInputEnabled: false });
+    }
+    if (this.settings.settings().midiOutputEnabled) {
+      this.settings.update({ midiOutputEnabled: false });
     }
 
-    // Start MIDI output independently if enabled
-    if (this.settings.settings().midiOutputEnabled && this.midiOutput.supported) {
-      this.midiOutput.start();
+    // Auto-open Serial Key Output if enabled — Chrome remembers previously
+    // granted serial ports across page refreshes via getPorts().
+    if (this.settings.settings().serialEnabled && 'serial' in navigator) {
+      this.autoOpenSerial();
+    }
+
+    // Auto-open WinKeyer if enabled
+    if (this.settings.settings().winkeyerEnabled && 'serial' in navigator) {
+      this.autoOpenWinkeyer();
     }
 
     // Auto-reconnect audio if it was running before the page reload.
@@ -357,11 +368,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         await this.cwInput.start();
         await this.audioOutput.start();
-        // Start MIDI independently — fire-and-forget so MIDI issues
-        // can never block audio from starting
-        if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
-          this.midiInput.start().catch(() => {});
-        }
         this.audioRunning = true;
         localStorage.setItem('morseAudioRunning', '1');
         await this.refreshDeviceConfig();
@@ -384,11 +390,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       await this.cwInput.start();
       await this.audioOutput.start();
-      // Start MIDI input independently — fire-and-forget so MIDI issues
-      // can never block audio from starting
-      if (this.settings.settings().midiInputEnabled && this.midiInput.supported) {
-        this.midiInput.start().catch(() => {});
-      }
       this.audioRunning = true;
       await this.refreshDeviceConfig();
     } catch {
@@ -397,6 +398,47 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.audioRunning = false;
     } finally {
       this.audioStarting = false;
+    }
+  }
+
+  /**
+   * Auto-open Serial Key Output after a browser refresh.
+   * Chrome remembers previously granted serial ports via getPorts().
+   * The port list may not be immediately available, so we retry.
+   */
+  private async autoOpenSerial(): Promise<void> {
+    const idx = this.settings.settings().serialPortIndex;
+    if (idx < 0) return;
+
+    // Retry with increasing delays — getPorts() can return an empty list
+    // immediately after page load before the USB subsystem is fully enumerated.
+    for (const delay of [0, 500, 1500, 3000]) {
+      if (delay > 0) await new Promise(r => setTimeout(r, delay));
+      if (this.serialOutput.connected()) return; // Already connected
+      await this.serialOutput.refreshPorts();
+      if (idx < this.serialOutput.ports().length) {
+        await this.serialOutput.open(idx);
+        if (this.serialOutput.connected()) return;
+      }
+    }
+  }
+
+  /**
+   * Auto-open WinKeyer after a browser refresh.
+   * Chrome remembers previously granted serial ports via getPorts().
+   */
+  private async autoOpenWinkeyer(): Promise<void> {
+    const idx = this.settings.settings().winkeyerPortIndex;
+    if (idx < 0) return;
+
+    for (const delay of [0, 500, 1500, 3000]) {
+      if (delay > 0) await new Promise(r => setTimeout(r, delay));
+      if (this.winkeyerOutput.connected()) return;
+      await this.winkeyerOutput.refreshPorts();
+      if (idx < this.winkeyerOutput.ports().length) {
+        await this.winkeyerOutput.open(idx);
+        if (this.winkeyerOutput.connected()) return;
+      }
     }
   }
 

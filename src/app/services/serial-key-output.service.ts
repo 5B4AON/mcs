@@ -4,7 +4,7 @@
  * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
  */
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 
 export type SerialPin = 'dtr' | 'rts';
@@ -57,8 +57,24 @@ export class SerialKeyOutputService {
   /** Track current key state for idempotency */
   private keyIsDown = false;
 
-  constructor(private settings: SettingsService) {
+  /** Bound handler for navigator.serial connect events */
+  private readonly onSerialConnect = () => this.handleSerialConnect();
+
+  /** Bound handler for port disconnect events (bound per-port in open()) */
+  private portDisconnectHandler: (() => void) | null = null;
+
+  /** Whether auto-reconnect is in progress */
+  private reconnecting = false;
+
+  constructor(
+    private settings: SettingsService,
+    private zone: NgZone,
+  ) {
     this.refreshPorts();
+    // Listen for newly connected serial devices for auto-reconnect
+    if ('serial' in navigator) {
+      navigator.serial.addEventListener('connect', this.onSerialConnect);
+    }
   }
 
   /** Refresh the list of previously-granted serial ports */
@@ -124,6 +140,18 @@ export class SerialKeyOutputService {
       this.connected.set(true);
       this.lastError.set(null);
 
+      // Listen for physical disconnection of this port
+      this.portDisconnectHandler = () => {
+        this.zone.run(() => {
+          this.activePort = null;
+          this.connected.set(false);
+          this.keyIsDown = false;
+          this.portDisconnectHandler = null;
+          this.refreshPorts();
+        });
+      };
+      port.addEventListener('disconnect', this.portDisconnectHandler);
+
       // Set initial state (active when inverted, inactive when normal)
       const s = this.settings.settings();
       const idle = s.serialInvert;
@@ -141,6 +169,11 @@ export class SerialKeyOutputService {
   /** Close the active serial port */
   async close(): Promise<void> {
     if (!this.activePort) return;
+    // Remove disconnect listener
+    if (this.portDisconnectHandler) {
+      this.activePort.removeEventListener('disconnect', this.portDisconnectHandler);
+      this.portDisconnectHandler = null;
+    }
     try {
       // Ensure key-up before closing
       if (this.keyIsDown) {
@@ -236,5 +269,29 @@ export class SerialKeyOutputService {
       return `USB Serial (VID:${info.usbVendorId.toString(16).padStart(4, '0')} PID:${info.usbProductId?.toString(16).padStart(4, '0') ?? '????'})`;
     }
     return 'Serial Port';
+  }
+
+  /**
+   * Handle a serial device being physically connected.
+   * If the service is enabled and currently disconnected, attempt to
+   * re-open the configured port after a short settling delay.
+   */
+  private handleSerialConnect(): void {
+    if (!this.settings.settings().serialEnabled) return;
+    if (this.connected()) return;
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+    // Allow the port to settle before attempting to open
+    setTimeout(async () => {
+      try {
+        await this.refreshPorts();
+        const idx = this.settings.settings().serialPortIndex;
+        if (idx >= 0 && idx < this.ports().length && !this.connected()) {
+          await this.open(idx);
+        }
+      } finally {
+        this.reconnecting = false;
+      }
+    }, 1000);
   }
 }

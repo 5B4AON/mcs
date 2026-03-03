@@ -131,31 +131,12 @@ export class MidiInputService implements OnDestroy {
       this.started = true;
       this.lastError.set('');
 
-      // Install state-change handler FIRST — before any enumeration.
-      // On a fresh page load Chrome may still be transitioning ports from
-      // 'disconnected' to 'connected'. If we enumerate first and install
-      // the handler second, we can miss the transition event entirely.
-      this.midiAccess!.onstatechange = () => {
-        this.zone.run(() => this.refreshInputs());
-        this.attachListeners();
-      };
+      // Install state-change handler — handles hot-plug of MIDI devices
+      this.installStateChangeHandler();
 
-      // Now enumerate whatever is already available
+      // Enumerate whatever is already available
       this.refreshInputs();
       this.attachListeners();
-
-      // Some browsers (Chrome) need a moment after requestMIDIAccess()
-      // before all ports have transitioned to 'connected'. If the initial
-      // enumeration found nothing, retry after a short delay to catch
-      // ports that were still settling.
-      if (this.midiInputs().length === 0) {
-        setTimeout(() => {
-          if (this.started && this.midiAccess) {
-            this.zone.run(() => this.refreshInputs());
-            this.attachListeners();
-          }
-        }, 500);
-      }
 
       // Keep-alive: periodically re-attach listeners to prevent browser
       // throttling from silently dropping MIDI event handlers
@@ -231,6 +212,29 @@ export class MidiInputService implements OnDestroy {
     if (this.started) {
       this.attachListeners();
     }
+  }
+
+  /**
+   * Install the onstatechange handler on the current MIDIAccess object.
+   * Extracted into its own method so it can be reused after re-acquisition.
+   */
+  private installStateChangeHandler(): void {
+    if (!this.midiAccess) return;
+    this.midiAccess.onstatechange = () => {
+      this.zone.run(() => this.refreshInputs());
+      this.attachListeners();
+      // Retry after short delays for ports that need time to settle
+      // after a physical reconnection. Some browsers report the port
+      // as 'connected' before it's actually ready to open.
+      for (const delay of [500, 1500]) {
+        setTimeout(() => {
+          if (this.started && this.midiAccess) {
+            this.zone.run(() => this.refreshInputs());
+            this.attachListeners();
+          }
+        }, delay);
+      }
+    };
   }
 
   // ---- Internal ----
@@ -402,20 +406,13 @@ export class MidiInputService implements OnDestroy {
    * Every 5 seconds the timer:
    *  1. Re-attaches onmidimessage handlers to all relevant inputs
    *  2. Refreshes the device list (catches hot-plugged devices)
-   *  3. If MIDIAccess was lost, attempts to re-acquire it
    */
   private installKeepAlive(): void {
     this.clearKeepAlive();
     this.keepAliveTimer = setInterval(() => {
-      if (!this.started) return;
-      if (this.midiAccess) {
-        this.attachListeners();
-        this.zone.run(() => this.refreshInputs());
-      } else {
-        // MIDIAccess was lost — try to reacquire
-        this.started = false;
-        this.start();
-      }
+      if (!this.started || !this.midiAccess) return;
+      this.attachListeners();
+      this.zone.run(() => this.refreshInputs());
     }, 5000);
   }
 

@@ -156,23 +156,12 @@ export class MidiOutputService implements OnDestroy {
       this.started = true;
       this.lastError.set('');
 
-      this.midiAccess!.onstatechange = () => {
-        this.zone.run(() => this.refreshOutputs());
-        this.resolveActiveOutput();
-      };
+      // Install state-change handler — handles hot-plug of MIDI devices
+      this.installStateChangeHandler();
 
+      // Enumerate whatever is already available
       this.refreshOutputs();
       this.resolveActiveOutput();
-
-      // Retry after a short delay if no outputs found initially
-      if (this.midiOutputs().length === 0) {
-        setTimeout(() => {
-          if (this.started && this.midiAccess) {
-            this.zone.run(() => this.refreshOutputs());
-            this.resolveActiveOutput();
-          }
-        }, 500);
-      }
 
       this.installKeepAlive();
     } catch (err: any) {
@@ -360,6 +349,28 @@ export class MidiOutputService implements OnDestroy {
     this.activeNotes.clear();
   }
 
+  /**
+   * Install the onstatechange handler on the current MIDIAccess object.
+   * Extracted into its own method so it can be reused after re-acquisition.
+   */
+  private installStateChangeHandler(): void {
+    if (!this.midiAccess) return;
+    this.midiAccess.onstatechange = () => {
+      this.zone.run(() => this.refreshOutputs());
+      this.resolveActiveOutput();
+      // Retry after short delays for ports that need time to settle
+      // after a physical reconnection.
+      for (const delay of [500, 1500]) {
+        setTimeout(() => {
+          if (this.started && this.midiAccess) {
+            this.zone.run(() => this.refreshOutputs());
+            this.resolveActiveOutput();
+          }
+        }, delay);
+      }
+    };
+  }
+
   /** Populate the midiOutputs signal from current MIDI access state */
   private refreshOutputs(): void {
     if (!this.midiAccess) return;
@@ -399,14 +410,9 @@ export class MidiOutputService implements OnDestroy {
   private installKeepAlive(): void {
     this.clearKeepAlive();
     this.keepAliveTimer = setInterval(() => {
-      if (!this.started) return;
-      if (this.midiAccess) {
-        this.zone.run(() => this.refreshOutputs());
-        this.resolveActiveOutput();
-      } else {
-        this.started = false;
-        this.start();
-      }
+      if (!this.started || !this.midiAccess) return;
+      this.zone.run(() => this.refreshOutputs());
+      this.resolveActiveOutput();
     }, 5000);
   }
 

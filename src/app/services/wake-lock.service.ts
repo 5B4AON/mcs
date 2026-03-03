@@ -36,6 +36,9 @@ export class WakeLockService implements OnDestroy {
   /** The active wake lock sentinel, or null if not held */
   private sentinel: WakeLockSentinel | null = null;
 
+  /** Flag to track explicit releases (vs. browser-initiated releases) */
+  private explicitlyReleasing = false;
+
   /** Bound visibility change handler for cleanup */
   private readonly onVisibilityChange = this.handleVisibilityChange.bind(this);
 
@@ -72,6 +75,11 @@ export class WakeLockService implements OnDestroy {
       this.sentinel.addEventListener('release', () => {
         this.zone.run(() => {
           this.sentinel = null;
+          // If the lock was released by the browser (not explicitly by us),
+          // update the setting to reflect the lost lock state
+          if (!this.explicitlyReleasing && this.settings.settings().wakeLockEnabled) {
+            this.settings.update({ wakeLockEnabled: false });
+          }
         });
       });
     } catch {
@@ -84,8 +92,10 @@ export class WakeLockService implements OnDestroy {
   /** Release the screen wake lock if currently held. */
   release(): void {
     if (this.sentinel) {
+      this.explicitlyReleasing = true;
       this.sentinel.release().catch(() => {});
       this.sentinel = null;
+      this.explicitlyReleasing = false;
     }
   }
 
