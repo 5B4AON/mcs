@@ -241,6 +241,37 @@
   background: #3a2a1a;
   border: 1px solid #6a4a2a;
 }
+.source-badge.source-both {
+  color: #afa;
+  background: #1a2a1a;
+  border: 1px solid #4a6a4a;
+}
+
+/* Connectivity status badge (icon-only) shown on card headers */
+.connectivity-badge {
+  padding: 0;
+  margin-right: 0.5rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  background: transparent;
+  border: none;
+}
+.connectivity-badge.connected {
+  color: #4a8;
+}
+.connectivity-badge.disconnected {
+  color: #888;
+  opacity: 0.75;
+}
+.connectivity-badge svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
 
 /* Toggle switch */
 .toggle-switch {
@@ -323,6 +354,33 @@
 .settings-card-body > :first-child {
   margin-top: 0;
   padding-top: 0;
+  border-top: none;
+}
+
+/* Labelled horizontal divider inside a card body (e.g. "Straight Key" / "Paddle") */
+.card-section-divider {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: .75rem;
+  padding-top: .75rem;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: #8888aa;
+}
+.card-section-divider::before,
+.card-section-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #3a3a5a;
+}
+/* Next sibling after divider should not double-up the top border */
+.card-section-divider + label,
+.card-section-divider + .keyer-hint,
+.card-section-divider + .cw-hint,
+.card-section-divider + .conflict-warning {
   border-top: none;
 }
 
@@ -613,6 +671,48 @@
   font-family: monospace;
 }
 
+/* Prosign display styling */
+.prosign-example {
+  font-size: 0.85em;
+  color: #8ab;
+  font-family: monospace;
+  font-weight: 600;
+}
+
+.prosign-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+}
+.prosign-table th {
+  text-align: left;
+  padding: 0.4rem 0.5rem;
+  background: #1a2a38;
+  border: 1px solid #334;
+  color: #8cf;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+.prosign-table td {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #334;
+  color: #abc;
+}
+.prosign-table tr:nth-child(even) {
+  background: #1a1a28;
+}
+.prosign-table tr:nth-child(odd) {
+  background: #181824;
+}
+.prosign-table code {
+  font-family: monospace;
+  color: #8cf;
+  background: #1a2a38;
+  padding: 0.1rem 0.3rem;
+  border-radius: 2px;
+  font-size: 0.9em;
+}
 
 
 /* Keyer hint text */

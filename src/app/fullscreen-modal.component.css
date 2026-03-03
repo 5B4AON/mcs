@@ -589,6 +589,20 @@
   margin-right: 0.3em;
 }
 
+/* Prosign display — styled as oval pill with muted background for visual distinction
+   ::ng-deep required because spans are injected via innerHTML and don't get view encapsulation attributes */
+:host ::ng-deep .prosign-display {
+  opacity: 0.85;
+  font-size: 0.8em;
+  font-weight: 600;
+  vertical-align: baseline;
+  font-family: monospace;
+  background: #2a2a3e;
+  padding: 0.15em 0.5em;
+  border-radius: 1em;
+  display: inline-block;
+}
+
 /* Inline encoder buffer displayed in conversation area */
 .fs-encoder-inline {
   font-family: 'Courier New', monospace;

@@ -135,6 +135,26 @@ export class MorseEncoderService {
 
   // ---- internal send loop ----
 
+  /**
+   * Extract the next token from the buffer.
+   * Returns either a single character or a prosign pattern (e.g., '<SK>').
+   * Updates the provided index to point past the extracted token.
+   */
+  private extractToken(buffer: string, startIdx: number): { token: string; endIdx: number } {
+    if (buffer[startIdx] === '<') {
+      const endIdx = buffer.indexOf('>', startIdx);
+      if (endIdx !== -1 && endIdx > startIdx + 1) {
+        const prosignPattern = buffer.substring(startIdx, endIdx + 1);
+        // Check if it matches prosign format: <[A-Z]+>
+        if (/^<[A-Z]+>$/.test(prosignPattern)) {
+          return { token: prosignPattern, endIdx: endIdx + 1 };
+        }
+      }
+    }
+    // Return single character
+    return { token: buffer[startIdx], endIdx: startIdx + 1 };
+  }
+
   private async processSend(): Promise<void> {
     if (this.sending) return; // already in loop
     this.sending = true;
@@ -146,19 +166,19 @@ export class MorseEncoderService {
         if (signal.aborted) break;
 
         const idx = this.sentIndex();
-        const char = this.buffer()[idx];
+        const { token, endIdx } = this.extractToken(this.buffer(), idx);
 
         // Forward to WinKeyer (as TX source) — WinKeyer handles its own timing
-        this.winkeyerOutput.forwardDecodedChar(char, 'tx');
+        this.winkeyerOutput.forwardDecodedChar(token, 'tx');
 
         // Forward to MIDI output (as TX source) — plays elements at encoder WPM
-        this.midiOutput.forwardDecodedChar(char, 'tx');
+        this.midiOutput.forwardDecodedChar(token, 'tx');
 
         // Forward to Firebase RTDB output (as TX source)
-        this.rtdbOutput.forwardEncoderChar(char, this.settings.settings().encoderWpm);
+        this.rtdbOutput.forwardEncoderChar(token, this.settings.settings().encoderWpm);
 
-        await this.sendCharacter(char, signal);
-        this.sentIndex.set(idx + 1);
+        await this.sendCharacter(token, signal);
+        this.sentIndex.set(endIdx);
 
         if (signal.aborted) break;
 

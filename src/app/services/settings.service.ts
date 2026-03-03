@@ -119,8 +119,12 @@ export interface AppSettings {
   // --- Keyer ---
   /** Enable/disable keyboard keyer input */
   keyboardKeyerEnabled: boolean;
-  /** Decoder source: which calibration pool keyboard keyer feeds ('rx' or 'tx') */
+  /** @deprecated Use keyboardStraightKeySource / keyboardPaddleSource instead */
   keyboardKeyerSource: DecoderSource;
+  /** Decoder source for keyboard straight key ('rx' or 'tx') */
+  keyboardStraightKeySource: DecoderSource;
+  /** Decoder source for keyboard paddle ('rx' or 'tx') */
+  keyboardPaddleSource: DecoderSource;
   straightKeyCode: string;
   leftPaddleKeyCode: string;
   rightPaddleKeyCode: string;
@@ -148,8 +152,12 @@ export interface AppSettings {
 
   // --- MIDI Input ---
   midiInputEnabled: boolean;
-  /** Decoder source: which calibration pool MIDI input feeds ('rx' or 'tx') */
+  /** @deprecated Use midiStraightKeySource / midiPaddleSource instead */
   midiInputSource: DecoderSource;
+  /** Decoder source for MIDI straight key ('rx' or 'tx') */
+  midiStraightKeySource: DecoderSource;
+  /** Decoder source for MIDI paddle ('rx' or 'tx') */
+  midiPaddleSource: DecoderSource;
   /** MIDI input device ID (empty = any/first available) */
   midiInputDeviceId: string;
   /** MIDI channel filter: 0 = omni (all channels), 1-16 = specific channel */
@@ -192,6 +200,10 @@ export interface AppSettings {
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
+
+  // --- Display Options ---
+  /** Show prosigns (e.g., <AR>) instead of punctuation (e.g., +) in conversation logs */
+  showProsigns: boolean;
 }
 
 /**
@@ -255,10 +267,10 @@ const DEFAULT_SETTINGS: AppSettings = {
   winkeyerEnabled: false,
   winkeyerPortIndex: -1,
   winkeyerWpm: 20,
-  winkeyerForward: 'both',
+  winkeyerForward: 'tx',
 
   rtdbOutputEnabled: false,
-  rtdbOutputForward: 'both',
+  rtdbOutputForward: 'tx',
   rtdbOutputChannelName: '',
   rtdbOutputChannelSecret: '',
   rtdbOutputUserName: '',
@@ -282,6 +294,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 
   keyboardKeyerEnabled: true,
   keyboardKeyerSource: 'tx',
+  keyboardStraightKeySource: 'tx',
+  keyboardPaddleSource: 'tx',
   straightKeyCode: 'Space',
   leftPaddleKeyCode: 'BracketLeft',
   rightPaddleKeyCode: 'BracketRight',
@@ -304,7 +318,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchReversePaddles: false,
 
   midiInputEnabled: false,
-  midiInputSource: 'tx',
+  midiInputSource: 'rx',
+  midiStraightKeySource: 'rx',
+  midiPaddleSource: 'rx',
   midiInputDeviceId: '',
   midiInputChannel: 0,
   midiStraightKeyNote: 60,
@@ -319,7 +335,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   midiOutputDitNote: 68,
   midiOutputDahNote: 70,
   midiOutputVelocity: 127,
-  midiOutputForward: 'both',
+  midiOutputForward: 'tx',
 
   rtdbInputEnabled: false,
   rtdbInputSource: 'rx',
@@ -328,6 +344,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbInputOverrideWpm: false,
 
   wakeLockEnabled: false,
+
+  showProsigns: false,
 };
 
 const PROFILES_KEY = 'morseProfiles';
@@ -462,6 +480,16 @@ export class SettingsService {
           }
           delete parsed.touchVibrateEnabled;
         }
+        // Migrate: keyboardKeyerSource → keyboardStraightKeySource + keyboardPaddleSource
+        if (parsed.keyboardKeyerSource !== undefined && parsed.keyboardStraightKeySource === undefined) {
+          parsed.keyboardStraightKeySource = parsed.keyboardKeyerSource;
+          parsed.keyboardPaddleSource = parsed.keyboardKeyerSource;
+        }
+        // Migrate: midiInputSource → midiStraightKeySource + midiPaddleSource
+        if (parsed.midiInputSource !== undefined && parsed.midiStraightKeySource === undefined) {
+          parsed.midiStraightKeySource = parsed.midiInputSource;
+          parsed.midiPaddleSource = parsed.midiInputSource;
+        }
         this.settings.set({ ...DEFAULT_SETTINGS, ...parsed });
         this.isDirty.set(true);
       } catch { /* ignore corrupt data */ }
@@ -523,6 +551,16 @@ export class SettingsService {
           (remapped as any).vibrateEnabled = (remapped as any).touchVibrateEnabled;
         }
         delete (remapped as any).touchVibrateEnabled;
+      }
+      // Migrate: keyboardKeyerSource → keyboardStraightKeySource + keyboardPaddleSource
+      if (remapped.keyboardKeyerSource !== undefined && (remapped as any).keyboardStraightKeySource === undefined) {
+        (remapped as any).keyboardStraightKeySource = remapped.keyboardKeyerSource;
+        (remapped as any).keyboardPaddleSource = remapped.keyboardKeyerSource;
+      }
+      // Migrate: midiInputSource → midiStraightKeySource + midiPaddleSource
+      if (remapped.midiInputSource !== undefined && (remapped as any).midiStraightKeySource === undefined) {
+        (remapped as any).midiStraightKeySource = remapped.midiInputSource;
+        (remapped as any).midiPaddleSource = remapped.midiInputSource;
       }
       this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
       this.isDirty.set(false);

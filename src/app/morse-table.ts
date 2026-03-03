@@ -47,9 +47,12 @@ export const MORSE_TABLE: Record<string, string> = {
   '<AR>': '.-.-.',   // End of message
   '<AS>': '.-...',   // Wait
   '<BT>': '-...-',   // Break / new paragraph
+  '<BK>': '-...-.-',   // Break / new paragraph (alternate) / Back-to you
   '<SK>': '...-.-',  // End of contact
+  '<KA>': '-.-.-',   // Message begins / Start of work / New message
   '<KN>': '-.--.',   // Go ahead (specific station)
   '<SOS>': '...---...', // Distress
+  '<HH>': '........', // Preceding text was in error
 };
 
 /** Reverse lookup: morse pattern → character */
@@ -58,6 +61,60 @@ for (const [char, code] of Object.entries(MORSE_TABLE)) {
   if (!char.startsWith('<')) {
     MORSE_REVERSE[code] = char;
   }
+}
+
+// Add non-clashing prosigns to the reverse lookup
+// (Prosigns that share patterns with punctuation are handled via PUNCTUATION_TO_PROSIGN)
+const NON_CLASHING_PROSIGNS = ['<BK>', '<SK>', '<SOS>', '<HH>'];
+for (const prosign of NON_CLASHING_PROSIGNS) {
+  const code = MORSE_TABLE[prosign];
+  if (code && !MORSE_REVERSE[code]) {
+    MORSE_REVERSE[code] = prosign;
+  }
+}
+
+/**
+ * Mapping from punctuation characters to their prosign representations.
+ *
+ * In International Morse, some prosigns share the same morse pattern as
+ * punctuation marks. This mapping allows displaying the procedural signal
+ * name instead of the raw punctuation for improved clarity.
+ */
+export const PUNCTUATION_TO_PROSIGN: Record<string, string> = {
+  '+': '<AR>',  // End of message (.-.-.)
+  '&': '<AS>',  // Wait (.-...)
+  '=': '<BT>',  // Break / new paragraph (-...-)
+  '(': '<KN>',  // Go ahead, specific station (-.--.)
+  ';': '<KA>',  // Message begins / Start of work (-.-.-.)
+};
+
+/**
+ * Reverse mapping: prosign to punctuation character.
+ * Used for converting prosigns to their punctuation equivalents
+ * when forwarding to systems that only support ASCII characters.
+ */
+export const PROSIGN_TO_PUNCTUATION: Record<string, string> = {};
+for (const [punct, prosign] of Object.entries(PUNCTUATION_TO_PROSIGN)) {
+  PROSIGN_TO_PUNCTUATION[prosign] = punct;
+}
+
+/**
+ * Converts text to prosign display format by replacing punctuation marks
+ * with their corresponding prosign names (e.g., '+' → '<AR>').
+ *
+ * This is for display purposes only — the application continues to send
+ * and receive punctuation characters for efficiency. The translation is
+ * applied at render time to improve readability in the conversation logs.
+ *
+ * @param text Input text containing punctuation
+ * @returns Text with prosigns substituted for matching punctuation
+ */
+export function toProsignDisplay(text: string): string {
+  let result = '';
+  for (const char of text) {
+    result += PUNCTUATION_TO_PROSIGN[char] || char;
+  }
+  return result;
 }
 
 /**

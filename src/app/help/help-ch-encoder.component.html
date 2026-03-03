@@ -78,3 +78,46 @@
     sidetone and any enabled key outputs to key your transmitter.
   </p>
 </div>
+
+<!-- 3.4 Prosign Support -->
+<h2 id="s3-4">3.4 &nbsp;Prosign Support</h2>
+
+<p>
+  You can type <strong>prosigns</strong> (procedural signals) directly in the
+  encoder buffer using angle-bracket notation. For example, typing
+  <code>HELLO&lt;SK&gt;</code> will send "HELLO" followed by the SK prosign
+  (end of contact). Prosigns are recognized as single tokens and transmitted
+  without inter-character spacing.
+</p>
+
+<p>
+  Supported prosign patterns:
+</p>
+
+<ul>
+  <li><code>&lt;AR&gt;</code> — End of message</li>
+  <li><code>&lt;AS&gt;</code> — Wait</li>
+  <li><code>&lt;BT&gt;</code> — Break; pause</li>
+  <li><code>&lt;KN&gt;</code> — Invitation to named station only</li>
+  <li><code>&lt;KA&gt;</code> — Starting signal</li>
+  <li><code>&lt;SK&gt;</code> — End of contact</li>
+  <li><code>&lt;SOS&gt;</code> — International distress signal</li>
+  <li><code>&lt;BK&gt;</code> — Break (invitation to transmit)</li>
+  <li><code>&lt;HH&gt;</code> — Error; correction follows</li>
+</ul>
+
+<p>
+  <strong>Note:</strong> Some prosigns (AR, AS, BT, KN, KA) share identical
+  morse patterns with punctuation marks (+, &amp;, =, (, ;). You can type
+  either the prosign pattern or the punctuation character &mdash; both will
+  produce the same morse output. Enable <strong>Show Prosigns</strong> in
+  Settings → Other to display prosign names instead of punctuation in the
+  conversation logs.
+</p>
+
+<p>
+  When using <strong>WinKeyer output</strong>, clashing prosigns are
+  automatically converted to their punctuation equivalents since the device
+  only supports ASCII characters. Non-clashing prosigns (&lt;SK&gt;,
+  &lt;SOS&gt;, &lt;BK&gt;, &lt;HH&gt;) are skipped in WinKeyer output.
+</p>

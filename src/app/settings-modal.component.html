@@ -58,7 +58,6 @@
               <span class="settings-card-chevron">{{ isSectionExpanded('mic') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Straight Key via Mic</span>
               <span class="source-badge" [class.source-rx]="settings.settings().micInputSource === 'rx'" [class.source-tx]="settings.settings().micInputSource === 'tx'">{{ settings.settings().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Pilot Tone</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().micInputEnabled"
@@ -167,7 +166,6 @@
               <span class="settings-card-chevron">{{ isSectionExpanded('cw') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">CW Tone Detector</span>
               <span class="source-badge" [class.source-rx]="settings.settings().cwInputSource === 'rx'" [class.source-tx]="settings.settings().cwInputSource === 'tx'">{{ settings.settings().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Audio Channel</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().cwInputEnabled"
@@ -258,8 +256,10 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('keyer') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Keyboard Keyer</span>
-              <span class="source-badge" [class.source-rx]="settings.settings().keyboardKeyerSource === 'rx'" [class.source-tx]="settings.settings().keyboardKeyerSource === 'tx'">{{ settings.settings().keyboardKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Paddle &amp; Straight Key</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().keyboardStraightKeySource === 'rx'" [class.source-tx]="settings.settings().keyboardStraightKeySource === 'tx'">{{ settings.settings().keyboardStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
+              @if (settings.settings().keyboardPaddleSource !== settings.settings().keyboardStraightKeySource) {
+                <span class="source-badge" [class.source-rx]="settings.settings().keyboardPaddleSource === 'rx'" [class.source-tx]="settings.settings().keyboardPaddleSource === 'tx'">{{ settings.settings().keyboardPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+              }
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().keyboardKeyerEnabled"
@@ -269,8 +269,11 @@
           </div>
           @if (isSectionExpanded('keyer')) {
             <div class="settings-card-body">
+
+              <div class="card-section-divider">Straight Key</div>
+
               <label>Used for:
-                <select [value]="settings.settings().keyboardKeyerSource" (change)="onSettingChange('keyboardKeyerSource', $event)">
+                <select [value]="settings.settings().keyboardStraightKeySource" (change)="onSettingChange('keyboardStraightKeySource', $event)">
                   <option value="rx">RX &mdash; received morse</option>
                   <option value="tx">TX &mdash; transmitted morse</option>
                 </select>
@@ -281,6 +284,15 @@
                         (keydown)="onCaptureKeyDown($event, 'straightKeyCode')">
                   {{ settings.settings().straightKeyCode }}
                 </button>
+              </label>
+
+              <div class="card-section-divider">Paddle</div>
+
+              <label>Used for:
+                <select [value]="settings.settings().keyboardPaddleSource" (change)="onSettingChange('keyboardPaddleSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
               </label>
 
               <label>Left Paddle {{ settings.settings().keyboardReversePaddles ? '(dah)' : '(dit)' }}:
@@ -342,7 +354,6 @@
               <span class="settings-card-chevron">{{ isSectionExpanded('mouse') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Mouse Keyer</span>
               <span class="source-badge" [class.source-rx]="settings.settings().mouseKeyerSource === 'rx'" [class.source-tx]="settings.settings().mouseKeyerSource === 'tx'">{{ settings.settings().mouseKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Click to Key</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().mouseKeyerEnabled"
@@ -423,7 +434,6 @@
               <span class="settings-card-chevron">{{ isSectionExpanded('touch') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Touch Keyer</span>
               <span class="source-badge" [class.source-rx]="settings.settings().touchKeyerSource === 'rx'" [class.source-tx]="settings.settings().touchKeyerSource === 'tx'">{{ settings.settings().touchKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Fullscreen Overlay</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().touchKeyerEnabled"
@@ -499,9 +509,14 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('midi') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">MIDI Input</span>
-              <span class="source-badge" [class.source-rx]="settings.settings().midiInputSource === 'rx'" [class.source-tx]="settings.settings().midiInputSource === 'tx'">{{ settings.settings().midiInputSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Background-capable</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().midiStraightKeySource === 'rx'" [class.source-tx]="settings.settings().midiStraightKeySource === 'tx'">{{ settings.settings().midiStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
+              @if (settings.settings().midiPaddleSource !== settings.settings().midiStraightKeySource) {
+                <span class="source-badge" [class.source-rx]="settings.settings().midiPaddleSource === 'rx'" [class.source-tx]="settings.settings().midiPaddleSource === 'tx'">{{ settings.settings().midiPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+              }
             </div>
+            <span class="connectivity-badge" [class.connected]="midiInput.connected()" [class.disconnected]="!midiInput.connected()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().midiInputEnabled"
                      [disabled]="!midiInput.supported"
@@ -521,13 +536,6 @@
                 <div class="conflict-warning">{{ midiInput.lastError() }}</div>
               }
 
-              <label>Used for:
-                <select [value]="settings.settings().midiInputSource" (change)="onSettingChange('midiInputSource', $event)">
-                  <option value="rx">RX &mdash; received morse</option>
-                  <option value="tx">TX &mdash; transmitted morse</option>
-                </select>
-              </label>
-
               <label>MIDI Device:
                 <select [value]="settings.settings().midiInputDeviceId" (change)="onMidiDeviceChange($event)">
                   <option value="">Any (first available)</option>
@@ -546,6 +554,15 @@
                 </select>
               </label>
 
+              <div class="card-section-divider">Straight Key</div>
+
+              <label>Used for:
+                <select [value]="settings.settings().midiStraightKeySource" (change)="onSettingChange('midiStraightKeySource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
+              </label>
+
               <label>Straight Key:
                 <button class="key-capture"
                         (click)="onMidiCapture('midiStraightKeyNote')">
@@ -554,6 +571,15 @@
                 @if (settings.settings().midiStraightKeyNote >= 0) {
                   <button class="key-capture-clear" (click)="clearMidiNote('midiStraightKeyNote')" title="Clear">&times;</button>
                 }
+              </label>
+
+              <div class="card-section-divider">Paddle</div>
+
+              <label>Used for:
+                <select [value]="settings.settings().midiPaddleSource" (change)="onSettingChange('midiPaddleSource', $event)">
+                  <option value="rx">RX &mdash; received morse</option>
+                  <option value="tx">TX &mdash; transmitted morse</option>
+                </select>
               </label>
 
               <label>Dit Paddle:
@@ -616,8 +642,10 @@
               <span class="settings-card-chevron">{{ isSectionExpanded('rtdbInput') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Firebase RTDB</span>
               <span class="source-badge" [class.source-rx]="settings.settings().rtdbInputSource === 'rx'" [class.source-tx]="settings.settings().rtdbInputSource === 'tx'">{{ settings.settings().rtdbInputSource === 'rx' ? 'RX' : 'TX' }}</span>
-              <span class="settings-card-subtitle">Realtime Database Input</span>
             </div>
+            <span class="connectivity-badge" [class.connected]="rtdbService.inputListening()" [class.disconnected]="!rtdbService.inputListening()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().rtdbInputEnabled"
                      (change)="onRtdbInputEnabledChange($event)">
@@ -697,8 +725,8 @@
           <div class="settings-card-header" (click)="toggleSection('opto')">
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('opto') ? '&#9660;' : '&#9654;' }}</span>
-              <span class="settings-card-name">Key Output</span>
-              <span class="settings-card-subtitle">Optocoupler (Audio)</span>
+              <span class="settings-card-name">Audio Output</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().optoForward === 'rx'" [class.source-tx]="settings.settings().optoForward === 'tx'" [class.source-both]="settings.settings().optoForward === 'both'">{{ settings.settings().optoForward === 'rx' ? 'RX' : settings.settings().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().optoEnabled"
@@ -803,9 +831,12 @@
           <div class="settings-card-header" (click)="toggleSection('serial')">
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('serial') ? '&#9660;' : '&#9654;' }}</span>
-              <span class="settings-card-name">Key Output</span>
-              <span class="settings-card-subtitle">Serial Port (DTR/RTS)</span>
+              <span class="settings-card-name">Serial Output</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().serialForward === 'rx'" [class.source-tx]="settings.settings().serialForward === 'tx'" [class.source-both]="settings.settings().serialForward === 'both'">{{ settings.settings().serialForward === 'rx' ? 'RX' : settings.settings().serialForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
+            <span class="connectivity-badge" [class.connected]="serialOutput.connected()" [class.disconnected]="!serialOutput.connected()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()"
                    [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
               <input type="checkbox" [checked]="settings.settings().serialEnabled"
@@ -816,6 +847,15 @@
           </div>
           @if (isSectionExpanded('serial')) {
             <div class="settings-card-body">
+              <label>Forward:
+                <select [value]="settings.settings().serialForward"
+                        (change)="onSettingChange('serialForward', $event)">
+                  <option value="tx" [selected]="settings.settings().serialForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().serialForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="both" [selected]="settings.settings().serialForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
               @if (!webSerialSupported) {
                 <div class="conflict-warning">
                   Web Serial API is not supported in this browser. Serial port features require a
@@ -828,15 +868,6 @@
                   Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
                 </div>
               }
-
-              <label>Forward:
-                <select [value]="settings.settings().serialForward"
-                        (change)="onSettingChange('serialForward', $event)">
-                  <option value="tx" [selected]="settings.settings().serialForward === 'tx'">TX only &mdash; transmitted morse</option>
-                  <option value="rx" [selected]="settings.settings().serialForward === 'rx'">RX only &mdash; received morse</option>
-                  <option value="both" [selected]="settings.settings().serialForward === 'both'">Both RX and TX</option>
-                </select>
-              </label>
 
               <div class="serial-port-row">
                 <button (click)="serialOutput.requestPort()" class="test-btn">
@@ -915,8 +946,11 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('winkeyer') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">WinKeyer Output</span>
-              <span class="settings-card-subtitle">K1EL WinKeyer (Serial)</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().winkeyerForward === 'rx'" [class.source-tx]="settings.settings().winkeyerForward === 'tx'" [class.source-both]="settings.settings().winkeyerForward === 'both'">{{ settings.settings().winkeyerForward === 'rx' ? 'RX' : settings.settings().winkeyerForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
+            <span class="connectivity-badge" [class.connected]="winkeyerOutput.connected()" [class.disconnected]="!winkeyerOutput.connected()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()"
                    [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
               <input type="checkbox" [checked]="settings.settings().winkeyerEnabled"
@@ -927,6 +961,15 @@
           </div>
           @if (isSectionExpanded('winkeyer')) {
             <div class="settings-card-body">
+              <label>Forward:
+                <select [value]="settings.settings().winkeyerForward"
+                        (change)="onSettingChange('winkeyerForward', $event)">
+                  <option value="rx" [selected]="settings.settings().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="tx" [selected]="settings.settings().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="both" [selected]="settings.settings().winkeyerForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
               @if (!webSerialSupported) {
                 <div class="conflict-warning">
                   Web Serial API is not supported in this browser. WinKeyer features require a
@@ -974,15 +1017,6 @@
                        (change)="onWinkeyerWpmChange($event)">
               </label>
 
-              <label>Forward:
-                <select [value]="settings.settings().winkeyerForward"
-                        (change)="onSettingChange('winkeyerForward', $event)">
-                  <option value="rx" [selected]="settings.settings().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
-                  <option value="tx" [selected]="settings.settings().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
-                  <option value="both" [selected]="settings.settings().winkeyerForward === 'both'">Both RX and TX</option>
-                </select>
-              </label>
-
               <div class="cw-hint">
                 Forwards decoded text to a K1EL WinKeyer (WK2/WK3/WKUSB) device.
                 WinKeyer generates perfectly timed CW keying on its output &mdash; the host
@@ -1028,8 +1062,11 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('rtdbOutput') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Firebase RTDB</span>
-              <span class="settings-card-subtitle">Realtime Database Output</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().rtdbOutputForward === 'rx'" [class.source-tx]="settings.settings().rtdbOutputForward === 'tx'" [class.source-both]="settings.settings().rtdbOutputForward === 'both'">{{ settings.settings().rtdbOutputForward === 'rx' ? 'RX' : settings.settings().rtdbOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
+            <span class="connectivity-badge" [class.connected]="rtdbService.outputActive()" [class.disconnected]="!rtdbService.outputActive()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().rtdbOutputEnabled"
                      (change)="onRtdbOutputEnabledChange($event)">
@@ -1038,6 +1075,15 @@
           </div>
           @if (isSectionExpanded('rtdbOutput')) {
             <div class="settings-card-body">
+              <label>Forward:
+                <select [value]="settings.settings().rtdbOutputForward"
+                        (change)="onSettingChange('rtdbOutputForward', $event)">
+                  <option value="rx" [selected]="settings.settings().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="tx" [selected]="settings.settings().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="both" [selected]="settings.settings().rtdbOutputForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
               @if (!rtdbService.isOnline()) {
                 <div class="conflict-warning">
                   You are currently offline. Firebase Realtime Database requires an internet connection.
@@ -1063,15 +1109,6 @@
                        (input)="onTextSettingChange('rtdbOutputUserName', $event)"
                        placeholder="e.g. 5B4AON"
                        maxlength="20">
-              </label>
-
-              <label>Forward:
-                <select [value]="settings.settings().rtdbOutputForward"
-                        (change)="onSettingChange('rtdbOutputForward', $event)">
-                  <option value="rx" [selected]="settings.settings().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
-                  <option value="tx" [selected]="settings.settings().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
-                  <option value="both" [selected]="settings.settings().rtdbOutputForward === 'both'">Both RX and TX</option>
-                </select>
               </label>
 
               <div class="cw-hint">
@@ -1108,8 +1145,11 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('midiOutput') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">MIDI Output</span>
-              <span class="settings-card-subtitle">Key via MIDI</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().midiOutputForward === 'rx'" [class.source-tx]="settings.settings().midiOutputForward === 'tx'" [class.source-both]="settings.settings().midiOutputForward === 'both'">{{ settings.settings().midiOutputForward === 'rx' ? 'RX' : settings.settings().midiOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
+            <span class="connectivity-badge" [class.connected]="midiOutput.connected()" [class.disconnected]="!midiOutput.connected()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </span>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().midiOutputEnabled"
                      [disabled]="!midiOutput.supported"
@@ -1119,6 +1159,15 @@
           </div>
           @if (isSectionExpanded('midiOutput')) {
             <div class="settings-card-body">
+              <label>Forward:
+                <select [value]="settings.settings().midiOutputForward"
+                        (change)="onSettingChange('midiOutputForward', $event)">
+                  <option value="tx" [selected]="settings.settings().midiOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+                  <option value="rx" [selected]="settings.settings().midiOutputForward === 'rx'">RX only &mdash; received morse</option>
+                  <option value="both" [selected]="settings.settings().midiOutputForward === 'both'">Both RX and TX</option>
+                </select>
+              </label>
+
               @if (!midiOutput.supported) {
                 <div class="conflict-warning">
                   Web MIDI API is not supported in this browser. Use Chrome or Edge.
@@ -1128,15 +1177,6 @@
               @if (midiOutput.lastError()) {
                 <div class="conflict-warning">{{ midiOutput.lastError() }}</div>
               }
-
-              <label>Forward:
-                <select [value]="settings.settings().midiOutputForward"
-                        (change)="onSettingChange('midiOutputForward', $event)">
-                  <option value="tx" [selected]="settings.settings().midiOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
-                  <option value="rx" [selected]="settings.settings().midiOutputForward === 'rx'">RX only &mdash; received morse</option>
-                  <option value="both" [selected]="settings.settings().midiOutputForward === 'both'">Both RX and TX</option>
-                </select>
-              </label>
 
               <label>MIDI Device:
                 <select [value]="settings.settings().midiOutputDeviceId" (change)="onMidiOutputDeviceChange($event)">
@@ -1286,7 +1326,7 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('sidetone') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Sidetone</span>
-              <span class="settings-card-subtitle">Speaker Output</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().sidetoneForward === 'rx'" [class.source-tx]="settings.settings().sidetoneForward === 'tx'" [class.source-both]="settings.settings().sidetoneForward === 'both'">{{ settings.settings().sidetoneForward === 'rx' ? 'RX' : settings.settings().sidetoneForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().sidetoneEnabled"
@@ -1345,7 +1385,7 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('vibrate') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Vibration</span>
-              <span class="settings-card-subtitle">Haptic Feedback</span>
+              <span class="source-badge" [class.source-rx]="settings.settings().vibrateForward === 'rx'" [class.source-tx]="settings.settings().vibrateForward === 'tx'" [class.source-both]="settings.settings().vibrateForward === 'both'">{{ settings.settings().vibrateForward === 'rx' ? 'RX' : settings.settings().vibrateForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().vibrateEnabled"
@@ -1399,7 +1439,6 @@
             <div class="settings-card-title">
               <span class="settings-card-chevron">{{ isSectionExpanded('wakeLock') ? '&#9660;' : '&#9654;' }}</span>
               <span class="settings-card-name">Screen Wake Lock</span>
-              <span class="settings-card-subtitle">Keep Screen Active</span>
             </div>
             <label class="toggle-switch" (click)="$event.stopPropagation()">
               <input type="checkbox" [checked]="settings.settings().wakeLockEnabled"
@@ -1423,6 +1462,85 @@
                 } @else {
                   <strong>Status:</strong> {{ wakeLock.active ? 'Active — screen will stay on' : 'Inactive' }}
                 }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- ===== 2. SHOW PROSIGNS ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().showProsigns">
+          <div class="settings-card-header" (click)="toggleSection('prosigns')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('prosigns') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Show Prosigns</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().showProsigns"
+                     (change)="onBoolChange('showProsigns', $event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('prosigns')) {
+            <div class="settings-card-body">
+              <div class="cw-hint">
+                <strong>Prosigns</strong> (procedural signals) are special multi-character morse
+                sequences transmitted without inter-character spacing. In International Morse,
+                some prosigns share identical patterns with punctuation marks, creating ambiguity
+                in text-based displays.<br><br>
+
+                When this setting is <strong>enabled</strong>, the decoder and encoder fullscreen
+                conversation logs will display prosign names (e.g., <span class="prosign-example">&lt;AR&gt;</span>)
+                instead of the underlying punctuation characters (e.g., +). This improves clarity
+                when communicating procedural signals.<br><br>
+
+                <table class="prosign-table">
+                  <thead>
+                    <tr>
+                      <th>Punctuation</th>
+                      <th>Prosign</th>
+                      <th>Morse Pattern</th>
+                      <th>Meaning</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td><strong>+</strong></td>
+                      <td><span class="prosign-example">&lt;AR&gt;</span></td>
+                      <td><code>.-.-.</code></td>
+                      <td>End of message</td>
+                    </tr>
+                    <tr>
+                      <td><strong>&amp;</strong></td>
+                      <td><span class="prosign-example">&lt;AS&gt;</span></td>
+                      <td><code>.-...</code></td>
+                      <td>Wait</td>
+                    </tr>
+                    <tr>
+                      <td><strong>=</strong></td>
+                      <td><span class="prosign-example">&lt;BT&gt;</span></td>
+                      <td><code>-...-</code></td>
+                      <td>Break / new paragraph</td>
+                    </tr>
+                    <tr>
+                      <td><strong>(</strong></td>
+                      <td><span class="prosign-example">&lt;KN&gt;</span></td>
+                      <td><code>-.--.</code></td>
+                      <td>Go ahead (specific station)</td>
+                    </tr>
+                    <tr>
+                      <td><strong>;</strong></td>
+                      <td><span class="prosign-example">&lt;KA&gt;</span></td>
+                      <td><code>-.-.-.</code></td>
+                      <td>Message begins</td>
+                    </tr>
+                  </tbody>
+                </table>
+                <br>
+                <strong>Note:</strong> This translation is for <em>display purposes only</em>.
+                Behind the scenes, the application continues to send and receive punctuation
+                characters for efficiency. The conversion happens in real-time during rendering.
+                This applies to the decoder and encoder fullscreen conversation windows only
+                &mdash; main screen log panels are not affected.
               </div>
             </div>
           }

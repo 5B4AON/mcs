@@ -6,6 +6,7 @@
 
 import { Injectable, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
+import { PROSIGN_TO_PUNCTUATION } from '../morse-table';
 
 /**
  * WinKeyer Host-Mode Protocol Constants.
@@ -262,12 +263,32 @@ export class WinkeyerOutputService {
    * Send a single character to WinKeyer for transmission.
    * WinKeyer accepts ASCII 0x20–0x7F and generates perfectly timed CW.
    * Characters outside this range are silently dropped.
+   *
+   * Prosigns are handled as follows:
+   * - Clashing prosigns (e.g., <AR>) are converted to their punctuation equivalent (+)
+   * - Non-clashing prosigns (e.g., <SK>, <HH>) are skipped (WinKeyer doesn't support them)
    */
   async sendChar(char: string): Promise<void> {
     if (!this.connected() || !this.writer) return;
     if (!this.settings.settings().winkeyerEnabled) return;
 
-    const code = char.toUpperCase().charCodeAt(0);
+    let charToSend = char;
+
+    // Handle prosign patterns: <LETTERS>
+    if (/^<[A-Z]+>$/.test(char)) {
+      // Check if this prosign has a punctuation equivalent
+      const punct = PROSIGN_TO_PUNCTUATION[char];
+      if (punct) {
+        // Clashing prosign - send as punctuation
+        charToSend = punct;
+      } else {
+        // Non-clashing prosign (e.g., <SK>, <HH>, <SOS>, <BK>)
+        // WinKeyer doesn't support these - skip silently
+        return;
+      }
+    }
+
+    const code = charToSend.toUpperCase().charCodeAt(0);
     // WinKeyer accepts printable ASCII (space through tilde)
     if (code >= 0x20 && code <= 0x7E) {
       await this.writeBytes([code]);
@@ -277,6 +298,10 @@ export class WinkeyerOutputService {
   /**
    * Send a string to WinKeyer for transmission.
    * Characters are buffered internally by WinKeyer (up to ~160 chars).
+   *
+   * Prosigns in the string are converted to punctuation or skipped:
+   * - <AR> → +, <AS> → &, <BT> → =, <KN> → (, <KA> → ;
+   * - <SK>, <HH>, <SOS>, <BK> are skipped (not supported by WinKeyer)
    */
   async sendText(text: string): Promise<void> {
     if (!this.connected() || !this.writer) return;
@@ -284,12 +309,38 @@ export class WinkeyerOutputService {
 
     const upper = text.toUpperCase();
     const bytes: number[] = [];
-    for (let i = 0; i < upper.length; i++) {
+    let i = 0;
+
+    while (i < upper.length) {
+      // Check for prosign pattern
+      if (upper[i] === '<') {
+        const endIdx = upper.indexOf('>', i);
+        if (endIdx !== -1 && endIdx > i + 1) {
+          const prosignPattern = upper.substring(i, endIdx + 1);
+          if (/^<[A-Z]+>$/.test(prosignPattern)) {
+            // Check if this prosign has a punctuation equivalent
+            const punct = PROSIGN_TO_PUNCTUATION[prosignPattern];
+            if (punct) {
+              const code = punct.charCodeAt(0);
+              if (code >= 0x20 && code <= 0x7E) {
+                bytes.push(code);
+              }
+            }
+            // Skip non-clashing prosigns
+            i = endIdx + 1;
+            continue;
+          }
+        }
+      }
+
+      // Regular character
       const code = upper.charCodeAt(i);
       if (code >= 0x20 && code <= 0x7E) {
         bytes.push(code);
       }
+      i++;
     }
+
     if (bytes.length > 0) {
       await this.writeBytes(bytes);
     }

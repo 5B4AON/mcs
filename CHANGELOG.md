@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.3] - 2026-03-03
+
+### Added
+
+- **Encoder Prosign Support** — users can now type prosigns directly in the
+  encoder buffer (e.g., `HELLO<SK>`) and they are recognized as single tokens,
+  properly encoded to morse patterns, and transmitted through all output channels.
+  Prosigns are parsed using the pattern `<[A-Z]+>` and treated as atomic units
+  rather than individual characters.
+- **Prosign Display Styling** — prosigns now display with a distinctive oval pill
+  background (#2a2a3e) in the fullscreen conversation view, making them visually
+  distinct from regular text.
+
+### Changed
+
+- **RTDB Validation Rules** — updated character length validation from ≤2 to ≤4
+  characters to support prosign patterns like `<SK>` (4 characters with brackets).
+  This allows prosigns to be forwarded through Firebase RTDB relay channels.
+- **WinKeyer Prosign Handling** — WinKeyer output now intelligently handles
+  prosigns: clashing prosigns (e.g., `<AR>`) are converted to their ASCII
+  punctuation equivalents (`+`), while non-clashing prosigns (e.g., `<SK>`,
+  `<HH>`, `<SOS>`, `<BK>`) are skipped since the device doesn't support them.
+- **Non-Clashing Prosigns Decoding** — fixed issue where non-clashing prosigns
+  like `<SK>`, `<HH>`, `<SOS>`, and `<BK>` displayed as "?" by adding them to
+  the reverse morse lookup table.
+
 ## [0.9.2] - 2026-03-02
 
 ### Added

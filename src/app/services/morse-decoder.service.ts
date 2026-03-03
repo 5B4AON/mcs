@@ -69,7 +69,8 @@ export class MorseDecoderService {
    *  3. The colour tag applied to decoded characters in the fullscreen modal
    *
    * Each input's source is configured in Settings (micInputSource, cwInputSource,
-   * keyboardKeyerSource, mouseKeyerSource, touchKeyerSource).
+   * keyboardStraightKeySource, keyboardPaddleSource, mouseKeyerSource, touchKeyerSource,
+   * midiStraightKeySource, midiPaddleSource).
    */
   keySource: 'rx' | 'tx' = 'rx';
 

@@ -10,6 +10,7 @@ import {
   NgZone, HostListener
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, ModalDisplaySettings } from './services/settings.service';
 import { AudioInputService } from './services/audio-input.service';
@@ -21,6 +22,7 @@ import { MouseKeyerService } from './services/mouse-keyer.service';
 import { KeyerService } from './services/keyer.service';
 import { DisplayBufferService, DisplayLine } from './services/display-buffer.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
+import { toProsignDisplay, PUNCTUATION_TO_PROSIGN } from './morse-table';
 
 /**
  * Fullscreen modal component.
@@ -110,6 +112,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private mouseKeyer: MouseKeyerService,
     private keyer: KeyerService,
     private zone: NgZone,
+    private sanitizer: DomSanitizer,
   ) {}
 
   /**
@@ -199,6 +202,93 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   closeClearMenu(): void {
     this.clearMenuOpen = false;
+  }
+
+  /**
+   * Format text for display, handling prosign patterns and optional punctuation conversion.
+   *
+   * Prosign patterns (e.g., '<SK>', '<HH>') are always wrapped in styled spans
+   * for visual distinction, regardless of the showProsigns setting.
+   *
+   * When the showProsigns setting is enabled, punctuation marks that share
+   * morse patterns with prosigns (e.g., '+' → '<AR>') are also replaced with
+   * their prosign names and wrapped in styled spans for improved clarity.
+   *
+   * @param text The raw text to display
+   * @returns Formatted HTML with prosigns styled
+   */
+  formatText(text: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.formatTextInternal(text));
+  }
+
+  /**
+   * Format a complete display line including optional username prefix and text.
+   *
+   * @param line The display line to format
+   * @returns Formatted HTML with optional username prefix and prosign-styled text
+   */
+  formatLine(line: DisplayLine): SafeHtml {
+    let result = '';
+    if (line.userName) {
+      result += `<span class="rtdb-user-prefix">[${this.escapeHtml(line.userName)}] </span>`;
+    }
+    result += this.formatTextInternal(line.text);
+    return this.sanitizer.bypassSecurityTrustHtml(result);
+  }
+
+  /**
+   * Internal text formatting logic: handles prosign patterns and punctuation conversion.
+   *
+   * @param text The text to format
+   * @returns HTML string with styled prosigns
+   */
+  private formatTextInternal(text: string): string {
+    let result = '';
+    let i = 0;
+
+    while (i < text.length) {
+      // Check for prosign pattern: <LETTERS>
+      if (text[i] === '<') {
+        const endIndex = text.indexOf('>', i);
+        if (endIndex !== -1 && endIndex > i + 1) {
+          // Extract the prosign pattern (including < and >)
+          const prosignPattern = text.substring(i, endIndex + 1);
+          // Check if it matches uppercase letters pattern
+          if (/^<[A-Z]+>$/.test(prosignPattern)) {
+            // This is a prosign - always style it
+            result += `<span class="prosign-display">${this.escapeHtml(prosignPattern)}</span>`;
+            i = endIndex + 1;
+            continue;
+          }
+        }
+      }
+
+      // Check for punctuation to prosign conversion (only if showProsigns is enabled)
+      const char = text[i];
+      if (this.settings.settings().showProsigns) {
+        const prosign = PUNCTUATION_TO_PROSIGN[char];
+        if (prosign) {
+          result += `<span class="prosign-display">${this.escapeHtml(prosign)}</span>`;
+          i++;
+          continue;
+        }
+      }
+
+      // Regular character
+      result += this.escapeHtml(char);
+      i++;
+    }
+
+    return result;
+  }
+
+  /**
+   * Escape HTML special characters for safe innerHTML rendering.
+   */
+  private escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
   // ---- Toolbar kebab ----

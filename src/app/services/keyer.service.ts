@@ -40,8 +40,9 @@ import { timingsFromWpm } from '../morse-table';
  *  Each public input method accepts an optional `source` parameter ('rx' or 'tx')
  *  that determines which decoder calibration pool receives the timing samples.
  *  Mouse and touch keyers pass their own configured source; keyboard defaults
- *  to `keyboardKeyerSource` from settings. This allows the user to assign any
- *  input to either the RX or TX decoder pool.
+ *  to `keyboardStraightKeySource` or `keyboardPaddleSource` from settings.
+ *  This allows the user to assign straight key and paddle to different
+ *  RX or TX decoder pools.
  */
 @Injectable({ providedIn: 'root' })
 export class KeyerService implements OnDestroy {
@@ -113,7 +114,7 @@ export class KeyerService implements OnDestroy {
       this.stopKeyer();
       if (this.straightKeyDown) {
         this.straightKeyDown = false;
-        this.decoder.keySource = this.settings.settings().keyboardKeyerSource;
+        this.decoder.keySource = this.settings.settings().keyboardStraightKeySource;
         this.decoder.perfectTiming = false;
         this.decoder.onKeyUp();
       }
@@ -137,7 +138,7 @@ export class KeyerService implements OnDestroy {
    */
   straightKeyInput(down: boolean, source?: 'rx' | 'tx'): void {
     if (!this.enabled) return;
-    const src = source ?? this.settings.settings().keyboardKeyerSource;
+    const src = source ?? this.settings.settings().keyboardStraightKeySource;
     if (down && !this.straightKeyDown) {
       this.straightKeyDown = true;
       this.zone.run(() => {
@@ -163,7 +164,7 @@ export class KeyerService implements OnDestroy {
    */
   ditPaddleInput(down: boolean, source?: 'rx' | 'tx'): void {
     if (!this.enabled) return;
-    this.paddleSource = source ?? this.settings.settings().keyboardKeyerSource;
+    this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
     if (down && !this.leftPaddleDown) {
       this.leftPaddleDown = true;
       this.ditMemory = true;
@@ -182,7 +183,7 @@ export class KeyerService implements OnDestroy {
    */
   dahPaddleInput(down: boolean, source?: 'rx' | 'tx'): void {
     if (!this.enabled) return;
-    this.paddleSource = source ?? this.settings.settings().keyboardKeyerSource;
+    this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
     if (down && !this.rightPaddleDown) {
       this.rightPaddleDown = true;
       this.dahMemory = true;

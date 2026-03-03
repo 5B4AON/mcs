@@ -185,13 +185,15 @@
               <!-- Last line matches cursor source: cursor stays inline -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                    [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span><span class="cursor"
+                    [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+                    [innerHTML]="formatLine(line)"></span><span class="cursor"
                     [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
             } @else if ($last) {
               <!-- Last line differs from cursor source: block, cursor on new line -->
               <div class="fs-line"
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+                   [innerHTML]="formatLine(line)"></div>
               @if (decoder.currentPattern()) {
                 <span class="cursor"
                       [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
@@ -199,7 +201,8 @@
             } @else {
               <div class="fs-line"
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+                   [innerHTML]="formatLine(line)"></div>
             }
           }
           @if (!conversationLines.length) {
@@ -257,24 +260,28 @@
               <!-- RX last line: cursor inline, encoder buffer on new line -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                    [style.color]="settings.modalDisplay().rxForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span><span class="cursor"
+                    [style.color]="settings.modalDisplay().rxForeground"
+                    [innerHTML]="formatLine(line)"></span><span class="cursor"
                     [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
               @if (encoderPendingChars().length) {
                 <div class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
                       [class.sending]="$first && encoder.isSending()"
                       [style.color]="$first && encoder.isSending()
                         ? settings.modalDisplay().sendingForeground
-                        : settings.modalDisplay().bufferForeground">{{ char }}</span>}</div>
+                        : settings.modalDisplay().bufferForeground"
+                      [innerHTML]="formatText(char)"></span>}</div>
               }
             } @else if ($last && line.type === 'tx') {
               <!-- TX last line: encoder buffer inline, cursor on new line -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                    [style.color]="settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</span>@if (encoderPendingChars().length) {<span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+                    [style.color]="settings.modalDisplay().txForeground"
+                    [innerHTML]="formatLine(line)"></span>@if (encoderPendingChars().length) {<span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
                     [class.sending]="$first && encoder.isSending()"
                     [style.color]="$first && encoder.isSending()
                       ? settings.modalDisplay().sendingForeground
-                      : settings.modalDisplay().bufferForeground">{{ char }}</span>}</span>}
+                      : settings.modalDisplay().bufferForeground"
+                    [innerHTML]="formatText(char)"></span>}</span>}
               @if (decoder.currentPattern()) {
                 <div><span class="cursor"
                       [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span></div>
@@ -283,7 +290,8 @@
               <!-- Non-last line: block -->
               <div class="fs-line"
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">@if (line.userName) {<span class="rtdb-user-prefix">[{{ line.userName }}] </span>}{{ line.text }}</div>
+                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+                   [innerHTML]="formatLine(line)"></div>
             }
           }
           @if (!conversationLines.length) {
@@ -295,7 +303,8 @@
                   <span [class.sending]="$first && encoder.isSending()"
                         [style.color]="$first && encoder.isSending()
                           ? settings.modalDisplay().sendingForeground
-                          : settings.modalDisplay().bufferForeground">{{ char }}</span>
+                          : settings.modalDisplay().bufferForeground"
+                        [innerHTML]="formatText(char)"></span>
                 }
               </span>
             }

@@ -326,26 +326,27 @@ export class MidiInputService implements OnDestroy {
     if (!this.settings.settings().midiInputEnabled) return;
 
     const s = this.settings.settings();
-    const source = s.midiInputSource;
+    const straightSource = s.midiStraightKeySource;
+    const paddleSource = s.midiPaddleSource;
     const reverse = s.midiReversePaddles;
 
     if (isNoteOn) {
       if (note === s.midiStraightKeyNote) {
         this.activeNotes.set(note, 'straightKey');
-        this.keyer.straightKeyInput(true, source);
+        this.keyer.straightKeyInput(true, straightSource);
       } else if (note === s.midiDitNote) {
         this.activeNotes.set(note, reverse ? 'dah' : 'dit');
         if (reverse) {
-          this.keyer.dahPaddleInput(true, source);
+          this.keyer.dahPaddleInput(true, paddleSource);
         } else {
-          this.keyer.ditPaddleInput(true, source);
+          this.keyer.ditPaddleInput(true, paddleSource);
         }
       } else if (note === s.midiDahNote) {
         this.activeNotes.set(note, reverse ? 'dit' : 'dah');
         if (reverse) {
-          this.keyer.ditPaddleInput(true, source);
+          this.keyer.ditPaddleInput(true, paddleSource);
         } else {
-          this.keyer.dahPaddleInput(true, source);
+          this.keyer.dahPaddleInput(true, paddleSource);
         }
       }
     } else if (isNoteOff) {
@@ -355,13 +356,13 @@ export class MidiInputService implements OnDestroy {
 
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, source);
+          this.keyer.straightKeyInput(false, straightSource);
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, source);
+          this.keyer.ditPaddleInput(false, paddleSource);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, source);
+          this.keyer.dahPaddleInput(false, paddleSource);
           break;
       }
     }
@@ -369,17 +370,19 @@ export class MidiInputService implements OnDestroy {
 
   /** Release any currently active notes (called on stop) */
   private releaseAll(): void {
-    const source = this.settings.settings().midiInputSource;
+    const s = this.settings.settings();
+    const straightSource = s.midiStraightKeySource;
+    const paddleSource = s.midiPaddleSource;
     for (const [, action] of this.activeNotes) {
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, source);
+          this.keyer.straightKeyInput(false, straightSource);
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, source);
+          this.keyer.ditPaddleInput(false, paddleSource);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, source);
+          this.keyer.dahPaddleInput(false, paddleSource);
           break;
       }
     }
