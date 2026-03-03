@@ -194,10 +194,8 @@
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
                    [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
                    [innerHTML]="formatLine(line)"></div>
-              @if (decoder.currentPattern()) {
-                <span class="cursor"
-                      [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
-              }
+              <span class="cursor"
+                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
             } @else {
               <div class="fs-line"
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
@@ -281,11 +279,8 @@
                     [style.color]="$first && encoder.isSending()
                       ? settings.modalDisplay().sendingForeground
                       : settings.modalDisplay().bufferForeground"
-                    [innerHTML]="formatText(char)"></span>}</span>}
-              @if (decoder.currentPattern()) {
-                <div><span class="cursor"
-                      [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span></div>
-              }
+                    [innerHTML]="formatText(char)"></span>}</span>}<span class="cursor"
+                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
             } @else {
               <!-- Non-last line: block -->
               <div class="fs-line"

@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.4] - 2026-03-03
+
+### Added
+
+- **Prosign Actions** — new settings card under the "Other" tab that assigns
+  automatic formatting actions to decoded prosigns. Each of the five supported
+  prosigns (`<AR>`, `<BT>`, `<BK>`, `<SK>`, `<HH>`) can be individually
+  enabled and mapped to one of four actions:
+  - **New Line** — inserts a line break
+  - **New Paragraph** — inserts two line breaks
+  - **Clear Line** — deletes the current line back to the previous newline
+  - **Clear Screen** — clears the current fullscreen buffer entirely
+  Actions are triggered in real time in the fullscreen decoder and encoder
+  conversation logs when a prosign is decoded or its punctuation equivalent
+  appears (e.g. `+` for `<AR>`, `=` for `<BT>`). The word-gap space that
+  the decoder emits after a prosign is automatically suppressed so new lines
+  start cleanly. Main screen panels are not affected.
+
+  Default mappings: `<AR>` → New Paragraph, `<BT>` → New Line,
+  `<BK>` → New Line, `<SK>` → Clear Screen, `<HH>` → Clear Line.
+
+### Changed
+
+- **Show Prosigns** — default value changed from `false` to `true` so prosign
+  display is enabled on fresh installs and after resetting to defaults.
+
 ## [0.9.3] - 2026-03-03
 
 ### Added

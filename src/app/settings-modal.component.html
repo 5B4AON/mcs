@@ -1563,10 +1563,50 @@
             </div>
           }
         </div>
+        <!-- ===== 3. PROSIGN ACTIONS ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().prosignActionsEnabled">
+          <div class="settings-card-header" (click)="toggleSection('prosignActions')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('prosignActions') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Prosign Actions</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().prosignActionsEnabled"
+                     (change)="onProsignActionsEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('prosignActions')) {
+            <div class="settings-card-body">
+              <div class="cw-hint">
+                Assign an action to each prosign. When a prosign is decoded (or encoded),
+                the selected action is triggered in the conversation log.
+              </div>
+              <div class="prosign-actions-list">
+                @for (key of prosignKeys; track key) {
+                  <div class="prosign-action-row">
+                    <label class="prosign-action-enable">
+                      <input type="checkbox"
+                             [checked]="settings.settings().prosignActions[key].enabled"
+                             (change)="onProsignEntryEnabledChange(key, $event)">
+                    </label>
+                    <span class="prosign-action-name">{{ key }}</span>
+                    <select class="prosign-action-select"
+                            [value]="settings.settings().prosignActions[key].action"
+                            (change)="onProsignEntryActionChange(key, $event)"
+                            [disabled]="!settings.settings().prosignActions[key].enabled">
+                      @for (opt of prosignActionOptions; track opt.value) {
+                        <option [value]="opt.value" [selected]="opt.value === settings.settings().prosignActions[key].action">{{ opt.label }}</option>
+                      }
+                    </select>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
       }
     </div>
-
-    <!-- Save button (sticky footer) -->
     <div class="settings-modal-footer">
       <button class="save-btn" (click)="saveSettings()" [disabled]="!settings.isDirty()">
         {{ settings.isDirty() ? 'Save Settings' : 'Saved ✓' }}

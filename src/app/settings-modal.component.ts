@@ -7,7 +7,7 @@
 import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { SettingsService, AppSettings, MouseButtonAction } from './services/settings.service';
+import { SettingsService, AppSettings, MouseButtonAction, ProsignAction, ProsignActionEntry } from './services/settings.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
@@ -74,6 +74,17 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   private rtdbInputDebounce: ReturnType<typeof setTimeout> | null = null;
   /** Debounce timer for RTDB output restart on text field changes */
   private rtdbOutputDebounce: ReturnType<typeof setTimeout> | null = null;
+
+  /** Ordered list of prosign keys for the Prosign Actions card */
+  readonly prosignKeys = ['<AR>', '<BT>', '<BK>', '<SK>', '<HH>'];
+
+  /** Available action choices for prosign action dropdowns */
+  readonly prosignActionOptions: { value: ProsignAction; label: string }[] = [
+    { value: 'newLine', label: 'New Line' },
+    { value: 'newParagraph', label: 'New Paragraph' },
+    { value: 'clearLine', label: 'Clear Line' },
+    { value: 'clearScreen', label: 'Clear Screen' },
+  ];
 
   /**
    * Conflict: CW audio input uses the same mic device as pilot tone detection.
@@ -573,5 +584,26 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     const value = (event.target as HTMLSelectElement).value;
     this.settings.update({ midiOutputDeviceId: value });
     this.midiOutput.reattach();
+  }
+
+  // ---- Prosign Actions handlers ----
+
+  onProsignActionsEnabledChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.settings.update({ prosignActionsEnabled: checked });
+  }
+
+  onProsignEntryEnabledChange(key: string, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const actions = { ...this.settings.settings().prosignActions };
+    actions[key] = { ...actions[key], enabled: checked };
+    this.settings.update({ prosignActions: actions });
+  }
+
+  onProsignEntryActionChange(key: string, event: Event): void {
+    const value = (event.target as HTMLSelectElement).value as ProsignAction;
+    const actions = { ...this.settings.settings().prosignActions };
+    actions[key] = { ...actions[key], action: value };
+    this.settings.update({ prosignActions: actions });
   }
 }

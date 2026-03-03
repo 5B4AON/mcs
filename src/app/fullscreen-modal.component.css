@@ -368,6 +368,21 @@
   color: #8cf;
   opacity: .7;
 }
+.cursor::after {
+  content: '';
+  display: inline-block;
+  width: 0.07em;
+  height: 0.82em;
+  min-width: 2px;
+  background: #888;
+  vertical-align: -0.15em;
+  margin-left: 1px;
+  animation: cursor-blink 1s step-end infinite;
+}
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
 
 /* Font size slider */
 .fs-font-ctl {

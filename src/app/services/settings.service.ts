@@ -29,6 +29,14 @@ export type SerialPin = 'dtr' | 'rts';
 export type OutputForward = 'rx' | 'tx' | 'both';
 /** @deprecated Use OutputForward instead */
 export type WinkeyerForward = OutputForward;
+/** Action to perform when a prosign is decoded */
+export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLine' | 'clearScreen';
+
+/** Configuration for a single prosign action mapping */
+export interface ProsignActionEntry {
+  enabled: boolean;
+  action: ProsignAction;
+}
 
 /**
  * Complete application settings interface.
@@ -204,6 +212,12 @@ export interface AppSettings {
   // --- Display Options ---
   /** Show prosigns (e.g., <AR>) instead of punctuation (e.g., +) in conversation logs */
   showProsigns: boolean;
+
+  // --- Prosign Actions ---
+  /** Master toggle for prosign action handling */
+  prosignActionsEnabled: boolean;
+  /** Per-prosign action mappings */
+  prosignActions: Record<string, ProsignActionEntry>;
 }
 
 /**
@@ -345,7 +359,16 @@ const DEFAULT_SETTINGS: AppSettings = {
 
   wakeLockEnabled: false,
 
-  showProsigns: false,
+  showProsigns: true,
+
+  prosignActionsEnabled: true,
+  prosignActions: {
+    '<AR>': { enabled: true, action: 'newParagraph' },
+    '<BT>': { enabled: true, action: 'newLine' },
+    '<BK>': { enabled: true, action: 'newLine' },
+    '<SK>': { enabled: true, action: 'clearScreen' },
+    '<HH>': { enabled: true, action: 'clearLine' },
+  },
 };
 
 const PROFILES_KEY = 'morseProfiles';

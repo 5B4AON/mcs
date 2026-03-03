@@ -153,3 +153,94 @@
   <li><strong>Colours</strong> — Custom colours for RX text, TX text, buffered
       text, currently-sending character, and background.</li>
 </ul>
+
+<!-- 8.4 Show Prosigns -->
+<h2 id="s8-4">8.4 &nbsp;Show Prosigns</h2>
+
+<p>
+  Found in <strong>Settings &rarr; Other</strong>. When enabled, punctuation
+  characters that share morse patterns with prosigns are displayed as their
+  prosign names in the fullscreen conversation logs. For example,
+  <code>+</code> appears as <code>&lt;AR&gt;</code>, and <code>=</code>
+  appears as <code>&lt;BT&gt;</code>.
+</p>
+<p>
+  This is a <em>display-only</em> transformation &mdash; the application
+  continues to work with punctuation characters internally. The conversion
+  applies to the fullscreen decoder and encoder conversation windows only;
+  main screen log panels show the raw punctuation. Prosigns that do not
+  share a pattern with punctuation (e.g. <code>&lt;SK&gt;</code>,
+  <code>&lt;HH&gt;</code>) are always shown in their prosign form
+  regardless of this setting.
+</p>
+
+<!-- 8.5 Prosign Actions -->
+<h2 id="s8-5">8.5 &nbsp;Prosign Actions</h2>
+
+<p>
+  Found in <strong>Settings &rarr; Other</strong>. When the master toggle is
+  enabled, decoded prosigns automatically trigger formatting actions in the
+  fullscreen conversation logs.
+</p>
+
+<p>
+  Five prosigns are supported, each individually enabled and mapped to one
+  of four actions:
+</p>
+
+<table class="prosign-table">
+  <thead>
+    <tr>
+      <th>Prosign</th>
+      <th>Default Action</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>&lt;AR&gt;</code></td>
+      <td>New Paragraph</td>
+      <td>End of message &mdash; inserts two blank lines</td>
+    </tr>
+    <tr>
+      <td><code>&lt;BT&gt;</code></td>
+      <td>New Line</td>
+      <td>Break / new paragraph &mdash; inserts a line break</td>
+    </tr>
+    <tr>
+      <td><code>&lt;BK&gt;</code></td>
+      <td>New Line</td>
+      <td>Back to you &mdash; inserts a line break</td>
+    </tr>
+    <tr>
+      <td><code>&lt;SK&gt;</code></td>
+      <td>Clear Screen</td>
+      <td>End of contact &mdash; clears the current fullscreen buffer</td>
+    </tr>
+    <tr>
+      <td><code>&lt;HH&gt;</code></td>
+      <td>Clear Line</td>
+      <td>Error &mdash; deletes the current line back to the last line break</td>
+    </tr>
+  </tbody>
+</table>
+
+<p>
+  <strong>Available actions:</strong>
+</p>
+<ul>
+  <li><strong>New Line</strong> &mdash; inserts a single line break.</li>
+  <li><strong>New Paragraph</strong> &mdash; inserts two line breaks (blank line separator).</li>
+  <li><strong>Clear Line</strong> &mdash; removes all text on the current line back to
+      the previous newline (or the start of the buffer).</li>
+  <li><strong>Clear Screen</strong> &mdash; clears the current fullscreen buffer entirely.
+      Other buffers (main panel, the other fullscreen view) are not affected.</li>
+</ul>
+
+<p>
+  Prosign actions only affect the <strong>fullscreen</strong> decoder and
+  encoder conversation logs. The main screen panels always show the raw
+  decoded text. The word-gap space that the decoder normally emits after
+  a character is automatically suppressed when a prosign action fires, so
+  new lines start without a leading space.
+</p>
