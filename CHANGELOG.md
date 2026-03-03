@@ -19,8 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- **RTDB Validation Rules** — updated character length validation from ≤2 to ≤4
-  characters to support prosign patterns like `<SK>` (4 characters with brackets).
+- **RTDB Validation Rules** — updated character length validation from ≤2 to ≤5
+  characters to support prosign patterns like `<SK>` and `<SOS>`.
   This allows prosigns to be forwarded through Firebase RTDB relay channels.
 - **WinKeyer Prosign Handling** — WinKeyer output now intelligently handles
   prosigns: clashing prosigns (e.g., `<AR>`) are converted to their ASCII

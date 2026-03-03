@@ -65,7 +65,7 @@ for (const [char, code] of Object.entries(MORSE_TABLE)) {
 
 // Add non-clashing prosigns to the reverse lookup
 // (Prosigns that share patterns with punctuation are handled via PUNCTUATION_TO_PROSIGN)
-const NON_CLASHING_PROSIGNS = ['<BK>', '<SK>', '<SOS>', '<HH>'];
+const NON_CLASHING_PROSIGNS = ['<BK>', '<SK>', '<KA>', '<SOS>', '<HH>'];
 for (const prosign of NON_CLASHING_PROSIGNS) {
   const code = MORSE_TABLE[prosign];
   if (code && !MORSE_REVERSE[code]) {
@@ -85,7 +85,6 @@ export const PUNCTUATION_TO_PROSIGN: Record<string, string> = {
   '&': '<AS>',  // Wait (.-...)
   '=': '<BT>',  // Break / new paragraph (-...-)
   '(': '<KN>',  // Go ahead, specific station (-.--.)
-  ';': '<KA>',  // Message begins / Start of work (-.-.-.)
 };
 
 /**

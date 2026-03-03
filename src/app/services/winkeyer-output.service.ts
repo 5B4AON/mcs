@@ -300,7 +300,7 @@ export class WinkeyerOutputService {
    * Characters are buffered internally by WinKeyer (up to ~160 chars).
    *
    * Prosigns in the string are converted to punctuation or skipped:
-   * - <AR> → +, <AS> → &, <BT> → =, <KN> → (, <KA> → ;
+   * - <AR> → +, <AS> → &, <BT> → =, <KN> → (
    * - <SK>, <HH>, <SOS>, <BK> are skipped (not supported by WinKeyer)
    */
   async sendText(text: string): Promise<void> {
