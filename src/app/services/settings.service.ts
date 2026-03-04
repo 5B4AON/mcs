@@ -30,12 +30,21 @@ export type OutputForward = 'rx' | 'tx' | 'both';
 /** @deprecated Use OutputForward instead */
 export type WinkeyerForward = OutputForward;
 /** Action to perform when a prosign is decoded */
-export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLine' | 'clearScreen';
+export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLastWord' | 'clearLine' | 'clearScreen';
 
 /** Configuration for a single prosign action mapping */
 export interface ProsignActionEntry {
   enabled: boolean;
   action: ProsignAction;
+}
+
+/** Configuration for a single emoji replacement mapping */
+export interface EmojiMapping {
+  enabled: boolean;
+  /** Match pattern — a character (e.g. '+'), prosign (e.g. '<AR>'), or sequence (e.g. 'TNX') */
+  match: string;
+  /** Emoji character to display */
+  emoji: string;
 }
 
 /**
@@ -218,6 +227,12 @@ export interface AppSettings {
   prosignActionsEnabled: boolean;
   /** Per-prosign action mappings */
   prosignActions: Record<string, ProsignActionEntry>;
+
+  // --- Emoji Replacements ---
+  /** Master toggle for emoji display in fullscreen modals */
+  emojisEnabled: boolean;
+  /** Ordered list of emoji replacement mappings */
+  emojiMappings: EmojiMapping[];
 }
 
 /**
@@ -365,10 +380,18 @@ const DEFAULT_SETTINGS: AppSettings = {
   prosignActions: {
     '<AR>': { enabled: true, action: 'newParagraph' },
     '<BT>': { enabled: true, action: 'newLine' },
-    '<BK>': { enabled: true, action: 'newLine' },
-    '<SK>': { enabled: true, action: 'clearScreen' },
-    '<HH>': { enabled: true, action: 'clearLine' },
+    '<HH>': { enabled: true, action: 'clearLastWord' },
   },
+
+  emojisEnabled: true,
+  emojiMappings: [
+    { enabled: true, match: 'TNX', emoji: '🙏' },
+    { enabled: true, match: '73', emoji: '👋' },
+    { enabled: true, match: '88', emoji: '😘' },
+    { enabled: true, match: 'TU', emoji: '🤝' },
+    { enabled: true, match: '<AR>', emoji: '✅' },
+    { enabled: true, match: '<SK>', emoji: '🔚' },
+  ],
 };
 
 const PROFILES_KEY = 'morseProfiles';
@@ -513,6 +536,14 @@ export class SettingsService {
           parsed.midiStraightKeySource = parsed.midiInputSource;
           parsed.midiPaddleSource = parsed.midiInputSource;
         }
+        // Migrate: remove <BK>/<SK> from prosignActions, update <HH> clearLine → clearLastWord
+        if (parsed.prosignActions) {
+          delete parsed.prosignActions['<BK>'];
+          delete parsed.prosignActions['<SK>'];
+          if (parsed.prosignActions['<HH>']?.action === 'clearLine') {
+            parsed.prosignActions['<HH>'].action = 'clearLastWord';
+          }
+        }
         this.settings.set({ ...DEFAULT_SETTINGS, ...parsed });
         this.isDirty.set(true);
       } catch { /* ignore corrupt data */ }
@@ -584,6 +615,14 @@ export class SettingsService {
       if (remapped.midiInputSource !== undefined && (remapped as any).midiStraightKeySource === undefined) {
         (remapped as any).midiStraightKeySource = remapped.midiInputSource;
         (remapped as any).midiPaddleSource = remapped.midiInputSource;
+      }
+      // Migrate: remove <BK>/<SK> from prosignActions, update <HH> clearLine → clearLastWord
+      if ((remapped as any).prosignActions) {
+        delete (remapped as any).prosignActions['<BK>'];
+        delete (remapped as any).prosignActions['<SK>'];
+        if ((remapped as any).prosignActions['<HH>']?.action === 'clearLine') {
+          (remapped as any).prosignActions['<HH>'].action = 'clearLastWord';
+        }
       }
       this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
       this.isDirty.set(false);

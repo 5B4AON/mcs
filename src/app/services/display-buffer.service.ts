@@ -73,10 +73,11 @@ export class DisplayBuffer {
    * Execute a prosign action on this buffer.
    *
    * Actions modify existing entries before rebuilding:
-   *  - newLine:       appends a newline character
-   *  - newParagraph:  appends two newline characters
-   *  - clearLine:     removes entries back to the last newline (or start)
-   *  - clearScreen:   clears all entries
+   *  - newLine:        appends a newline character
+   *  - newParagraph:   appends two newline characters
+   *  - clearLastWord:  removes entries back to the last space/newline boundary
+   *  - clearLine:      removes entries back to the last newline (or start)
+   *  - clearScreen:    clears all entries
    */
   applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', userName?: string): void {
     switch (action) {
@@ -87,6 +88,21 @@ export class DisplayBuffer {
         this.entries.push({ type, char: '\n', userName });
         this.entries.push({ type, char: '\n', userName });
         break;
+      case 'clearLastWord': {
+        // Remove entries back to the most recent space or newline (including trailing space)
+        let i = this.entries.length - 1;
+        // Skip trailing spaces
+        while (i >= 0 && this.entries[i].char === ' ') {
+          i--;
+        }
+        // Skip word characters back to space/newline boundary
+        while (i >= 0 && this.entries[i].char !== ' ' && this.entries[i].char !== '\n') {
+          i--;
+        }
+        // Keep the boundary character (space/newline) if found, remove everything after
+        this.entries.splice(i + 1);
+        break;
+      }
       case 'clearLine': {
         // Remove entries back to the most recent newline (or start of buffer)
         let i = this.entries.length - 1;
@@ -169,28 +185,27 @@ export class DisplayBufferService {
 
   /**
    * Push a decoded character to all relevant buffers.
-   * Both fullscreen modes show decoded text in their conversation view.
+   * Both fullscreen modes and main panel show decoded text.
    * If the character is a prosign with an enabled action, the action
-   * is applied to the fullscreen buffers instead of the raw text.
+   * is applied to all buffers instead of the raw text.
    */
   pushDecoded(type: 'rx' | 'tx', char: string, userName?: string): void {
-    // Always push to main panel buffer (no action handling there)
-    this.mainDecoder.push(type, char, userName);
-
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
       return;
     }
 
-    // Check for prosign action on the fullscreen buffers
+    // Check for prosign action
     const action = this.resolveProsignAction(char);
     if (action) {
+      this.mainDecoder.applyProsignAction(action, type, userName);
       this.fullscreenDecoder.applyProsignAction(action, type, userName);
       this.fullscreenEncoder.applyProsignAction(action, type, userName);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
+      this.mainDecoder.push(type, char, userName);
       this.fullscreenDecoder.push(type, char, userName);
       this.fullscreenEncoder.push(type, char, userName);
     }
@@ -198,28 +213,27 @@ export class DisplayBufferService {
 
   /**
    * Push a sent (encoder) character to all relevant buffers.
-   * Both fullscreen modes show sent text in their conversation view.
+   * Both fullscreen modes and main panel show sent text.
    * If the character is a prosign with an enabled action, the action
-   * is applied to the fullscreen buffers instead of the raw text.
+   * is applied to all buffers instead of the raw text.
    */
   pushSent(char: string, userName?: string): void {
-    // Always push to main panel buffer (no action handling there)
-    this.mainEncoder.push('tx', char, userName);
-
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
       return;
     }
 
-    // Check for prosign action on the fullscreen buffers
+    // Check for prosign action
     const action = this.resolveProsignAction(char);
     if (action) {
+      this.mainEncoder.applyProsignAction(action, 'tx', userName);
       this.fullscreenDecoder.applyProsignAction(action, 'tx', userName);
       this.fullscreenEncoder.applyProsignAction(action, 'tx', userName);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
+      this.mainEncoder.push('tx', char, userName);
       this.fullscreenDecoder.push('tx', char, userName);
       this.fullscreenEncoder.push('tx', char, userName);
     }

@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, computed, ViewChild, ElementRef, AfterViewInit, HostListener, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -85,8 +85,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Which modal is open: 'decoder' (conversation), 'encoder' (QSO), or null */
   activeModal: 'decoder' | 'encoder' | null = null;
 
-  readonly encoderChars = computed(() => this.encoder.buffer().split(''));
-
   /** Whether the encoder textarea has text (for TX button state) */
   encoderInputHasText = false;
 
@@ -97,6 +95,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   clearMenuOpen: 'decoder' | 'encoder' | null = null;
 
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
 
   private subs: Subscription[] = [];
 
@@ -176,13 +175,38 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const buf = this.encoder.buffer();
       const idx = this.encoder.sentIndex();
       if (buf !== this.lastSentBuf) {
-        // Buffer replaced (new text submitted or cleared) — reset tracking
+        // Buffer was replaced or cleared.
+        // When processSend finishes, sentIndex.set(endIdx), buffer.set(''),
+        // and sentIndex.set(0) all happen synchronously — Angular coalesces
+        // the signal updates and the effect only sees the final state
+        // (buf='', idx=0). Flush any remaining unpushed characters from
+        // the old buffer so they reach the display (and prosign actions fire).
+        if (buf === '' && this.lastSentBuf && this.lastSentIdx < this.lastSentBuf.length) {
+          const userName = this.getDisplayUserName('tx');
+          let i = this.lastSentIdx;
+          while (i < this.lastSentBuf.length) {
+            const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
+            this.displayBuffers.pushSent(token, userName);
+            i = endIdx;
+          }
+        }
         this.lastSentBuf = buf;
         this.lastSentIdx = idx;
+        // Sync the main-screen textarea when the encoder clears its buffer
+        // (e.g. after live-mode send completes) so stale text can't be re-fed
+        if (buf === '' && this.encoderInputRef) {
+          this.encoderInputRef.nativeElement.value = '';
+          this.encoderInputHasText = false;
+        }
       } else if (idx > this.lastSentIdx) {
         const userName = this.getDisplayUserName('tx');
-        for (let i = this.lastSentIdx; i < idx; i++) {
-          this.displayBuffers.pushSent(buf[i], userName);
+        // Walk through newly sent characters using token extraction so
+        // prosign patterns (e.g. '<SK>') are pushed as whole strings.
+        let i = this.lastSentIdx;
+        while (i < idx) {
+          const { token, endIdx } = this.encoder.extractToken(buf, i);
+          this.displayBuffers.pushSent(token, userName);
+          i = endIdx;
         }
         this.lastSentIdx = idx;
       }

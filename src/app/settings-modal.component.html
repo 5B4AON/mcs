@@ -1605,6 +1605,78 @@
             </div>
           }
         </div>
+
+        <!-- ===== 4. EMOJIS ===== -->
+        <div class="settings-card" [class.disabled-card]="!settings.settings().emojisEnabled">
+          <div class="settings-card-header" (click)="toggleSection('emojis')">
+            <div class="settings-card-title">
+              <span class="settings-card-chevron">{{ isSectionExpanded('emojis') ? '&#9660;' : '&#9654;' }}</span>
+              <span class="settings-card-name">Emojis</span>
+            </div>
+            <label class="toggle-switch" (click)="$event.stopPropagation()">
+              <input type="checkbox" [checked]="settings.settings().emojisEnabled"
+                     (change)="onEmojisEnabledChange($event)">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          @if (isSectionExpanded('emojis')) {
+            <div class="settings-card-body">
+              <div class="cw-hint">
+                Replace character sequences or prosigns with emoji graphics in the
+                fullscreen decoder and encoder conversation logs. Matching is
+                case-insensitive. Prosign patterns (e.g., &lt;AR&gt;) also match
+                their punctuation equivalents (e.g., +).<br><br>
+                Emojis scale with the conversation font size setting.
+              </div>
+              <div class="emoji-list">
+                @for (mapping of settings.settings().emojiMappings; track $index) {
+                  <div class="emoji-row" [class.emoji-row-disabled]="!mapping.enabled">
+                    @if (emojiEditIndex === $index) {
+                      <!-- Edit mode -->
+                      <label class="emoji-enable">
+                        <input type="checkbox" [checked]="mapping.enabled"
+                               (change)="onEmojiEntryEnabledChange($index, $event)">
+                      </label>
+                      <input class="emoji-match-input" type="text"
+                             [(ngModel)]="emojiEditMatch" placeholder="Match text"
+                             maxlength="20" (keydown.enter)="emojiSaveEdit()"
+                             (keydown.escape)="emojiCancelEdit()">
+                      <div class="emoji-emoji-input-group">
+                        <input class="emoji-emoji-input" type="text"
+                               [(ngModel)]="emojiEditEmoji" placeholder="🙂"
+                               maxlength="4" (keydown.enter)="emojiSaveEdit()"
+                               (keydown.escape)="emojiCancelEdit()">
+                        <button class="emoji-btn emoji-btn-picker" (click)="openEmojiPicker()" title="Pick emoji">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                        </button>
+                      </div>
+                      <button class="emoji-btn emoji-btn-save" (click)="emojiSaveEdit()" title="Save">&#10003;</button>
+                      <button class="emoji-btn emoji-btn-cancel" (click)="emojiCancelEdit()" title="Cancel">&#10007;</button>
+                    } @else {
+                      <!-- View mode -->
+                      <label class="emoji-enable">
+                        <input type="checkbox" [checked]="mapping.enabled"
+                               (change)="onEmojiEntryEnabledChange($index, $event)">
+                      </label>
+                      <span class="emoji-match-text" (click)="emojiStartEdit($index)">{{ mapping.match }}</span>
+                      <span class="emoji-emoji-text" (click)="emojiStartEdit($index)">{{ mapping.emoji }}</span>
+                      <button class="emoji-btn emoji-btn-edit" (click)="emojiStartEdit($index)" title="Edit">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+                      </button>
+                      <button class="emoji-btn emoji-btn-delete" (click)="emojiDelete($index)" title="Delete">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                      </button>
+                    }
+                  </div>
+                  @if (emojiEditIndex === $index && emojiEditError) {
+                    <div class="emoji-error">{{ emojiEditError }}</div>
+                  }
+                }
+              </div>
+              <button class="emoji-add-btn" (click)="emojiAdd()">+ Add Emoji</button>
+            </div>
+          }
+        </div>
       }
     </div>
     <div class="settings-modal-footer">
@@ -1626,4 +1698,11 @@ This cannot be undone."
     [danger]="true"
     (confirmed)="onResetConfirmed($event)">
   </app-confirm-dialog>
+}
+
+@if (showEmojiPicker) {
+  <app-emoji-picker
+    (emojiSelected)="onEmojiPickerSelected($event)"
+    (closed)="closeEmojiPicker()">
+  </app-emoji-picker>
 }

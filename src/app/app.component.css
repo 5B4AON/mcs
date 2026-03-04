@@ -374,23 +374,71 @@
 /* ===== Morse Decoder ===== */
 .decoded-text {
   font-family: 'Courier New', monospace;
-  font-size: 1.15rem;
-  min-height: 4em;
-  max-height: 14rem;
+  font-size: 1.1rem;
+  min-height: 8em;
+  max-height: 32rem;
   overflow-y: auto;
-  background: #0e1218;
-  border: 1px solid #1c2630;
-  border-radius: 4px;
-  padding: .6rem .8rem;
-  line-height: 1.5;
+  position: relative;
+  padding: 0.3rem 0.7rem 0.5rem 0.7rem;
+  line-height: 1.35em;
   white-space: pre-wrap;
   word-break: break-all;
-  color: #eee;
-  box-shadow: inset -3px -3px 8px rgba(0,0,0,.65), inset 2px 2px 5px rgba(255,255,255,.05);
+  color: #1a0f08;
+  text-shadow: 0 0 0.3px rgba(26, 15, 8, 0.25);
+  /* Parchment paper background */
+  background: 
+    /* Horizontal ruled lines aligned with text baseline */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(1.35em - 1px),
+      rgba(105, 85, 65, 0.18) calc(1.35em - 1px),
+      rgba(105, 85, 65, 0.18) 1.35em
+    ),
+    /* Paper grain noise texture */
+    url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.05"/></svg>'),
+    /* Age spots and stains */
+    radial-gradient(ellipse at 80% 20%, rgba(139, 115, 85, 0.08), transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(139, 115, 85, 0.06), transparent 35%),
+    radial-gradient(ellipse at 60% 60%, rgba(139, 115, 85, 0.05), transparent 50%),
+    /* Base aged parchment - darker tones */
+    linear-gradient(
+      to bottom,
+      #d4c4a8,
+      #cdbaa0 25%,
+      #c8b599 75%,
+      #c0ad91
+    );
+  border: none;
+  border-radius: 1px;
+  /* Worn paper edges and realistic shadow */
+  box-shadow: 
+    /* Drop shadow layers */
+    0 2px 3px rgba(80, 60, 40, 0.15),
+    0 4px 8px rgba(80, 60, 40, 0.12),
+    0 8px 16px rgba(80, 60, 40, 0.08),
+    /* Edge darkening for worn effect */
+    inset 0 0 0 0.5px rgba(100, 80, 60, 0.25),
+    inset 1px 1px 3px rgba(100, 80, 60, 0.12),
+    inset -1px -1px 3px rgba(100, 80, 60, 0.12),
+    /* Subtle edge highlights */
+    inset 0.5px 0.5px 1px rgba(255, 248, 235, 0.2);
+  /* Torn/irregular edge effect */
+  clip-path: polygon(
+    0% 0.2%,
+    0.3% 0%,
+    99.8% 0%,
+    100% 0.3%,
+    100% 99.7%,
+    99.7% 100%,
+    0.2% 100%,
+    0% 99.8%
+  );
 }
 .cursor {
-  color: #8cf;
-  opacity: .7;
+  color: #4a3a2a;
+  opacity: .65;
+  font-weight: 600;
 }
 .decoded-actions {
   display: flex;
@@ -428,31 +476,88 @@
 
 .encoder-buffer {
   font-family: 'Courier New', monospace;
-  font-size: 1.15rem;
-  min-height: 4em;
-  max-height: 14rem;
+  font-size: 1.1rem;
+  min-height: 8em;
+  max-height: 32rem;
   overflow-y: auto;
-  padding: .6rem .8rem;
-  line-height: 1.5;
-  background: #0e1218;
-  border: 1px solid #1c2630;
-  border-radius: 4px;
+  position: relative;
+  padding: 0.3rem 0.7rem 0.5rem 0.7rem;
+  line-height: 1.35em;
   margin-bottom: .5rem;
   word-break: break-all;
-  box-shadow: inset -3px -3px 8px rgba(0,0,0,.65), inset 2px 2px 5px rgba(255,255,255,.05);
+  white-space: pre-wrap;
+  color: #1a0f08;
+  text-shadow: 0 0 0.3px rgba(26, 15, 8, 0.25);
+  /* Parchment paper background */
+  background: 
+    /* Horizontal ruled lines aligned with text baseline */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(1.35em - 1px),
+      rgba(105, 85, 65, 0.18) calc(1.35em - 1px),
+      rgba(105, 85, 65, 0.18) 1.35em
+    ),
+    /* Paper grain noise texture */
+    url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.05"/></svg>'),
+    /* Age spots and stains */
+    radial-gradient(ellipse at 80% 20%, rgba(139, 115, 85, 0.08), transparent 40%),
+    radial-gradient(ellipse at 20% 80%, rgba(139, 115, 85, 0.06), transparent 35%),
+    radial-gradient(ellipse at 60% 60%, rgba(139, 115, 85, 0.05), transparent 50%),
+    /* Base aged parchment - darker tones */
+    linear-gradient(
+      to bottom,
+      #d4c4a8,
+      #cdbaa0 25%,
+      #c8b599 75%,
+      #c0ad91
+    );
+  border: none;
+  border-radius: 1px;
+  /* Worn paper edges and realistic shadow */
+  box-shadow: 
+    /* Drop shadow layers */
+    0 2px 3px rgba(80, 60, 40, 0.15),
+    0 4px 8px rgba(80, 60, 40, 0.12),
+    0 8px 16px rgba(80, 60, 40, 0.08),
+    /* Edge darkening for worn effect */
+    inset 0 0 0 0.5px rgba(100, 80, 60, 0.25),
+    inset 1px 1px 3px rgba(100, 80, 60, 0.12),
+    inset -1px -1px 3px rgba(100, 80, 60, 0.12),
+    /* Subtle edge highlights */
+    inset 0.5px 0.5px 1px rgba(255, 248, 235, 0.2);
+  /* Torn/irregular edge effect */
+  clip-path: polygon(
+    0% 0.2%,
+    0.3% 0%,
+    99.8% 0%,
+    100% 0.3%,
+    100% 99.7%,
+    99.7% 100%,
+    0.2% 100%,
+    0% 99.8%
+  );
 }
-.encoder-buffer span {
-  display: inline-block;
-  min-width: .6em;
-  text-align: center;
-  color: #888;
+
+/* Parchment scrollbar styling */
+.decoded-text::-webkit-scrollbar,
+.encoder-buffer::-webkit-scrollbar {
+  width: 8px;
 }
-.encoder-buffer span.sent {
-  color: #eee;
+.decoded-text::-webkit-scrollbar-track,
+.encoder-buffer::-webkit-scrollbar-track {
+  background: rgba(105, 85, 65, 0.12);
+  border-radius: 1px;
 }
-.encoder-buffer span.sending {
-  color: #ff0;
-  font-weight: bold;
+.decoded-text::-webkit-scrollbar-thumb,
+.encoder-buffer::-webkit-scrollbar-thumb {
+  background: rgba(105, 85, 65, 0.35);
+  border-radius: 1px;
+  border: 2px solid rgba(212, 196, 168, 0.4);
+}
+.decoded-text::-webkit-scrollbar-thumb:hover,
+.encoder-buffer::-webkit-scrollbar-thumb:hover {
+  background: rgba(105, 85, 65, 0.5);
 }
 
 .encoder-input-row {

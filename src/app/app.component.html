@@ -136,8 +136,8 @@
         </button>
         @if (clearMenuOpen === 'decoder') {
           <div class="clear-menu">
-            <button class="clear-menu-btn clear-this" (click)="clearMainDecoder(); closeClearMenu()">This log</button>
-            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All logs</button>
+            <button class="clear-menu-btn clear-this" (click)="clearMainDecoder(); closeClearMenu()">This text area</button>
+            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All text areas</button>
           </div>
         }
       </div>
@@ -157,12 +157,7 @@
       </div>
     </div>
 
-    <div class="encoder-buffer">
-      @for (char of encoderChars(); track $index) {
-        <span [class.sent]="$index < encoder.sentIndex()"
-              [class.sending]="$index === encoder.sentIndex() && encoder.isSending()">{{ char }}</span>
-      }
-    </div>
+    <div class="encoder-buffer">{{ displayBuffers.mainEncoder.text() }}</div>
 
     <div class="encoder-input-row">
       <textarea #encoderInput rows="2" placeholder="Type text to encode..."
@@ -187,9 +182,9 @@
         </button>
         @if (clearMenuOpen === 'encoder') {
           <div class="clear-menu">
-            <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Text area</button>
-            <button class="clear-menu-btn clear-this" (click)="clearEncoder(encoderInput); closeClearMenu()">This log</button>
-            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All logs</button>
+            <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Input box</button>
+            <button class="clear-menu-btn clear-this" (click)="clearEncoder(encoderInput); closeClearMenu()">This text area</button>
+            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All text areas</button>
           </div>
         }
       </div>

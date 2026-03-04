@@ -83,9 +83,9 @@ export class MorseEncoderService {
   setBuffer(text: string): void {
     const upper = text.toUpperCase();
     this.buffer.set(upper);
-    // Don't reset sentIndex if the buffer just grew (append-style typing)
+    // Clamp sentIndex to new buffer length (don't reset to 0 — sent chars are gone)
     if (this.sentIndex() > upper.length) {
-      this.sentIndex.set(0);
+      this.sentIndex.set(upper.length);
     }
     // In live mode, auto-start TX when there is unsent text
     if (this.settings.settings().encoderMode === 'live' && upper.length > this.sentIndex()) {
@@ -138,9 +138,9 @@ export class MorseEncoderService {
   /**
    * Extract the next token from the buffer.
    * Returns either a single character or a prosign pattern (e.g., '<SK>').
-   * Updates the provided index to point past the extracted token.
+   * The returned endIdx points past the extracted token.
    */
-  private extractToken(buffer: string, startIdx: number): { token: string; endIdx: number } {
+  extractToken(buffer: string, startIdx: number): { token: string; endIdx: number } {
     if (buffer[startIdx] === '<') {
       const endIdx = buffer.indexOf('>', startIdx);
       if (endIdx !== -1 && endIdx > startIdx + 1) {
@@ -189,6 +189,12 @@ export class MorseEncoderService {
       this.sending = false;
       if (this.sentIndex() >= this.buffer().length) {
         this.isSending.set(false);
+        // In live mode, clear the buffer when sending completes
+        // In enter mode, keep the buffer so it's visible until manually cleared
+        if (this.settings.settings().encoderMode === 'live') {
+          this.buffer.set('');
+          this.sentIndex.set(0);
+        }
       }
     }
   }

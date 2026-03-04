@@ -1,0 +1,48 @@
+<div class="emoji-picker-overlay" (click)="close()">
+  <div class="emoji-picker-modal" (click)="$event.stopPropagation()">
+    <div class="emoji-picker-header">
+      <h3>Select Emoji</h3>
+      <button type="button" class="close-btn" (click)="close()" title="Close">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <div class="emoji-picker-search">
+      <input
+        type="text"
+        [(ngModel)]="searchQuery"
+        placeholder="Search emojis..."
+        class="search-input"
+      />
+    </div>
+
+    <div class="emoji-picker-categories">
+      @for (category of categories; track category.name) {
+        <button
+          type="button"
+          class="category-btn"
+          [class.active]="activeCategory === category.name"
+          (click)="selectCategory(category.name)"
+        >
+          {{ category.name }}
+        </button>
+      }
+    </div>
+
+    <div class="emoji-picker-grid">
+      @for (emoji of filteredEmojis; track emoji) {
+        <button
+          type="button"
+          class="emoji-item"
+          (click)="selectEmoji(emoji)"
+          [title]="emoji"
+        >
+          {{ emoji }}
+        </button>
+      }
+    </div>
+  </div>
+</div>

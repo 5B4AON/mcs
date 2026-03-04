@@ -618,6 +618,15 @@
   display: inline-block;
 }
 
+/* Emoji display — scales with conversation font size, slightly larger for visibility
+   ::ng-deep required because spans are injected via innerHTML */
+:host ::ng-deep .emoji-display {
+  font-size: 1.1em;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-block;
+}
+
 /* Inline encoder buffer displayed in conversation area */
 .fs-encoder-inline {
   font-family: 'Courier New', monospace;

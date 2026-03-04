@@ -7,7 +7,7 @@
 import { Component, EventEmitter, Input, OnInit, OnDestroy, Output, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
-import { SettingsService, AppSettings, MouseButtonAction, ProsignAction, ProsignActionEntry } from './services/settings.service';
+import { SettingsService, AppSettings, MouseButtonAction, ProsignAction, ProsignActionEntry, EmojiMapping } from './services/settings.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
@@ -19,6 +19,7 @@ import { MidiInputService, midiNoteName } from './services/midi-input.service';
 import { MidiOutputService, midiOutputNoteName } from './services/midi-output.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { ConfirmDialogComponent } from './confirm-dialog.component';
+import { EmojiPickerComponent } from './emoji-picker.component';
 
 /**
  * Settings modal component.
@@ -30,7 +31,7 @@ import { ConfirmDialogComponent } from './confirm-dialog.component';
 @Component({
   selector: 'app-settings-modal',
   standalone: true,
-  imports: [FormsModule, ConfirmDialogComponent],
+  imports: [FormsModule, ConfirmDialogComponent, EmojiPickerComponent],
   templateUrl: './settings-modal.component.html',
   styleUrls: ['./settings-modal.component.css'],
 })
@@ -76,12 +77,13 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   private rtdbOutputDebounce: ReturnType<typeof setTimeout> | null = null;
 
   /** Ordered list of prosign keys for the Prosign Actions card */
-  readonly prosignKeys = ['<AR>', '<BT>', '<BK>', '<SK>', '<HH>'];
+  readonly prosignKeys = ['<AR>', '<BT>', '<HH>'];
 
   /** Available action choices for prosign action dropdowns */
   readonly prosignActionOptions: { value: ProsignAction; label: string }[] = [
     { value: 'newLine', label: 'New Line' },
     { value: 'newParagraph', label: 'New Paragraph' },
+    { value: 'clearLastWord', label: 'Clear Last Word' },
     { value: 'clearLine', label: 'Clear Line' },
     { value: 'clearScreen', label: 'Clear Screen' },
   ];
@@ -605,5 +607,97 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     const actions = { ...this.settings.settings().prosignActions };
     actions[key] = { ...actions[key], action: value };
     this.settings.update({ prosignActions: actions });
+  }
+
+  // ---- Emoji handlers ----
+
+  /** Index of the emoji mapping currently being edited, or -1 */
+  emojiEditIndex = -1;
+  /** Temporary match value while editing */
+  emojiEditMatch = '';
+  /** Temporary emoji value while editing */
+  emojiEditEmoji = '';
+  /** Validation error for the edit row */
+  emojiEditError = '';
+  /** Whether emoji picker modal is visible */
+  showEmojiPicker = false;
+
+  onEmojisEnabledChange(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.settings.update({ emojisEnabled: checked });
+  }
+
+  onEmojiEntryEnabledChange(index: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const mappings = this.settings.settings().emojiMappings.map((m, i) =>
+      i === index ? { ...m, enabled: checked } : m
+    );
+    this.settings.update({ emojiMappings: mappings });
+  }
+
+  emojiStartEdit(index: number): void {
+    const m = this.settings.settings().emojiMappings[index];
+    this.emojiEditIndex = index;
+    this.emojiEditMatch = m.match;
+    this.emojiEditEmoji = m.emoji;
+    this.emojiEditError = '';
+  }
+
+  emojiCancelEdit(): void {
+    this.emojiEditIndex = -1;
+    this.emojiEditError = '';
+  }
+
+  emojiSaveEdit(): void {
+    const match = this.emojiEditMatch.trim().toUpperCase();
+    const emoji = this.emojiEditEmoji.trim();
+    if (!match || !emoji) {
+      this.emojiEditError = 'Both fields are required.';
+      return;
+    }
+    // Check for duplicates (exclude current row)
+    const mappings = this.settings.settings().emojiMappings;
+    const dup = mappings.some((m, i) => i !== this.emojiEditIndex && m.match.toUpperCase() === match);
+    if (dup) {
+      this.emojiEditError = 'Duplicate match pattern.';
+      return;
+    }
+    const updated = mappings.map((m, i) =>
+      i === this.emojiEditIndex ? { ...m, match, emoji } : m
+    );
+    this.settings.update({ emojiMappings: updated });
+    this.emojiEditIndex = -1;
+    this.emojiEditError = '';
+  }
+
+  emojiAdd(): void {
+    const mappings = [...this.settings.settings().emojiMappings];
+    mappings.push({ enabled: true, match: '', emoji: '😊' });
+    this.settings.update({ emojiMappings: mappings });
+    // Immediately enter edit mode on the new row
+    this.emojiStartEdit(mappings.length - 1);
+  }
+
+  emojiDelete(index: number): void {
+    const mappings = this.settings.settings().emojiMappings.filter((_, i) => i !== index);
+    this.settings.update({ emojiMappings: mappings });
+    if (this.emojiEditIndex === index) {
+      this.emojiEditIndex = -1;
+    } else if (this.emojiEditIndex > index) {
+      this.emojiEditIndex--;
+    }
+  }
+
+  openEmojiPicker(): void {
+    this.showEmojiPicker = true;
+  }
+
+  closeEmojiPicker(): void {
+    this.showEmojiPicker = false;
+  }
+
+  onEmojiPickerSelected(emoji: string): void {
+    this.emojiEditEmoji = emoji;
+    this.showEmojiPicker = false;
   }
 }

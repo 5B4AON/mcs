@@ -12,7 +12,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { Subscription } from 'rxjs';
-import { SettingsService, AppSettings, ModalDisplaySettings } from './services/settings.service';
+import { SettingsService, AppSettings, ModalDisplaySettings, EmojiMapping } from './services/settings.service';
 import { AudioInputService } from './services/audio-input.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { CwInputService, CwLevelEvent } from './services/cw-input.service';
@@ -237,25 +237,74 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   /**
-   * Internal text formatting logic: handles prosign patterns and punctuation conversion.
+   * Internal text formatting logic: handles emoji replacement, prosign patterns,
+   * and punctuation conversion.
+   *
+   * Emoji replacement runs first — enabled emoji mappings are checked at each
+   * position (longest match first) and matching text is replaced with an emoji
+   * span. Remaining text passes through prosign / punctuation formatting.
    *
    * @param text The text to format
-   * @returns HTML string with styled prosigns
+   * @returns HTML string with styled prosigns and emoji replacements
    */
   private formatTextInternal(text: string): string {
+    const s = this.settings.settings();
+    // Build sorted emoji matchers (longest match first) for the current pass
+    const emojiMatchers = s.emojisEnabled
+      ? s.emojiMappings
+          .filter(m => m.enabled && m.match && m.emoji)
+          .sort((a, b) => b.match.length - a.match.length)
+      : [];
+
     let result = '';
     let i = 0;
 
     while (i < text.length) {
-      // Check for prosign pattern: <LETTERS>
+      // ---- Emoji replacement (checked first) ----
+      if (emojiMatchers.length > 0) {
+        let emojiFound = false;
+        for (const mapping of emojiMatchers) {
+          const match = mapping.match;
+          // Prosign match: <XX> in text or punctuation equivalent
+          if (match.startsWith('<') && match.endsWith('>')) {
+            // Direct prosign in text
+            if (text.startsWith(match, i)) {
+              result += `<span class="emoji-display">${mapping.emoji}</span>`;
+              i += match.length;
+              emojiFound = true;
+              break;
+            }
+            // Punctuation equivalent (e.g. '+' for '<AR>')
+            const char = text[i];
+            if (char.length === 1) {
+              const prosign = PUNCTUATION_TO_PROSIGN[char];
+              if (prosign === match) {
+                result += `<span class="emoji-display">${mapping.emoji}</span>`;
+                i++;
+                emojiFound = true;
+                break;
+              }
+            }
+          } else {
+            // Plain text sequence match (case-insensitive)
+            const slice = text.substring(i, i + match.length);
+            if (slice.toUpperCase() === match.toUpperCase()) {
+              result += `<span class="emoji-display">${mapping.emoji}</span>`;
+              i += match.length;
+              emojiFound = true;
+              break;
+            }
+          }
+        }
+        if (emojiFound) continue;
+      }
+
+      // ---- Prosign pattern: <LETTERS> ----
       if (text[i] === '<') {
         const endIndex = text.indexOf('>', i);
         if (endIndex !== -1 && endIndex > i + 1) {
-          // Extract the prosign pattern (including < and >)
           const prosignPattern = text.substring(i, endIndex + 1);
-          // Check if it matches uppercase letters pattern
           if (/^<[A-Z]+>$/.test(prosignPattern)) {
-            // This is a prosign - always style it
             result += `<span class="prosign-display">${this.escapeHtml(prosignPattern)}</span>`;
             i = endIndex + 1;
             continue;
@@ -263,9 +312,9 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
         }
       }
 
-      // Check for punctuation to prosign conversion (only if showProsigns is enabled)
+      // ---- Punctuation to prosign conversion ----
       const char = text[i];
-      if (this.settings.settings().showProsigns) {
+      if (s.showProsigns) {
         const prosign = PUNCTUATION_TO_PROSIGN[char];
         if (prosign) {
           result += `<span class="prosign-display">${this.escapeHtml(prosign)}</span>`;
@@ -417,7 +466,11 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     if (event.key === 'Backspace') {
       event.preventDefault();
       const buf = this.encoder.buffer();
-      if (buf.length > 0) {
+      const sentIdx = this.encoder.sentIndex();
+      // The char at sentIndex is currently being sent (audio already started),
+      // so treat it as non-deletable when TX is active.
+      const minKeep = this.encoder.isSending() ? sentIdx + 1 : sentIdx;
+      if (buf.length > minKeep) {
         this.encoder.setBuffer(buf.slice(0, -1));
       }
       return;
@@ -471,7 +524,11 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
     if (ie.inputType === 'deleteContentBackward' || ie.inputType === 'deleteContentForward') {
       const buf = this.encoder.buffer();
-      if (buf.length > 0) {
+      const sentIdx = this.encoder.sentIndex();
+      // The char at sentIndex is currently being sent (audio already started),
+      // so treat it as non-deletable when TX is active.
+      const minKeep = this.encoder.isSending() ? sentIdx + 1 : sentIdx;
+      if (buf.length > minKeep) {
         this.encoder.setBuffer(buf.slice(0, -1));
       }
     } else if (ie.inputType === 'insertLineBreak') {
