@@ -112,7 +112,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private lastSentIdx = 0;
   /** Last known encoder buffer — detects when buffer is replaced */
   private lastSentBuf = '';
-
+  /** Last known encoder wordGapCount — detects word-gap timer firings */
+  private lastWordGapCount = 0;
   constructor(
     public settings: SettingsService,
     public audioInput: AudioInputService,
@@ -201,6 +202,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.encoderInputRef.nativeElement.value = '';
           this.encoderInputHasText = false;
         }
+      } else if (idx < this.lastSentIdx) {
+        // sentIndex went backwards while buffer stayed the same — the same
+        // text was re-submitted (e.g. user typed "TEST", Enter, then "TEST",
+        // Enter again). Reset tracking so subsequent advances are picked up.
+        this.lastSentIdx = idx;
       } else if (idx > this.lastSentIdx) {
         const userName = this.getDisplayUserName('tx');
         // Walk through newly sent characters using token extraction so
@@ -213,6 +219,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.lastSentIdx = idx;
       }
+    });
+
+    // Watch for encoder word-gap timer — insert a space into display buffers
+    // when enough silence passes after the last sent character (mirrors the
+    // decoder's word-boundary space insertion).
+    effect(() => {
+      const count = this.encoder.wordGapCount();
+      if (count > this.lastWordGapCount) {
+        const userName = this.getDisplayUserName('tx');
+        this.displayBuffers.pushSent(' ', userName);
+      }
+      this.lastWordGapCount = count;
     });
   }
 

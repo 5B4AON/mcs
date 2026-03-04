@@ -1094,11 +1094,6 @@ select { max-width: 300px; }
     min-width: 0;
   }
 
-  /* Encoder */
-  .encoder-buffer {
-    font-size: 1rem;
-    padding: 0.4rem 0.5rem;
-  }
   .encoder-input-row {
     gap: 0.35rem;
   }

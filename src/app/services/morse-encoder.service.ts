@@ -47,9 +47,17 @@ export class MorseEncoderService {
   /** Whether TX is active */
   readonly isSending = signal(false);
 
+  /**
+   * Monotonically increasing counter — incremented when silence after the
+   * last sent character exceeds the word-gap threshold.  The app component
+   * watches this signal and pushes a space to the display buffers.
+   */
+  readonly wordGapCount = signal(0);
+
   /** Currently sending (internal lock) */
   private sending = false;
   private abortController: AbortController | null = null;
+  private wordGapTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Queue and lock for sidetone-only playback of incoming RTDB chars */
   private sidetoneQueue: SidetoneQueueEntry[] = [];
@@ -82,10 +90,21 @@ export class MorseEncoderService {
   /** Set entire buffer (e.g. from textarea) */
   setBuffer(text: string): void {
     const upper = text.toUpperCase();
+    const oldSent = this.sentIndex();
+    const oldBuf = this.buffer();
     this.buffer.set(upper);
-    // Clamp sentIndex to new buffer length (don't reset to 0 — sent chars are gone)
-    if (this.sentIndex() > upper.length) {
-      this.sentIndex.set(upper.length);
+    // If the already-sent prefix no longer matches the start of the new
+    // buffer the old sentIndex is meaningless (e.g. completely different
+    // text after a mode switch).  Reset to 0 so all characters are sent.
+    // When the prefix still matches, clamp to the new length to handle
+    // backspace edits without re-sending already-sent characters.
+    if (oldSent > 0) {
+      const prefixLen = Math.min(oldSent, upper.length);
+      if (oldBuf.slice(0, prefixLen) !== upper.slice(0, prefixLen)) {
+        this.sentIndex.set(0);
+      } else if (oldSent > upper.length) {
+        this.sentIndex.set(upper.length);
+      }
     }
     // In live mode, auto-start TX when there is unsent text
     if (this.settings.settings().encoderMode === 'live' && upper.length > this.sentIndex()) {
@@ -108,6 +127,7 @@ export class MorseEncoderService {
   stopTx(): void {
     this.isSending.set(false);
     this.abortController?.abort();
+    this.cancelWordGapTimer();
   }
 
   /** Toggle TX */
@@ -124,6 +144,7 @@ export class MorseEncoderService {
     this.stopTx();
     this.buffer.set('');
     this.sentIndex.set(0);
+    this.cancelWordGapTimer();
   }
 
   /** Submit text in 'enter' mode */
@@ -158,6 +179,7 @@ export class MorseEncoderService {
   private async processSend(): Promise<void> {
     if (this.sending) return; // already in loop
     this.sending = true;
+    this.cancelWordGapTimer();
     this.abortController = new AbortController();
     const signal = this.abortController.signal;
 
@@ -195,6 +217,10 @@ export class MorseEncoderService {
           this.buffer.set('');
           this.sentIndex.set(0);
         }
+        // Start a word-gap timer — if no new characters arrive before it
+        // fires, a space is pushed to the display buffers (mirroring the
+        // decoder's word-boundary detection).
+        this.startWordGapTimer();
       }
     }
   }
@@ -242,6 +268,31 @@ export class MorseEncoderService {
       const id = setTimeout(resolve, ms);
       signal.addEventListener('abort', () => { clearTimeout(id); resolve(); }, { once: true });
     });
+  }
+
+  /**
+   * Start the word-gap timer.  Called when the send loop finishes
+   * naturally (all characters sent).  The timer fires after the
+   * remaining word-gap silence (interWord − interChar, since
+   * sendCharacter already adds an inter-char gap after the last
+   * element).  When it fires it increments wordGapCount so the
+   * display effect can push a space.
+   */
+  private startWordGapTimer(): void {
+    this.cancelWordGapTimer();
+    const timings = timingsFromWpm(this.settings.settings().encoderWpm);
+    const delay = timings.interWord - timings.interChar;
+    this.wordGapTimer = setTimeout(() => {
+      this.wordGapTimer = null;
+      this.wordGapCount.update(n => n + 1);
+    }, delay);
+  }
+
+  private cancelWordGapTimer(): void {
+    if (this.wordGapTimer) {
+      clearTimeout(this.wordGapTimer);
+      this.wordGapTimer = null;
+    }
   }
 
   // ──────────────────────────────────────────────
