@@ -189,7 +189,6 @@ export interface AppSettings {
   midiDahNote: number;
   /** Reverse paddles for MIDI paddle input */
   midiReversePaddles: boolean;
-
   // --- MIDI Output ---
   midiOutputEnabled: boolean;
   /** MIDI output device ID (empty = first available) */
@@ -206,6 +205,8 @@ export interface AppSettings {
   midiOutputVelocity: number;
   /** Output forwarding mode: which signal source drives MIDI output */
   midiOutputForward: OutputForward;
+  /** When true, ignore remote WPM and use local encoder WPM for MIDI output */
+  midiOutputOverrideWpm: boolean;
 
   // --- Firebase RTDB Input ---
   rtdbInputEnabled: boolean;
@@ -367,6 +368,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   midiOutputDahNote: 70,
   midiOutputVelocity: 127,
   midiOutputForward: 'tx',
+  midiOutputOverrideWpm: false,
 
   rtdbInputEnabled: false,
   rtdbInputSource: 'rx',

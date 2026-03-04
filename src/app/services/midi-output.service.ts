@@ -100,6 +100,9 @@ export class MidiOutputService implements OnDestroy {
   /** Last error message */
   readonly lastError = signal('');
 
+  /** True while MIDI output has active notes held (keying) */
+  readonly isSending = signal(false);
+
   private midiAccess: MIDIAccess | null = null;
   private started = false;
   private startingPromise: Promise<void> | null = null;
@@ -111,12 +114,53 @@ export class MidiOutputService implements OnDestroy {
   private activeNotes = new Set<number>();
 
   /** Character playback queue */
-  private charQueue: { char: string; source: 'rx' | 'tx' }[] = [];
+  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number }[] = [];
   private playing = false;
   private abortPlayback = false;
 
+  /**
+   * True while break-in is active — MIDI output refuses new characters
+   * until the remote party stops (word-gap silence detected by MidiInputService).
+   */
+  private breakInActive = false;
+
+  /**
+   * Resolve function for the interruptible space sleep.
+   * When set, calling it cuts the word-gap sleep short so the next
+   * queued character can play immediately.
+   */
+  private spaceSleepResolve: (() => void) | null = null;
+
   /** Keep-alive timer — periodically refreshes output list */
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
+
+  /**
+   * Full break-in: abort current playback, flush the queue, release held
+   * notes, and enter a muted state where `forwardDecodedChar` drops incoming
+   * characters. Call `clearBreakIn()` to resume normal operation.
+   *
+   * Called by MIDI input when a valid (non-echo) note-on arrives — the
+   * remote party is responding, so our output must yield immediately.
+   */
+  breakIn(): void {
+    this.breakInActive = true;
+    this.abortPlayback = true;
+    this.charQueue.length = 0;
+    if (this.spaceSleepResolve) {
+      this.spaceSleepResolve();
+      this.spaceSleepResolve = null;
+    }
+    this.releaseAll();
+  }
+
+  /**
+   * Clear the break-in state, allowing `forwardDecodedChar` to accept
+   * characters again.  Called by MidiInputService after a word-gap of
+   * silence from the remote party.
+   */
+  clearBreakIn(): void {
+    this.breakInActive = false;
+  }
 
   constructor(
     private settings: SettingsService,
@@ -177,6 +221,10 @@ export class MidiOutputService implements OnDestroy {
   stop(): void {
     this.abortPlayback = true;
     this.charQueue.length = 0;
+    if (this.spaceSleepResolve) {
+      this.spaceSleepResolve();
+      this.spaceSleepResolve = null;
+    }
     this.releaseAll();
   }
 
@@ -185,6 +233,10 @@ export class MidiOutputService implements OnDestroy {
     if (!this.started) return;
     this.abortPlayback = true;
     this.charQueue.length = 0;
+    if (this.spaceSleepResolve) {
+      this.spaceSleepResolve();
+      this.spaceSleepResolve = null;
+    }
     this.releaseAll();
     this.clearKeepAlive();
 
@@ -222,10 +274,19 @@ export class MidiOutputService implements OnDestroy {
    *
    * @param char   The decoded character (e.g. 'A', ' ')
    * @param source 'rx' or 'tx' — checked against forward setting
+   * @param wpm    Optional WPM from the source (e.g. Firebase RTDB remote speed)
    */
-  forwardDecodedChar(char: string, source: 'rx' | 'tx'): void {
+  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number): void {
     if (!this.canOutput(source)) return;
-    this.charQueue.push({ char, source });
+    // During break-in the remote party has priority — drop outgoing chars.
+    if (this.breakInActive) return;
+    this.charQueue.push({ char, source, wpm });
+    // If we're sleeping through a word gap and a real character arrives,
+    // cut the sleep short so the new character plays immediately.
+    if (char !== ' ' && this.spaceSleepResolve) {
+      this.spaceSleepResolve();
+      this.spaceSleepResolve = null;
+    }
     if (!this.playing) {
       this.processCharQueue();
     }
@@ -238,7 +299,7 @@ export class MidiOutputService implements OnDestroy {
     try {
       while (this.charQueue.length > 0 && !this.abortPlayback) {
         const entry = this.charQueue.shift()!;
-        await this.playCharElements(entry.char);
+        await this.playCharElements(entry.char, entry.wpm);
       }
     } finally {
       this.playing = false;
@@ -248,16 +309,24 @@ export class MidiOutputService implements OnDestroy {
   /**
    * Play a single character as MIDI note elements.
    * Each dit/dah fires the straight key note + the element-specific note.
+   *
+   * Uses the provided remote WPM if available and the override setting is off;
+   * otherwise falls back to the local encoder WPM.
    */
-  private async playCharElements(char: string): Promise<void> {
-    const timings = timingsFromWpm(this.settings.settings().encoderWpm);
+  private async playCharElements(char: string, wpm?: number): Promise<void> {
+    const s0 = this.settings.settings();
+    const effectiveWpm = (wpm && !s0.midiOutputOverrideWpm) ? wpm : s0.encoderWpm;
+    const timings = timingsFromWpm(effectiveWpm);
     const s = this.settings.settings();
     const channel = s.midiOutputChannel;
     const velocity = s.midiOutputVelocity;
 
     if (char === ' ') {
-      // Word space = 7 dit units; 3 already elapsed as inter-char
-      await this.sleepMs(timings.interWord - timings.interChar);
+      // Word space = 7 dit units; 3 already elapsed as inter-char.
+      // Use an interruptible sleep so that if a new character arrives
+      // while we're waiting, the gap is cut short and playback resumes
+      // immediately — eliminating the perceived input delay.
+      await this.interruptibleSleepMs(timings.interWord - timings.interChar);
       return;
     }
 
@@ -299,6 +368,23 @@ export class MidiOutputService implements OnDestroy {
   }
 
   /**
+   * Sleep that can be resolved early by setting and calling spaceSleepResolve.
+   * Used for the word-gap pause so incoming characters cut it short.
+   */
+  private interruptibleSleepMs(ms: number): Promise<void> {
+    return new Promise<void>(resolve => {
+      const timer = setTimeout(() => {
+        this.spaceSleepResolve = null;
+        resolve();
+      }, ms);
+      this.spaceSleepResolve = () => {
+        clearTimeout(timer);
+        resolve();
+      };
+    });
+  }
+
+  /**
    * Test output — send a 1-second pulse on the straight key note.
    */
   async test(): Promise<void> {
@@ -319,6 +405,7 @@ export class MidiOutputService implements OnDestroy {
     const status = 0x90 | ((channel - 1) & 0x0f);
     this.activeOutput.send([status, note, velocity & 0x7f]);
     this.activeNotes.add(note);
+    this.isSending.set(true);
   }
 
   private sendNoteOff(note: number, channel: number): void {
@@ -327,6 +414,9 @@ export class MidiOutputService implements OnDestroy {
     const status = 0x80 | ((channel - 1) & 0x0f);
     this.activeOutput.send([status, note, 0]);
     this.activeNotes.delete(note);
+    if (this.activeNotes.size === 0) {
+      this.isSending.set(false);
+    }
   }
 
   /** Check whether output should be active for the given source */
@@ -347,6 +437,7 @@ export class MidiOutputService implements OnDestroy {
       this.sendNoteOff(note, channel);
     }
     this.activeNotes.clear();
+    this.isSending.set(false);
   }
 
   /**

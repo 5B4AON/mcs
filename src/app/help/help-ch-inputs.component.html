@@ -192,6 +192,34 @@
     continues to work during screensaver, lock screen, or while another
     application has focus.
   </p>
+  <p>
+    MIDI input also bypasses the keyboard keyer&rsquo;s enabled/disabled state.
+    When a text field has focus, the keyboard keyer is automatically disabled
+    to avoid stray characters, but MIDI keying continues uninterrupted.
+    This means you can type in the encoder while still keying via your
+    MIDI pedal or controller.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Full-duplex echo prevention &amp; break-in (QSK)</div>
+  <p>
+    When MIDI input and output share the same bus or device, the app
+    automatically prevents feedback loops:
+  </p>
+  <ul>
+    <li><strong>Echo suppression</strong> &mdash; while a MIDI output note
+        is physically held, all incoming note-on messages are treated as
+        loopback echoes and dropped.</li>
+    <li><strong>Break-in</strong> &mdash; when a valid (non-echo) MIDI
+        input note arrives, the entire MIDI output queue is flushed, held
+        notes are released, and output is muted. New characters from the
+        encoder are dropped until the remote party goes silent for a full
+        word gap, at which point output resumes automatically.</li>
+    <li><strong>Reverse-path tagging</strong> &mdash; characters decoded
+        from MIDI input carry a <code>fromMidi</code> tag and are never
+        forwarded back to MIDI output.</li>
+  </ul>
 </div>
 
 <div class="example-box">

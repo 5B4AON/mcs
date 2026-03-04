@@ -4,6 +4,56 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.6] - 2026-03-04
+
+### Added
+
+- **MIDI Input/Output Feedback Loop Prevention** — bidirectional echo
+  prevention for MIDI input and output sharing the same device or bus:
+  - **Output → Input**: while a MIDI output note is physically held
+    (active keying), incoming MIDI note-on messages are suppressed as
+    bus loopback echoes. During silence gaps (inter-element, inter-char,
+    word space) input passes through — any arrival during silence is
+    real input, not an echo.
+  - **Input → Output**: characters decoded from MIDI input carry a
+    `fromMidi` tag (same pattern as `fromRtdb` for Firebase) and are
+    never forwarded back to MIDI output.
+  - **Break-in**: when MIDI input receives a note-on while MIDI output
+    is sleeping through a trailing word-gap space, the space sleep is
+    interrupted so the output gets out of the way immediately.
+  - **Full QSK break-in**: when MIDI input receives a valid (non-echo)
+    note-on, the entire MIDI output queue is aborted (all remaining
+    characters flushed, held notes released) and output enters a muted
+    state. New characters are dropped until the remote party goes silent
+    for a full word gap, at which point output resumes automatically.
+    This eliminates the delay where remaining queued characters would
+    block incoming MIDI input after a space or inter-element gap.
+- **MIDI Output Remote WPM Passthrough** — characters received via Firebase
+  RTDB now carry the sender's original WPM speed through to MIDI output,
+  so remote characters are played back at the speed they were originally
+  sent. A new "Override remote WPM with local encoder WPM" setting allows
+  forcing local encoder speed instead.
+
+### Changed
+
+- **MIDI Output Word-Gap Responsiveness** — the word-gap sleep (space
+  character) in MIDI output is now interruptible. When a new character
+  arrives while the output is sleeping through a word gap, the sleep is
+  cut short and the next character plays immediately. MIDI input note-on
+  events also interrupt the space sleep for instant break-in.
+- **Decoder Source-Switch Flush** — when a key-down arrives on a different
+  source (RX vs TX) than the in-progress pattern, the pending character is
+  finished first. This prevents dits and dahs from one direction being
+  appended to a pattern started by the other, which could corrupt both
+  characters.
+- **MIDI Input Keyer Bypass** — MIDI input now bypasses the keyboard keyer's
+  enabled/disabled state, so MIDI keying continues to work even when the
+  keyboard keyer is disabled (e.g. while focus is in a text field). The
+  `force` parameter on `straightKeyInput()`, `ditPaddleInput()`, and
+  `dahPaddleInput()` enables this behaviour.
+- **Help Documentation** — updated MIDI Input (§6.3) and MIDI Output (§7.4)
+  chapters with the new settings and behaviours introduced in this release.
+
 ## [0.9.5] - 2026-03-04
 
 ### Added

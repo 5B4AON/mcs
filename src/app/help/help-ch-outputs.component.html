@@ -301,7 +301,10 @@
   <li><strong>MIDI input</strong> &mdash; Decoded characters from incoming
       MIDI are played back on the MIDI output.</li>
   <li><strong>Firebase RTDB</strong> &mdash; Characters received from a
-      remote station are played back at encoder WPM.</li>
+      remote station are played back at the sender&rsquo;s original WPM by
+      default, preserving the remote operator&rsquo;s speed. Enable
+      &ldquo;Override remote WPM&rdquo; to use your local Encoder WPM
+      instead.</li>
 </ul>
 
 <h3>Intended Use Case</h3>
@@ -362,6 +365,11 @@
   <li><strong>MIDI Channel</strong> &mdash; Output channel (1&ndash;16).</li>
   <li><strong>Velocity</strong> &mdash; Note-on velocity (1&ndash;127).
       Default is 127 (maximum intensity).</li>
+  <li><strong>Override remote WPM with local encoder WPM</strong> &mdash;
+      Characters received via Firebase RTDB carry the sender&rsquo;s original
+      WPM speed. By default MIDI output uses that remote speed so the
+      playback matches the sender&rsquo;s timing. Enable this option to
+      ignore the remote WPM and use your local Encoder WPM instead.</li>
   <li><strong>Note assignments</strong> &mdash; Each output (Straight Key,
       Dit Paddle, Dah Paddle) has a configurable MIDI note. Use the
       note/octave picker or click <strong>#</strong> to switch to raw
@@ -377,6 +385,26 @@
   <li>The browser prompts for MIDI access permission the first time.
       The grant is remembered across sessions.</li>
 </ul>
+
+<h3>Break-In (QSK)</h3>
+<p>
+  When MIDI Input and MIDI Output share the same bus, MIDI output
+  supports automatic <strong>full break-in</strong>. When a valid
+  (non-echo) note arrives on MIDI input, MIDI output immediately:
+</p>
+<ol>
+  <li>Aborts the current element playback and flushes all queued
+      characters.</li>
+  <li>Releases any held notes so the bus is silent.</li>
+  <li>Enters a muted state &mdash; new characters from the encoder are
+      dropped silently.</li>
+</ol>
+<p>
+  The muted state persists until the remote party&rsquo;s input goes
+  silent for a full word gap (7 dit units at the current encoder WPM).
+  After the word gap expires, MIDI output resumes accepting characters
+  normally.
+</p>
 
 <div class="example-box">
   <div class="example-title">Example — Arduino Pro Micro MIDI keyer</div>

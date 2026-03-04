@@ -1224,6 +1224,18 @@
                        (change)="onSettingChange('midiOutputVelocity', $event)">
               </label>
 
+              <label class="checkbox-label">
+                <input type="checkbox" [checked]="settings.settings().midiOutputOverrideWpm"
+                       (change)="onBoolChange('midiOutputOverrideWpm', $event)">
+                Override remote WPM with local encoder WPM
+              </label>
+              <div class="cw-hint">
+                Characters received via Firebase RTDB carry the WPM speed that was
+                used to generate them. By default, MIDI output plays those characters
+                at the sender's original speed. Enable this option to ignore the
+                remote WPM and use your local Encoder WPM instead.
+              </div>
+
               <!-- Straight Key Note -->
               <div class="midi-output-note-row">
                 <span class="midi-output-note-label">Straight Key:</span>

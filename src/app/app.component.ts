@@ -162,8 +162,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           // Forward to WinKeyer (all entries including RTDB-sourced)
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
 
-          // Forward to MIDI output (all entries — plays elements at encoder WPM)
-          this.midiOutput.forwardDecodedChar(entry.char, entry.type);
+          // Forward to MIDI output — skip chars that originated from MIDI input
+          // to prevent echo loops (same pattern as fromRtdb for Firebase).
+          // Plays elements at encoder WPM, or at remote WPM for RTDB-sourced
+          // characters when override is off.
+          if (!entry.fromMidi) {
+            this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm);
+          }
 
           // Forward to RTDB output only for non-RTDB chars (prevent echo)
           if (!entry.fromRtdb) {

@@ -8,6 +8,9 @@ import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
 import { KeyerService } from './keyer.service';
+import { MidiOutputService } from './midi-output.service';
+import { timingsFromWpm } from '../morse-table';
+
 
 /**
  * MIDI note name lookup (scientific pitch notation).
@@ -88,10 +91,18 @@ export class MidiInputService implements OnDestroy {
    */
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
 
+  /**
+   * Timer that clears MIDI output break-in after a word-gap of silence
+   * from the remote party.  Reset on every MIDI input note-on; fires
+   * when no further input activity is detected within one word gap.
+   */
+  private breakInClearTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private settings: SettingsService,
     private keyer: KeyerService,
     private zone: NgZone,
+    private midiOutput: MidiOutputService,
   ) {}
 
   ngOnDestroy(): void {
@@ -170,6 +181,7 @@ export class MidiInputService implements OnDestroy {
     if (!this.started) return;
     this.releaseAll();
     this.learnCallback = null;
+    this.cancelBreakInClear();
     this.clearKeepAlive();
 
     if (this.midiAccess) {
@@ -329,6 +341,19 @@ export class MidiInputService implements OnDestroy {
     // Normal mode: map note to keyer action
     if (!this.settings.settings().midiInputEnabled) return;
 
+    // Suppress loopback: while a MIDI output note is physically held,
+    // any incoming notes are bus echoes — drop them.
+    if (isNoteOn && this.midiOutput.isSending()) return;
+
+    // Full break-in: abort the MIDI output queue, release held notes,
+    // and mute further output until the remote party goes silent for
+    // a full word gap.  This prevents remaining queued characters from
+    // blocking incoming MIDI input after the current space or gap.
+    if (isNoteOn) {
+      this.midiOutput.breakIn();
+      this.cancelBreakInClear();
+    }
+
     const s = this.settings.settings();
     const straightSource = s.midiStraightKeySource;
     const paddleSource = s.midiPaddleSource;
@@ -337,20 +362,20 @@ export class MidiInputService implements OnDestroy {
     if (isNoteOn) {
       if (note === s.midiStraightKeyNote) {
         this.activeNotes.set(note, 'straightKey');
-        this.keyer.straightKeyInput(true, straightSource);
+        this.keyer.straightKeyInput(true, straightSource, true);
       } else if (note === s.midiDitNote) {
         this.activeNotes.set(note, reverse ? 'dah' : 'dit');
         if (reverse) {
-          this.keyer.dahPaddleInput(true, paddleSource);
+          this.keyer.dahPaddleInput(true, paddleSource, true);
         } else {
-          this.keyer.ditPaddleInput(true, paddleSource);
+          this.keyer.ditPaddleInput(true, paddleSource, true);
         }
       } else if (note === s.midiDahNote) {
         this.activeNotes.set(note, reverse ? 'dit' : 'dah');
         if (reverse) {
-          this.keyer.ditPaddleInput(true, paddleSource);
+          this.keyer.ditPaddleInput(true, paddleSource, true);
         } else {
-          this.keyer.dahPaddleInput(true, paddleSource);
+          this.keyer.dahPaddleInput(true, paddleSource, true);
         }
       }
     } else if (isNoteOff) {
@@ -360,15 +385,43 @@ export class MidiInputService implements OnDestroy {
 
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, straightSource);
+          this.keyer.straightKeyInput(false, straightSource, true);
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, paddleSource);
+          this.keyer.ditPaddleInput(false, paddleSource, true);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, paddleSource);
+          this.keyer.dahPaddleInput(false, paddleSource, true);
           break;
       }
+
+      // When all input notes are released, schedule break-in clear
+      // after one word-gap of silence so MIDI output can resume.
+      if (this.activeNotes.size === 0) {
+        this.scheduleBreakInClear();
+      }
+    }
+  }
+
+  /**
+   * Schedule clearing the break-in state after one word gap of silence.
+   * Resets on every call so that continued MIDI input activity keeps
+   * the output muted until the remote party truly stops.
+   */
+  private scheduleBreakInClear(): void {
+    this.cancelBreakInClear();
+    const timings = timingsFromWpm(this.settings.settings().encoderWpm);
+    this.breakInClearTimer = setTimeout(() => {
+      this.midiOutput.clearBreakIn();
+      this.breakInClearTimer = null;
+    }, timings.interWord);
+  }
+
+  /** Cancel any pending break-in clear timer. */
+  private cancelBreakInClear(): void {
+    if (this.breakInClearTimer) {
+      clearTimeout(this.breakInClearTimer);
+      this.breakInClearTimer = null;
     }
   }
 
@@ -380,13 +433,13 @@ export class MidiInputService implements OnDestroy {
     for (const [, action] of this.activeNotes) {
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, straightSource);
+          this.keyer.straightKeyInput(false, straightSource, true);
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, paddleSource);
+          this.keyer.ditPaddleInput(false, paddleSource, true);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, paddleSource);
+          this.keyer.dahPaddleInput(false, paddleSource, true);
           break;
       }
     }

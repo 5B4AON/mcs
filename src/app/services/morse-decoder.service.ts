@@ -95,7 +95,16 @@ export class MorseDecoderService {
    * Tagged output — each decoded character/space is paired with its source.
    * Used by the fullscreen modal to colour RX vs TX text.
    */
-  readonly taggedOutput = signal<{ type: 'rx' | 'tx'; char: string; userName?: string; fromRtdb?: boolean; wpm?: number }[]>([]);
+  readonly taggedOutput = signal<{ type: 'rx' | 'tx'; char: string; userName?: string; fromRtdb?: boolean; fromMidi?: boolean; wpm?: number }[]>([]);
+
+  /**
+   * MIDI-origin flag — set by the keyer before calling onKeyDown/onKeyUp
+   * when the key event originated from MIDI input. Characters decoded
+   * while this flag is true carry `fromMidi: true` in taggedOutput so
+   * the app component can skip forwarding them back to MIDI output
+   * (preventing echo loops — same pattern as fromRtdb).
+   */
+  fromMidi = false;
 
   // ---- RX calibration (audio input — mic / CW) ----
   readonly rxEstimatedWpm = signal(12);
@@ -170,6 +179,24 @@ export class MorseDecoderService {
    */
   onKeyDown(): void {
     const now = performance.now();
+
+    // If the keying source changed direction (e.g. RX → TX or vice versa)
+    // while there is a pending pattern, finish that character first.
+    // This prevents dits/dahs from one direction being appended to a
+    // pattern started by the other direction.
+    if (this.currentPattern() && this.currentSource() !== this.keySource) {
+      this.finishCharacter();
+      // Also emit a word boundary if the gap is long enough
+      if (this.keyUpTime > 0) {
+        const silenceMs = now - this.keyUpTime;
+        const ditUnit = this.perfectTiming
+          ? timingsFromWpm(this.settings.settings().keyerWpm).dit
+          : this.currentAvgDit();
+        if (silenceMs > ditUnit * 6) {
+          this.finishWord();
+        }
+      }
+    }
 
     // If there was a previous key-up, measure the silence gap
     if (this.keyUpTime > 0) {
@@ -380,7 +407,8 @@ export class MorseDecoderService {
     const char = MORSE_REVERSE[pattern] || '?';
     const wpm = this.currentSourceWpm();
     this.decodedText.update(t => t + char);
-    this.taggedOutput.update(arr => [...arr, { type: this.keySource, char, wpm }]);
+    const fromMidi = this.fromMidi || undefined;
+    this.taggedOutput.update(arr => [...arr, { type: this.keySource, char, wpm, fromMidi }]);
     this.currentPattern.set('');
   }
 
@@ -391,8 +419,9 @@ export class MorseDecoderService {
     const text = this.decodedText();
     if (text.length > 0 && !text.endsWith(' ')) {
       const wpm = this.currentSourceWpm();
+      const fromMidi = this.fromMidi || undefined;
       this.decodedText.update(t => t + ' ');
-      this.taggedOutput.update(arr => [...arr, { type: this.keySource, char: ' ', wpm }]);
+      this.taggedOutput.update(arr => [...arr, { type: this.keySource, char: ' ', wpm, fromMidi }]);
     }
   }
 

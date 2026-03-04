@@ -76,6 +76,13 @@ export class KeyerService implements OnDestroy {
    */
   private paddleSource: 'rx' | 'tx' = 'tx';
 
+  /**
+   * Whether the current paddle session originated from MIDI input.
+   * Set alongside paddleSource when a paddle input is activated;
+   * used by runKeyerLoop to tag generated elements with fromMidi.
+   */
+  private paddleFromMidi = false;
+
   private enabled = true;
 
   /**
@@ -135,15 +142,18 @@ export class KeyerService implements OnDestroy {
    * @param down    true = key pressed, false = key released
    * @param source  decoder source override ('rx' or 'tx'); defaults to
    *                the keyboard keyer's configured source
+   * @param force   when true, bypass the enabled check (used by MIDI input
+   *                so it works even when the keyboard keyer is disabled)
    */
-  straightKeyInput(down: boolean, source?: 'rx' | 'tx'): void {
-    if (!this.enabled) return;
+  straightKeyInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+    if (!this.enabled && !force) return;
     const src = source ?? this.settings.settings().keyboardStraightKeySource;
     if (down && !this.straightKeyDown) {
       this.straightKeyDown = true;
       this.zone.run(() => {
         this.decoder.keySource = src;
         this.decoder.perfectTiming = false;
+        this.decoder.fromMidi = force;
         this.decoder.onKeyDown();
       });
     } else if (!down && this.straightKeyDown) {
@@ -151,6 +161,7 @@ export class KeyerService implements OnDestroy {
       this.zone.run(() => {
         this.decoder.keySource = src;
         this.decoder.perfectTiming = false;
+        this.decoder.fromMidi = force;
         this.decoder.onKeyUp();
       });
     }
@@ -161,10 +172,12 @@ export class KeyerService implements OnDestroy {
    *
    * @param down    true = paddle pressed, false = paddle released
    * @param source  decoder source override; defaults to keyboard keyer source
+   * @param force   when true, bypass the enabled check (used by MIDI input)
    */
-  ditPaddleInput(down: boolean, source?: 'rx' | 'tx'): void {
-    if (!this.enabled) return;
+  ditPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+    if (!this.enabled && !force) return;
     this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
+    this.paddleFromMidi = force;
     if (down && !this.leftPaddleDown) {
       this.leftPaddleDown = true;
       this.ditMemory = true;
@@ -180,10 +193,12 @@ export class KeyerService implements OnDestroy {
    *
    * @param down    true = paddle pressed, false = paddle released
    * @param source  decoder source override; defaults to keyboard keyer source
+   * @param force   when true, bypass the enabled check (used by MIDI input)
    */
-  dahPaddleInput(down: boolean, source?: 'rx' | 'tx'): void {
-    if (!this.enabled) return;
+  dahPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+    if (!this.enabled && !force) return;
     this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
+    this.paddleFromMidi = force;
     if (down && !this.rightPaddleDown) {
       this.rightPaddleDown = true;
       this.dahMemory = true;
@@ -300,6 +315,7 @@ export class KeyerService implements OnDestroy {
     this.zone.run(() => {
       this.decoder.keySource = this.paddleSource;
       this.decoder.perfectTiming = true;
+      this.decoder.fromMidi = this.paddleFromMidi;
       this.decoder.onKeyDown();
       this.keyOutput$.next(true);
     });
