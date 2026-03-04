@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.5] - 2026-03-04
+
+### Added
+
+- **Symbols Reference Modal** — new standalone reference component
+  (`symbols_ref/`) providing comprehensive tables for International Morse
+  Code characters, prosigns, common CW abbreviations, Q-codes, and 92 codes.
+  Accessible from the kebab menu on both the main screen and fullscreen
+  modals.
+- **Emoji Replacements** — expanded emoji system with curated default
+  mappings for prosigns, greetings, Q-codes, and common CW abbreviations.
+  Each mapping now supports an optional `meaning` field displayed in
+  settings. Matching is word-boundary-aware (whole-word only). A new
+  `formatTextNoEmoji()` method ensures emojis only appear on transmitted
+  text, not pending encoder characters. Disabled by default.
+- **Help Chapter 8.6 — Emoji Replacements** — new documentation section
+  explaining the emoji replacement feature, matching rules, and default
+  mappings.
+
+### Changed
+
+- **Parchment Paper Styling** — enhanced decoder and encoder panel
+  backgrounds with dual noise layers, corner wear, coffee ring stains,
+  foxing spots, diagonal fold crease, and a detailed torn-edge clip-path
+  polygon for a more realistic aged paper appearance.
+- **Prosign Display Contrast** — prosign pill background changed from
+  `#2a2a3e` to `#3a3a52` for improved readability in fullscreen views.
+- **Kebab Menu Layout** — added "Symbols Ref" button alongside Help;
+  tighter vertical gap between consecutive action buttons.
+
 ## [0.9.4] - 2026-03-03
 
 ### Added

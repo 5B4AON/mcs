@@ -1030,6 +1030,27 @@ select { max-width: 300px; }
   cursor: pointer;
   text-align: center;
 }
+.emoji-meaning-text {
+  font-size: 0.8rem;
+  color: #889;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 12rem;
+}
+.emoji-meaning-input {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  width: 8rem;
+}
+.emoji-row-spacer {
+  flex: 1;
+}
 .emoji-match-input {
   background: #222;
   color: #ddd;

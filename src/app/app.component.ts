@@ -21,6 +21,7 @@ import { WakeLockService } from './services/wake-lock.service';
 import { HelpComponent } from './help.component';
 import { SettingsModalComponent } from './settings-modal.component';
 import { FullscreenModalComponent } from './fullscreen-modal.component';
+import { SymbolsRefComponent } from './symbols_ref/symbols-ref.component';
 
 /**
  * Morse Code Studio
@@ -49,7 +50,7 @@ import { FullscreenModalComponent } from './fullscreen-modal.component';
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, HelpComponent, SettingsModalComponent, FullscreenModalComponent],
+  imports: [FormsModule, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -67,6 +68,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showSettings = false;
   /** Whether the Help modal is visible */
   showHelp = false;
+  /** Whether the Symbols Reference modal is visible */
+  showSymbolsRef = false;
 
   // ---- CW audio input state ----
   /** Current CW Goertzel magnitude for the CW level meter */
@@ -342,6 +345,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private closeActiveModal(): void {
     if (this.showHelp) {
       this.showHelp = false;
+    } else if (this.showSymbolsRef) {
+      this.showSymbolsRef = false;
     } else if (this.showSettings) {
       this.showSettings = false;
     } else if (this.activeModal) {
@@ -575,6 +580,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Close help modal */
   closeHelp(): void {
     this.showHelp = false;
+    this.popModalState();
+  }
+
+  /** Open symbols reference modal */
+  openSymbolsRef(): void {
+    this.showSymbolsRef = true;
+    this.pushModalState('symbolsRef');
+  }
+
+  /** Close symbols reference modal */
+  closeSymbolsRef(): void {
+    this.showSymbolsRef = false;
     this.popModalState();
   }
 

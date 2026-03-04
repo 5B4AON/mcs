@@ -163,6 +163,9 @@
               </div>
             }
           </div>
+          <button class="kebab-help-btn" (click)="requestSymbolsRef(); fsKebabOpen = false" title="Symbols Reference">
+            Symbols Ref
+          </button>
           <button class="kebab-help-btn" (click)="requestHelp(); fsKebabOpen = false" title="Help &amp; Documentation">
             Help
           </button>
@@ -267,7 +270,7 @@
                       [style.color]="$first && encoder.isSending()
                         ? settings.modalDisplay().sendingForeground
                         : settings.modalDisplay().bufferForeground"
-                      [innerHTML]="formatText(char)"></span>}</div>
+                      [innerHTML]="formatTextNoEmoji(char)"></span>}</div>
               }
             } @else if ($last && line.type === 'tx') {
               <!-- TX last line: encoder buffer inline, cursor on new line -->
@@ -279,7 +282,7 @@
                     [style.color]="$first && encoder.isSending()
                       ? settings.modalDisplay().sendingForeground
                       : settings.modalDisplay().bufferForeground"
-                    [innerHTML]="formatText(char)"></span>}</span>}<span class="cursor"
+                    [innerHTML]="formatTextNoEmoji(char)"></span>}</span>}<span class="cursor"
                     [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
             } @else {
               <!-- Non-last line: block -->
@@ -299,7 +302,7 @@
                         [style.color]="$first && encoder.isSending()
                           ? settings.modalDisplay().sendingForeground
                           : settings.modalDisplay().bufferForeground"
-                        [innerHTML]="formatText(char)"></span>
+                        [innerHTML]="formatTextNoEmoji(char)"></span>
                 }
               </span>
             }

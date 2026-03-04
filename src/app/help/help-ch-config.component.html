@@ -244,3 +244,40 @@
   a character is automatically suppressed when a prosign action fires, so
   new lines start without a leading space.
 </p>
+
+<!-- 8.6 Emoji Replacements -->
+<h2 id="s8-6">8.6 &nbsp;Emoji Replacements</h2>
+
+<p>
+  When enabled, emoji replacements substitute common morse abbreviations,
+  prosigns, Q-codes, and 92 codes with emoji graphics in the
+  <strong>fullscreen</strong> decoder and encoder conversation logs.
+  This adds visual context at a glance &mdash; a greeting, a farewell,
+  a signal report &mdash; without affecting the underlying text or
+  the morse encoding itself.
+</p>
+
+<p>
+  Each mapping has a <strong>match pattern</strong> (case-insensitive),
+  an <strong>emoji</strong>, and an optional <strong>meaning</strong>
+  description. Matching is whole-word only: the pattern must appear at
+  a word boundary on both sides (start of text, space, or newline).
+  Prosign patterns such as <code>&lt;AR&gt;</code> also match their
+  punctuation equivalents (e.g. <code>+</code>).
+</p>
+
+<p>
+  The feature ships with a curated set of defaults (disabled by default).
+  You can enable it, add your own mappings, reorder, or delete entries in
+  <strong>Settings &rarr; Other &rarr; Emoji Replacements</strong>.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Sample QSO with emojis &amp; prosign actions</div>
+  <p>Copy and paste the text below into the encoder to see how prosign
+    actions and emoji replacements work together in the fullscreen view:</p>
+  <pre class="sample-text">CQ CQ CQ DE 5B4AON 5B4AON K
+GA OM TNX FER CALL UR RST 599 599 QTH CYPRUS
+WX IS FB HERE HI
+QSL VIA LOTW GL 73 88 &lt;SK&gt;</pre>
+</div>

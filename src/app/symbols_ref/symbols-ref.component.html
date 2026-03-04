@@ -1,0 +1,361 @@
+<!-- Close button -->
+<button class="ref-close-btn" (click)="closed.emit()" title="Close Symbols Reference">
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+</button>
+
+<!-- Floating back-to-top button -->
+@if (showBackToTop) {
+  <button class="ref-home-btn" (click)="scrollToTop()" title="Back to top">
+    &uarr; Top
+  </button>
+}
+
+<div class="ref-overlay" #scrollContainer>
+  <div class="ref-container">
+
+    <!-- ====== TITLE ====== -->
+    <h1 class="ref-title" id="ref-top">Symbols Reference</h1>
+
+    <!-- ====== TABLE OF CONTENTS ====== -->
+    <nav class="toc">
+      <h2 class="toc-heading">Contents</h2>
+
+      <div class="toc-chapter">
+        <a class="toc-ch" (click)="scrollTo('ch1')">1. International Morse Code</a>
+        <a (click)="scrollTo('s1-1')">1.1 Letters</a>
+        <a (click)="scrollTo('s1-2')">1.2 Numbers</a>
+        <a (click)="scrollTo('s1-3')">1.3 Punctuation &amp; Special Characters</a>
+      </div>
+
+      <div class="toc-chapter">
+        <a class="toc-ch" (click)="scrollTo('ch2')">2. Prosigns</a>
+        <a (click)="scrollTo('s2-1')">2.1 What Are Prosigns?</a>
+        <a (click)="scrollTo('s2-2')">2.2 Prosign Table</a>
+      </div>
+
+      <div class="toc-chapter">
+        <a class="toc-ch" (click)="scrollTo('ch3')">3. Common CW Abbreviations</a>
+        <a (click)="scrollTo('s3-1')">3.1 Operating Abbreviations</a>
+        <a (click)="scrollTo('s3-2')">3.2 Conversational Abbreviations</a>
+      </div>
+
+      <div class="toc-chapter">
+        <a class="toc-ch" (click)="scrollTo('ch4')">4. Q-Codes</a>
+        <a (click)="scrollTo('s4-1')">4.1 What Are Q-Codes?</a>
+        <a (click)="scrollTo('s4-2')">4.2 Commonly Used Q-Codes</a>
+      </div>
+
+      <div class="toc-chapter">
+        <a class="toc-ch" (click)="scrollTo('ch5')">5. 92 Code (Numbered Codes)</a>
+        <a (click)="scrollTo('s5-1')">5.1 What Is the 92 Code?</a>
+        <a (click)="scrollTo('s5-2')">5.2 Common 92 Codes</a>
+      </div>
+    </nav>
+
+    <!-- ====================================================================
+         CHAPTER 1 — International Morse Code
+         ==================================================================== -->
+    <div class="ref-chapter" id="ch1">
+      <h1 class="chapter-heading">1. International Morse Code</h1>
+
+      <p>
+        International Morse Code encodes each character as a unique sequence of short signals
+        (<strong>dits</strong>, written as <code>.</code>) and long signals
+        (<strong>dahs</strong>, written as <code>-</code>). A dah is three times the length
+        of a dit. Characters are separated by a gap equal to three dits, and words are
+        separated by a gap equal to seven dits.
+      </p>
+
+      <!-- 1.1 Letters -->
+      <h2 id="s1-1">1.1 Letters</h2>
+      <table class="ref-table morse-table">
+        <thead>
+          <tr><th>Character</th><th>Morse</th><th></th><th>Character</th><th>Morse</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>A</td><td><code>.-</code></td><td class="spacer-col"></td><td>N</td><td><code>-.</code></td></tr>
+          <tr><td>B</td><td><code>-...</code></td><td class="spacer-col"></td><td>O</td><td><code>---</code></td></tr>
+          <tr><td>C</td><td><code>-.-.</code></td><td class="spacer-col"></td><td>P</td><td><code>.--.</code></td></tr>
+          <tr><td>D</td><td><code>-..</code></td><td class="spacer-col"></td><td>Q</td><td><code>--.-</code></td></tr>
+          <tr><td>E</td><td><code>.</code></td><td class="spacer-col"></td><td>R</td><td><code>.-.</code></td></tr>
+          <tr><td>F</td><td><code>..-.</code></td><td class="spacer-col"></td><td>S</td><td><code>...</code></td></tr>
+          <tr><td>G</td><td><code>--.</code></td><td class="spacer-col"></td><td>T</td><td><code>-</code></td></tr>
+          <tr><td>H</td><td><code>....</code></td><td class="spacer-col"></td><td>U</td><td><code>..-</code></td></tr>
+          <tr><td>I</td><td><code>..</code></td><td class="spacer-col"></td><td>V</td><td><code>...-</code></td></tr>
+          <tr><td>J</td><td><code>.---</code></td><td class="spacer-col"></td><td>W</td><td><code>.--</code></td></tr>
+          <tr><td>K</td><td><code>-.-</code></td><td class="spacer-col"></td><td>X</td><td><code>-..-</code></td></tr>
+          <tr><td>L</td><td><code>.-..</code></td><td class="spacer-col"></td><td>Y</td><td><code>-.--</code></td></tr>
+          <tr><td>M</td><td><code>--</code></td><td class="spacer-col"></td><td>Z</td><td><code>--..</code></td></tr>
+        </tbody>
+      </table>
+
+      <!-- 1.2 Numbers -->
+      <h2 id="s1-2">1.2 Numbers</h2>
+      <table class="ref-table morse-table">
+        <thead>
+          <tr><th>Character</th><th>Morse</th><th></th><th>Character</th><th>Morse</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>0</td><td><code>-----</code></td><td class="spacer-col"></td><td>5</td><td><code>.....</code></td></tr>
+          <tr><td>1</td><td><code>.----</code></td><td class="spacer-col"></td><td>6</td><td><code>-....</code></td></tr>
+          <tr><td>2</td><td><code>..---</code></td><td class="spacer-col"></td><td>7</td><td><code>--...</code></td></tr>
+          <tr><td>3</td><td><code>...--</code></td><td class="spacer-col"></td><td>8</td><td><code>---..</code></td></tr>
+          <tr><td>4</td><td><code>....-</code></td><td class="spacer-col"></td><td>9</td><td><code>----.</code></td></tr>
+        </tbody>
+      </table>
+
+      <!-- 1.3 Punctuation -->
+      <h2 id="s1-3">1.3 Punctuation &amp; Special Characters</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Character</th><th>Name</th><th>Morse</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>.</code></td><td>Full stop (period)</td><td><code>.-.-.-</code></td></tr>
+          <tr><td><code>,</code></td><td>Comma</td><td><code>--..--</code></td></tr>
+          <tr><td><code>?</code></td><td>Question mark</td><td><code>..--..</code></td></tr>
+          <tr><td><code>'</code></td><td>Apostrophe</td><td><code>.----.</code></td></tr>
+          <tr><td><code>!</code></td><td>Exclamation mark</td><td><code>-.-.--</code></td></tr>
+          <tr><td><code>/</code></td><td>Slash</td><td><code>-..-.</code></td></tr>
+          <tr><td><code>(</code></td><td>Open parenthesis</td><td><code>-.--.</code></td></tr>
+          <tr><td><code>)</code></td><td>Close parenthesis</td><td><code>-.--.-</code></td></tr>
+          <tr><td><code>&amp;</code></td><td>Ampersand</td><td><code>.-...</code></td></tr>
+          <tr><td><code>:</code></td><td>Colon</td><td><code>---...</code></td></tr>
+          <tr><td><code>;</code></td><td>Semicolon</td><td><code>-.-.-.</code></td></tr>
+          <tr><td><code>=</code></td><td>Equals / Double dash</td><td><code>-...-</code></td></tr>
+          <tr><td><code>+</code></td><td>Plus</td><td><code>.-.-.</code></td></tr>
+          <tr><td><code>-</code></td><td>Hyphen / Minus</td><td><code>-....-</code></td></tr>
+          <tr><td><code>_</code></td><td>Underscore</td><td><code>..--.-</code></td></tr>
+          <tr><td><code>"</code></td><td>Quotation mark</td><td><code>.-..-.</code></td></tr>
+          <tr><td><code>$</code></td><td>Dollar sign</td><td><code>...-..-</code></td></tr>
+          <tr><td><code>&#64;</code></td><td>At sign</td><td><code>.--.-.</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====================================================================
+         CHAPTER 2 — Prosigns
+         ==================================================================== -->
+    <div class="ref-chapter" id="ch2">
+      <h1 class="chapter-heading">2. Prosigns (Procedural Signals)</h1>
+
+      <h2 id="s2-1">2.1 What Are Prosigns?</h2>
+      <p>
+        Prosigns are special Morse sequences where two or more letters are sent together
+        <em>without</em> the normal inter-character gap, forming a single symbol with a
+        unique meaning. They are written with an overline (e.g., <span style="text-decoration:overline">AR</span>) or in angle brackets
+        (<code>&lt;AR&gt;</code>) and act as procedural commands during a CW QSO.
+      </p>
+      <p>
+        Some prosigns share their Morse pattern with a punctuation character &mdash; for
+        example <code>&lt;AR&gt;</code> and <code>+</code> are both <code>.-.-.</code>.
+        Morse Code Studio can optionally display the prosign name instead of the
+        punctuation mark for improved clarity; this is controlled by the
+        <em>Show Prosigns</em> setting.
+      </p>
+
+      <h2 id="s2-2">2.2 Prosign Table</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Prosign</th><th>Morse</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><code>&lt;AR&gt;</code></td><td><code>.-.-.</code></td><td>End of message &mdash; signals the conclusion of a transmission</td></tr>
+          <tr><td><code>&lt;AS&gt;</code></td><td><code>.-...</code></td><td>Wait &mdash; stand by, I need a moment</td></tr>
+          <tr><td><code>&lt;BT&gt;</code></td><td><code>-...-</code></td><td>Break / new paragraph &mdash; separates sections of a message</td></tr>
+          <tr><td><code>&lt;BK&gt;</code></td><td><code>-...-.-</code></td><td>Break &mdash; invitation for the other station to transmit (back to you)</td></tr>
+          <tr><td><code>&lt;CL&gt;</code></td><td><code>-.-..-..</code></td><td>Closing station &mdash; going off the air</td></tr>
+          <tr><td><code>&lt;CT&gt;</code> / <code>&lt;KA&gt;</code></td><td><code>-.-.-</code></td><td>Attention &mdash; start of a new message / commence transmission</td></tr>
+          <tr><td><code>&lt;HH&gt;</code></td><td><code>........</code></td><td>Error &mdash; preceding text was sent in error (8 dits)</td></tr>
+          <tr><td><code>&lt;KN&gt;</code></td><td><code>-.--.</code></td><td>Go ahead, specific station only &mdash; others please stand by</td></tr>
+          <tr><td><code>&lt;NJ&gt;</code> / <code>&lt;DO&gt;</code></td><td><code>-..---</code></td><td>Shift to Wabun code (Japanese Morse)</td></tr>
+          <tr><td><code>&lt;SK&gt;</code></td><td><code>...-.-</code></td><td>End of contact / end of work &mdash; silent key (also &ldquo;VA&rdquo;)</td></tr>
+          <tr><td><code>&lt;SN&gt;</code></td><td><code>...-.</code></td><td>Understood / verified</td></tr>
+          <tr><td><code>&lt;SOS&gt;</code></td><td><code>...---...</code></td><td>International distress signal</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====================================================================
+         CHAPTER 3 — Common CW Abbreviations
+         ==================================================================== -->
+    <div class="ref-chapter" id="ch3">
+      <h1 class="chapter-heading">3. Common CW Abbreviations</h1>
+
+      <p>
+        CW operators use many shorthand abbreviations to keep transmissions brief. These are
+        <em>not</em> prosigns &mdash; each letter is sent with normal inter-character spacing.
+        The following tables list the most widely used abbreviations in amateur radio.
+      </p>
+
+      <h2 id="s3-1">3.1 Operating Abbreviations</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Abbr.</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>CQ</td><td>Calling any station (general call)</td></tr>
+          <tr><td>DE</td><td>From (used between callsigns, e.g., &ldquo;CQ CQ DE 5B4AON&rdquo;)</td></tr>
+          <tr><td>K</td><td>Go ahead / Over (invitation to transmit)</td></tr>
+          <tr><td>R</td><td>Roger / received / acknowledged</td></tr>
+          <tr><td>RST</td><td>Readability, Strength, Tone &mdash; standard signal report system</td></tr>
+          <tr><td>TU</td><td>Thank you</td></tr>
+          <tr><td>UR</td><td>Your / You&rsquo;re</td></tr>
+          <tr><td>ES</td><td>And</td></tr>
+          <tr><td>HR</td><td>Here</td></tr>
+          <tr><td>HW</td><td>How (as in &ldquo;HW CPY?&rdquo; &mdash; How copy?)</td></tr>
+          <tr><td>CPY</td><td>Copy</td></tr>
+          <tr><td>PSE</td><td>Please</td></tr>
+          <tr><td>AGN</td><td>Again</td></tr>
+          <tr><td>WX</td><td>Weather</td></tr>
+          <tr><td>ANT</td><td>Antenna</td></tr>
+          <tr><td>RIG</td><td>Station equipment / radio</td></tr>
+          <tr><td>PWR</td><td>Power</td></tr>
+          <tr><td>OP</td><td>Operator</td></tr>
+          <tr><td>QTH</td><td>Location (see also Q-Codes)</td></tr>
+          <tr><td>SIG</td><td>Signal</td></tr>
+          <tr><td>FREQ</td><td>Frequency</td></tr>
+          <tr><td>DX</td><td>Long distance / rare station</td></tr>
+          <tr><td>QSO</td><td>A contact / conversation (see Q-Codes)</td></tr>
+          <tr><td>TX</td><td>Transmit / Transmitter</td></tr>
+          <tr><td>RX</td><td>Receive / Receiver</td></tr>
+          <tr><td>CL</td><td>Closing (going off the air)</td></tr>
+          <tr><td>QRZ?</td><td>Who is calling me? (see Q-Codes)</td></tr>
+        </tbody>
+      </table>
+
+      <h2 id="s3-2">3.2 Conversational Abbreviations</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Abbr.</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>GM</td><td>Good morning</td></tr>
+          <tr><td>GA</td><td>Good afternoon / Go ahead</td></tr>
+          <tr><td>GE</td><td>Good evening</td></tr>
+          <tr><td>GN</td><td>Good night</td></tr>
+          <tr><td>GL</td><td>Good luck</td></tr>
+          <tr><td>GD</td><td>Good</td></tr>
+          <tr><td>FB</td><td>Fine business &mdash; great, very good</td></tr>
+          <tr><td>OM</td><td>Old man (friendly term for male operator)</td></tr>
+          <tr><td>YL</td><td>Young lady (female operator)</td></tr>
+          <tr><td>XYL</td><td>Ex-young lady (wife)</td></tr>
+          <tr><td>HI</td><td>Laughter (the CW equivalent of &ldquo;LOL&rdquo;)</td></tr>
+          <tr><td>CFM</td><td>Confirm / I confirm</td></tr>
+          <tr><td>SRI</td><td>Sorry</td></tr>
+          <tr><td>FER</td><td>For</td></tr>
+          <tr><td>NR</td><td>Number</td></tr>
+          <tr><td>RPT</td><td>Repeat</td></tr>
+          <tr><td>WKD</td><td>Worked (contacted)</td></tr>
+          <tr><td>BCNU</td><td>Be seeing you</td></tr>
+          <tr><td>CUL</td><td>See you later</td></tr>
+          <tr><td>HPE</td><td>Hope</td></tr>
+          <tr><td>TNX / TKS</td><td>Thanks</td></tr>
+          <tr><td>VY</td><td>Very</td></tr>
+          <tr><td>ABT</td><td>About</td></tr>
+          <tr><td>BTN</td><td>Between</td></tr>
+          <tr><td>NW</td><td>Now</td></tr>
+          <tr><td>DR</td><td>Dear</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====================================================================
+         CHAPTER 4 — Q-Codes
+         ==================================================================== -->
+    <div class="ref-chapter" id="ch4">
+      <h1 class="chapter-heading">4. Q-Codes</h1>
+
+      <h2 id="s4-1">4.1 What Are Q-Codes?</h2>
+      <p>
+        Q-codes are three-letter codes beginning with &ldquo;Q&rdquo; originally developed
+        for commercial radiotelegraph communication. Each Q-code serves as a shorthand for a
+        complete question or statement. When sent with a question mark, the code asks a question;
+        without the question mark, it is a statement or answer.
+      </p>
+      <p>
+        For example, <strong>QTH?</strong> means &ldquo;What is your location?&rdquo; while
+        <strong>QTH</strong> followed by a place name means &ldquo;My location is&hellip;&rdquo;
+      </p>
+
+      <h2 id="s4-2">4.2 Commonly Used Q-Codes</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Code</th><th>Question (with ?)</th><th>Statement (without ?)</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>QRA</td><td>What is the name of your station?</td><td>The name of my station is&hellip;</td></tr>
+          <tr><td>QRG</td><td>What is my exact frequency?</td><td>Your exact frequency is&hellip;</td></tr>
+          <tr><td>QRH</td><td>Does my frequency vary?</td><td>Your frequency varies</td></tr>
+          <tr><td>QRI</td><td>How is my tone?</td><td>Your tone is: 1 (good), 2 (variable), 3 (bad)</td></tr>
+          <tr><td>QRL</td><td>Is this frequency in use?</td><td>This frequency is in use</td></tr>
+          <tr><td>QRM</td><td>Are you being interfered with?</td><td>I am being interfered with (man-made)</td></tr>
+          <tr><td>QRN</td><td>Are you troubled by static?</td><td>I am troubled by static (atmospheric noise)</td></tr>
+          <tr><td>QRO</td><td>Shall I increase power?</td><td>Increase power</td></tr>
+          <tr><td>QRP</td><td>Shall I decrease power?</td><td>Decrease power / low-power operation</td></tr>
+          <tr><td>QRQ</td><td>Shall I send faster?</td><td>Send faster (&hellip; words per minute)</td></tr>
+          <tr><td>QRS</td><td>Shall I send more slowly?</td><td>Send more slowly (&hellip; words per minute)</td></tr>
+          <tr><td>QRT</td><td>Shall I stop sending?</td><td>I am shutting down / stop sending</td></tr>
+          <tr><td>QRU</td><td>Have you anything for me?</td><td>I have nothing for you</td></tr>
+          <tr><td>QRV</td><td>Are you ready?</td><td>I am ready</td></tr>
+          <tr><td>QRX</td><td>When will you call again?</td><td>I will call you again at&hellip;</td></tr>
+          <tr><td>QRZ</td><td>Who is calling me?</td><td>You are being called by&hellip;</td></tr>
+          <tr><td>QSA</td><td>What is my signal strength?</td><td>Your signal strength is&hellip; (1&ndash;5)</td></tr>
+          <tr><td>QSB</td><td>Are my signals fading?</td><td>Your signals are fading</td></tr>
+          <tr><td>QSD</td><td>Is my keying defective?</td><td>Your keying is defective</td></tr>
+          <tr><td>QSK</td><td>Can you hear me between your signals?</td><td>I can hear you between my signals (full break-in)</td></tr>
+          <tr><td>QSL</td><td>Can you acknowledge receipt?</td><td>I acknowledge receipt / QSL card</td></tr>
+          <tr><td>QSO</td><td>Can you communicate with&hellip; directly?</td><td>I can communicate with&hellip; / a radio contact</td></tr>
+          <tr><td>QSP</td><td>Will you relay to&hellip;?</td><td>I will relay to&hellip;</td></tr>
+          <tr><td>QST</td><td>&mdash;</td><td>General call to all stations (bulletin)</td></tr>
+          <tr><td>QSX</td><td>Will you listen on&hellip;?</td><td>I am listening on&hellip; (frequency)</td></tr>
+          <tr><td>QSY</td><td>Shall I change frequency?</td><td>Change to frequency&hellip;</td></tr>
+          <tr><td>QTH</td><td>What is your location?</td><td>My location is&hellip;</td></tr>
+          <tr><td>QTR</td><td>What is the correct time?</td><td>The correct time is&hellip;</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- ====================================================================
+         CHAPTER 5 — 92 Code (Numbered Codes)
+         ==================================================================== -->
+    <div class="ref-chapter" id="ch5">
+      <h1 class="chapter-heading">5. 92 Code (Numbered Codes)</h1>
+
+      <h2 id="s5-1">5.1 What Is the 92 Code?</h2>
+      <p>
+        The 92 Code is a set of numbered brevity codes adopted by Western Union in 1859.
+        These shorthand numeric abbreviations were used in CW and radiotelegraph to convey
+        common phrases, reducing bandwidth consumption over telegraph lines. Several codes
+        &mdash; most notably <strong>73</strong> and <strong>88</strong> &mdash; remain in
+        widespread amateur radio use today.
+      </p>
+
+      <h2 id="s5-2">5.2 Common 92 Codes</h2>
+      <table class="ref-table">
+        <thead>
+          <tr><th>Code</th><th>Meaning</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>22</td><td>Love and kisses (less common variant of 88)</td></tr>
+          <tr><td>33</td><td>Fondest regards (between YLs &mdash; female operators)</td></tr>
+          <tr><td>44</td><td>Best wishes / WX (weather-related acknowledgement)</td></tr>
+          <tr><td>55</td><td>Best success / good luck</td></tr>
+          <tr><td>72</td><td>Best regards (QRP community greeting)</td></tr>
+          <tr><td>73</td><td>Best regards &mdash; universal ham radio farewell</td></tr>
+          <tr><td>88</td><td>Love and kisses &mdash; affectionate farewell</td></tr>
+          <tr><td>99</td><td>Go away / Get lost (impolite dismissal)</td></tr>
+        </tbody>
+      </table>
+
+      <div class="note-box">
+        <strong>Note:</strong> <strong>73</strong> is by far the most commonly used numbered code.
+        It is customary to send it at the end of a QSO. &ldquo;73&rdquo; is already plural &mdash;
+        saying &ldquo;73s&rdquo; is technically redundant but widely tolerated.
+        <strong>88</strong> is often appended when conversing with an YL or XYL, or in a
+        light-hearted context.
+      </div>
+    </div>
+
+  </div>
+</div>

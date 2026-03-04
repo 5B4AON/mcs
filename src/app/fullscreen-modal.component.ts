@@ -48,6 +48,9 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Emitted when the user requests the help dialog */
   @Output() helpRequested = new EventEmitter<void>();
 
+  /** Emitted when the user requests the symbols reference */
+  @Output() symbolsRefRequested = new EventEmitter<void>();
+
   // ---- Level meter state ----
   micLevel = 0;
   cwLevel = 0;
@@ -182,6 +185,11 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     this.helpRequested.emit();
   }
 
+  /** Open the symbols reference (delegates to parent via output event) */
+  requestSymbolsRef(): void {
+    this.symbolsRefRequested.emit();
+  }
+
   clearConversation(): void {
     const buf = this.mode === 'decoder'
       ? this.displayBuffers.fullscreenDecoder
@@ -222,6 +230,15 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   /**
+   * Format text for display without emoji replacement.
+   * Used for encoder pending (unsent) characters — emojis should only
+   * appear once text has been transmitted.
+   */
+  formatTextNoEmoji(text: string): SafeHtml {
+    return this.sanitizer.bypassSecurityTrustHtml(this.formatTextInternal(text, true));
+  }
+
+  /**
    * Format a complete display line including optional username prefix and text.
    *
    * @param line The display line to format
@@ -247,10 +264,10 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
    * @param text The text to format
    * @returns HTML string with styled prosigns and emoji replacements
    */
-  private formatTextInternal(text: string): string {
+  private formatTextInternal(text: string, skipEmojis = false): string {
     const s = this.settings.settings();
     // Build sorted emoji matchers (longest match first) for the current pass
-    const emojiMatchers = s.emojisEnabled
+    const emojiMatchers = !skipEmojis && s.emojisEnabled
       ? s.emojiMappings
           .filter(m => m.enabled && m.match && m.emoji)
           .sort((a, b) => b.match.length - a.match.length)
@@ -261,7 +278,10 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
     while (i < text.length) {
       // ---- Emoji replacement (checked first) ----
-      if (emojiMatchers.length > 0) {
+      // Only match when the position is at a word boundary on the left
+      // (start of text, after a space, or after a newline).
+      const atWordStart = i === 0 || text[i - 1] === ' ' || text[i - 1] === '\n';
+      if (emojiMatchers.length > 0 && atWordStart) {
         let emojiFound = false;
         for (const mapping of emojiMatchers) {
           const match = mapping.match;
@@ -279,16 +299,22 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
             if (char.length === 1) {
               const prosign = PUNCTUATION_TO_PROSIGN[char];
               if (prosign === match) {
-                result += `<span class="emoji-display">${mapping.emoji}</span>`;
-                i++;
-                emojiFound = true;
-                break;
+                const afterPunct = i + 1;
+                const atWordEndP = afterPunct >= text.length || text[afterPunct] === ' ' || text[afterPunct] === '\n' || text[afterPunct] === '<';
+                if (atWordEndP) {
+                  result += `<span class="emoji-display">${mapping.emoji}</span>`;
+                  i++;
+                  emojiFound = true;
+                  break;
+                }
               }
             }
           } else {
-            // Plain text sequence match (case-insensitive)
+            // Plain text sequence match (case-insensitive, full word only)
             const slice = text.substring(i, i + match.length);
-            if (slice.toUpperCase() === match.toUpperCase()) {
+            const afterMatch = i + match.length;
+            const atWordEnd = afterMatch >= text.length || text[afterMatch] === ' ' || text[afterMatch] === '\n' || text[afterMatch] === '<';
+            if (slice.toUpperCase() === match.toUpperCase() && atWordEnd) {
               result += `<span class="emoji-display">${mapping.emoji}</span>`;
               i += match.length;
               emojiFound = true;

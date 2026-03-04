@@ -56,6 +56,9 @@
           <span class="wpm-pill-value">{{ settings.settings().keyerWpm }}</span>
           <button class="wpm-btn" (click)="adjustWpm('keyerWpm', 1)">+</button>
         </span>
+        <button class="kebab-help-btn" (click)="openSymbolsRef(); controlsKebabOpen = false" title="Symbols Reference">
+          Symbols Ref
+        </button>
         <button class="kebab-help-btn" (click)="openHelp(); controlsKebabOpen = false" title="Help &amp; Documentation">
           Help
         </button>
@@ -202,7 +205,12 @@
 
 <!-- ========== FULLSCREEN MODAL ========== -->
 @if (activeModal) {
-  <app-fullscreen-modal [mode]="activeModal" (closed)="closeModal()" (helpRequested)="openHelp()"></app-fullscreen-modal>
+  <app-fullscreen-modal [mode]="activeModal" (closed)="closeModal()" (helpRequested)="openHelp()" (symbolsRefRequested)="openSymbolsRef()"></app-fullscreen-modal>
+}
+
+<!-- ========== SYMBOLS REFERENCE MODAL ========== -->
+@if (showSymbolsRef) {
+  <app-symbols-ref (closed)="closeSymbolsRef()"></app-symbols-ref>
 }
 
 <!-- ========== HELP MODAL ========== -->

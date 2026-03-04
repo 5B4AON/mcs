@@ -617,6 +617,8 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   emojiEditMatch = '';
   /** Temporary emoji value while editing */
   emojiEditEmoji = '';
+  /** Temporary meaning value while editing */
+  emojiEditMeaning = '';
   /** Validation error for the edit row */
   emojiEditError = '';
   /** Whether emoji picker modal is visible */
@@ -640,6 +642,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
     this.emojiEditIndex = index;
     this.emojiEditMatch = m.match;
     this.emojiEditEmoji = m.emoji;
+    this.emojiEditMeaning = m.meaning ?? '';
     this.emojiEditError = '';
   }
 
@@ -651,6 +654,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   emojiSaveEdit(): void {
     const match = this.emojiEditMatch.trim().toUpperCase();
     const emoji = this.emojiEditEmoji.trim();
+    const meaning = this.emojiEditMeaning.trim();
     if (!match || !emoji) {
       this.emojiEditError = 'Both fields are required.';
       return;
@@ -663,7 +667,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
       return;
     }
     const updated = mappings.map((m, i) =>
-      i === this.emojiEditIndex ? { ...m, match, emoji } : m
+      i === this.emojiEditIndex ? { ...m, match, emoji, meaning: meaning || undefined } : m
     );
     this.settings.update({ emojiMappings: updated });
     this.emojiEditIndex = -1;
@@ -672,7 +676,7 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
 
   emojiAdd(): void {
     const mappings = [...this.settings.settings().emojiMappings];
-    mappings.push({ enabled: true, match: '', emoji: '😊' });
+    mappings.push({ enabled: true, match: '', emoji: '😊', meaning: '' });
     this.settings.update({ emojiMappings: mappings });
     // Immediately enter edit mode on the new row
     this.emojiStartEdit(mappings.length - 1);

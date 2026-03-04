@@ -1650,6 +1650,11 @@
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
                         </button>
                       </div>
+                      <input class="emoji-meaning-input" type="text"
+                             [(ngModel)]="emojiEditMeaning" placeholder="Meaning"
+                             maxlength="40" (keydown.enter)="emojiSaveEdit()"
+                             (keydown.escape)="emojiCancelEdit()">
+                      <span class="emoji-row-spacer"></span>
                       <button class="emoji-btn emoji-btn-save" (click)="emojiSaveEdit()" title="Save">&#10003;</button>
                       <button class="emoji-btn emoji-btn-cancel" (click)="emojiCancelEdit()" title="Cancel">&#10007;</button>
                     } @else {
@@ -1660,6 +1665,10 @@
                       </label>
                       <span class="emoji-match-text" (click)="emojiStartEdit($index)">{{ mapping.match }}</span>
                       <span class="emoji-emoji-text" (click)="emojiStartEdit($index)">{{ mapping.emoji }}</span>
+                      @if (mapping.meaning) {
+                        <span class="emoji-meaning-text" (click)="emojiStartEdit($index)">{{ mapping.meaning }}</span>
+                      }
+                      <span class="emoji-row-spacer"></span>
                       <button class="emoji-btn emoji-btn-edit" (click)="emojiStartEdit($index)" title="Edit">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
                       </button>

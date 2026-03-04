@@ -1,0 +1,245 @@
+/* ===== Symbols Reference Modal Overlay ===== */
+:host {
+  display: block;
+}
+
+.ref-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: #181c20;
+  color: #e0e0e0;
+  overflow-y: auto;
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
+}
+
+.ref-container {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 28px 80px;
+}
+
+/* ---- Title ---- */
+.ref-title {
+  margin: 0 0 24px;
+  font-size: 22px;
+  color: #66ccff;
+}
+
+/* ---- Table of Contents ---- */
+.toc {
+  background: #1e2228;
+  border: 1px solid #333;
+  border-radius: 8px;
+  padding: 16px 22px 18px;
+  margin-bottom: 32px;
+}
+
+.toc-heading {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #a8d8ff;
+}
+
+.toc-chapter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 6px;
+}
+
+.toc a {
+  color: #88bbdd;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 14px;
+  line-height: 1.6;
+  transition: background 0.12s;
+}
+.toc a:hover {
+  background: #282c34;
+  color: #b8deff;
+}
+.toc a.toc-ch {
+  font-weight: 600;
+  font-size: 15px;
+  color: #a8d8ff;
+  margin-top: 4px;
+}
+
+/* ---- Chapter blocks ---- */
+.ref-chapter {
+  margin-bottom: 36px;
+  padding-top: 8px;
+}
+
+.chapter-heading {
+  font-size: 20px;
+  font-weight: 700;
+  color: #66ccff;
+  margin: 0 0 16px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #333;
+}
+
+.ref-chapter h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #a8d8ff;
+  margin: 24px 0 10px;
+  padding-top: 8px;
+}
+
+/* ---- Prose ---- */
+.ref-chapter p {
+  margin: 0 0 12px;
+}
+
+.ref-chapter strong {
+  color: #e8e8e8;
+}
+
+.ref-chapter em {
+  color: #88bbdd;
+  font-style: italic;
+}
+
+.ref-chapter code {
+  background: #282c34;
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 13px;
+  color: #e0b050;
+}
+
+/* ---- Reference tables ---- */
+.ref-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 10px 0 14px;
+  font-size: 14px;
+}
+
+.ref-table th {
+  text-align: left;
+  padding: 6px 10px;
+  background: #282c34;
+  border: 1px solid #444;
+  color: #a8d8ff;
+  font-weight: 600;
+}
+
+.ref-table td {
+  padding: 6px 10px;
+  border: 1px solid #333;
+}
+
+.ref-table tr:nth-child(even) {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* Side-by-side morse table spacer column */
+.spacer-col {
+  width: 24px;
+  border: none !important;
+  background: transparent !important;
+}
+
+/* Morse code dual-column table — widen character columns */
+.morse-table th:first-child,
+.morse-table td:first-child,
+.morse-table th:nth-child(4),
+.morse-table td:nth-child(4) {
+  width: 5rem;
+  text-align: center;
+  font-weight: 600;
+  color: #e0b050;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+}
+
+/* ---- Note box ---- */
+.note-box {
+  border-left: 3px solid #66ccff;
+  background: #1c2028;
+  padding: 10px 16px;
+  margin: 10px 0 14px;
+  border-radius: 0 6px 6px 0;
+  font-size: 14px;
+}
+
+/* ---- Close button ---- */
+.ref-close-btn {
+  position: fixed;
+  top: 14px;
+  right: 18px;
+  z-index: 10100;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+  padding: 0;
+}
+.ref-close-btn:hover {
+  background: #3a4050;
+}
+.ref-close-btn:active {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+
+/* ---- Floating back-to-top button ---- */
+.ref-home-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10100;
+  background: #282c34;
+  color: #88bbdd;
+  border: 1px solid #555;
+  border-radius: 20px;
+  padding: 8px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .4);
+  transition: background 0.15s, color 0.15s;
+}
+.ref-home-btn:hover {
+  background: #3a3f4b;
+  color: #b8deff;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 600px) {
+  .ref-container {
+    padding: 16px 12px 48px;
+  }
+  .ref-title {
+    font-size: 18px;
+  }
+  .ref-table {
+    font-size: 13px;
+  }
+  .ref-table th,
+  .ref-table td {
+    padding: 4px 6px;
+  }
+  .spacer-col {
+    width: 12px;
+  }
+}
