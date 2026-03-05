@@ -401,7 +401,6 @@ const DEFAULT_SETTINGS: AppSettings = {
     // Common abbreviations
     { enabled: true, match: 'CQ', emoji: '📡', meaning: 'Calling any station' },
     { enabled: true, match: 'R', emoji: '👍', meaning: 'Roger / received' },
-    { enabled: true, match: 'RR', emoji: '👍👍', meaning: 'Roger roger' },
     { enabled: true, match: 'K', emoji: '🎤', meaning: 'Go ahead' },
     { enabled: true, match: '<KN>', emoji: '🎤🔒', meaning: 'Go ahead (named only)' },
     { enabled: true, match: '<BK>', emoji: '🔙', meaning: 'Break / back to you' },
