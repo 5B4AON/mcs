@@ -40,8 +40,9 @@ class CwDetectProcessor extends AudioWorkletProcessor {
   constructor() {
     super();
 
-    // Detection frequency (Hz)
+    // Detection frequency (Hz) and bandwidth
     this.frequency = 600;
+    this.bandwidth = 100;
     this.sRate = 48000;
     this._updateGoertzelCoeff();
 
@@ -86,6 +87,10 @@ class CwDetectProcessor extends AudioWorkletProcessor {
         this.frequency = d.frequency;
         this._updateGoertzelCoeff();
       }
+      if (d.bandwidth !== undefined) {
+        this.bandwidth = d.bandwidth;
+        this._updateGoertzelCoeff();
+      }
       if (d.sampleRate !== undefined) {
         this.sRate = d.sampleRate;
         this._updateGoertzelCoeff();
@@ -102,21 +107,29 @@ class CwDetectProcessor extends AudioWorkletProcessor {
   }
 
   _updateGoertzelCoeff() {
-    const N = 128;
-    const k = Math.round(N * this.frequency / this.sRate);
-    this.goertzelCoeff = 2 * Math.cos(2 * Math.PI * k / N);
+    // Block size N determines frequency resolution: binWidth = sampleRate / N.
+    // For a given bandwidth, N = sampleRate / bandwidth.
+    // Clamp between 64 (responsive) and 512 (selective).
+    const bw = this.bandwidth || 100;
+    this.blockSize = Math.max(64, Math.min(512, Math.round(this.sRate / bw)));
+    const k = Math.round(this.blockSize * this.frequency / this.sRate);
+    this.goertzelCoeff = 2 * Math.cos(2 * Math.PI * k / this.blockSize);
+    // Reset accumulation buffer for new block size
+    this._blockBuf = new Float32Array(this.blockSize);
+    this._blockPos = 0;
   }
 
   _goertzelMag(samples) {
     const coeff = this.goertzelCoeff;
+    const N = this.blockSize;
     let s0 = 0, s1 = 0, s2 = 0;
-    for (let i = 0; i < samples.length; i++) {
+    for (let i = 0; i < N; i++) {
       s0 = samples[i] + coeff * s1 - s2;
       s2 = s1;
       s1 = s0;
     }
     const magSq = s1 * s1 + s2 * s2 - coeff * s1 * s2;
-    return Math.sqrt(Math.abs(magSq)) / samples.length;
+    return Math.sqrt(Math.abs(magSq)) / N;
   }
 
   process(inputs) {
@@ -126,7 +139,37 @@ class CwDetectProcessor extends AudioWorkletProcessor {
     const samples = input[0]; // always channel 0
     if (!samples || samples.length === 0) return true;
 
-    const rawMag = this._goertzelMag(samples);
+    // Accumulate samples into the Goertzel block buffer.
+    // AudioWorklet delivers 128-sample blocks; the Goertzel block size
+    // may be larger (up to 512) depending on the configured bandwidth.
+    // We run the Goertzel algorithm each time the buffer is full.
+    const N = this.blockSize;
+    if (!this._blockBuf || this._blockBuf.length !== N) {
+      this._blockBuf = new Float32Array(N);
+      this._blockPos = 0;
+    }
+    let sIdx = 0;
+    while (sIdx < samples.length) {
+      const remaining = N - this._blockPos;
+      const toCopy = Math.min(remaining, samples.length - sIdx);
+      this._blockBuf.set(samples.subarray(sIdx, sIdx + toCopy), this._blockPos);
+      this._blockPos += toCopy;
+      sIdx += toCopy;
+      if (this._blockPos >= N) {
+        this._processBlock(this._blockBuf);
+        this._blockPos = 0;
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Process one full Goertzel block: compute magnitude, update thresholds,
+   * detect key state, and emit events.
+   */
+  _processBlock(blockSamples) {
+    const rawMag = this._goertzelMag(blockSamples);
     this.smoothMag += this.emaAlpha * (rawMag - this.smoothMag);
     const magnitude = this.smoothMag;
 
@@ -222,8 +265,6 @@ class CwDetectProcessor extends AudioWorkletProcessor {
         signalPeak: this.signalPeak,
       });
     }
-
-    return true;
   }
 }
 

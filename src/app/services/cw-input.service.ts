@@ -148,6 +148,7 @@ export class CwInputService {
     // Send initial parameters
     this.workletNode.port.postMessage({
       frequency: s.cwInputFrequency,
+      bandwidth: s.cwInputBandwidth,
       sampleRate: 48000,
       debounceMs: s.cwInputDebounceMs,
       autoThreshold: s.cwInputAutoThreshold,
@@ -173,6 +174,7 @@ export class CwInputService {
     const s = this.settings.settings();
     this.workletNode.port.postMessage({
       frequency: s.cwInputFrequency,
+      bandwidth: s.cwInputBandwidth,
       debounceMs: s.cwInputDebounceMs,
       autoThreshold: s.cwInputAutoThreshold,
       threshold: s.cwInputThreshold,

@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.9] - 2026-03-05
+
+### Added
+
+- **CW Tone Bandwidth Setting** — new "CW Tone Bandwidth (Hz)" control in
+  Settings (100–500 Hz) that adjusts the width of the Goertzel tone-detection
+  passband. Narrower bandwidth is more selective against adjacent tones;
+  wider bandwidth reacts faster. The settings hint now dynamically shows the
+  computed passband range around the centre frequency.
+
+### Changed
+
+- **Goertzel Detector Dynamic Block Size** — the CW audio tone detector
+  (`cw-detect-processor.js`) now computes its Goertzel block size from the
+  configured bandwidth (`N = sampleRate / bandwidth`, clamped 64–512) instead of
+  using a fixed 128-sample block. An internal accumulation buffer handles the
+  variable block size across the AudioWorklet's fixed 128-sample frames.
+- **Parchment Ruled Lines** — horizontal rules on the decoder and encoder
+  parchment areas now use a fixed-size background tile (`background-size`)
+  instead of `repeating-linear-gradient`, eliminating a gap that could appear
+  at the original element boundary when the area expanded. Lines start
+  slightly lower (`0.3em` offset) and all background layers use
+  `background-attachment: local` so they scroll correctly with content.
+- **Typewriter Typography** — decoder and encoder parchment text now uses a
+  typewriter-style font stack (`American Typewriter`, `Courier Prime`,
+  `Courier New`) with slightly bolder weight, subtle letter-spacing, and
+  multi-layer text-shadow to simulate uneven ink impression, giving a more
+  authentic telegram appearance.
+
+### Fixed
+
+- **Help Documentation Corrections** — updated several help chapters to match
+  current application behaviour: corrected the Settings access description
+  (gear icon, not hamburger menu), removed references to non-existent features,
+  fixed Firebase channel-name character limit, and added the CW Tone Bandwidth
+  setting to the Audio Inputs help chapter.
+
 ## [0.9.8] - 2026-03-05
 
 ### Changed

@@ -209,8 +209,18 @@
                        (change)="onCwParamChange('cwInputFrequency', $event)">
               </label>
 
+              <label>CW Tone Bandwidth (Hz):
+                <input type="number" min="100" max="500" step="10"
+                       [value]="settings.settings().cwInputBandwidth"
+                       (change)="onCwParamChange('cwInputBandwidth', $event)">
+              </label>
+
               <div class="cw-hint">
                 Typical CW audio tone: 500–700 Hz. Match to your radio's sidetone or BFO offset.
+                The bandwidth controls how selective the detector is around the centre frequency.
+                At {{ settings.settings().cwInputBandwidth }} Hz bandwidth, the passband is
+                {{ settings.settings().cwInputFrequency - settings.settings().cwInputBandwidth / 2 }}–{{ settings.settings().cwInputFrequency + settings.settings().cwInputBandwidth / 2 }} Hz.
+                Narrower = more selective but requires a more precise frequency setting.
               </div>
 
               <label>

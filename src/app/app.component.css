@@ -386,27 +386,33 @@
 
 /* ===== Morse Decoder ===== */
 .decoded-text {
-  font-family: 'Courier New', monospace;
-  font-size: 1.1rem;
+  font-family: 'American Typewriter', 'Courier Prime', 'Courier New', 'Lucida Console', monospace;
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   min-height: 12em;
   max-height: 48rem;
   overflow-y: auto;
   position: relative;
-  padding: 0.3rem 0.7rem 0.5rem 0.7rem;
+  padding: 0.6rem 1.7rem 0.5rem 1.5rem;
   line-height: 1.35em;
   white-space: pre-wrap;
   word-break: break-all;
-  color: #1a0f08;
-  text-shadow: 0 0 0.3px rgba(26, 15, 8, 0.25);
+  /* Faded typewriter ribbon ink — dark blue-brown */
+  color: #1e1812;
+  text-shadow:
+    0 0 0.2px rgba(20, 14, 8, 0.4),
+    0.3px 0.2px 0 rgba(30, 20, 10, 0.12),
+    -0.2px 0.1px 0 rgba(30, 20, 10, 0.08);
   /* Parchment paper background */
   background:
-    /* Horizontal ruled lines aligned with text baseline */
-    repeating-linear-gradient(
+    /* Horizontal ruled lines — tiled via background-size + repeat */
+    linear-gradient(
       to bottom,
       transparent 0,
-      transparent calc(1.35em - 1px),
-      rgba(105, 85, 65, 0.18) calc(1.35em - 1px),
-      rgba(105, 85, 65, 0.18) 1.35em
+      transparent calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) 100%
     ),
     /* Paper grain noise texture — coarse fibers */
     url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.07"/></svg>'),
@@ -442,6 +448,12 @@
       #c8b599 75%,
       #c0ad91
     );
+  /* Ruled-line tile: 1.35em matches line-height; offset 0.3em pushes
+     the first line slightly lower. Fixed tile size avoids gaps when
+     the element grows beyond its initial min-height. */
+  background-size: 100% 1.35em, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto;
+  background-position: 0 0.3em, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-attachment: local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local;
   border: none;
   border-radius: 1px;
   /* Worn paper edges and realistic shadow */
@@ -510,8 +522,8 @@
   );
 }
 .cursor {
-  color: #4a3a2a;
-  opacity: .65;
+  color: #3a2e20;
+  opacity: .6;
   font-weight: 600;
 }
 .decoded-actions {
@@ -549,8 +561,10 @@
 }
 
 .encoder-buffer {
-  font-family: 'Courier New', monospace;
-  font-size: 1.1rem;
+  font-family: 'American Typewriter', 'Courier Prime', 'Courier New', 'Lucida Console', monospace;
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
   min-height: 8em;
   max-height: 32rem;
   overflow-y: auto;
@@ -560,17 +574,21 @@
   margin-bottom: .5rem;
   word-break: break-all;
   white-space: pre-wrap;
-  color: #1a0f08;
-  text-shadow: 0 0 0.3px rgba(26, 15, 8, 0.25);
+  /* Faded typewriter ribbon ink — dark blue-brown */
+  color: #1e1812;
+  text-shadow:
+    0 0 0.2px rgba(20, 14, 8, 0.4),
+    0.3px 0.2px 0 rgba(30, 20, 10, 0.12),
+    -0.2px 0.1px 0 rgba(30, 20, 10, 0.08);
   /* Parchment paper background */
   background:
-    /* Horizontal ruled lines aligned with text baseline */
-    repeating-linear-gradient(
+    /* Horizontal ruled lines — tiled via background-size + repeat */
+    linear-gradient(
       to bottom,
       transparent 0,
-      transparent calc(1.35em - 1px),
-      rgba(105, 85, 65, 0.18) calc(1.35em - 1px),
-      rgba(105, 85, 65, 0.18) 1.35em
+      transparent calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) 100%
     ),
     /* Paper grain noise texture — coarse fibers */
     url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.07"/></svg>'),
@@ -606,6 +624,12 @@
       #c8b599 75%,
       #c0ad91
     );
+  /* Ruled-line tile: 1.35em matches line-height; offset 0.3em pushes
+     the first line slightly lower. Fixed tile size avoids gaps when
+     the element grows beyond its initial min-height. */
+  background-size: 100% 1.35em, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto;
+  background-position: 0 0.3em, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
+  background-attachment: local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local;
   border: none;
   border-radius: 1px;
   /* Worn paper edges and realistic shadow */

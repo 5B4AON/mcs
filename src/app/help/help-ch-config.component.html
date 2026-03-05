@@ -97,8 +97,9 @@
   <strong>cleared independently</strong>. Pressing the Clear button (🗑)
   opens a context menu with <strong>This text area</strong> (clears the current
   buffer only) and <strong>All text areas</strong> (clears all four buffers at
-  once). The encoder&rsquo;s clear menu adds a <strong>Text area</strong>
-  option to empty the text-entry field without affecting any log.
+  once). On the main screen, the encoder&rsquo;s clear menu adds an
+  <strong>Input box</strong> option to empty the text-entry field without
+  affecting any log.
 </p>
 <p>
   Buffers are capped at approximately <strong>5 000 characters</strong>
@@ -147,7 +148,6 @@
 </p>
 <ul>
   <li><strong>Font size</strong> — Adjustable from 24 to 184 px.</li>
-  <li><strong>Bold</strong> — Toggle bold text.</li>
   <li><strong>Line spacing</strong> — Vertical spacing between conversation
       lines.</li>
   <li><strong>Colours</strong> — Custom colours for RX text, TX text, buffered
@@ -184,8 +184,8 @@
 </p>
 
 <p>
-  Five prosigns are supported, each individually enabled and mapped to one
-  of four actions:
+  Three prosigns are supported, each individually enabled and mapped to one
+  of five actions:
 </p>
 
 <table class="prosign-table">
@@ -208,19 +208,9 @@
       <td>Break / new paragraph &mdash; inserts a line break</td>
     </tr>
     <tr>
-      <td><code>&lt;BK&gt;</code></td>
-      <td>New Line</td>
-      <td>Back to you &mdash; inserts a line break</td>
-    </tr>
-    <tr>
-      <td><code>&lt;SK&gt;</code></td>
-      <td>Clear Screen</td>
-      <td>End of contact &mdash; clears the current fullscreen buffer</td>
-    </tr>
-    <tr>
       <td><code>&lt;HH&gt;</code></td>
-      <td>Clear Line</td>
-      <td>Error &mdash; deletes the current line back to the last line break</td>
+      <td>Clear Last Word</td>
+      <td>Error &mdash; removes text back to the last space or newline boundary</td>
     </tr>
   </tbody>
 </table>
@@ -231,6 +221,8 @@
 <ul>
   <li><strong>New Line</strong> &mdash; inserts a single line break.</li>
   <li><strong>New Paragraph</strong> &mdash; inserts two line breaks (blank line separator).</li>
+  <li><strong>Clear Last Word</strong> &mdash; removes text back to the last space or
+      newline boundary (or the start of the buffer if there is none).</li>
   <li><strong>Clear Line</strong> &mdash; removes all text on the current line back to
       the previous newline (or the start of the buffer).</li>
   <li><strong>Clear Screen</strong> &mdash; clears the current fullscreen buffer entirely.
