@@ -27,10 +27,28 @@ export type OptoMode = 'ac' | 'dc';
 export type SerialPin = 'dtr' | 'rts';
 /** Output forwarding mode: which signal source (RX, TX, or both) drives an output */
 export type OutputForward = 'rx' | 'tx' | 'both';
-/** @deprecated Use OutputForward instead */
-export type WinkeyerForward = OutputForward;
 /** Action to perform when a prosign is decoded */
 export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLastWord' | 'clearLine' | 'clearScreen';
+
+/**
+ * Unique identifier for each decoder input pipeline.
+ *
+ * Every input source that engages a decoder gets its own pipeline with
+ * independent timing state and pattern buffer. Inputs that support both
+ * straight-key and paddle modes are treated as two separate pipelines so
+ * they can run autonomously without corrupting each other's decode state.
+ */
+export type InputPath =
+  | 'mic'                   // Pilot tone detection (straight key via mic)
+  | 'cwAudio'               // CW tone detection (straight key via audio channel)
+  | 'keyboardStraightKey'   // Keyboard straight key
+  | 'keyboardPaddle'        // Keyboard iambic/ultimatic paddle
+  | 'mouseStraightKey'      // Mouse button as straight key
+  | 'mousePaddle'           // Mouse button as paddle
+  | 'touchStraightKey'      // Touch screen straight key
+  | 'touchPaddle'           // Touch screen paddle
+  | 'midiStraightKey'       // MIDI note as straight key
+  | 'midiPaddle';           // MIDI note as paddle
 
 /** Configuration for a single prosign action mapping */
 export interface ProsignActionEntry {
@@ -138,8 +156,6 @@ export interface AppSettings {
   // --- Keyer ---
   /** Enable/disable keyboard keyer input */
   keyboardKeyerEnabled: boolean;
-  /** @deprecated Use keyboardStraightKeySource / keyboardPaddleSource instead */
-  keyboardKeyerSource: DecoderSource;
   /** Decoder source for keyboard straight key ('rx' or 'tx') */
   keyboardStraightKeySource: DecoderSource;
   /** Decoder source for keyboard paddle ('rx' or 'tx') */
@@ -171,8 +187,6 @@ export interface AppSettings {
 
   // --- MIDI Input ---
   midiInputEnabled: boolean;
-  /** @deprecated Use midiStraightKeySource / midiPaddleSource instead */
-  midiInputSource: DecoderSource;
   /** Decoder source for MIDI straight key ('rx' or 'tx') */
   midiStraightKeySource: DecoderSource;
   /** Decoder source for MIDI paddle ('rx' or 'tx') */
@@ -325,7 +339,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   encoderMode: 'enter',
 
   keyboardKeyerEnabled: true,
-  keyboardKeyerSource: 'tx',
   keyboardStraightKeySource: 'tx',
   keyboardPaddleSource: 'tx',
   straightKeyCode: 'Space',
@@ -350,7 +363,6 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchReversePaddles: false,
 
   midiInputEnabled: false,
-  midiInputSource: 'rx',
   midiStraightKeySource: 'rx',
   midiPaddleSource: 'rx',
   midiInputDeviceId: '',
@@ -464,7 +476,6 @@ const DEFAULT_MODAL_DISPLAY: ModalDisplaySettings = {
  *  - Device ID remapping: stores device labels and re-resolves IDs on reload
  *  - Channel conflict detection: warns when outputs overlap on same channel
  *  - Fullscreen modal display settings with separate auto-persistence
- *  - Migration from legacy flat storage format
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -541,43 +552,6 @@ export class SettingsService {
   });
 
   constructor() {
-    // Migration: load old flat format if present
-    const old = localStorage.getItem('morseAppSettings');
-    if (old) {
-      try {
-        const parsed = JSON.parse(old);
-        delete parsed.inputDetectionMode;
-        delete parsed.inputChannel;
-        // Migrate: touchVibrateEnabled → vibrateEnabled
-        if (parsed.touchVibrateEnabled !== undefined) {
-          if (parsed.vibrateEnabled === undefined) {
-            parsed.vibrateEnabled = parsed.touchVibrateEnabled;
-          }
-          delete parsed.touchVibrateEnabled;
-        }
-        // Migrate: keyboardKeyerSource → keyboardStraightKeySource + keyboardPaddleSource
-        if (parsed.keyboardKeyerSource !== undefined && parsed.keyboardStraightKeySource === undefined) {
-          parsed.keyboardStraightKeySource = parsed.keyboardKeyerSource;
-          parsed.keyboardPaddleSource = parsed.keyboardKeyerSource;
-        }
-        // Migrate: midiInputSource → midiStraightKeySource + midiPaddleSource
-        if (parsed.midiInputSource !== undefined && parsed.midiStraightKeySource === undefined) {
-          parsed.midiStraightKeySource = parsed.midiInputSource;
-          parsed.midiPaddleSource = parsed.midiInputSource;
-        }
-        // Migrate: remove <BK>/<SK> from prosignActions, update <HH> clearLine → clearLastWord
-        if (parsed.prosignActions) {
-          delete parsed.prosignActions['<BK>'];
-          delete parsed.prosignActions['<SK>'];
-          if (parsed.prosignActions['<HH>']?.action === 'clearLine') {
-            parsed.prosignActions['<HH>'].action = 'clearLastWord';
-          }
-        }
-        this.settings.set({ ...DEFAULT_SETTINGS, ...parsed });
-        this.isDirty.set(true);
-      } catch { /* ignore corrupt data */ }
-    }
-
     // Load modal display settings
     try {
       const raw = localStorage.getItem(MODAL_DISPLAY_KEY);
@@ -623,34 +597,6 @@ export class SettingsService {
           const devices = isInput ? currentInputs : currentOutputs;
           const match = devices.find(d => d.label === savedLabel);
           (remapped as any)[key] = match ? match.deviceId : 'default';
-        }
-      }
-      // Strip any old fields that no longer exist
-      delete (remapped as any).inputDetectionMode;
-      delete (remapped as any).inputChannel;
-      // Migrate: touchVibrateEnabled → vibrateEnabled
-      if ((remapped as any).touchVibrateEnabled !== undefined) {
-        if (remapped.vibrateEnabled === undefined) {
-          (remapped as any).vibrateEnabled = (remapped as any).touchVibrateEnabled;
-        }
-        delete (remapped as any).touchVibrateEnabled;
-      }
-      // Migrate: keyboardKeyerSource → keyboardStraightKeySource + keyboardPaddleSource
-      if (remapped.keyboardKeyerSource !== undefined && (remapped as any).keyboardStraightKeySource === undefined) {
-        (remapped as any).keyboardStraightKeySource = remapped.keyboardKeyerSource;
-        (remapped as any).keyboardPaddleSource = remapped.keyboardKeyerSource;
-      }
-      // Migrate: midiInputSource → midiStraightKeySource + midiPaddleSource
-      if (remapped.midiInputSource !== undefined && (remapped as any).midiStraightKeySource === undefined) {
-        (remapped as any).midiStraightKeySource = remapped.midiInputSource;
-        (remapped as any).midiPaddleSource = remapped.midiInputSource;
-      }
-      // Migrate: remove <BK>/<SK> from prosignActions, update <HH> clearLine → clearLastWord
-      if ((remapped as any).prosignActions) {
-        delete (remapped as any).prosignActions['<BK>'];
-        delete (remapped as any).prosignActions['<SK>'];
-        if ((remapped as any).prosignActions['<HH>']?.action === 'clearLine') {
-          (remapped as any).prosignActions['<HH>'].action = 'clearLastWord';
         }
       }
       this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
@@ -702,9 +648,6 @@ export class SettingsService {
     const profiles = this._getProfiles();
     profiles[fp] = { settings: { ...s }, deviceLabels };
     localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-
-    // Clean up old flat format
-    localStorage.removeItem('morseAppSettings');
 
     this.isDirty.set(false);
     this.needsValidation.set(false);

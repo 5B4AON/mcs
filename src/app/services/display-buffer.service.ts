@@ -45,13 +45,20 @@ export class DisplayBuffer {
   private entries: DisplayEntry[] = [];
   /** Collapsed conversation lines (rebuilt from entries on mutation) */
   readonly lines = signal<DisplayLine[]>([]);
-  /** Flat text for simple display (e.g. main decoder panel) */
+  /** Flat text for simple display (e.g. main output panel) */
   readonly text = signal('');
   /** Maximum number of character entries to keep */
   private capacity: number;
+  /**
+   * When true, a newline is inserted in the flat text whenever the
+   * source type (RX/TX) changes — producing a conversation-style
+   * layout in the main output panel.
+   */
+  private conversationNewlines: boolean;
 
-  constructor(capacity = DEFAULT_CAPACITY) {
+  constructor(capacity = DEFAULT_CAPACITY, conversationNewlines = false) {
     this.capacity = capacity;
+    this.conversationNewlines = conversationNewlines;
   }
 
   /** Append one or more characters. */
@@ -137,8 +144,15 @@ export class DisplayBuffer {
   private rebuild(): void {
     const lines: DisplayLine[] = [];
     let flat = '';
+    let lastType: 'rx' | 'tx' | null = null;
 
     for (const entry of this.entries) {
+      // Insert newline when source type changes (conversation-style)
+      if (this.conversationNewlines && lastType !== null && entry.type !== lastType
+          && entry.char !== '\n' && !flat.endsWith('\n')) {
+        flat += '\n';
+      }
+      lastType = entry.type;
       flat += entry.char;
       const last = lines.length > 0 ? lines[lines.length - 1] : null;
       if (last && last.type === entry.type && last.userName === entry.userName) {
@@ -154,7 +168,7 @@ export class DisplayBuffer {
 }
 
 /**
- * Display Buffer Service — four independent FIFO display buffers.
+ * Display Buffer Service — three independent FIFO display buffers.
  *
  * Each buffer receives characters from the same data sources but can
  * be cleared independently. Buffers survive component destruction
@@ -162,15 +176,13 @@ export class DisplayBuffer {
  * root-provided service.
  *
  * Buffers:
- *  - mainDecoder:       Main screen decoder panel (flat text)
- *  - mainEncoder:       Main screen encoder buffer display
+ *  - mainOutput:        Main screen output panel (flat text with conversation newlines)
  *  - fullscreenDecoder: Fullscreen decoder conversation log
  *  - fullscreenEncoder: Fullscreen encoder conversation log
  */
 @Injectable({ providedIn: 'root' })
 export class DisplayBufferService {
-  readonly mainDecoder = new DisplayBuffer();
-  readonly mainEncoder = new DisplayBuffer();
+  readonly mainOutput = new DisplayBuffer(DEFAULT_CAPACITY, true);
   readonly fullscreenDecoder = new DisplayBuffer();
   readonly fullscreenEncoder = new DisplayBuffer();
 
@@ -199,13 +211,13 @@ export class DisplayBufferService {
     // Check for prosign action
     const action = this.resolveProsignAction(char);
     if (action) {
-      this.mainDecoder.applyProsignAction(action, type, userName);
+      this.mainOutput.applyProsignAction(action, type, userName);
       this.fullscreenDecoder.applyProsignAction(action, type, userName);
       this.fullscreenEncoder.applyProsignAction(action, type, userName);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainDecoder.push(type, char, userName);
+      this.mainOutput.push(type, char, userName);
       this.fullscreenDecoder.push(type, char, userName);
       this.fullscreenEncoder.push(type, char, userName);
     }
@@ -227,13 +239,13 @@ export class DisplayBufferService {
     // Check for prosign action
     const action = this.resolveProsignAction(char);
     if (action) {
-      this.mainEncoder.applyProsignAction(action, 'tx', userName);
+      this.mainOutput.applyProsignAction(action, 'tx', userName);
       this.fullscreenDecoder.applyProsignAction(action, 'tx', userName);
       this.fullscreenEncoder.applyProsignAction(action, 'tx', userName);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainEncoder.push('tx', char, userName);
+      this.mainOutput.push('tx', char, userName);
       this.fullscreenDecoder.push('tx', char, userName);
       this.fullscreenEncoder.push('tx', char, userName);
     }
@@ -268,10 +280,9 @@ export class DisplayBufferService {
     return null;
   }
 
-  /** Clear all four display buffers at once. */
+  /** Clear all three display buffers at once. */
   clearAll(): void {
-    this.mainDecoder.clear();
-    this.mainEncoder.clear();
+    this.mainOutput.clear();
     this.fullscreenDecoder.clear();
     this.fullscreenEncoder.clear();
   }

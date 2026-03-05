@@ -4,6 +4,61 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.8] - 2026-03-05
+
+### Changed
+
+- **Consolidated Main Screen Layout** — merged the separate Decoder and
+  Encoder panels into a single unified Output section. Both decoded (RX)
+  and encoded (TX) text now appear in one combined output area with
+  conversation-style line breaks when the source direction changes. The
+  encoder input textarea, mode selector, and TX button remain below the
+  output area. All four WPM indicators (RX, TX, Keyer, Encoder) are
+  shown in the title row.
+- **Fullscreen Context Menu** — the single fullscreen button now opens a
+  context menu offering "Fullscreen Decoder View" and "Fullscreen Encoder
+  View", replacing the two separate fullscreen buttons.
+- **Unified Clear Menu** — one clear button with options: "Input box"
+  (encoder textarea only), "This text area" (main output), and "All text
+  areas" (all buffers including fullscreen).
+- **Morse Key Panel Icon** — replaced the "Output" heading with an inline
+  SVG depicting a morse straight key.
+- **Display Buffer Consolidation** — the `DisplayBufferService` now uses
+  three buffers (`mainOutput`, `fullscreenDecoder`, `fullscreenEncoder`)
+  instead of four. The new `mainOutput` buffer supports conversation-style
+  newlines in its flat text output, inserting a line break whenever the
+  source type (RX/TX) changes.
+
+## [0.9.7] - 2026-03-05
+
+### Changed
+
+- **Universal Per-Output Isolation** — decoder pipelines now track activated
+  outputs with independent reference counters (`audioOutputRefCount`,
+  `serialOutputRefCount`, `vibrationOutputRefCount`, `midiOutputRefCount`)
+  and per-pipeline `activatedOutputs` sets. Receive pipelines (mic, CW audio,
+  MIDI) activate only audio and vibration; local keyer pipelines (keyboard,
+  mouse, touch) activate all outputs. This replaces the previous two-set
+  approach (`activeOutputPaths` / `activeMidiOutputPaths`).
+- **MIDI Reconnect Banner** — a blue info banner now appears on the main
+  screen when MIDI input or output was enabled before a page refresh,
+  prompting the user to re-enable MIDI in Settings (browser security
+  requires a fresh user gesture to re-acquire MIDI access). The banner
+  auto-dismisses when Settings is closed.
+- **Settings Cleanup** — removed all backward-compatibility migration code
+  and deprecated type aliases:
+  - Removed legacy flat-format (`morseAppSettings`) migration from the
+    settings service constructor and `loadForFingerprint()`.
+  - Removed deprecated `keyboardKeyerSource` and `midiInputSource` fields
+    from the `AppSettings` interface and defaults.
+  - Removed deprecated `WinkeyerForward` type aliases from both
+    `settings.service.ts` and `winkeyer-output.service.ts`.
+  - Removed deprecated service-level fields (`keySource`, `perfectTiming`,
+    `fromMidi`) and the unused `currentSource` signal from
+    `morse-decoder.service.ts`.
+  - Updated JSDoc comments across `keyer.service.ts` and `settings.service.ts`
+    to remove all references to removed properties and migration logic.
+
 ## [0.9.6] - 2026-03-04
 
 ### Added

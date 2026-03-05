@@ -6,7 +6,7 @@
 
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode } from './settings.service';
+import { SettingsService, PaddleMode, InputPath } from './settings.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { timingsFromWpm } from '../morse-table';
 
@@ -17,12 +17,12 @@ import { timingsFromWpm } from '../morse-table';
  *
  *  1. **Straight key**: a single keyboard key acts as a manual morse key.
  *     Press = key down, release = key up. Timing is entirely up to the operator.
- *     Sets `decoder.perfectTiming = false` so the decoder auto-calibrates.
+ *     The decoder auto-calibrates from the operator's timing.
  *
  *  2. **Iambic paddles**: two keyboard keys act as dit and dah paddles.
  *     The keyer auto-generates correctly timed dits and dahs at the
- *     configured WPM speed. Sets `decoder.perfectTiming = true` because
- *     element durations are mathematically exact and should not affect
+ *     configured WPM speed. The decoder uses perfect (mathematical) timing
+ *     because element durations are exact and should not affect
  *     the adaptive calibration pools.
  *     Supported modes:
  *     - **Iambic B**: squeezing both paddles alternates dit/dah; releasing
@@ -77,11 +77,17 @@ export class KeyerService implements OnDestroy {
   private paddleSource: 'rx' | 'tx' = 'tx';
 
   /**
-   * Whether the current paddle session originated from MIDI input.
-   * Set alongside paddleSource when a paddle input is activated;
-   * used by runKeyerLoop to tag generated elements with fromMidi.
+   * InputPath for the current paddle session.
+   * Set when a paddle input is activated; used by runKeyerLoop to
+   * route decoded elements through the correct pipeline.
    */
-  private paddleFromMidi = false;
+  private paddlePath: InputPath = 'keyboardPaddle';
+
+  /**
+   * InputPath for the current straight key session.
+   * Set when straight key input is activated.
+   */
+  private straightKeyPath: InputPath = 'keyboardStraightKey';
 
   private enabled = true;
 
@@ -121,9 +127,10 @@ export class KeyerService implements OnDestroy {
       this.stopKeyer();
       if (this.straightKeyDown) {
         this.straightKeyDown = false;
-        this.decoder.keySource = this.settings.settings().keyboardStraightKeySource;
-        this.decoder.perfectTiming = false;
-        this.decoder.onKeyUp();
+        this.decoder.onKeyUp(
+          this.straightKeyPath,
+          this.settings.settings().keyboardStraightKeySource,
+        );
       }
     }
   }
@@ -135,34 +142,30 @@ export class KeyerService implements OnDestroy {
    *
    * The straight key is human-timed (perfectTiming = false), so the
    * decoder will auto-calibrate based on the measured durations.
-   * The keySource is set from the calling input's configured decoder
-   * source (keyboard/mouse/touch), which determines which calibration
-   * pool (RX or TX) receives the samples.
+   * The source determines which calibration pool (RX or TX) receives samples.
    *
-   * @param down    true = key pressed, false = key released
-   * @param source  decoder source override ('rx' or 'tx'); defaults to
-   *                the keyboard keyer's configured source
-   * @param force   when true, bypass the enabled check (used by MIDI input
-   *                so it works even when the keyboard keyer is disabled)
+   * @param down       true = key pressed, false = key released
+   * @param source     decoder source override ('rx' or 'tx'); defaults to
+   *                   the keyboard keyer's configured source
+   * @param force      when true, bypass the enabled check (used by MIDI input
+   *                   so it works even when the keyboard keyer is disabled)
+   * @param inputPath  pipeline identifier; defaults to 'keyboardStraightKey'
    */
-  straightKeyInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+  straightKeyInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
     if (!this.enabled && !force) return;
     const src = source ?? this.settings.settings().keyboardStraightKeySource;
+    const path = inputPath ?? 'keyboardStraightKey';
+    const fromMidi = path === 'midiStraightKey' || path === 'midiPaddle';
     if (down && !this.straightKeyDown) {
       this.straightKeyDown = true;
+      this.straightKeyPath = path;
       this.zone.run(() => {
-        this.decoder.keySource = src;
-        this.decoder.perfectTiming = false;
-        this.decoder.fromMidi = force;
-        this.decoder.onKeyDown();
+        this.decoder.onKeyDown(path, src, { fromMidi });
       });
     } else if (!down && this.straightKeyDown) {
       this.straightKeyDown = false;
       this.zone.run(() => {
-        this.decoder.keySource = src;
-        this.decoder.perfectTiming = false;
-        this.decoder.fromMidi = force;
-        this.decoder.onKeyUp();
+        this.decoder.onKeyUp(path, src, { fromMidi });
       });
     }
   }
@@ -170,14 +173,15 @@ export class KeyerService implements OnDestroy {
   /**
    * Activate/deactivate the dit paddle directly (no reversal applied here).
    *
-   * @param down    true = paddle pressed, false = paddle released
-   * @param source  decoder source override; defaults to keyboard keyer source
-   * @param force   when true, bypass the enabled check (used by MIDI input)
+   * @param down       true = paddle pressed, false = paddle released
+   * @param source     decoder source override; defaults to keyboard keyer source
+   * @param force      when true, bypass the enabled check (used by MIDI input)
+   * @param inputPath  pipeline identifier; defaults to 'keyboardPaddle'
    */
-  ditPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+  ditPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
     if (!this.enabled && !force) return;
     this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
-    this.paddleFromMidi = force;
+    this.paddlePath = inputPath ?? 'keyboardPaddle';
     if (down && !this.leftPaddleDown) {
       this.leftPaddleDown = true;
       this.ditMemory = true;
@@ -191,14 +195,15 @@ export class KeyerService implements OnDestroy {
   /**
    * Activate/deactivate the dah paddle directly (no reversal applied here).
    *
-   * @param down    true = paddle pressed, false = paddle released
-   * @param source  decoder source override; defaults to keyboard keyer source
-   * @param force   when true, bypass the enabled check (used by MIDI input)
+   * @param down       true = paddle pressed, false = paddle released
+   * @param source     decoder source override; defaults to keyboard keyer source
+   * @param force      when true, bypass the enabled check (used by MIDI input)
+   * @param inputPath  pipeline identifier; defaults to 'keyboardPaddle'
    */
-  dahPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false): void {
+  dahPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
     if (!this.enabled && !force) return;
     this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
-    this.paddleFromMidi = force;
+    this.paddlePath = inputPath ?? 'keyboardPaddle';
     if (down && !this.rightPaddleDown) {
       this.rightPaddleDown = true;
       this.dahMemory = true;
@@ -274,10 +279,11 @@ export class KeyerService implements OnDestroy {
     }
     if (this.elementPlaying) {
       this.elementPlaying = false;
+      const fromMidi = this.paddlePath === 'midiPaddle';
       this.zone.run(() => {
-        this.decoder.keySource = this.paddleSource;
-        this.decoder.perfectTiming = true;
-        this.decoder.onKeyUp();
+        this.decoder.onKeyUp(this.paddlePath, this.paddleSource, {
+          perfectTiming: true, fromMidi,
+        });
         this.keyOutput$.next(false);
       });
     }
@@ -312,11 +318,11 @@ export class KeyerService implements OnDestroy {
 
     // Key down — keyer produces perfect timing, so set perfectTiming = true
     this.elementPlaying = true;
+    const fromMidi = this.paddlePath === 'midiPaddle';
     this.zone.run(() => {
-      this.decoder.keySource = this.paddleSource;
-      this.decoder.perfectTiming = true;
-      this.decoder.fromMidi = this.paddleFromMidi;
-      this.decoder.onKeyDown();
+      this.decoder.onKeyDown(this.paddlePath, this.paddleSource, {
+        perfectTiming: true, fromMidi,
+      });
       this.keyOutput$.next(true);
     });
 
@@ -324,7 +330,9 @@ export class KeyerService implements OnDestroy {
     this.keyerTimeout = setTimeout(() => {
       this.elementPlaying = false;
       this.zone.run(() => {
-        this.decoder.onKeyUp();
+        this.decoder.onKeyUp(this.paddlePath, this.paddleSource, {
+          perfectTiming: true, fromMidi,
+        });
         this.keyOutput$.next(false);
       });
       this.lastElement = this.currentElement;

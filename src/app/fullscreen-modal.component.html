@@ -184,21 +184,21 @@
         <!-- Decoder-only: live decoded text -->
         <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea>
           @for (line of conversationLines; track $index) {
-            @if ($last && line.type === decoder.currentSource()) {
-              <!-- Last line matches cursor source: cursor stays inline -->
+            @if ($last) {
+              <!-- Last line: show text inline, then same-source pattern cursor -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
                     [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
                     [innerHTML]="formatLine(line)"></span><span class="cursor"
-                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
-            } @else if ($last) {
-              <!-- Last line differs from cursor source: block, cursor on new line -->
-              <div class="fs-line"
-                   [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-                   [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
-                   [innerHTML]="formatLine(line)"></div>
-              <span class="cursor"
-                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+                    [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ line.type === 'rx' ? decoder.rxCurrentPattern() : decoder.txCurrentPattern() }}</span>
+              <!-- Other-source pattern on new line (if any active pattern from opposite direction) -->
+              @if (line.type === 'rx' && decoder.txCurrentPattern()) {
+                <div><span class="cursor"
+                      [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span></div>
+              } @else if (line.type === 'tx' && decoder.rxCurrentPattern()) {
+                <div><span class="cursor"
+                      [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span></div>
+              }
             } @else {
               <div class="fs-line"
                    [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
@@ -207,8 +207,17 @@
             }
           }
           @if (!conversationLines.length) {
-            <span class="cursor"
-                  [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+            @if (decoder.rxCurrentPattern()) {
+              <span class="cursor"
+                    [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+            }
+            @if (decoder.txCurrentPattern()) {
+              <span class="cursor"
+                    [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+            }
+            @if (!decoder.rxCurrentPattern() && !decoder.txCurrentPattern()) {
+              <span class="cursor"></span>
+            }
           }
         </div>
 
@@ -258,12 +267,16 @@
              tabindex="0" (keydown)="onEncoderModalKeydown($event)">
           @for (line of conversationLines; track $index) {
             @if ($last && line.type === 'rx') {
-              <!-- RX last line: cursor inline, encoder buffer on new line -->
+              <!-- RX last line: RX pattern inline, encoder buffer on new line -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
                     [style.color]="settings.modalDisplay().rxForeground"
                     [innerHTML]="formatLine(line)"></span><span class="cursor"
-                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+                    [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+              @if (decoder.txCurrentPattern()) {
+                <div><span class="cursor"
+                      [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span></div>
+              }
               @if (encoderPendingChars().length) {
                 <div class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
                       [class.sending]="$first && encoder.isSending()"
@@ -273,7 +286,7 @@
                       [innerHTML]="formatTextNoEmoji(char)"></span>}</div>
               }
             } @else if ($last && line.type === 'tx') {
-              <!-- TX last line: encoder buffer inline, cursor on new line -->
+              <!-- TX last line: encoder buffer inline, then pattern cursors -->
               <span class="fs-line fs-line-inline"
                     [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
                     [style.color]="settings.modalDisplay().txForeground"
@@ -283,7 +296,11 @@
                       ? settings.modalDisplay().sendingForeground
                       : settings.modalDisplay().bufferForeground"
                     [innerHTML]="formatTextNoEmoji(char)"></span>}</span>}<span class="cursor"
-                    [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+                    [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+              @if (decoder.rxCurrentPattern()) {
+                <div><span class="cursor"
+                      [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span></div>
+              }
             } @else {
               <!-- Non-last line: block -->
               <div class="fs-line"
@@ -293,8 +310,17 @@
             }
           }
           @if (!conversationLines.length) {
-            <span class="cursor"
-                  [style.color]="decoder.currentSource() === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ decoder.currentPattern() }}</span>
+            @if (decoder.rxCurrentPattern()) {
+              <span class="cursor"
+                    [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+            }
+            @if (decoder.txCurrentPattern()) {
+              <span class="cursor"
+                    [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+            }
+            @if (!decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
+              <span class="cursor"></span>
+            }
             @if (encoderPendingChars().length) {
               <span class="fs-encoder-inline">
                 @for (char of encoderPendingChars(); track $index) {

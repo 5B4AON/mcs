@@ -452,8 +452,9 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /**
    * Dispatch a touch/mouse button press to the keyer service.
    *
-   * Passes the touch keyer's configured decoder source so keyer events
-   * are tagged with the correct RX/TX source for calibration routing.
+   * Passes the touch keyer's configured decoder source and the
+   * appropriate InputPath so keyer events are tagged correctly
+   * and routed through the correct decoder pipeline.
    *
    * Haptic vibration (when enabled) is handled globally by
    * VibrationOutputService, triggered from MorseDecoderService on
@@ -463,16 +464,16 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     const s = this.settings.settings();
     const source = s.touchKeyerSource;
     if (button === 'straight') {
-      this.keyer.straightKeyInput(down, source);
+      this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
       return;
     }
     const reverse = s.touchReversePaddles;
     const element = button === 'left' ? s.touchLeftPaddle : s.touchRightPaddle;
     const effective = reverse ? (element === 'dit' ? 'dah' : 'dit') : element;
     if (effective === 'dit') {
-      this.keyer.ditPaddleInput(down, source);
+      this.keyer.ditPaddleInput(down, source, false, 'touchPaddle');
     } else {
-      this.keyer.dahPaddleInput(down, source);
+      this.keyer.dahPaddleInput(down, source, false, 'touchPaddle');
     }
   }
 

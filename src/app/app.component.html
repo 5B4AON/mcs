@@ -84,10 +84,45 @@
     </div>
   }
 
-  <!-- ========== Morse Decoder ========== -->
+  <!-- MIDI reconnect banner -->
+  @if (midiInputNeedsReconnect || midiOutputNeedsReconnect) {
+    <div class="midi-reconnect-banner">
+      <span class="midi-reconnect-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3H5a2 2 0 0 0-2 2v4"/><path d="M15 21h4a2 2 0 0 0 2-2v-4"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+      </span>
+      <span class="midi-reconnect-text">
+        MIDI
+        @if (midiInputNeedsReconnect && midiOutputNeedsReconnect) {
+          Input &amp; Output need
+        } @else if (midiInputNeedsReconnect) {
+          Input needs
+        } @else {
+          Output needs
+        }
+        to be re-enabled after page refresh.
+        Open <a class="midi-reconnect-link" (click)="openSettings()">Settings</a>
+        and toggle the service off and on.
+      </span>
+      <button class="midi-reconnect-dismiss" (click)="dismissMidiReconnectBanner()" title="Dismiss">&times;</button>
+    </div>
+  }
+
+  <!-- ========== Output ========== -->
   <section class="panel">
     <div class="panel-title-row">
-      <h2>Decoder</h2>
+      <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Base plate -->
+        <rect x="8" y="44" width="48" height="6" rx="2" fill="currentColor" opacity="0.25"/>
+        <!-- Pivot post -->
+        <line x1="18" y1="44" x2="18" y2="36"/>
+        <!-- Lever arm -->
+        <line x1="18" y1="36" x2="52" y2="30"/>
+        <!-- Knob -->
+        <ellipse cx="52" cy="29" rx="5" ry="3.5" fill="currentColor" opacity="0.5"/>
+        <!-- Contact points -->
+        <circle cx="36" cy="44" r="2" fill="currentColor" opacity="0.6"/>
+        <circle cx="36" cy="38" r="1.5" fill="currentColor" opacity="0.4"/>
+      </svg>
       <div class="wpm-indicators">
         <span class="wpm-indicator" title="RX Decoder WPM">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
@@ -103,6 +138,11 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
           <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
           <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
+        </span>
+        <span class="wpm-indicator" title="Encoder WPM">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+          <span class="wpm-indicator-label"><span class="label-full">Encoder</span><span class="label-short">ENC</span></span>
+          <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
         </span>
       </div>
     </div>
@@ -120,9 +160,9 @@
       </div>
     }
 
-    <div class="decoded-text" #decoderBox>{{ displayBuffers.mainDecoder.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
-    <div class="decoded-actions">
-      @if (settings.settings().cwInputEnabled) {
+    <div class="decoded-text" #decoderBox>{{ displayBuffers.mainOutput.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+    @if (settings.settings().cwInputEnabled) {
+      <div class="decoded-actions">
         <div class="level-meter-group inline-meter">
           <svg class="level-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="8" width="4" height="12" rx="1"/></svg>
           <div class="level-meter-track">
@@ -132,35 +172,8 @@
                  title="Auto Threshold"></div>
           </div>
         </div>
-      }
-      <div class="clear-menu-wrapper action-right" (click)="$event.stopPropagation()">
-        <button class="clear-icon-btn" (click)="toggleClearMenu('decoder')" title="Clear">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
-        @if (clearMenuOpen === 'decoder') {
-          <div class="clear-menu">
-            <button class="clear-menu-btn clear-this" (click)="clearMainDecoder(); closeClearMenu()">This text area</button>
-            <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All text areas</button>
-          </div>
-        }
       </div>
-      <button class="expand-btn" (click)="openModal('decoder')" title="Fullscreen">&#x26F6;</button>
-    </div>
-  </section>
-
-  <section class="panel">
-    <div class="panel-title-row">
-      <h2>Encoder</h2>
-      <div class="wpm-indicators">
-        <span class="wpm-indicator" title="Encoder WPM">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="wpm-indicator-label">Encoder</span>
-          <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
-        </span>
-      </div>
-    </div>
-
-    <div class="encoder-buffer">{{ displayBuffers.mainEncoder.text() }}</div>
+    }
 
     <div class="encoder-input-row">
       <textarea #encoderInput rows="2" placeholder="Type text to encode..."
@@ -180,18 +193,26 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
       </button>
       <div class="clear-menu-wrapper action-right" (click)="$event.stopPropagation()">
-        <button class="clear-icon-btn" (click)="toggleClearMenu('encoder')" title="Clear">
+        <button class="clear-icon-btn" (click)="toggleClearMenu()" title="Clear">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         </button>
-        @if (clearMenuOpen === 'encoder') {
+        @if (clearMenuOpen) {
           <div class="clear-menu">
             <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Input box</button>
-            <button class="clear-menu-btn clear-this" (click)="clearEncoder(encoderInput); closeClearMenu()">This text area</button>
+            <button class="clear-menu-btn clear-this" (click)="clearMainOutput(); closeClearMenu()">This text area</button>
             <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All text areas</button>
           </div>
         }
       </div>
-      <button class="expand-btn" (click)="openModal('encoder')" title="Fullscreen">&#x26F6;</button>
+      <div class="clear-menu-wrapper" (click)="$event.stopPropagation()">
+        <button class="expand-btn" (click)="toggleFullscreenMenu()" title="Fullscreen">&#x26F6;</button>
+        @if (fullscreenMenuOpen) {
+          <div class="clear-menu">
+            <button class="clear-menu-btn clear-decoder" (click)="openModal('decoder'); closeFullscreenMenu()">Fullscreen Decoder View</button>
+            <button class="clear-menu-btn clear-encoder" (click)="openModal('encoder'); closeFullscreenMenu()">Fullscreen Encoder View</button>
+          </div>
+        }
+      </div>
     </div>
   </section>
 

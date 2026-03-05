@@ -112,8 +112,9 @@ export class MouseKeyerService implements OnDestroy {
   /**
    * Route the action to the keyer service, applying mouse reverse paddles.
    *
-   * Passes the configured mouseKeyerSource so the keyer can tag decoder
-   * events with the correct RX/TX source for calibration routing.
+   * Passes the configured mouseKeyerSource and the appropriate InputPath
+   * so the keyer can tag decoder events with the correct RX/TX source
+   * and route them through the correct pipeline.
    */
   private dispatchAction(action: MouseButtonAction, down: boolean): void {
     const s = this.settings.settings();
@@ -121,13 +122,13 @@ export class MouseKeyerService implements OnDestroy {
     const source = s.mouseKeyerSource;
     switch (action) {
       case 'straightKey':
-        this.keyer.straightKeyInput(down, source);
+        this.keyer.straightKeyInput(down, source, false, 'mouseStraightKey');
         break;
       case 'dit':
-        if (reverse) this.keyer.dahPaddleInput(down, source); else this.keyer.ditPaddleInput(down, source);
+        if (reverse) this.keyer.dahPaddleInput(down, source, false, 'mousePaddle'); else this.keyer.ditPaddleInput(down, source, false, 'mousePaddle');
         break;
       case 'dah':
-        if (reverse) this.keyer.ditPaddleInput(down, source); else this.keyer.dahPaddleInput(down, source);
+        if (reverse) this.keyer.ditPaddleInput(down, source, false, 'mousePaddle'); else this.keyer.dahPaddleInput(down, source, false, 'mousePaddle');
         break;
     }
   }

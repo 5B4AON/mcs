@@ -103,6 +103,27 @@ export class MidiOutputService implements OnDestroy {
   /** True while MIDI output has active notes held (keying) */
   readonly isSending = signal(false);
 
+  /**
+   * Holdoff timer — keeps isSending() true for a few ms after the last
+   * note-off. The physical MIDI-to-electrical bus has settling time:
+   * the Arduino/optocoupler de-energise, the bus voltage drops, and
+   * the input sampling circuit needs time to stop seeing the signal.
+   * Without this holdoff, a fast key-up → loopback echo can sneak
+   * through the isSending() gate before the bus has fully settled.
+   *
+   * *** DO NOT REMOVE OR SHORTEN THIS HOLDOFF ***
+   * It prevents feedback loops that can lock the MIDI output in a
+   * permanent keying state.
+   */
+  private isSendingHoldoff: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Holdoff duration in milliseconds.  Empirically tested: 30 ms
+   * covers typical Arduino + optocoupler settling plus USB MIDI
+   * round-trip jitter (8-12 ms).
+   */
+  private static readonly SENDING_HOLDOFF_MS = 30;
+
   private midiAccess: MIDIAccess | null = null;
   private started = false;
   private startingPromise: Promise<void> | null = null;
@@ -384,6 +405,40 @@ export class MidiOutputService implements OnDestroy {
     });
   }
 
+  // ---- Real-time keying (used by MorseDecoderService) ----
+
+  /**
+   * Real-time key down — sends note-on on the straight key note.
+   *
+   * Used by the decoder to key the radio in real-time when local keyer
+   * inputs (keyboard, mouse, touch) are active. This provides immediate
+   * radio keying that matches the sidetone timing exactly, unlike the
+   * character-based forwarding path which introduces decode delay.
+   *
+   * Not called for MIDI-originated inputs (fromMidi) to prevent echo loops.
+   */
+  keyDown(source: 'rx' | 'tx' = 'tx'): void {
+    if (!this.canOutput(source)) return;
+    const s = this.settings.settings();
+    if (s.midiOutputStraightKeyNote >= 0) {
+      this.sendNoteOn(s.midiOutputStraightKeyNote, s.midiOutputVelocity, s.midiOutputChannel);
+    }
+  }
+
+  /**
+   * Real-time key up — sends note-off on the straight key note.
+   *
+   * Counterpart to keyDown(). Safe to call even when no note is active;
+   * the method checks activeNotes before sending.
+   */
+  keyUp(): void {
+    if (!this.activeOutput) return;
+    const s = this.settings.settings();
+    if (s.midiOutputStraightKeyNote >= 0 && this.activeNotes.has(s.midiOutputStraightKeyNote)) {
+      this.sendNoteOff(s.midiOutputStraightKeyNote, s.midiOutputChannel);
+    }
+  }
+
   /**
    * Test output — send a 1-second pulse on the straight key note.
    */
@@ -405,6 +460,11 @@ export class MidiOutputService implements OnDestroy {
     const status = 0x90 | ((channel - 1) & 0x0f);
     this.activeOutput.send([status, note, velocity & 0x7f]);
     this.activeNotes.add(note);
+    // Cancel any pending holdoff — we are actively sending again
+    if (this.isSendingHoldoff) {
+      clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = null;
+    }
     this.isSending.set(true);
   }
 
@@ -415,7 +475,18 @@ export class MidiOutputService implements OnDestroy {
     this.activeOutput.send([status, note, 0]);
     this.activeNotes.delete(note);
     if (this.activeNotes.size === 0) {
-      this.isSending.set(false);
+      // Don't clear isSending immediately — start a holdoff timer so
+      // the physical bus has time to settle before MIDI input is unmuted.
+      // If another note-on arrives before the holdoff expires, the timer
+      // is cancelled in sendNoteOn and isSending stays true throughout.
+      if (this.isSendingHoldoff) clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = setTimeout(() => {
+        this.isSendingHoldoff = null;
+        // Only clear if no notes were re-activated during the holdoff
+        if (this.activeNotes.size === 0) {
+          this.isSending.set(false);
+        }
+      }, MidiOutputService.SENDING_HOLDOFF_MS);
     }
   }
 
@@ -437,6 +508,11 @@ export class MidiOutputService implements OnDestroy {
       this.sendNoteOff(note, channel);
     }
     this.activeNotes.clear();
+    // Immediate clear — no holdoff needed when explicitly releasing all
+    if (this.isSendingHoldoff) {
+      clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = null;
+    }
     this.isSending.set(false);
   }
 

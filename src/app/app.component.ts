@@ -95,7 +95,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   controlsKebabOpen = false;
 
   // ---- Clear context menu state ----
-  clearMenuOpen: 'decoder' | 'encoder' | null = null;
+  clearMenuOpen = false;
+
+  // ---- Fullscreen context menu state ----
+  fullscreenMenuOpen = false;
 
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
@@ -114,6 +117,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private lastSentBuf = '';
   /** Last known encoder wordGapCount — detects word-gap timer firings */
   private lastWordGapCount = 0;
+
+  /**
+   * MIDI reconnect banner flags — set when the page loaded with MIDI
+   * services enabled but they had to be disabled because Chrome's MIDI
+   * subsystem cannot auto-reconnect reliably. Cleared when the user
+   * dismisses the banner or re-enables the service via settings.
+   */
+  midiInputNeedsReconnect = false;
+  midiOutputNeedsReconnect = false;
   constructor(
     public settings: SettingsService,
     public audioInput: AudioInputService,
@@ -163,11 +175,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
 
           // Forward to MIDI output — skip chars that originated from MIDI input
-          // to prevent echo loops (same pattern as fromRtdb for Firebase).
-          // Plays elements at encoder WPM, or at remote WPM for RTDB-sourced
-          // characters when override is off.
+          // (prevents echo loop) and skip chars from local keyer pipelines
+          // (keyboard, mouse, touch) because those are already keyed on the
+          // MIDI output in real-time via the decoder's keyDown/keyUp path.
+          // Only forward chars from audio inputs (mic, CW), encoder, and RTDB.
           if (!entry.fromMidi) {
-            this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm);
+            const isLocalKeyer = entry.inputPath &&
+              (entry.inputPath === 'keyboardStraightKey' || entry.inputPath === 'keyboardPaddle' ||
+               entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
+               entry.inputPath === 'touchStraightKey' || entry.inputPath === 'touchPaddle');
+            if (!isLocalKeyer) {
+              this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm);
+            }
           }
 
           // Forward to RTDB output only for non-RTDB chars (prevent echo)
@@ -246,12 +265,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.audioInput.keyEvent$.subscribe(evt => {
         this.micKeyDown = evt.down;
-        this.decoder.keySource = this.settings.settings().micInputSource;
-        this.decoder.perfectTiming = false;
+        const source = this.settings.settings().micInputSource;
         if (evt.down) {
-          this.decoder.onKeyDown();
+          this.decoder.onKeyDown('mic', source);
         } else {
-          this.decoder.onKeyUp();
+          this.decoder.onKeyUp('mic', source);
         }
       })
     );
@@ -270,12 +288,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
         this.cwKeyDown = evt.down;
-        this.decoder.keySource = this.settings.settings().cwInputSource;
-        this.decoder.perfectTiming = false;
+        const source = this.settings.settings().cwInputSource;
         if (evt.down) {
-          this.decoder.onKeyDown();
+          this.decoder.onKeyDown('cwAudio', source);
         } else {
-          this.decoder.onKeyUp();
+          this.decoder.onKeyUp('cwAudio', source);
         }
       })
     );
@@ -308,16 +325,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     );
 
     // MIDI cannot reliably auto-reconnect after a browser refresh because
-    // Chrome's MIDI subsystem returns stale/empty data from requestMIDIAccess().
-    // Disable MIDI on page load so the user must explicitly re-enable it.
-    // Their settings (device, channel, notes) are preserved — only the
-    // enabled flag is cleared.
-    if (this.settings.settings().midiInputEnabled) {
-      this.settings.update({ midiInputEnabled: false });
-    }
-    if (this.settings.settings().midiOutputEnabled) {
-      this.settings.update({ midiOutputEnabled: false });
-    }
+    // Chrome's MIDI subsystem may return stale/empty data from
+    // requestMIDIAccess(). We detect this after the device profile is
+    // loaded (in refreshDeviceConfig) and show a banner prompting the
+    // user to re-enable MIDI manually.
 
     // Auto-open Serial Key Output if enabled — Chrome remembers previously
     // granted serial ports across page refreshes via getPorts().
@@ -399,7 +410,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   @HostListener('document:click')
   onDocumentClick(): void {
     this.controlsKebabOpen = false;
-    this.clearMenuOpen = null;
+    this.clearMenuOpen = false;
+    this.fullscreenMenuOpen = false;
   }
 
   async toggleAudio(): Promise<void> {
@@ -531,7 +543,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   clearEncoder(textarea: HTMLTextAreaElement): void {
     textarea.value = '';
     this.encoder.clearBuffer();
-    this.displayBuffers.mainEncoder.clear();
   }
 
   /** Clear only the encoder textarea input (not the buffer or log) */
@@ -540,25 +551,35 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.encoderInputHasText = false;
   }
 
-  /** Clear the main decoder display buffer and reset operational state */
-  clearMainDecoder(): void {
-    this.displayBuffers.mainDecoder.clear();
+  /** Clear the main output display buffer and reset operational state */
+  clearMainOutput(): void {
+    this.displayBuffers.mainOutput.clear();
     this.decoder.clearOutput();
   }
 
-  /** Clear all four display buffers plus encoder operational state */
+  /** Clear all three display buffers plus encoder operational state */
   clearAllBuffers(): void {
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.encoder.clearBuffer();
   }
 
-  toggleClearMenu(which: 'decoder' | 'encoder'): void {
-    this.clearMenuOpen = this.clearMenuOpen === which ? null : which;
+  toggleClearMenu(): void {
+    this.clearMenuOpen = !this.clearMenuOpen;
+    this.fullscreenMenuOpen = false;
   }
 
   closeClearMenu(): void {
-    this.clearMenuOpen = null;
+    this.clearMenuOpen = false;
+  }
+
+  toggleFullscreenMenu(): void {
+    this.fullscreenMenuOpen = !this.fullscreenMenuOpen;
+    this.clearMenuOpen = false;
+  }
+
+  closeFullscreenMenu(): void {
+    this.fullscreenMenuOpen = false;
   }
 
   /**
@@ -588,10 +609,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.pushModalState('settings');
   }
 
-  /** Close settings modal */
+  /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */
   closeSettings(): void {
     this.showSettings = false;
     this.popModalState();
+    // Clear reconnect flags if the user has re-enabled the services
+    if (this.settings.settings().midiInputEnabled) this.midiInputNeedsReconnect = false;
+    if (this.settings.settings().midiOutputEnabled) this.midiOutputNeedsReconnect = false;
+  }
+
+  /** Dismiss the MIDI reconnect banner and open settings */
+  dismissMidiReconnectBanner(): void {
+    this.midiInputNeedsReconnect = false;
+    this.midiOutputNeedsReconnect = false;
   }
 
   /** Open help modal */
@@ -638,9 +668,33 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.devices.inputDevices(),
         this.devices.outputDevices()
       );
+      // After loading the device profile, check if MIDI was enabled.
+      // The flat-format check in ngOnInit may have seen defaults (false)
+      // because the real profile hadn't been loaded yet.
+      this.checkMidiReconnect();
       if (!found) {
         this.openSettings(); // auto-open settings for validation
       }
+    }
+  }
+
+  /**
+   * Check if MIDI services were enabled before the page refresh and
+   * need to be manually re-enabled. Disables them and sets the banner
+   * flags so the user is informed.
+   *
+   * Called after loadForFingerprint() loads the device profile — this is
+   * the only time we have the real saved settings (settings start at
+   * defaults until the profile is loaded asynchronously).
+   */
+  private checkMidiReconnect(): void {
+    if (this.settings.settings().midiInputEnabled) {
+      this.midiInputNeedsReconnect = true;
+      this.settings.update({ midiInputEnabled: false });
+    }
+    if (this.settings.settings().midiOutputEnabled) {
+      this.midiOutputNeedsReconnect = true;
+      this.settings.update({ midiOutputEnabled: false });
     }
   }
 

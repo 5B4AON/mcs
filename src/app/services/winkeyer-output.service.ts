@@ -35,8 +35,7 @@ const WK_BUF_SPEED   = 0x1C;   // Buffered speed change: next byte = WPM
 /** Status byte bits returned by WinKeyer */
 const WK_STATUS_BUSY = 0x04;   // Bit 2: character buffer not empty / sending
 
-/** @deprecated Use OutputForward from settings.service */
-export type WinkeyerForward = 'rx' | 'tx' | 'both';
+
 
 /**
  * WinKeyer Output Service — sends decoded text to a K1EL WinKeyer device

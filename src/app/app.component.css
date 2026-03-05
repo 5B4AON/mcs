@@ -233,6 +233,15 @@
   font-weight: 400;
   color: #bdf;
 }
+.panel-icon {
+  color: #8ab;
+  flex-shrink: 0;
+  height: 2.8em;
+  width: auto;
+  margin: -1em 0;
+  position: relative;
+  top: -0.15em;
+}
 
 /* Panel title row with WPM indicators */
 .panel-title-row {
@@ -379,8 +388,8 @@
 .decoded-text {
   font-family: 'Courier New', monospace;
   font-size: 1.1rem;
-  min-height: 8em;
-  max-height: 32rem;
+  min-height: 12em;
+  max-height: 48rem;
   overflow-y: auto;
   position: relative;
   padding: 0.3rem 0.7rem 0.5rem 0.7rem;
@@ -690,6 +699,7 @@
   display: flex;
   gap: .5rem;
   align-items: flex-start;
+  margin-top: 1rem;
 }
 .encoder-input-row textarea {
   flex: 1;
@@ -829,6 +839,14 @@
 }
 .clear-menu-btn.clear-textarea {
   background: linear-gradient(180deg, #4088c0 0%, #285888 100%);
+  color: #fff;
+}
+.clear-menu-btn.clear-decoder {
+  background: linear-gradient(180deg, #4088c0 0%, #285888 100%);
+  color: #fff;
+}
+.clear-menu-btn.clear-encoder {
+  background: linear-gradient(180deg, #50a050 0%, #307030 100%);
   color: #fff;
 }
 
@@ -1201,6 +1219,51 @@ select { max-width: 300px; }
 .rtdb-warning-dismiss:hover {
   background: #e6a817;
   color: #1a1a2e;
+}
+
+/* ── MIDI reconnect info banner (blue) ── */
+.midi-reconnect-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  margin: 0 0 1rem;
+  background: #132040;
+  border: 1px solid #4a90d9;
+  border-radius: 8px;
+  color: #b8d4f0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+.midi-reconnect-icon {
+  flex-shrink: 0;
+  color: #6aadf0;
+}
+.midi-reconnect-text {
+  flex: 1;
+}
+.midi-reconnect-link {
+  color: #6aadf0;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.midi-reconnect-link:hover {
+  color: #a0ccf8;
+}
+.midi-reconnect-dismiss {
+  background: none;
+  border: 1px solid #4a90d9;
+  border-radius: 4px;
+  color: #4a90d9;
+  font-size: 1.2rem;
+  cursor: pointer;
+  padding: 2px 8px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.midi-reconnect-dismiss:hover {
+  background: #4a90d9;
+  color: #fff;
 }
 
 /* ============================================================

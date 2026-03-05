@@ -6,8 +6,8 @@
 
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService } from './settings.service';
-import { KeyerService } from './keyer.service';
+import { SettingsService, PaddleMode } from './settings.service';
+import { MorseDecoderService } from './morse-decoder.service';
 import { MidiOutputService } from './midi-output.service';
 import { timingsFromWpm } from '../morse-table';
 
@@ -46,8 +46,10 @@ export function midiNoteName(note: number): string {
  *     covers both permissions — no separate prompt needed).
  *  2. Listens for note-on (0x90) and note-off (0x80) messages on the
  *     configured device and MIDI channel.
- *  3. Maps received notes to keyer actions: straight key, dit paddle,
- *     or dah paddle — using the same KeyerService methods as the keyboard keyer.
+ *  3. Maps received notes to decoder inputs: straight key calls the decoder
+ *     directly; paddle notes feed an independent iambic keyer built into
+ *     this service. This gives MIDI input its own completely separate
+ *     pipeline — no shared state with the keyboard/mouse/touch KeyerService.
  *  4. Supports a "learn" mode: the next MIDI note-on received is captured
  *     and reported back to the UI for assignment to a setting.
  *
@@ -95,12 +97,29 @@ export class MidiInputService implements OnDestroy {
    * Timer that clears MIDI output break-in after a word-gap of silence
    * from the remote party.  Reset on every MIDI input note-on; fires
    * when no further input activity is detected within one word gap.
+   * @deprecated Break-in is no longer used — MIDI input during gaps is
+   * allowed since each input has its own decoder pipeline.
    */
   private breakInClearTimer: ReturnType<typeof setTimeout> | null = null;
 
+  // ---- Independent MIDI paddle keyer state ----
+  // MIDI input has its own iambic keyer that is completely independent of
+  // the keyboard/mouse/touch KeyerService. This ensures MIDI paddles have
+  // zero shared state with other input sources — true parallel operation.
+  private midiLeftPaddleDown = false;
+  private midiRightPaddleDown = false;
+  private midiDitMemory = false;
+  private midiDahMemory = false;
+  private midiKeyerTimeout: ReturnType<typeof setTimeout> | null = null;
+  private midiCurrentElement: 'dit' | 'dah' | null = null;
+  private midiLastElement: 'dit' | 'dah' | null = null;
+  private midiElementPlaying = false;
+  private midiKeyerRunning = false;
+  private midiPaddleSource: 'rx' | 'tx' = 'rx';
+
   constructor(
     private settings: SettingsService,
-    private keyer: KeyerService,
+    private decoder: MorseDecoderService,
     private zone: NgZone,
     private midiOutput: MidiOutputService,
   ) {}
@@ -341,41 +360,58 @@ export class MidiInputService implements OnDestroy {
     // Normal mode: map note to keyer action
     if (!this.settings.settings().midiInputEnabled) return;
 
-    // Suppress loopback: while a MIDI output note is physically held,
-    // any incoming notes are bus echoes — drop them.
+    // ======================================================================
+    // *** DO NOT CHANGE THIS CHECK TO PER-NOTE OR ANY OTHER VARIATION ***
+    //
+    // Blanket isSending() suppression is REQUIRED because MIDI notes are
+    // converted to electrical signals on a COMMON PHYSICAL BUS where both
+    // sending and receiving happen on the same wire.  When the MIDI output
+    // sends ANY note, the bus is energised and the MIDI input hardware
+    // simultaneously samples the same bus, generating a mirror note-on.
+    // The note numbers are LOST in the electrical domain — only "bus
+    // active / bus idle" matters.  Therefore we must mute ALL MIDI input
+    // while ANY MIDI output note is held, regardless of note number.
+    //
+    // True parallel operation (e.g. receiving MIDI while the keyboard
+    // keyer is active) is achieved by:
+    //  1. Real-time MIDI output keying in the decoder (keyDown/keyUp),
+    //     which keeps isSending() true only during actual key-down —
+    //     not during the decoder's word-gap silence timers.
+    //  2. Not forwarding local-keyer decoded characters to MIDI output
+    //     via forwardDecodedChar (they are already keyed in real-time).
+    //  3. This service bypassing KeyerService entirely (own iambic keyer
+    //     + direct decoder calls), so no shared state with keyboard.
+    // ======================================================================
     if (isNoteOn && this.midiOutput.isSending()) return;
-
-    // Full break-in: abort the MIDI output queue, release held notes,
-    // and mute further output until the remote party goes silent for
-    // a full word gap.  This prevents remaining queued characters from
-    // blocking incoming MIDI input after the current space or gap.
-    if (isNoteOn) {
-      this.midiOutput.breakIn();
-      this.cancelBreakInClear();
-    }
 
     const s = this.settings.settings();
     const straightSource = s.midiStraightKeySource;
     const paddleSource = s.midiPaddleSource;
     const reverse = s.midiReversePaddles;
 
+    // Straight key and paddle inputs bypass KeyerService completely.
+    // MIDI input talks to the decoder directly (for straight key) or
+    // through its own independent iambic keyer (for paddles).  This
+    // ensures zero shared state with the keyboard/mouse/touch keyer.
     if (isNoteOn) {
       if (note === s.midiStraightKeyNote) {
         this.activeNotes.set(note, 'straightKey');
-        this.keyer.straightKeyInput(true, straightSource, true);
+        this.zone.run(() => {
+          this.decoder.onKeyDown('midiStraightKey', straightSource, { fromMidi: true });
+        });
       } else if (note === s.midiDitNote) {
         this.activeNotes.set(note, reverse ? 'dah' : 'dit');
         if (reverse) {
-          this.keyer.dahPaddleInput(true, paddleSource, true);
+          this.midiDahPaddleInput(true, paddleSource);
         } else {
-          this.keyer.ditPaddleInput(true, paddleSource, true);
+          this.midiDitPaddleInput(true, paddleSource);
         }
       } else if (note === s.midiDahNote) {
         this.activeNotes.set(note, reverse ? 'dit' : 'dah');
         if (reverse) {
-          this.keyer.ditPaddleInput(true, paddleSource, true);
+          this.midiDitPaddleInput(true, paddleSource);
         } else {
-          this.keyer.dahPaddleInput(true, paddleSource, true);
+          this.midiDahPaddleInput(true, paddleSource);
         }
       }
     } else if (isNoteOff) {
@@ -385,20 +421,16 @@ export class MidiInputService implements OnDestroy {
 
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, straightSource, true);
+          this.zone.run(() => {
+            this.decoder.onKeyUp('midiStraightKey', straightSource, { fromMidi: true });
+          });
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, paddleSource, true);
+          this.midiDitPaddleInput(false, paddleSource);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, paddleSource, true);
+          this.midiDahPaddleInput(false, paddleSource);
           break;
-      }
-
-      // When all input notes are released, schedule break-in clear
-      // after one word-gap of silence so MIDI output can resume.
-      if (this.activeNotes.size === 0) {
-        this.scheduleBreakInClear();
       }
     }
   }
@@ -433,17 +465,164 @@ export class MidiInputService implements OnDestroy {
     for (const [, action] of this.activeNotes) {
       switch (action) {
         case 'straightKey':
-          this.keyer.straightKeyInput(false, straightSource, true);
+          this.zone.run(() => {
+            this.decoder.onKeyUp('midiStraightKey', straightSource, { fromMidi: true });
+          });
           break;
         case 'dit':
-          this.keyer.ditPaddleInput(false, paddleSource, true);
+          this.midiDitPaddleInput(false, paddleSource);
           break;
         case 'dah':
-          this.keyer.dahPaddleInput(false, paddleSource, true);
+          this.midiDahPaddleInput(false, paddleSource);
           break;
       }
     }
     this.activeNotes.clear();
+    this.stopMidiKeyer();
+  }
+
+  // ---- Independent MIDI paddle keyer ----
+  // Self-contained iambic keyer that calls the decoder directly.
+  // Completely independent of KeyerService — no shared state.
+
+  /** Activate/deactivate the dit paddle on the MIDI keyer. */
+  private midiDitPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
+    this.midiPaddleSource = source;
+    if (down && !this.midiLeftPaddleDown) {
+      this.midiLeftPaddleDown = true;
+      this.midiDitMemory = true;
+      this.startMidiKeyer();
+    } else if (!down) {
+      this.midiLeftPaddleDown = false;
+      this.checkStopMidiKeyer();
+    }
+  }
+
+  /** Activate/deactivate the dah paddle on the MIDI keyer. */
+  private midiDahPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
+    this.midiPaddleSource = source;
+    if (down && !this.midiRightPaddleDown) {
+      this.midiRightPaddleDown = true;
+      this.midiDahMemory = true;
+      this.startMidiKeyer();
+    } else if (!down) {
+      this.midiRightPaddleDown = false;
+      this.checkStopMidiKeyer();
+    }
+  }
+
+  private startMidiKeyer(): void {
+    if (this.midiKeyerRunning) return;
+    this.midiKeyerRunning = true;
+    this.runMidiKeyerLoop();
+  }
+
+  private stopMidiKeyer(): void {
+    this.midiKeyerRunning = false;
+    if (this.midiKeyerTimeout) {
+      clearTimeout(this.midiKeyerTimeout);
+      this.midiKeyerTimeout = null;
+    }
+    if (this.midiElementPlaying) {
+      this.midiElementPlaying = false;
+      this.zone.run(() => {
+        this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
+          perfectTiming: true, fromMidi: true,
+        });
+      });
+    }
+    this.midiCurrentElement = null;
+    this.midiLastElement = null;
+    this.midiDitMemory = false;
+    this.midiDahMemory = false;
+  }
+
+  private checkStopMidiKeyer(): void {
+    if (!this.midiLeftPaddleDown && !this.midiRightPaddleDown &&
+        !this.midiDitMemory && !this.midiDahMemory && !this.midiElementPlaying) {
+      this.stopMidiKeyer();
+    }
+  }
+
+  private runMidiKeyerLoop(): void {
+    if (!this.midiKeyerRunning) return;
+    const mode: PaddleMode = this.settings.settings().paddleMode;
+    const timings = timingsFromWpm(this.settings.settings().keyerWpm);
+    const nextElement = this.pickMidiNextElement(mode);
+    if (!nextElement) {
+      this.stopMidiKeyer();
+      return;
+    }
+    this.midiCurrentElement = nextElement;
+    const duration = nextElement === 'dit' ? timings.dit : timings.dah;
+
+    this.midiElementPlaying = true;
+    this.zone.run(() => {
+      this.decoder.onKeyDown('midiPaddle', this.midiPaddleSource, {
+        perfectTiming: true, fromMidi: true,
+      });
+    });
+
+    this.midiKeyerTimeout = setTimeout(() => {
+      this.midiElementPlaying = false;
+      this.zone.run(() => {
+        this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
+          perfectTiming: true, fromMidi: true,
+        });
+      });
+      this.midiLastElement = this.midiCurrentElement;
+      this.midiCurrentElement = null;
+
+      // Inter-element space (1 dit)
+      this.midiKeyerTimeout = setTimeout(() => {
+        if (this.midiKeyerRunning) {
+          if (this.midiLeftPaddleDown || this.midiRightPaddleDown ||
+              this.midiDitMemory || this.midiDahMemory) {
+            this.runMidiKeyerLoop();
+          } else {
+            this.stopMidiKeyer();
+          }
+        }
+      }, timings.intraChar);
+    }, duration);
+  }
+
+  /**
+   * Pick the next element to play based on the current paddle mode.
+   * Mirrors KeyerService.pickNextElement but uses MIDI-local state.
+   */
+  private pickMidiNextElement(mode: PaddleMode): 'dit' | 'dah' | null {
+    const hasDit = this.midiLeftPaddleDown || this.midiDitMemory;
+    const hasDah = this.midiRightPaddleDown || this.midiDahMemory;
+    let picked: 'dit' | 'dah' | null = null;
+    const bothActive = hasDit && hasDah;
+
+    if (mode === 'iambic-b' || mode === 'iambic-a') {
+      if (bothActive) {
+        picked = this.midiLastElement === 'dit' ? 'dah' : 'dit';
+      } else if (hasDit) {
+        picked = 'dit';
+      } else if (hasDah) {
+        picked = 'dah';
+      } else if (mode === 'iambic-b' && this.midiLastElement) {
+        picked = this.midiLastElement === 'dit' ? 'dah' : 'dit';
+      }
+    } else if (mode === 'ultimatic') {
+      if (bothActive) {
+        picked = this.midiLastElement || 'dit';
+      } else if (hasDit) {
+        picked = 'dit';
+      } else if (hasDah) {
+        picked = 'dah';
+      }
+    } else if (mode === 'single-lever') {
+      if (hasDit) picked = 'dit';
+      else if (hasDah) picked = 'dah';
+    }
+
+    if (picked === 'dit') this.midiDitMemory = false;
+    else if (picked === 'dah') this.midiDahMemory = false;
+    return picked;
   }
 
   /** Try to get the device name from a MIDI message event */
