@@ -162,7 +162,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
       // Biased toward noise floor for faster key-down detection
       const range = this.signalPeak - this.noiseFloor;
       if (range > 0.0001) {
-        this.autoTh = this.noiseFloor + range * 0.3;
+        this.autoTh = Math.max(this.noiseFloor + range * 0.3, 0.002);
       }
     }
 
