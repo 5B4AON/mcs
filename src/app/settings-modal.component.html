@@ -46,7 +46,9 @@
     </div>
 
     <!-- Tab content -->
-    <div class="settings-tab-content">
+    <div class="settings-tab-content"
+         (touchstart)="onTabContentTouchStart($event)"
+         (touchend)="onTabContentTouchEnd($event)">
 
       <!-- ==================== INPUTS TAB ==================== -->
       @if (settingsTab === 'inputs') {
@@ -1736,4 +1738,73 @@ This cannot be undone."
     (emojiSelected)="onEmojiPickerSelected($event)"
     (closed)="closeEmojiPicker()">
   </app-emoji-picker>
+}
+
+@if (showScanResults) {
+  <div class="scan-results-overlay" (click)="dismissScanResults()">
+    <div class="scan-results-dialog" (click)="$event.stopPropagation()" role="dialog"
+         aria-label="Device scan results">
+
+      <!-- Header -->
+      <div class="scan-results-header">
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="1" width="11" height="9" rx="1.5"/><line x1="3" y1="5" x2="8" y2="5"/><line x1="3" y1="7.5" x2="7" y2="7.5"/><circle cx="15.5" cy="13" r="6.5"/><line x1="20" y1="17.5" x2="23.5" y2="21" stroke-width="3"/></svg>
+          Device Scan Complete
+        </h3>
+      </div>
+
+      <!-- Body -->
+      <div class="scan-results-body">
+        <p class="scan-results-explanation">
+          The browser was asked for microphone permission and then
+          enumerated all available audio devices.
+        </p>
+
+        @if (scanProfileChanged) {
+          <p class="scan-results-profile-note">
+            A different hardware profile was detected — settings have
+            been loaded for this configuration.
+          </p>
+        }
+
+        @if (scanResultInputs.length === 0 && scanResultOutputs.length === 0) {
+          <p class="scan-results-empty">No audio devices found. Check that your
+          devices are connected and the browser has permission to access them.</p>
+        }
+
+        @if (scanResultInputs.length > 0) {
+          <div class="scan-results-section">
+            <h4>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              Inputs ({{ scanResultInputs.length }})
+            </h4>
+            <ul>
+              @for (dev of scanResultInputs; track dev.label) {
+                <li>{{ dev.label }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (scanResultOutputs.length > 0) {
+          <div class="scan-results-section">
+            <h4>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              Outputs ({{ scanResultOutputs.length }})
+            </h4>
+            <ul>
+              @for (dev of scanResultOutputs; track dev.label) {
+                <li>{{ dev.label }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <!-- Actions -->
+      <div class="scan-results-actions">
+        <button class="scan-results-ok-btn" (click)="dismissScanResults()">OK</button>
+      </div>
+    </div>
+  </div>
 }

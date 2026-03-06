@@ -102,6 +102,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
+  @ViewChild('panelSection') panelSectionRef?: ElementRef<HTMLElement>;
+
+  /** Whether there is at least 300px of space below the panel for the sprite button */
+  spriteSpaceAvailable = false;
 
   private subs: Subscription[] = [];
 
@@ -145,6 +149,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
   ) {
+    // Auto-scroll the main decoder box when new text arrives
+    effect(() => {
+      this.displayBuffers.mainOutput.text();
+      const el = this.decoderBoxRef?.nativeElement;
+      if (el) {
+        requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
+      }
+    });
+
     // Watch for new decoded characters and forward to WinKeyer and Firebase RTDB
     // Also push every entry (including RTDB-sourced) into the display buffers.
     // Loop detection: record output chars and check for feedback loops.
@@ -405,6 +418,22 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.decoderBoxRef) {
       this.mouseKeyer.attach(this.decoderBoxRef.nativeElement);
     }
+    this.checkSpriteSpace();
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    this.checkSpriteSpace();
+  }
+
+  /** Check if at least 300px is available below the panel for the sprite button */
+  private checkSpriteSpace(): void {
+    if (!this.panelSectionRef) {
+      this.spriteSpaceAvailable = false;
+      return;
+    }
+    const panelBottom = this.panelSectionRef.nativeElement.getBoundingClientRect().bottom;
+    this.spriteSpaceAvailable = (window.innerHeight - panelBottom) >= 150;
   }
 
   @HostListener('document:click')
@@ -719,6 +748,37 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (key === 'rxDecoderWpm') this.decoder.resetRxCalibration();
     if (key === 'txDecoderWpm') this.decoder.resetTxCalibration();
     this.saveSettings();
+  }
+
+  // ---- Touch straight-key sprite button ----
+
+  /** Visual pressed state for the touch straight-key sprite */
+  spriteKeyDown = false;
+  /** Guard to prevent duplicate mouse events when touch already active */
+  private spriteMouseActive = false;
+
+  /** Handle touch events on the sprite key button */
+  onSpriteTouch(down: boolean, event: TouchEvent): void {
+    event.preventDefault();
+    this.spriteKeyDown = down;
+    const source = this.settings.settings().touchKeyerSource;
+    this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
+  }
+
+  /** Handle mouse events on the sprite key button (desktop fallback) */
+  onSpriteMouse(down: boolean, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (down) {
+      if (this.spriteMouseActive) return;
+      this.spriteMouseActive = true;
+    } else {
+      if (!this.spriteMouseActive) return;
+      this.spriteMouseActive = false;
+    }
+    this.spriteKeyDown = down;
+    const source = this.settings.settings().touchKeyerSource;
+    this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
   }
 
   // ---- Fullscreen modal ----

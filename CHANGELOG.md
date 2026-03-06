@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.10.0] - 2026-03-06
+
+### Added
+
+- **Touch Straight-Key Sprite Button** — a floating straight-key button now
+  appears at the bottom of the screen when touch keyer is enabled in straight
+  mode and sufficient vertical space is available (≥ 150 px below the panel).
+  Supports both touch and mouse input with visual pressed state.
+- **Device Scan Results Dialog** — after scanning for audio devices in Settings,
+  a dialog now lists all detected input and output devices and indicates whether
+  a different hardware profile was loaded.
+- **Settings Tab Swipe Navigation** — on touch devices, swipe left/right on the
+  Settings tab content area to cycle between the Inputs, Outputs, and Other
+  tabs.
+
+### Changed
+
+- **Touch Keyer Default** — the touch keyer is now enabled by default only on
+  devices that have touch capability (detected via `maxTouchPoints` and the
+  `any-pointer: coarse` media query), instead of being unconditionally enabled.
+- **Decoder Auto-Scroll** — the main decoder/output parchment now automatically
+  scrolls to the bottom when new text arrives.
+- **Parchment Wrapper** — the decoded text area is wrapped in a
+  `.decoded-parchment` container for improved layout control.
+- **Firebase RTDB Configuration** — production Firebase credentials are now
+  included in the repository for the public relay service.
+
 ## [0.9.9] - 2026-03-05
 
 ### Added

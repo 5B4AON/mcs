@@ -108,7 +108,7 @@
   }
 
   <!-- ========== Output ========== -->
-  <section class="panel">
+  <section class="panel" #panelSection>
     <div class="panel-title-row">
       <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
         <!-- Base plate -->
@@ -160,7 +160,9 @@
       </div>
     }
 
-    <div class="decoded-text" #decoderBox>{{ displayBuffers.mainOutput.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+    <div class="decoded-parchment">
+      <div class="decoded-text" #decoderBox>{{ displayBuffers.mainOutput.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+    </div>
     @if (settings.settings().cwInputEnabled) {
       <div class="decoded-actions">
         <div class="level-meter-group inline-meter">
@@ -215,6 +217,21 @@
       </div>
     </div>
   </section>
+
+  <!-- ========== TOUCH STRAIGHT-KEY SPRITE BUTTON ========== -->
+  @if (settings.settings().touchKeyerEnabled && settings.settings().touchKeyerMode === 'straight' && spriteSpaceAvailable) {
+    <div class="touch-key-sprite-wrapper">
+      <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
+              (touchstart)="onSpriteTouch(true, $event)"
+              (touchend)="onSpriteTouch(false, $event)"
+              (touchcancel)="onSpriteTouch(false, $event)"
+              (contextmenu)="$event.preventDefault()"
+              (mousedown)="onSpriteMouse(true, $event)"
+              (mouseup)="onSpriteMouse(false, $event)"
+              (mouseleave)="onSpriteMouse(false, $event)">
+      </button>
+    </div>
+  }
 
   <!-- Settings are now in a modal, opened via the gear icon in the header -->
 </div>

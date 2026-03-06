@@ -1,11 +1,21 @@
 ﻿:host {
-  display: block;
+  display: flex;
+  flex-direction: column;
   padding: 1.5rem;
   max-width: 940px;
   margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  box-sizing: border-box;
 }
 
 /* ===== App container ===== */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
 .app-header {
   display: flex;
   align-items: center;
@@ -385,35 +395,14 @@
 }
 
 /* ===== Morse Decoder ===== */
-.decoded-text {
-  font-family: 'American Typewriter', 'Courier Prime', 'Courier New', 'Lucida Console', monospace;
-  font-size: 1.08rem;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  min-height: 12em;
-  max-height: 48rem;
-  overflow-y: auto;
+
+/* Outer parchment wrapper — carries the visual styling and torn-edge clip */
+.decoded-parchment {
   position: relative;
-  padding: 0.6rem 1.7rem 0.5rem 1.5rem;
-  line-height: 1.35em;
-  white-space: pre-wrap;
-  word-break: break-all;
-  /* Faded typewriter ribbon ink — dark blue-brown */
-  color: #1e1812;
-  text-shadow:
-    0 0 0.2px rgba(20, 14, 8, 0.4),
-    0.3px 0.2px 0 rgba(30, 20, 10, 0.12),
-    -0.2px 0.1px 0 rgba(30, 20, 10, 0.08);
+  border: none;
+  border-radius: 1px;
   /* Parchment paper background */
   background:
-    /* Horizontal ruled lines — tiled via background-size + repeat */
-    linear-gradient(
-      to bottom,
-      transparent 0,
-      transparent calc(100% - 1px),
-      rgba(105, 85, 65, 0.18) calc(100% - 1px),
-      rgba(105, 85, 65, 0.18) 100%
-    ),
     /* Paper grain noise texture — coarse fibers */
     url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.07"/></svg>'),
     /* Fine paper fiber texture — second noise layer */
@@ -448,14 +437,6 @@
       #c8b599 75%,
       #c0ad91
     );
-  /* Ruled-line tile: 1.35em matches line-height; offset 0.3em pushes
-     the first line slightly lower. Fixed tile size avoids gaps when
-     the element grows beyond its initial min-height. */
-  background-size: 100% 1.35em, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto, auto;
-  background-position: 0 0.3em, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0;
-  background-attachment: local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local, local;
-  border: none;
-  border-radius: 1px;
   /* Worn paper edges and realistic shadow */
   box-shadow:
     /* Drop shadow layers */
@@ -520,6 +501,42 @@
     0.2% 17.0%,  0.5% 14.0%,  0.8% 11.0%,  0.3% 8.5%,
     0.6% 6.0%,   0.2% 3.5%,   0.5% 1.5%
   );
+}
+
+/* Inner scrollable text area — sits inside the parchment wrapper */
+.decoded-text {
+  font-family: 'American Typewriter', 'Courier Prime', 'Courier New', 'Lucida Console', monospace;
+  font-size: 1.08rem;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  height: 12em;
+  overflow-y: scroll;
+  /* Firefox scrollbar styling */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 100, 60, 0.45) transparent;
+  margin-right: 1rem;
+  padding: 0.6rem 1.7rem 0.5rem 1.5rem;
+  line-height: 1.35em;
+  white-space: pre-wrap;
+  word-break: break-all;
+  /* Faded typewriter ribbon ink — dark blue-brown */
+  color: #1e1812;
+  text-shadow:
+    0 0 0.2px rgba(20, 14, 8, 0.4),
+    0.3px 0.2px 0 rgba(30, 20, 10, 0.12),
+    -0.2px 0.1px 0 rgba(30, 20, 10, 0.08);
+  /* Ruled lines scroll with text via background-attachment: local */
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) 100%
+    );
+  background-size: 100% 1.35em;
+  background-position: 0 0.3em;
+  background-attachment: local;
 }
 .cursor {
   color: #3a2e20;
@@ -698,25 +715,55 @@
   );
 }
 
-/* Parchment scrollbar styling */
+/* Parchment scrollbar styling — wood grain handle */
 .decoded-text::-webkit-scrollbar,
 .encoder-buffer::-webkit-scrollbar {
-  width: 8px;
+  width: 10px;
 }
 .decoded-text::-webkit-scrollbar-track,
 .encoder-buffer::-webkit-scrollbar-track {
-  background: rgba(105, 85, 65, 0.12);
-  border-radius: 1px;
+  background: rgba(180, 160, 130, 0.18);
+  border-radius: 5px;
+  margin: 4px 0;
 }
 .decoded-text::-webkit-scrollbar-thumb,
 .encoder-buffer::-webkit-scrollbar-thumb {
-  background: rgba(105, 85, 65, 0.35);
-  border-radius: 1px;
-  border: 2px solid rgba(212, 196, 168, 0.4);
+  background:
+    linear-gradient(
+      to right,
+      rgba(139, 100, 60, 0.35),
+      rgba(160, 120, 72, 0.50) 30%,
+      rgba(139, 100, 60, 0.55) 50%,
+      rgba(160, 120, 72, 0.45) 70%,
+      rgba(139, 100, 60, 0.35)
+    );
+  border-radius: 5px;
+  border: 1px solid rgba(120, 85, 50, 0.15);
+  min-height: 40px;
 }
 .decoded-text::-webkit-scrollbar-thumb:hover,
 .encoder-buffer::-webkit-scrollbar-thumb:hover {
-  background: rgba(105, 85, 65, 0.5);
+  background:
+    linear-gradient(
+      to right,
+      rgba(139, 100, 60, 0.50),
+      rgba(160, 120, 72, 0.65) 30%,
+      rgba(139, 100, 60, 0.70) 50%,
+      rgba(160, 120, 72, 0.60) 70%,
+      rgba(139, 100, 60, 0.50)
+    );
+}
+.decoded-text::-webkit-scrollbar-thumb:active,
+.encoder-buffer::-webkit-scrollbar-thumb:active {
+  background:
+    linear-gradient(
+      to right,
+      rgba(120, 82, 45, 0.60),
+      rgba(145, 105, 60, 0.75) 30%,
+      rgba(120, 82, 45, 0.80) 50%,
+      rgba(145, 105, 60, 0.70) 70%,
+      rgba(120, 82, 45, 0.60)
+    );
 }
 
 .encoder-input-row {
@@ -1288,6 +1335,48 @@ select { max-width: 300px; }
 .midi-reconnect-dismiss:hover {
   background: #4a90d9;
   color: #fff;
+}
+
+/* ============================================================
+   TOUCH STRAIGHT-KEY SPRITE BUTTON
+   ============================================================ */
+.panel:has(+ .touch-key-sprite-wrapper) {
+  margin-bottom: 0;
+}
+.touch-key-sprite-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  flex: 1;
+  position: relative;
+  min-height: 0;
+}
+.touch-key-sprite {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  background: url('/morse-key-sprite-transparent.png') no-repeat center top;
+  background-size: auto 200%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  transition: none;
+}
+.touch-key-sprite:hover,
+.touch-key-sprite:active,
+.touch-key-sprite:focus {
+  background: url('/morse-key-sprite-transparent.png') no-repeat center top;
+  background-size: auto 200%;
+}
+.touch-key-sprite.pressed,
+.touch-key-sprite.pressed:hover,
+.touch-key-sprite.pressed:active {
+  background: url('/morse-key-sprite-transparent.png') no-repeat center bottom;
+  background-size: auto 200%;
 }
 
 /* ============================================================

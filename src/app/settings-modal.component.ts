@@ -46,6 +46,14 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
   expandedSections: Record<string, boolean> = {};
   showResetConfirm = false;
+  showScanResults = false;
+  scanResultInputs: { label: string }[] = [];
+  scanResultOutputs: { label: string }[] = [];
+  scanProfileChanged = false;
+
+  // ---- Swipe gesture state ----
+  private touchStartX = 0;
+  private touchStartY = 0;
 
   /** Whether the browser supports the Web Serial API */
   readonly webSerialSupported = 'serial' in navigator;
@@ -425,15 +433,69 @@ export class SettingsModalComponent implements OnInit, OnDestroy {
   // ---- Device refresh ----
 
   async onRefreshDevices(): Promise<void> {
+    const previousFp = this.settings.currentFingerprint();
     await this.devices.requestAndEnumerate();
     const fp = this.devices.computeFingerprint();
-    if (fp && fp !== this.settings.currentFingerprint()) {
+    if (fp && fp !== previousFp) {
       this.settings.loadForFingerprint(
         fp,
         this.devices.inputDevices(),
         this.devices.outputDevices()
       );
     }
+    this.scanResultInputs = this.devices.inputDevices().map(d => ({ label: d.label }));
+    this.scanResultOutputs = this.devices.outputDevices().map(d => ({ label: d.label }));
+    this.scanProfileChanged = !!(fp && fp !== previousFp);
+    this.showScanResults = true;
+  }
+
+  /** Dismiss the scan results overlay */
+  dismissScanResults(): void {
+    this.showScanResults = false;
+  }
+
+  // ---- Swipe gesture for tab navigation ----
+
+  /** Tab order used for cycling */
+  private readonly tabOrder: ('inputs' | 'outputs' | 'other')[] = ['inputs', 'outputs', 'other'];
+
+  /** Record the starting touch position */
+  onTabContentTouchStart(event: TouchEvent): void {
+    const touch = event.touches[0];
+    this.touchStartX = touch.clientX;
+    this.touchStartY = touch.clientY;
+  }
+
+  /**
+   * Detect a horizontal swipe and switch tabs.
+   * Requires a minimum 60 px horizontal distance and the swipe must
+   * be more horizontal than vertical to avoid triggering on scrolls.
+   */
+  onTabContentTouchEnd(event: TouchEvent): void {
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - this.touchStartX;
+    const dy = touch.clientY - this.touchStartY;
+
+    // Only act if the gesture is predominantly horizontal
+    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
+
+    if (dx < 0) {
+      this.nextTab();   // swipe left → next tab
+    } else {
+      this.prevTab();   // swipe right → previous tab
+    }
+  }
+
+  /** Move to the next tab (Inputs → Outputs → Other → Inputs) */
+  private nextTab(): void {
+    const idx = this.tabOrder.indexOf(this.settingsTab);
+    this.settingsTab = this.tabOrder[(idx + 1) % this.tabOrder.length];
+  }
+
+  /** Move to the previous tab (Other → Outputs → Inputs → Other) */
+  private prevTab(): void {
+    const idx = this.tabOrder.indexOf(this.settingsTab);
+    this.settingsTab = this.tabOrder[(idx - 1 + this.tabOrder.length) % this.tabOrder.length];
   }
 
   // ---- Save ----

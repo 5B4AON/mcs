@@ -7,6 +7,17 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { timingsFromWpm } from '../morse-table';
 
+/**
+ * Detect whether the device has a touch-capable display.
+ * Uses hardware capability (`maxTouchPoints`) plus the CSS `any-pointer: coarse`
+ * media query so laptops with both trackpad and touchscreen are correctly
+ * identified as touch devices.
+ */
+export function isTouchDevice(): boolean {
+  return navigator.maxTouchPoints > 0
+    || matchMedia('(any-pointer: coarse)').matches;
+}
+
 /** Iambic keyer paddle mode */
 export type PaddleMode = 'iambic-b' | 'iambic-a' | 'ultimatic' | 'single-lever';
 /** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type */
@@ -355,7 +366,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   mouseRightAction: 'none',
   mouseReversePaddles: false,
 
-  touchKeyerEnabled: true,
+  touchKeyerEnabled: isTouchDevice(),
   touchKeyerSource: 'tx',
   touchKeyerMode: 'straight',
   touchLeftPaddle: 'dit',
