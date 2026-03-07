@@ -28,9 +28,31 @@ A browser-based Morse code encoder, decoder and keyer that runs entirely in the 
 
 **Decoder Source Routing** — Each input (Mic, CW Tone, Keyboard, Mouse, Touch) can be independently assigned to the RX or TX decoder pool, controlling both calibration and colour tagging in the fullscreen conversation view.
 
-## Arduino MIDI Hardware Interface
+## Hardware Interfaces — Connecting to Your Key and Radio
 
-The [`arduino/`](arduino/) folder contains ready-made sketches that turn an Arduino Pro Micro into a USB MIDI device for keying and paddle input/output. Two board variants are supported: ATmega32U4 (classic Pro Micro) and nRF52840 (Supermini / nice!nano). Includes wiring diagrams for straight keys, iambic paddles, and optocoupler output circuits. See the [Arduino README](arduino/README.md) for details.
+Morse Code Studio supports several ways to connect physical keys and key your radio transmitter. Each has different trade-offs in responsiveness, background operation, and browser support.
+
+### Arduino MIDI (Recommended)
+
+The **preferred interface** is a simple Arduino-based USB MIDI adapter. An Arduino Pro Micro (ATmega32U4 or nRF52840) enumerates as a standard USB MIDI device — no drivers needed — and provides both **paddle/key input** and **optocoupler keying output** over a single USB connection. The Web MIDI API delivers input events asynchronously (no polling), so timing is crisp and responsive even at high WPM. Crucially, **MIDI works when the browser is in the background or minimised**, unlike keyboard and mouse keyers which require the app to be in focus. This makes MIDI the most practical interface for on-air use where you may need to switch between applications while operating.
+
+The [`arduino/`](arduino/) folder contains ready-made sketches for both board variants, with wiring diagrams for straight keys, iambic paddles, and optocoupler output circuits. See the [Arduino README](arduino/README.md) for build details.
+
+### Serial Port (DTR/RTS)
+
+A USB-serial adapter can key your transmitter via DTR/RTS line toggling (Web Serial API — Chrome/Edge only). This provides reliable keying **output**, but serial port access requires the app tab to be in focus for initial connection, and the protocol is inherently output-only — there is no event-driven input path, so it cannot replace MIDI for paddle input.
+
+### WinKeyer
+
+For stations already using a K1EL WinKeyer (WK2/WK3/WKUSB), the app can forward decoded text to the WinKeyer over its serial port. The WinKeyer then generates hardware-precision CW keying independently.
+
+### Keyboard, Mouse and Touch Keyers
+
+The built-in keyboard, mouse, and touch keyers are convenient for practice and portable use — no extra hardware required. They support all five keyer modes (straight, Iambic A/B, Ultimatic, Single Lever) with full dit/dah memory. The main limitation is that **the browser tab must be in focus** to receive keyboard and mouse events, so these keyers are not suitable for background operation.
+
+### Sound Card (Experimental)
+
+The sound card can serve double duty: an **optocoupler output** (DC or AC mode) keys the transmitter via the headphone jack, while a **microphone input** with ultrasonic pilot-tone detection reads a physical key's closures. Sound-card CW tone decoding of received audio works well and is the primary decode path for most setups. The keying input side (pilot-tone detection) is experimental and sensitive to audio hardware latency and noise, so MIDI remains the more robust choice for key input.
 
 ## Progressive Web App
 
