@@ -59,12 +59,15 @@ const firebaseConfig = {
           "$secret": {
             ".read": true,
             ".write": true,
-            ".validate": "newData.hasChildren(['char', 'userName', 'ts'])
+            ".validate": "newData.hasChildren(['char', 'userName', 'ts', 'wpm'])
                           && newData.child('char').isString()
-                          && newData.child('char').val().length <= 2
+                          && newData.child('char').val().length <= 5
                           && newData.child('userName').isString()
                           && newData.child('userName').val().length <= 20
-                          && newData.child('ts').val() === now"
+                          && newData.child('ts').val() === now
+            							&& newData.child('wpm').isNumber()
+            							&& newData.child('wpm').val() >= 5
+            							&& newData.child('wpm').val() <= 60"
           }
         }
       }
