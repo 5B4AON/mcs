@@ -1,6 +1,13 @@
+<p align="center">
+  <a href="https://morse-code-studio.web.app/">
+    <img src="public/favicon.svg" alt="Morse Code Studio" width="96">
+  </a>
+</p>
+
 # Morse Code Studio
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![Live App](https://img.shields.io/badge/Live_App-morse--code--studio.web.app-green)](https://morse-code-studio.web.app/)
 
 A browser-based Morse code encoder, decoder and keyer that runs entirely in the browser with no installation required. Built with Angular 19 and the Web Audio API, it provides real-time CW encoding/decoding with sub-millisecond timing precision suitable for on-air operating at 5–50+ WPM.
 
