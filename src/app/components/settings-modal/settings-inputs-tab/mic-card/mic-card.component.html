@@ -1,0 +1,107 @@
+<!-- Straight Key via Mic (Pilot Tone) -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().micInputEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Straight Key via Mic</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().micInputSource === 'rx'" [class.source-tx]="settings.settings().micInputSource === 'tx'">{{ settings.settings().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().micInputEnabled"
+             (change)="onMicEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="experimental-banner">&#x26A0; Experimental &mdash; AC coupling varies across sound cards; results may be unreliable.</div>
+      <label>Used for:
+        <select [value]="settings.settings().micInputSource" (change)="onSettingChange('micInputSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Mic Device:
+        <select [value]="settings.settings().inputDeviceId" (change)="onSettingChange('inputDeviceId', $event)">
+          <option value="default" [selected]="settings.settings().inputDeviceId === 'default'">System Default</option>
+          @for (dev of devices.inputDevices(); track dev.deviceId) {
+            <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().inputDeviceId">{{ dev.label }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="pilot-settings">
+        <label>Pilot Output Device:
+          <select [value]="settings.settings().pilotOutputDeviceId" (change)="onSettingChange('pilotOutputDeviceId', $event)">
+            <option value="default" [selected]="settings.settings().pilotOutputDeviceId === 'default'">System Default</option>
+            @for (dev of devices.outputDevices(); track dev.deviceId) {
+              <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().pilotOutputDeviceId">{{ dev.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label>Pilot Output Channel:
+          <select [value]="settings.settings().pilotOutputChannel" (change)="onSettingChange('pilotOutputChannel', $event)">
+            <option value="left" [selected]="settings.settings().pilotOutputChannel === 'left'">Left</option>
+            <option value="right" [selected]="settings.settings().pilotOutputChannel === 'right'">Right</option>
+          </select>
+        </label>
+
+        <label>Pilot Frequency (Hz):
+          <input type="number" min="10000" max="22000" step="500"
+                 [value]="settings.settings().pilotFrequency"
+                 (change)="onInputParamChange('pilotFrequency', $event)">
+        </label>
+
+        <label>Pilot Amplitude:
+          <input type="range" min="0.05" max="1" step="0.05"
+                 [value]="settings.settings().pilotAmplitude"
+                 (input)="onSettingChange('pilotAmplitude', $event)">
+          {{ settings.settings().pilotAmplitude }}
+        </label>
+
+        <div class="pilot-wiring-hint">
+          Wire: Pilot output → 10kΩ resistor → junction → mic input.
+          Morse key from junction to ground.
+        </div>
+      </div>
+
+      <label>Threshold:
+        <input type="range" min="0.0001" max="0.2" step="0.0001" [value]="settings.settings().inputThreshold"
+               (input)="onInputParamChange('inputThreshold', $event)">
+        {{ (settings.settings().inputThreshold * 1000).toFixed(2) }}m
+      </label>
+
+      <div class="calibration-row">
+        <span class="calibration-label">Calibrate:</span>
+        <button [disabled]="!audioRunning || calibrating" (click)="calibrateOpen()">
+          {{ calibrating === 'open' ? 'Measuring...' : '1. Key Open' }}
+        </button>
+        <button [disabled]="!audioRunning || calibrating" (click)="calibrateClosed()">
+          {{ calibrating === 'closed' ? 'Measuring...' : '2. Key Closed' }}
+        </button>
+        @if (calibOpenRms !== null || calibClosedRms !== null) {
+          <span class="calibration-values">
+            @if (calibOpenRms !== null) { Open: {{ (calibOpenRms * 1000).toFixed(3) }}m }
+            @if (calibClosedRms !== null) { &nbsp;Closed: {{ (calibClosedRms * 1000).toFixed(3) }}m }
+          </span>
+        }
+        @if (calibOpenRms !== null && calibClosedRms !== null) {
+          <button (click)="applyCalibration()">Apply threshold</button>
+        }
+      </div>
+
+      <label>Debounce (ms):
+        <input type="number" min="1" max="100" [value]="settings.settings().inputDebounceMs"
+               (change)="onInputParamChange('inputDebounceMs', $event)">
+      </label>
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().inputInvert"
+               (change)="onInputInvertChange($event)">
+        Invert key sense
+      </label>
+    </div>
+  }
+</div>

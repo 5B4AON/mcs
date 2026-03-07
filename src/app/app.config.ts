@@ -1,9 +1,23 @@
+/**
+ * Morse Code Studio
+ * Copyright (c) 2026 5B4AON — Mike
+ * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
+ */
+
 import { ApplicationConfig, provideZoneChangeDetection, isDevMode } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 
 import { routes } from './app.routes';
 
+/**
+ * Root application configuration.
+ *
+ * Configures Angular's dependency injection providers:
+ * - Zone.js change detection with event coalescing for performance
+ * - Router (empty routes — app is single-page, modal-based navigation)
+ * - Service worker for PWA offline support (registered after 30 s stability)
+ */
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),

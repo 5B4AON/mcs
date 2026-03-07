@@ -1,0 +1,58 @@
+<!-- Sidetone / Speaker -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().sidetoneEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Sidetone</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().sidetoneForward === 'rx'" [class.source-tx]="settings.settings().sidetoneForward === 'tx'" [class.source-both]="settings.settings().sidetoneForward === 'both'">{{ settings.settings().sidetoneForward === 'rx' ? 'RX' : settings.settings().sidetoneForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().sidetoneEnabled"
+             (change)="onBoolChange('sidetoneEnabled', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Active on:
+        <select [value]="settings.settings().sidetoneForward"
+                (change)="onSettingChange('sidetoneForward', $event)">
+          <option value="both" [selected]="settings.settings().sidetoneForward === 'both'">Both RX and TX</option>
+          <option value="tx" [selected]="settings.settings().sidetoneForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="rx" [selected]="settings.settings().sidetoneForward === 'rx'">RX only &mdash; received morse</option>
+        </select>
+      </label>
+
+      <label>Audio Device:
+        <select [value]="settings.settings().sidetoneOutputDeviceId" (change)="onSettingChange('sidetoneOutputDeviceId', $event)">
+          <option value="default" [selected]="settings.settings().sidetoneOutputDeviceId === 'default'">System Default</option>
+          @for (dev of devices.outputDevices(); track dev.deviceId) {
+            <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().sidetoneOutputDeviceId">{{ dev.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>Channel:
+        <select [value]="settings.settings().sidetoneOutputChannel" (change)="onSettingChange('sidetoneOutputChannel', $event)">
+          <option value="left" [selected]="settings.settings().sidetoneOutputChannel === 'left'">Left</option>
+          <option value="right" [selected]="settings.settings().sidetoneOutputChannel === 'right'">Right</option>
+        </select>
+      </label>
+
+      <label>Frequency (Hz):
+        <input type="number" min="500" max="800" [value]="settings.settings().sidetoneFrequency"
+               (change)="onSettingChange('sidetoneFrequency', $event)">
+      </label>
+
+      <label>Amplitude:
+        <input type="range" min="0" max="1" step="0.05" [value]="settings.settings().sidetoneAmplitude"
+               (input)="onSettingChange('sidetoneAmplitude', $event)">
+        {{ settings.settings().sidetoneAmplitude }}
+      </label>
+
+      <button [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="test-btn">
+        Test Output (1s)
+      </button>
+    </div>
+  }
+</div>

@@ -28,7 +28,108 @@ Browser-based Morse code encoder/decoder/keyer built with **Angular 19** (standa
 - **Firebase via raw SDK** (`firebase/app`, `firebase/database`) — not `@angular/fire`
 - **No external UI libraries** — all custom CSS, inline SVGs, dark theme (`#1a1a2e`)
 - **Settings persistence**: `SettingsService` stores per-device profiles in `localStorage` keyed by audio device fingerprint
-- Large monolithic components are intentional — prefer cohesion over splitting
+
+## Project Structure
+
+### Source layout
+```
+src/app/
+├── app.component.*          — root component: main UI, toolbar, orchestrates all modals
+├── app.config.ts            — Angular app config (providers)
+├── app.routes.ts            — empty routes array (no routing)
+├── firebase.config.ts       — Firebase RTDB credentials
+├── morse-table.ts           — MORSE_TABLE, MORSE_REVERSE, timingsFromWpm()
+├── version.ts               — app version constant (keep in sync with package.json)
+├── web-serial.d.ts          — Web Serial API type declarations
+├── services/                — singleton services (providedIn: 'root')
+│   ├── settings.service.ts  — central settings signal + localStorage persistence
+│   ├── audio-device.service.ts — audio device enumeration & fingerprinting
+│   ├── audio-input.service.ts  — microphone capture + AudioWorklet processing
+│   ├── audio-output.service.ts — audio playback (keyed tone generation)
+│   ├── cw-input.service.ts     — CW tone detection via Goertzel AudioWorklet
+│   ├── morse-decoder.service.ts — timing→character decoding
+│   ├── morse-encoder.service.ts — text→Morse encoding + keyed output
+│   ├── keyer.service.ts         — iambic/straight keyer logic
+│   ├── display-buffer.service.ts — decoded/encoded text buffer + prosign actions
+│   ├── serial-key-output.service.ts — Web Serial DTR/RTS radio keying
+│   ├── winkeyer-output.service.ts   — WinKeyer serial protocol
+│   ├── midi-input.service.ts   — Web MIDI input
+│   ├── midi-output.service.ts  — Web MIDI output
+│   ├── firebase-rtdb.service.ts — Firebase RTDB relay (send/receive)
+│   ├── mouse-keyer.service.ts  — mouse-based keyer input
+│   ├── loop-detection.service.ts — prevents audio feedback loops
+│   ├── wake-lock.service.ts    — Screen Wake Lock API
+│   └── vibration-output.service.ts — Vibration API output
+└── components/
+    ├── settings-modal/      — settings dialog (3 tab children, each with card children)
+    │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
+    │   ├── settings-shared.css          — shared card styles (loaded globally via angular.json)
+    │   ├── settings-inputs-tab/         — thin shell hosting 7 input card components
+    │   │   ├── mic-card/
+    │   │   ├── cw-detector-card/
+    │   │   ├── keyboard-keyer-card/
+    │   │   ├── mouse-keyer-card/
+    │   │   ├── touch-keyer-card/
+    │   │   ├── midi-input-card/
+    │   │   └── rtdb-input-card/
+    │   ├── settings-outputs-tab/        — thin shell hosting 7 output card components
+    │   │   ├── audio-output-card/
+    │   │   ├── serial-output-card/
+    │   │   ├── winkeyer-card/
+    │   │   ├── rtdb-output-card/
+    │   │   ├── midi-output-card/
+    │   │   ├── sidetone-card/
+    │   │   └── vibration-card/
+    │   └── settings-other-tab/          — thin shell hosting 4 card components
+    │       ├── wake-lock-card/
+    │       ├── show-prosigns-card/
+    │       ├── prosign-actions-card/
+    │       └── emojis-card/
+    ├── fullscreen-modal/    — fullscreen encode/decode views
+    │   ├── fullscreen-modal.component.* — container
+    │   ├── fullscreen-shared.css        — shared fullscreen styles
+    │   ├── fullscreen-format.utils.ts   — shared formatting utilities
+    │   ├── fs-toolbar/      — fullscreen mode toolbar
+    │   ├── fs-decoder-view/ — fullscreen decoder display
+    │   └── fs-encoder-view/ — fullscreen encoder display
+    ├── help/                — help system (chapter components + diagrams)
+    │   ├── help.component.*             — shell with table of contents
+    │   ├── help-ch-*.component.*        — individual chapter components (HTML-only content)
+    │   └── diagrams/                    — SVG wiring diagrams
+    ├── confirm-dialog/      — reusable confirmation dialog
+    ├── emoji-picker/        — emoji selection popup
+    ├── emoji-edit-modal/    — emoji mapping editor modal
+    └── symbols-ref/         — Morse code symbol reference panel
+```
+
+### Component hierarchy
+```
+AppComponent
+├── SettingsModalComponent
+│   ├── SettingsInputsTabComponent → 7 *-card components
+│   ├── SettingsOutputsTabComponent → 7 *-card components
+│   ├── SettingsOtherTabComponent → 4 *-card components
+│   └── ConfirmDialogComponent (reset confirmation)
+├── FullscreenModalComponent
+│   ├── FsToolbarComponent
+│   ├── FsDecoderViewComponent
+│   └── FsEncoderViewComponent
+├── HelpComponent → help-ch-* chapter components
+├── SymbolsRefComponent
+└── EmojiPickerComponent
+```
+
+### Key interdependencies to be aware of
+- **`SettingsService`** is the central hub — nearly every service and card component reads from `settings.settings()`. Changes to `AppSettings` interface or `DEFAULT_SETTINGS` affect the entire app.
+- **`AppSettings` interface + `DEFAULT_SETTINGS`** (both in `settings.service.ts`): when adding a new setting, update the interface, add a default, and add the UI control in the appropriate settings card component.
+- **Prosign actions pipeline**: prosign keys are defined in `prosign-actions-card.component.ts` (`prosignKeys` array), their defaults in `DEFAULT_SETTINGS.prosignActions` (settings.service.ts), and they are consumed at runtime by `DisplayBufferService.handleProsignAction()`. All three must stay in sync.
+- **Emoji mappings pipeline**: emoji defaults in `DEFAULT_SETTINGS.emojiMappings`, UI in `emojis-card` + `EmojiEditModalComponent`, runtime processing in `DisplayBufferService`.
+- **Settings card CSS** (`settings-shared.css`, `settings-outputs-tab.component.css`, `settings-other-tab.component.css`) is loaded **globally** via `angular.json` `styles` array — not via component `styleUrls`. Card components use `styles: [':host { display: contents; }']` only. Do NOT add these CSS files back into component `styleUrls` or the bundle will bloat.
+- **Fullscreen modal CSS** (`fullscreen-shared.css`) is similarly shared. Child components (`fs-toolbar`, `fs-decoder-view`, `fs-encoder-view`) import it via `styleUrls` (only 3 consumers, so duplication is acceptable here — unlike the 18 settings cards).
+- **Morse table** (`morse-table.ts`): `MORSE_TABLE` maps characters/prosigns to dot-dash strings; `MORSE_REVERSE` is the inverse. Changes to the table can affect encoding, decoding, and the symbols reference panel.
+- **`DisplayBufferService`** bridges decoded/encoded text with prosign actions and emoji replacements — changes to prosign or emoji logic converge here.
+- **Audio chain**: `AudioDeviceService` → `AudioInputService` → `CwInputService` (detection) → `MorseDecoderService` (decode). Output: `MorseEncoderService` → `AudioOutputService` + optional `SerialKeyOutputService` / `WinkeyerOutputService` / `MidiOutputService` / `FirebaseRtdbService`.
+- **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone-card).
 
 ## Build and Test
 ```bash
@@ -57,6 +158,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
   6. If help chapters were added or removed, update the table of contents in the help component (`help.component.ts` / `help.component.html`)
   7. Review and update `README.md` (project root) and `arduino/README.md` if changes affect their general overview content
 - **Help system**: standalone chapter components in `src/app/help/` with content-only HTML and minimal TS; wiring diagrams as SVGs in `src/app/help/diagrams/`
+- **Architecture changes**: when adding/removing/moving components, services, or shared CSS files, update this `copilot-instructions.md` — specifically the Project Structure tree, Component hierarchy, and Key interdependencies sections — so future sessions have accurate context
 
 ## Integration Points
 - **Firebase RTDB**: config in `src/app/firebase.config.ts`, channel structure `/morse-code-studio/channels/{channelName}/{secret}`. Offline caching disabled; auto-reconnect with exponential backoff
@@ -68,3 +170,6 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 ## Security
 - Do NOT open public issues for vulnerabilities — use email or GitHub private vulnerability reporting (see `SECURITY.md`)
 - Firebase credentials in `firebase.config.ts` are intentionally public (client-side RTDB with security rules)
+
+## Forbidden Operations
+- **NEVER run `firebase deploy` or any Firebase CLI deployment commands** (`firebase deploy`, `firebase hosting:channel:deploy`, `firebase functions:deploy`, etc.). Deployment is handled outside of Copilot's scope. Only the project owner deploys to production.

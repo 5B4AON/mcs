@@ -1,0 +1,119 @@
+<!-- WinKeyer Output -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().winkeyerEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">WinKeyer Output</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().winkeyerForward === 'rx'" [class.source-tx]="settings.settings().winkeyerForward === 'tx'" [class.source-both]="settings.settings().winkeyerForward === 'both'">{{ settings.settings().winkeyerForward === 'rx' ? 'RX' : settings.settings().winkeyerForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    </div>
+    <span class="connectivity-badge" [class.connected]="winkeyerOutput.connected()" [class.disconnected]="!winkeyerOutput.connected()">
+      @if (winkeyerOutput.connected()) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+    <label class="toggle-switch" (click)="$event.stopPropagation()"
+           [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
+      <input type="checkbox" [checked]="settings.settings().winkeyerEnabled"
+             [disabled]="!webSerialSupported || isAndroid"
+             (change)="onWinkeyerEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Forward:
+        <select [value]="settings.settings().winkeyerForward"
+                (change)="onSettingChange('winkeyerForward', $event)">
+          <option value="rx" [selected]="settings.settings().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
+          <option value="tx" [selected]="settings.settings().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="both" [selected]="settings.settings().winkeyerForward === 'both'">Both RX and TX</option>
+        </select>
+      </label>
+
+      @if (!webSerialSupported) {
+        <div class="conflict-warning">
+          Web Serial API is not supported in this browser. WinKeyer features require a
+          Chromium-based browser (Chrome or Edge).
+        </div>
+      } @else if (isAndroid) {
+        <div class="conflict-warning">
+          Serial port access is not available on Android. USB-to-serial devices like WinKeyer
+          are not supported by Chrome on Android even via USB OTG. This feature requires
+          Chrome or Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+        </div>
+      }
+      <div class="serial-port-row">
+        <button (click)="winkeyerOutput.requestPort()" class="test-btn">
+          Add Serial Port&hellip;
+        </button>
+        <button (click)="winkeyerOutput.refreshPorts()" class="test-btn">
+          Refresh
+        </button>
+      </div>
+
+      @if (winkeyerOutput.ports().length === 0) {
+        <div class="cw-hint">
+          No serial ports available. Click "Add Serial Port&hellip;" to grant access to the WinKeyer's COM port.
+          Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
+        </div>
+      }
+
+      @if (winkeyerOutput.ports().length > 0) {
+        <label>WinKeyer Port:
+          <select [value]="settings.settings().winkeyerPortIndex"
+                  (change)="onWinkeyerPortChange($event)">
+            <option [value]="-1">&mdash; Select &mdash;</option>
+            @for (port of winkeyerOutput.ports(); track $index) {
+              <option [value]="$index" [selected]="$index === settings.settings().winkeyerPortIndex">
+                {{ winkeyerOutput.portLabel(port) }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+
+      <label>WPM Speed:
+        <input type="number" min="5" max="99" [value]="settings.settings().winkeyerWpm"
+               (change)="onWinkeyerWpmChange($event)">
+      </label>
+
+      <div class="cw-hint">
+        Forwards decoded text to a K1EL WinKeyer (WK2/WK3/WKUSB) device.
+        WinKeyer generates perfectly timed CW keying on its output &mdash; the host
+        sends plain ASCII characters and WinKeyer handles the morse timing internally.<br><br>
+        <strong>Connection:</strong> 1200 baud, 8N2. The WinKeyer appears as a virtual
+        COM port (USB-serial). Select which decoded text to forward: RX (received),
+        TX (transmitted by the encoder/keyer), or both.<br><br>
+        <strong>Use case:</strong> Re-key received or transmitted morse through a
+        WinKeyer for relay, practice, or driving an external transmitter with
+        clean timing.
+      </div>
+
+      @if (winkeyerOutput.lastError()) {
+        <div class="conflict-warning">{{ winkeyerOutput.lastError() }}</div>
+      }
+
+      <div class="serial-port-row">
+        <button [disabled]="!winkeyerOutput.connected()"
+                (click)="winkeyerOutput.test()" class="test-btn">
+          Test (send "TEST")
+        </button>
+        <button [disabled]="!winkeyerOutput.connected()"
+                (click)="winkeyerOutput.clearBuffer()" class="test-btn">
+          Clear Buffer
+        </button>
+        @if (winkeyerOutput.connected()) {
+          <span class="serial-status connected">&#x2714; Connected
+            @if (winkeyerOutput.firmwareVersion()) {
+              (v{{ winkeyerOutput.firmwareVersion() }})
+            }
+          </span>
+        } @else {
+          <span class="serial-status">&#x2716; Disconnected</span>
+        }
+      </div>
+    </div>
+  }
+</div>

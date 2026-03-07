@@ -1,0 +1,80 @@
+<!-- Decoder: live decoded text conversation area -->
+<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea>
+  @for (line of conversationLines; track $index) {
+    @if ($last) {
+      <!-- Last line: show text inline, then same-source pattern cursor -->
+      <span class="fs-line fs-line-inline"
+            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+            [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+            [innerHTML]="formatLine(line)"></span><span class="cursor"
+            [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ line.type === 'rx' ? decoder.rxCurrentPattern() : decoder.txCurrentPattern() }}</span>
+      <!-- Other-source pattern on new line (if any active pattern from opposite direction) -->
+      @if (line.type === 'rx' && decoder.txCurrentPattern()) {
+        <div><span class="cursor"
+              [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span></div>
+      } @else if (line.type === 'tx' && decoder.rxCurrentPattern()) {
+        <div><span class="cursor"
+              [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span></div>
+      }
+    } @else {
+      <div class="fs-line"
+           [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+           [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+           [innerHTML]="formatLine(line)"></div>
+    }
+  }
+  @if (!conversationLines.length) {
+    @if (decoder.rxCurrentPattern()) {
+      <span class="cursor"
+            [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+    }
+    @if (decoder.txCurrentPattern()) {
+      <span class="cursor"
+            [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+    }
+    @if (!decoder.rxCurrentPattern() && !decoder.txCurrentPattern()) {
+      <span class="cursor"></span>
+    }
+  }
+</div>
+
+<!-- Touch keyer overlay (decoder mode only) -->
+@if (settings.settings().touchKeyerEnabled) {
+  <div class="touch-overlay">
+    @if (settings.settings().touchKeyerMode === 'straight') {
+      <div class="touch-btn touch-btn-straight"
+           (touchstart)="onTouchKey('straight', true, $event)"
+           (touchend)="onTouchKey('straight', false, $event)"
+           (touchcancel)="onTouchKey('straight', false, $event)"
+           (contextmenu)="$event.preventDefault()"
+           (mousedown)="onTouchMouseKey('straight', true, $event)"
+           (mouseup)="onTouchMouseKey('straight', false, $event)"
+           (mouseleave)="onTouchMouseKey('straight', false, $event)">
+        <span class="touch-btn-icon">&#x25CF;</span>
+      </div>
+    } @else {
+      <div class="touch-btn touch-btn-left"
+           (touchstart)="onTouchKey('left', true, $event)"
+           (touchend)="onTouchKey('left', false, $event)"
+           (touchcancel)="onTouchKey('left', false, $event)"
+           (contextmenu)="$event.preventDefault()"
+           (mousedown)="onTouchMouseKey('left', true, $event)"
+           (mouseup)="onTouchMouseKey('left', false, $event)"
+           (mouseleave)="onTouchMouseKey('left', false, $event)">
+        <span class="touch-btn-icon">{{ effectiveTouchElement('left') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
+        <span class="touch-btn-label">{{ effectiveTouchElement('left') }}</span>
+      </div>
+      <div class="touch-btn touch-btn-right"
+           (touchstart)="onTouchKey('right', true, $event)"
+           (touchend)="onTouchKey('right', false, $event)"
+           (touchcancel)="onTouchKey('right', false, $event)"
+           (contextmenu)="$event.preventDefault()"
+           (mousedown)="onTouchMouseKey('right', true, $event)"
+           (mouseup)="onTouchMouseKey('right', false, $event)"
+           (mouseleave)="onTouchMouseKey('right', false, $event)">
+        <span class="touch-btn-icon">{{ effectiveTouchElement('right') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
+        <span class="touch-btn-label">{{ effectiveTouchElement('right') }}</span>
+      </div>
+    }
+  </div>
+}

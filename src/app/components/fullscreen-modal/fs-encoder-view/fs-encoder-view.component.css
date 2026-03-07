@@ -1,0 +1,69 @@
+/* ============================================================
+   ENCODER VIEW — Inline encoder buffer + virtual keyboard
+   ============================================================ */
+
+/* Host fills the parent flex container */
+:host {
+  display: contents;
+}
+
+/* Inline encoder buffer displayed in conversation area */
+.fs-encoder-inline {
+  font-family: 'Courier New', monospace;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.fs-encoder-inline span {
+  display: inline;
+  min-width: .6em;
+  text-align: center;
+}
+
+/* ---- Virtual keyboard ---- */
+.virtual-key-input {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  border: none;
+  outline: none;
+  padding: 0;
+  margin: 0;
+  font-size: 16px;            /* prevents iOS auto-zoom */
+  caret-color: transparent;
+  pointer-events: none;
+}
+
+.vk-toggle-btn {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: rgba(60, 60, 80, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 20;
+  padding: 0;
+  min-height: unset;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+}
+.vk-toggle-btn:hover {
+  background: rgba(80, 80, 110, 0.9);
+}
+.vk-toggle-btn.vk-active {
+  background: rgba(40, 100, 180, 0.85);
+  border-color: rgba(100, 180, 255, 0.5);
+  color: #fff;
+}
+.vk-toggle-btn svg {
+  display: block;
+}

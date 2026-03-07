@@ -1,0 +1,96 @@
+<!-- Keyboard Keyer -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().keyboardKeyerEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Keyboard Keyer</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().keyboardStraightKeySource === 'rx'" [class.source-tx]="settings.settings().keyboardStraightKeySource === 'tx'">{{ settings.settings().keyboardStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
+      @if (settings.settings().keyboardPaddleSource !== settings.settings().keyboardStraightKeySource) {
+        <span class="source-badge" [class.source-rx]="settings.settings().keyboardPaddleSource === 'rx'" [class.source-tx]="settings.settings().keyboardPaddleSource === 'tx'">{{ settings.settings().keyboardPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+      }
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().keyboardKeyerEnabled"
+             (change)="onBoolChange('keyboardKeyerEnabled', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+
+      <div class="card-section-divider">Straight Key</div>
+
+      <label>Used for:
+        <select [value]="settings.settings().keyboardStraightKeySource" (change)="onSettingChange('keyboardStraightKeySource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Straight Key:
+        <button class="key-capture"
+                (keydown)="onCaptureKeyDown($event, 'straightKeyCode')">
+          {{ settings.settings().straightKeyCode }}
+        </button>
+      </label>
+
+      <div class="card-section-divider">Paddle</div>
+
+      <label>Used for:
+        <select [value]="settings.settings().keyboardPaddleSource" (change)="onSettingChange('keyboardPaddleSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Left Paddle {{ settings.settings().keyboardReversePaddles ? '(dah)' : '(dit)' }}:
+        <button class="key-capture"
+                (keydown)="onCaptureKeyDown($event, 'leftPaddleKeyCode')">
+          {{ settings.settings().leftPaddleKeyCode }}
+        </button>
+      </label>
+
+      <label>Right Paddle {{ settings.settings().keyboardReversePaddles ? '(dit)' : '(dah)' }}:
+        <button class="key-capture"
+                (keydown)="onCaptureKeyDown($event, 'rightPaddleKeyCode')">
+          {{ settings.settings().rightPaddleKeyCode }}
+        </button>
+      </label>
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().keyboardReversePaddles"
+               (change)="onBoolChange('keyboardReversePaddles', $event)">
+        Reverse Paddles
+      </label>
+
+      <label>Paddle Mode:
+        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+        </select>
+      </label>
+
+      @if (settings.settings().paddleMode === 'iambic-a' || settings.settings().paddleMode === 'iambic-b') {
+        <div class="keyer-hint">
+          Dit/dah memory active &mdash; press the opposite paddle during an element to queue it.
+          @if (settings.settings().paddleMode === 'iambic-b') {
+            In Iambic B, releasing both paddles completes the alternating element.
+          } @else {
+            In Iambic A, releasing both paddles stops immediately.
+          }
+        </div>
+      } @else if (settings.settings().paddleMode === 'ultimatic') {
+        <div class="keyer-hint">
+          Ultimatic: when both paddles are held, the <em>last pressed</em> paddle repeats.
+        </div>
+      } @else {
+        <div class="keyer-hint">
+          Single Lever: each paddle sends only its element. No alternation or memory.
+        </div>
+      }
+
+    </div>
+  }
+</div>

@@ -1,0 +1,44 @@
+<!-- Prosign Actions -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().prosignActionsEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Prosign Actions</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().prosignActionsEnabled"
+             (change)="onProsignActionsEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Assign an action to each prosign. When a prosign is decoded (or encoded),
+        the selected action is triggered in the conversation log.
+      </div>
+      <div class="prosign-actions-list">
+        @for (key of prosignKeys; track key) {
+          @if (getEntry(key); as entry) {
+            <div class="prosign-action-row">
+              <label class="prosign-action-enable">
+                <input type="checkbox"
+                       [checked]="entry.enabled"
+                       (change)="onProsignEntryEnabledChange(key, $event)">
+              </label>
+              <span class="prosign-action-name">{{ key }}</span>
+              <select class="prosign-action-select"
+                      [value]="entry.action"
+                      (change)="onProsignEntryActionChange(key, $event)"
+                      [disabled]="!entry.enabled">
+                @for (opt of prosignActionOptions; track opt.value) {
+                  <option [value]="opt.value" [selected]="opt.value === entry.action">{{ opt.label }}</option>
+                }
+              </select>
+            </div>
+          }
+        }
+      </div>
+    </div>
+  }
+</div>

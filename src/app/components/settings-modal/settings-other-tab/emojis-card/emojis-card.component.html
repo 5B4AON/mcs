@@ -1,0 +1,57 @@
+<!-- Emojis -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().emojisEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Emojis</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().emojisEnabled"
+             (change)="onEmojisEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Replace character sequences or prosigns with emoji graphics in the
+        fullscreen decoder and encoder conversation logs. Matching is
+        case-insensitive. Prosign patterns (e.g., &lt;AR&gt;) also match
+        their punctuation equivalents (e.g., +).<br><br>
+        Emojis scale with the conversation font size setting.
+      </div>
+      <div class="emoji-list">
+        @for (mapping of settings.settings().emojiMappings; track $index) {
+          <div class="emoji-row" [class.emoji-row-disabled]="!mapping.enabled">
+              <label class="emoji-enable">
+                <input type="checkbox" [checked]="mapping.enabled"
+                       (change)="onEmojiEntryEnabledChange($index, $event)">
+              </label>
+              <span class="emoji-match-text" (click)="emojiStartEdit($index)">{{ mapping.match }}</span>
+              <span class="emoji-emoji-text" (click)="emojiStartEdit($index)">{{ mapping.emoji }}</span>
+              @if (mapping.meaning) {
+                <span class="emoji-meaning-text" (click)="emojiStartEdit($index)">{{ mapping.meaning }}</span>
+              }
+              <span class="emoji-row-spacer"></span>
+              <button class="emoji-btn emoji-btn-edit" (click)="emojiStartEdit($index)" title="Edit">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+              </button>
+          </div>
+        }
+      </div>
+      <button class="emoji-add-btn" (click)="emojiAdd()">+ Add Emoji</button>
+    </div>
+  }
+</div>
+
+<!-- Emoji edit modal (hosted here because it's triggered from the Emojis card) -->
+@if (showEmojiEditModal) {
+  <app-emoji-edit-modal
+    [mapping]="emojiEditMapping"
+    [allMappings]="settings.settings().emojiMappings"
+    [editIndex]="emojiEditIndex"
+    (saved)="onEmojiEditSaved($event)"
+    (cancelled)="onEmojiEditCancelled()"
+    (deleted)="onEmojiEditDeleted()">
+  </app-emoji-edit-modal>
+}

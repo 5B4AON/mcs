@@ -1,0 +1,91 @@
+/* ============================================================
+   FULLSCREEN MODAL — Shared styles for conversation views
+   Used by both decoder-view and encoder-view children.
+   ============================================================ */
+
+/* Conversation area (scrollable) */
+.fs-conversation {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  padding: .5rem;
+  padding-bottom: 2.5em;
+  scroll-behavior: smooth;
+}
+.fs-conversation.vk-open {
+  padding-bottom: 0;
+}
+.fs-conversation:focus {
+  outline: none;
+}
+
+/* Line rendering */
+.fs-line {
+  margin-bottom: 0;
+}
+.fs-line-inline {
+  display: inline;
+}
+
+/* Blinking cursor for active decoding pattern */
+.cursor {
+  color: #8cf;
+  opacity: .7;
+}
+.cursor::after {
+  content: '';
+  display: inline-block;
+  width: 0.07em;
+  height: 0.82em;
+  min-width: 2px;
+  background: #888;
+  vertical-align: -0.15em;
+  margin-left: 1px;
+  animation: cursor-blink 1s step-end infinite;
+}
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+/* RTDB user name prefix — display only, not sent as morse */
+.rtdb-user-prefix {
+  opacity: 0.6;
+  font-size: 0.75em;
+  vertical-align: baseline;
+  margin-right: 0.3em;
+}
+
+/* Prosign display — styled as oval pill with muted background for visual distinction
+   ::ng-deep required because spans are injected via innerHTML and don't get view encapsulation attributes */
+:host ::ng-deep .prosign-display {
+  opacity: 0.85;
+  font-size: 0.8em;
+  font-weight: 600;
+  vertical-align: baseline;
+  font-family: monospace;
+  background: #3a3a52;
+  padding: 0.15em 0.5em;
+  border-radius: 1em;
+  display: inline-block;
+}
+
+/* Emoji display — scales with conversation font size, slightly larger for visibility
+   ::ng-deep required because spans are injected via innerHTML */
+:host ::ng-deep .emoji-display {
+  font-size: 1.1em;
+  line-height: 1;
+  vertical-align: middle;
+  display: inline-block;
+}
+
+/* ---- Responsive ---- */
+@media (max-width: 480px) {
+  .fs-conversation {
+    padding: 0.3rem;
+    padding-bottom: 2em;
+  }
+}

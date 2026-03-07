@@ -72,7 +72,7 @@ export interface EmojiMapping {
   enabled: boolean;
   /** Match pattern — a character (e.g. '+'), prosign (e.g. '<AR>'), or sequence (e.g. 'TNX') */
   match: string;
-  /** Emoji character to display */
+  /** Replacement text — one or more emojis, characters, or any mix */
   emoji: string;
   /** Optional short description of the mapping's meaning */
   meaning?: string;
@@ -339,7 +339,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   sidetoneEnabled: true,
   sidetoneForward: 'both',
 
-  vibrateEnabled: true,
+  vibrateEnabled: false,
   vibrateForward: 'both',
   vibrateEnhanced: true,
 
@@ -406,6 +406,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   prosignActionsEnabled: true,
   prosignActions: {
     '<AR>': { enabled: true, action: 'newParagraph' },
+    '<BK>': { enabled: true, action: 'newLine' },
     '<BT>': { enabled: true, action: 'newLine' },
     '<HH>': { enabled: true, action: 'clearLastWord' },
   },
@@ -611,6 +612,9 @@ export class SettingsService {
         }
       }
       this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
+      // Ensure nested collections have all expected keys (e.g. new prosign
+      // keys added after the profile was saved).
+      this.backfillProsignActions();
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -669,6 +673,27 @@ export class SettingsService {
     this.modalDisplay.set({ ...DEFAULT_MODAL_DISPLAY });
     localStorage.setItem(MODAL_DISPLAY_KEY, JSON.stringify(DEFAULT_MODAL_DISPLAY));
     this.isDirty.set(true);
+  }
+
+  /**
+   * Ensure prosignActions contains entries for every key present in
+   * DEFAULT_SETTINGS.  Profiles saved before a new prosign was added
+   * will be missing that key; back-fill it from the defaults.
+   */
+  private backfillProsignActions(): void {
+    const current = this.settings().prosignActions;
+    const defaults = DEFAULT_SETTINGS.prosignActions;
+    let patched = false;
+    const merged = { ...current };
+    for (const key of Object.keys(defaults)) {
+      if (!merged[key]) {
+        merged[key] = { ...defaults[key] };
+        patched = true;
+      }
+    }
+    if (patched) {
+      this.settings.set({ ...this.settings(), prosignActions: merged });
+    }
   }
 
   getDefaults(): AppSettings {

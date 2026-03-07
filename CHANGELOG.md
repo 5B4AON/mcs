@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.11.0] - 2026-03-07
+
+### Added
+
+- **`<BK>` Prosign Action** — added the Break prosign (`<BK>`) to the prosign
+  actions configuration with a default action of New Line, joining the existing
+  `<AR>`, `<BT>`, and `<HH>` prosigns.
+
+### Changed
+
+- **Settings Decomposed into Card Components** — the three settings tabs
+  (Inputs, Outputs, Other) have been decomposed into 18 individual card
+  components (7 input cards, 7 output cards, 4 other cards). Each tab is now a
+  thin shell that composes its child cards. Shared CSS is loaded globally via
+  `angular.json` to avoid bundle bloat from per-component duplication.
+- **Emoji Edit Modal Close Button** — the close button now uses the same
+  circular style (dark background, `#8cf` icon) as the settings and help modals
+  for visual consistency.
+- **Touch Straight-Key Sprite Position** — the animated morse key sprite now
+  appears closer to the bottom of the panel card (`margin-top: -0.75rem`).
+- **Sprite Space Detection** — the sprite visibility check now reacts to
+  settings changes that affect panel height (mic/CW input toggles, warning
+  banners) via a signal `effect()`, fixing cases where the button would not
+  appear or disappear correctly after a page refresh until the phone was
+  rotated.
+- **Copilot Instructions** — expanded `.github/copilot-instructions.md` with
+  full project structure tree, component hierarchy, key interdependencies
+  (settings pipeline, CSS loading strategy, audio chain, prosign/emoji
+  pipelines), architecture change conventions, and a Forbidden Operations
+  section preventing Firebase deployment commands.
+
 ## [0.10.0] - 2026-03-06
 
 ### Added

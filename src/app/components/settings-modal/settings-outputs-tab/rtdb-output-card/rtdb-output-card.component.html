@@ -1,0 +1,86 @@
+<!-- Firebase RTDB Output -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().rtdbOutputEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Firebase RTDB</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().rtdbOutputForward === 'rx'" [class.source-tx]="settings.settings().rtdbOutputForward === 'tx'" [class.source-both]="settings.settings().rtdbOutputForward === 'both'">{{ settings.settings().rtdbOutputForward === 'rx' ? 'RX' : settings.settings().rtdbOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    </div>
+    <span class="connectivity-badge" [class.connected]="rtdbService.outputActive()" [class.disconnected]="!rtdbService.outputActive()">
+      @if (rtdbService.outputActive()) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().rtdbOutputEnabled"
+             (change)="onRtdbOutputEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Forward:
+        <select [value]="settings.settings().rtdbOutputForward"
+                (change)="onSettingChange('rtdbOutputForward', $event)">
+          <option value="rx" [selected]="settings.settings().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+          <option value="tx" [selected]="settings.settings().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="both" [selected]="settings.settings().rtdbOutputForward === 'both'">Both RX and TX</option>
+        </select>
+      </label>
+
+      @if (!rtdbService.isOnline()) {
+        <div class="conflict-warning">
+          You are currently offline. Firebase Realtime Database requires an internet connection.
+        </div>
+      }
+
+      <label>Channel Name:
+        <input type="text" [value]="settings.settings().rtdbOutputChannelName"
+               (input)="onTextSettingChange('rtdbOutputChannelName', $event)"
+               placeholder="e.g. cw-practice-40m"
+               maxlength="50">
+      </label>
+
+      <label>Channel Secret:
+        <input type="password" [value]="settings.settings().rtdbOutputChannelSecret"
+               (input)="onTextSettingChange('rtdbOutputChannelSecret', $event)"
+               placeholder="shared secret"
+               maxlength="50">
+      </label>
+
+      <label>User Name:
+        <input type="text" [value]="settings.settings().rtdbOutputUserName"
+               (input)="onTextSettingChange('rtdbOutputUserName', $event)"
+               placeholder="e.g. 5B4AON"
+               maxlength="20">
+      </label>
+
+      <div class="cw-hint">
+        Publishes decoded morse characters to a Firebase Realtime Database channel.
+        Remote stations subscribed to the same channel and secret will receive
+        each letter as it is decoded.<br><br>
+        <strong>User Name</strong> is attached to each posted letter (typically your
+        callsign). Select which decoded text to forward: RX (received), TX
+        (transmitted by the encoder/keyer), or both.<br><br>
+        Only the <strong>last letter</strong> per channel is stored &mdash; no message
+        history is retained. Channel limits and automatic expiry are configured
+        externally via Firebase Security Rules and Cloud Functions.<br><br>
+        <strong>Requires an internet connection.</strong> Offline caching is disabled.
+      </div>
+
+      @if (rtdbService.lastError()) {
+        <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
+      }
+
+      <div class="serial-port-row">
+        @if (rtdbService.outputActive()) {
+          <span class="serial-status connected">&#x2714; Active</span>
+        } @else if (settings.settings().rtdbOutputEnabled) {
+          <span class="serial-status">&#x2716; Not active</span>
+        }
+      </div>
+    </div>
+  }
+</div>

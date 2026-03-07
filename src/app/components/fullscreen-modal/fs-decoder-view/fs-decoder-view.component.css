@@ -1,0 +1,57 @@
+/* ============================================================
+   DECODER VIEW — Touch keyer overlay
+   ============================================================ */
+
+/* Host fills the parent flex container */
+:host {
+  display: contents;
+}
+
+.touch-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  padding: 0 2px 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+.touch-btn {
+  pointer-events: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.touch-btn:active {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+}
+.touch-btn-straight {
+  max-width: 100%;
+}
+.touch-btn-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.touch-btn-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  opacity: 0.7;
+}

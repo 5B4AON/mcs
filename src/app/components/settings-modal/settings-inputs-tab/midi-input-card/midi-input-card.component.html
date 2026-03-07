@@ -1,0 +1,135 @@
+<!-- MIDI Input -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().midiInputEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">MIDI Input</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().midiStraightKeySource === 'rx'" [class.source-tx]="settings.settings().midiStraightKeySource === 'tx'">{{ settings.settings().midiStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
+      @if (settings.settings().midiPaddleSource !== settings.settings().midiStraightKeySource) {
+        <span class="source-badge" [class.source-rx]="settings.settings().midiPaddleSource === 'rx'" [class.source-tx]="settings.settings().midiPaddleSource === 'tx'">{{ settings.settings().midiPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+      }
+    </div>
+    <span class="connectivity-badge" [class.connected]="midiInput.connected()" [class.disconnected]="!midiInput.connected()">
+      @if (midiInput.connected()) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().midiInputEnabled"
+             [disabled]="!midiInput.supported"
+             (change)="onMidiEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      @if (!midiInput.supported) {
+        <div class="conflict-warning">
+          Web MIDI API is not supported in this browser. Use Chrome or Edge.
+        </div>
+      }
+
+      @if (midiInput.lastError()) {
+        <div class="conflict-warning">{{ midiInput.lastError() }}</div>
+      }
+
+      <label>MIDI Device:
+        <select [value]="settings.settings().midiInputDeviceId" (change)="onMidiDeviceChange($event)">
+          <option value="">Any (first available)</option>
+          @for (dev of midiInput.midiInputs(); track dev.id) {
+            <option [value]="dev.id" [selected]="dev.id === settings.settings().midiInputDeviceId">{{ dev.name }}</option>
+          }
+        </select>
+      </label>
+
+      <label>MIDI Channel:
+        <select [value]="settings.settings().midiInputChannel" (change)="onSettingChange('midiInputChannel', $event)">
+          <option [value]="0">Omni (all channels)</option>
+          @for (ch of midiChannels; track ch) {
+            <option [value]="ch" [selected]="ch === settings.settings().midiInputChannel">Channel {{ ch }}</option>
+          }
+        </select>
+      </label>
+
+      <div class="card-section-divider">Straight Key</div>
+
+      <label>Used for:
+        <select [value]="settings.settings().midiStraightKeySource" (change)="onSettingChange('midiStraightKeySource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Straight Key:
+        <button class="key-capture"
+                (click)="onMidiCapture('midiStraightKeyNote')">
+          {{ midiCapturing === 'midiStraightKeyNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiStraightKeyNote) }}
+        </button>
+        @if (settings.settings().midiStraightKeyNote >= 0) {
+          <button class="key-capture-clear" (click)="clearMidiNote('midiStraightKeyNote')" title="Clear">&times;</button>
+        }
+      </label>
+
+      <div class="card-section-divider">Paddle</div>
+
+      <label>Used for:
+        <select [value]="settings.settings().midiPaddleSource" (change)="onSettingChange('midiPaddleSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Dit Paddle:
+        <button class="key-capture"
+                (click)="onMidiCapture('midiDitNote')">
+          {{ midiCapturing === 'midiDitNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiDitNote) }}
+        </button>
+        @if (settings.settings().midiDitNote >= 0) {
+          <button class="key-capture-clear" (click)="clearMidiNote('midiDitNote')" title="Clear">&times;</button>
+        }
+      </label>
+
+      <label>Dah Paddle:
+        <button class="key-capture"
+                (click)="onMidiCapture('midiDahNote')">
+          {{ midiCapturing === 'midiDahNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiDahNote) }}
+        </button>
+        @if (settings.settings().midiDahNote >= 0) {
+          <button class="key-capture-clear" (click)="clearMidiNote('midiDahNote')" title="Clear">&times;</button>
+        }
+      </label>
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().midiReversePaddles"
+               (change)="onBoolChange('midiReversePaddles', $event)">
+        Reverse Paddles
+      </label>
+
+      <label>Paddle Mode:
+        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+        </select>
+      </label>
+
+      <div class="keyer-hint">
+        MIDI input works even when the app is in the background, another window
+        is focused, or the screen is locked. Connect a MIDI pedal, keyboard, or
+        controller and assign notes to straight key or paddles using the capture
+        buttons above.
+      </div>
+
+      <div class="serial-port-row">
+        @if (midiInput.connected()) {
+          <span class="serial-status connected">&#x2714; Connected</span>
+        } @else if (settings.settings().midiInputEnabled) {
+          <span class="serial-status">&#x2716; Not connected</span>
+        }
+      </div>
+    </div>
+  }
+</div>

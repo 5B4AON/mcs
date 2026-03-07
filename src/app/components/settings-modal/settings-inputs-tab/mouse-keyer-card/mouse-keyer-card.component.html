@@ -1,0 +1,79 @@
+<!-- Mouse Keyer -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().mouseKeyerEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Mouse Keyer</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().mouseKeyerSource === 'rx'" [class.source-tx]="settings.settings().mouseKeyerSource === 'tx'">{{ settings.settings().mouseKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().mouseKeyerEnabled"
+             (change)="onBoolChange('mouseKeyerEnabled', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Used for:
+        <select [value]="settings.settings().mouseKeyerSource" (change)="onSettingChange('mouseKeyerSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Left Button:
+        <select [value]="settings.settings().mouseLeftAction"
+                (change)="onMouseActionChange('mouseLeftAction', $event)">
+          <option value="none">None</option>
+          <option value="straightKey">Straight Key</option>
+          <option value="dit">Dit</option>
+          <option value="dah">Dah</option>
+        </select>
+      </label>
+
+      <label>Middle Button:
+        <select [value]="settings.settings().mouseMiddleAction"
+                (change)="onMouseActionChange('mouseMiddleAction', $event)">
+          <option value="none">None</option>
+          <option value="straightKey">Straight Key</option>
+          <option value="dit">Dit</option>
+          <option value="dah">Dah</option>
+        </select>
+      </label>
+
+      <label>Right Button:
+        <select [value]="settings.settings().mouseRightAction"
+                (change)="onMouseActionChange('mouseRightAction', $event)">
+          <option value="none">None</option>
+          <option value="straightKey">Straight Key</option>
+          <option value="dit">Dit</option>
+          <option value="dah">Dah</option>
+        </select>
+      </label>
+
+      @if (mouseActionConflict()) {
+        <div class="conflict-warning">{{ mouseActionConflict() }}</div>
+      }
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().mouseReversePaddles"
+               (change)="onBoolChange('mouseReversePaddles', $event)">
+        Reverse Paddles
+      </label>
+
+      <label>Paddle Mode:
+        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+        </select>
+      </label>
+
+      <div class="keyer-hint">
+        Mouse clicks are captured in the Morse Decoder area and the fullscreen decoder view.
+        Right-click context menu is suppressed when mapped.
+      </div>
+    </div>
+  }
+</div>

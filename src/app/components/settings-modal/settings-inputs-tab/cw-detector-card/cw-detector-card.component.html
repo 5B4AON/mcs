@@ -1,0 +1,100 @@
+<!-- CW Tone Detector -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().cwInputEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">CW Tone Detector</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().cwInputSource === 'rx'" [class.source-tx]="settings.settings().cwInputSource === 'tx'">{{ settings.settings().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().cwInputEnabled"
+             [disabled]="!!cwInputConflict()"
+             (change)="onCwEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      @if (cwInputConflict()) {
+        <div class="conflict-warning">{{ cwInputConflict() }}</div>
+      }
+
+      <label>Used for:
+        <select [value]="settings.settings().cwInputSource" (change)="onSettingChange('cwInputSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Audio Input Device:
+        <select [value]="settings.settings().cwInputDeviceId" (change)="onSettingChange('cwInputDeviceId', $event)">
+          <option value="default" [selected]="settings.settings().cwInputDeviceId === 'default'">System Default</option>
+          @for (dev of devices.inputDevices(); track dev.deviceId) {
+            <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().cwInputDeviceId">{{ dev.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>Input Channel:
+        <select [value]="settings.settings().cwInputChannel" (change)="onCwParamChange('cwInputChannel', $event)">
+          <option value="left" [selected]="settings.settings().cwInputChannel === 'left'">Left</option>
+          <option value="right" [selected]="settings.settings().cwInputChannel === 'right'">Right</option>
+        </select>
+      </label>
+
+      <label>CW Tone Frequency (Hz):
+        <input type="number" min="200" max="2000" step="10"
+               [value]="settings.settings().cwInputFrequency"
+               (change)="onCwParamChange('cwInputFrequency', $event)">
+      </label>
+
+      <label>CW Tone Bandwidth (Hz):
+        <input type="number" min="100" max="500" step="10"
+               [value]="settings.settings().cwInputBandwidth"
+               (change)="onCwParamChange('cwInputBandwidth', $event)">
+      </label>
+
+      <div class="cw-hint">
+        Typical CW audio tone: 500–700 Hz. Match to your radio's sidetone or BFO offset.
+        The bandwidth controls how selective the detector is around the centre frequency.
+        At {{ settings.settings().cwInputBandwidth }} Hz bandwidth, the passband is
+        {{ settings.settings().cwInputFrequency - settings.settings().cwInputBandwidth / 2 }}–{{ settings.settings().cwInputFrequency + settings.settings().cwInputBandwidth / 2 }} Hz.
+        Narrower = more selective but requires a more precise frequency setting.
+      </div>
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().cwInputAutoThreshold"
+               (change)="onCwParamChange('cwInputAutoThreshold', $event)">
+        Auto Threshold
+      </label>
+
+      @if (!settings.settings().cwInputAutoThreshold) {
+        <label>Manual Threshold:
+          <input type="range" min="0.0001" max="0.5" step="0.0001"
+                 [value]="settings.settings().cwInputThreshold"
+                 (input)="onCwParamChange('cwInputThreshold', $event)">
+          {{ (settings.settings().cwInputThreshold * 1000).toFixed(2) }}m
+        </label>
+      }
+
+      @if (cwNoiseFloor > 0 || cwSignalPeak > 0) {
+        <div class="cw-auto-info">
+          Noise: {{ (cwNoiseFloor * 1000).toFixed(2) }}m
+          &nbsp;|&nbsp; Peak: {{ (cwSignalPeak * 1000).toFixed(2) }}m
+          &nbsp;|&nbsp; Threshold: {{ (cwThreshold * 1000).toFixed(2) }}m
+        </div>
+      }
+
+      <label>Debounce (ms):
+        <input type="number" min="1" max="100"
+               [value]="settings.settings().cwInputDebounceMs"
+               (change)="onCwParamChange('cwInputDebounceMs', $event)">
+      </label>
+
+      <div class="cw-hint">
+        Feed audio from your radio receiver, virtual audio cable, or any audio source carrying CW tones.
+        The detector uses a narrow Goertzel filter at the configured frequency with automatic gain tracking.
+      </div>
+    </div>
+  }
+</div>

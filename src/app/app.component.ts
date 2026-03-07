@@ -18,10 +18,10 @@ import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { WakeLockService } from './services/wake-lock.service';
-import { HelpComponent } from './help.component';
-import { SettingsModalComponent } from './settings-modal.component';
-import { FullscreenModalComponent } from './fullscreen-modal.component';
-import { SymbolsRefComponent } from './symbols_ref/symbols-ref.component';
+import { HelpComponent } from './components/help/help.component';
+import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
+import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
+import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
 
 /**
  * Morse Code Studio
@@ -107,7 +107,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Whether there is at least 300px of space below the panel for the sprite button */
   spriteSpaceAvailable = false;
 
+  /** Delays sprite reveal until viewport has settled after page load */
+  spriteReady = false;
+
   private subs: Subscription[] = [];
+
+  /** Bound handler for visualViewport resize — stored for cleanup */
+  private vvResizeHandler: (() => void) | null = null;
 
   /** Tracks how many modal history entries are currently pushed */
   private modalHistoryDepth = 0;
@@ -131,6 +137,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   midiInputNeedsReconnect = false;
   midiOutputNeedsReconnect = false;
   constructor(
+    private hostRef: ElementRef,
     public settings: SettingsService,
     public audioInput: AudioInputService,
     public audioOutput: AudioOutputService,
@@ -269,6 +276,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       this.lastWordGapCount = count;
     });
+
+    // Recheck sprite space when settings that affect panel height change
+    // (level-meter visibility, banner appearance, touch keyer settings).
+    effect(() => {
+      this.settings.settings().micInputEnabled;
+      this.settings.settings().cwInputEnabled;
+      this.settings.settings().touchKeyerEnabled;
+      this.settings.settings().touchKeyerMode;
+      this.loopDetection.loopDetected();
+      this.rtdbService.connectionWarning();
+      // Wait one frame for the DOM to settle after @if blocks toggle
+      requestAnimationFrame(() => this.checkSpriteSpace());
+    });
   }
 
   ngOnInit(): void {
@@ -366,6 +386,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnDestroy(): void {
     this.subs.forEach(s => s.unsubscribe());
     this.mouseKeyer.detachAll();
+    if (this.vvResizeHandler && window.visualViewport) {
+      window.visualViewport.removeEventListener('resize', this.vvResizeHandler);
+    }
   }
 
   // ---- Browser back-button modal handling ----
@@ -418,15 +441,46 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.decoderBoxRef) {
       this.mouseKeyer.attach(this.decoderBoxRef.nativeElement);
     }
-    this.checkSpriteSpace();
+
+    // On mobile browsers the visual viewport can change after the initial
+    // layout (e.g. URL bar animating away after a pull-to-refresh).  The
+    // standard window resize event does NOT fire for these changes, so we
+    // also listen to the VisualViewport resize event.
+    if (window.visualViewport) {
+      this.vvResizeHandler = () => {
+        this.correctHostHeight();
+        this.checkSpriteSpace();
+      };
+      window.visualViewport.addEventListener('resize', this.vvResizeHandler);
+    }
+
+    // Delay the sprite reveal by 500ms so the mobile viewport has fully
+    // settled (URL bar animation, font loading) before we measure.  The
+    // sprite then fades in via CSS animation — no resize flicker.
+    setTimeout(() => {
+      this.correctHostHeight();
+      this.checkSpriteSpace();
+      this.spriteReady = true;
+    }, 500);
   }
 
   @HostListener('window:resize')
   onWindowResize(): void {
+    this.correctHostHeight();
     this.checkSpriteSpace();
   }
 
-  /** Check if at least 300px is available below the panel for the sprite button */
+  /**
+   * On mobile browsers 100dvh can be stale after a pull-to-refresh (it may
+   * include the URL bar height).  Explicitly set min-height to the real
+   * viewport height so the flex layout is computed correctly.
+   */
+  private correctHostHeight(): void {
+    const host = this.hostRef.nativeElement as HTMLElement;
+    host.style.minHeight = window.innerHeight + 'px';
+  }
+
+  /** Check if at least 150px is available below the panel for the sprite button */
   private checkSpriteSpace(): void {
     if (!this.panelSectionRef) {
       this.spriteSpaceAvailable = false;

@@ -1,0 +1,75 @@
+<!-- Touch Keyer -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().touchKeyerEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Touch Keyer</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().touchKeyerSource === 'rx'" [class.source-tx]="settings.settings().touchKeyerSource === 'tx'">{{ settings.settings().touchKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().touchKeyerEnabled"
+             (change)="onBoolChange('touchKeyerEnabled', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Used for:
+        <select [value]="settings.settings().touchKeyerSource" (change)="onSettingChange('touchKeyerSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <label>Touch Mode:
+        <select [value]="settings.settings().touchKeyerMode"
+                (change)="onSettingChange('touchKeyerMode', $event)">
+          <option value="straight">Straight Key</option>
+          <option value="paddle">Paddle</option>
+        </select>
+      </label>
+
+      <div class="keyer-hint">
+        @if (settings.settings().touchKeyerMode === 'straight') {
+          Shows a single touch button in the fullscreen decoder view.
+          Press and hold to key down, release to key up.
+        } @else {
+          Shows two touch buttons in the fullscreen decoder view.
+        }
+      </div>
+
+      @if (settings.settings().touchKeyerMode === 'paddle') {
+        <label>Left Button:
+          <select [value]="settings.settings().touchLeftPaddle"
+                  (change)="onSettingChange('touchLeftPaddle', $event)">
+            <option value="dit">Dit</option>
+            <option value="dah">Dah</option>
+          </select>
+        </label>
+
+        <label>Right Button:
+          <select [value]="settings.settings().touchRightPaddle"
+                  (change)="onSettingChange('touchRightPaddle', $event)">
+            <option value="dit">Dit</option>
+            <option value="dah">Dah</option>
+          </select>
+        </label>
+
+        <label>
+          <input type="checkbox" [checked]="settings.settings().touchReversePaddles"
+                 (change)="onBoolChange('touchReversePaddles', $event)">
+          Reverse Paddles
+        </label>
+
+        <label>Paddle Mode:
+          <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
+            <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
+            <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
+            <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
+            <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+          </select>
+        </label>
+      }
+    </div>
+  }
+</div>

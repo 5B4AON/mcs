@@ -1,0 +1,27 @@
+<div class="fs-modal-overlay" [style.height]="overlayHeight" [style.top]="overlayTop">
+  <div class="fs-modal">
+
+    <!-- Top toolbar: close, level meter, WPM pills, clear, kebab menu -->
+    <app-fs-toolbar
+      [mode]="mode"
+      (closeRequest)="close()"
+      (helpRequested)="requestHelp()"
+      (symbolsRefRequested)="requestSymbolsRef()">
+    </app-fs-toolbar>
+
+    <!-- Main content area -->
+    <div class="fs-body"
+         [style.background]="settings.modalDisplay().rxBackground"
+         [style.fontSize.px]="settings.modalDisplay().fontSize"
+         [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'"
+         [style.lineHeight]="1.15 + settings.modalDisplay().lineSpacing">
+
+      @if (mode === 'decoder') {
+        <app-fs-decoder-view [viewportKeyboardOpen]="viewportKeyboardOpen"></app-fs-decoder-view>
+      } @else {
+        <app-fs-encoder-view [viewportKeyboardOpen]="viewportKeyboardOpen"></app-fs-encoder-view>
+      }
+
+    </div>
+  </div>
+</div>

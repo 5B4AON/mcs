@@ -1,0 +1,105 @@
+<!-- Audio Output (Optocoupler) -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().optoEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Audio Output</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().optoForward === 'rx'" [class.source-tx]="settings.settings().optoForward === 'tx'" [class.source-both]="settings.settings().optoForward === 'both'">{{ settings.settings().optoForward === 'rx' ? 'RX' : settings.settings().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().optoEnabled"
+             (change)="onBoolChange('optoEnabled', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="experimental-banner">&#x26A0; Experimental &mdash; AC coupling on some sound cards may produce unreliable keying.</div>
+      <label>Forward:
+        <select [value]="settings.settings().optoForward"
+                (change)="onSettingChange('optoForward', $event)">
+          <option value="tx" [selected]="settings.settings().optoForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="rx" [selected]="settings.settings().optoForward === 'rx'">RX only &mdash; received morse</option>
+          <option value="both" [selected]="settings.settings().optoForward === 'both'">Both RX and TX</option>
+        </select>
+      </label>
+
+      <label>Audio Device:
+        <select [value]="settings.settings().optoOutputDeviceId" (change)="onSettingChange('optoOutputDeviceId', $event)">
+          <option value="default" [selected]="settings.settings().optoOutputDeviceId === 'default'">System Default</option>
+          @for (dev of devices.outputDevices(); track dev.deviceId) {
+            <option [value]="dev.deviceId" [selected]="dev.deviceId === settings.settings().optoOutputDeviceId">{{ dev.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>Channel:
+        <select [value]="settings.settings().optoOutputChannel" (change)="onSettingChange('optoOutputChannel', $event)">
+          <option value="left" [selected]="settings.settings().optoOutputChannel === 'left'">Left</option>
+          <option value="right" [selected]="settings.settings().optoOutputChannel === 'right'">Right</option>
+        </select>
+      </label>
+
+      <label>Mode:
+        <select [value]="settings.settings().optoMode" (change)="onSettingChange('optoMode', $event)">
+          <option value="dc" [selected]="settings.settings().optoMode === 'dc'">DC Offset</option>
+          <option value="ac" [selected]="settings.settings().optoMode === 'ac'">AC Tone</option>
+        </select>
+      </label>
+
+      @if (settings.settings().optoMode === 'ac') {
+        <label>Frequency (Hz):
+          <input type="number" min="100" max="20000" [value]="settings.settings().optoFrequency"
+                 (change)="onSettingChange('optoFrequency', $event)">
+        </label>
+      }
+
+      <label>Amplitude:
+        <input type="range" min="0" max="1" step="0.05" [value]="settings.settings().optoAmplitude"
+               (input)="onSettingChange('optoAmplitude', $event)">
+        {{ settings.settings().optoAmplitude }}
+      </label>
+
+      <div class="opto-wiring-hint">
+        @if (settings.settings().optoMode === 'dc') {
+          <strong>DC Offset mode:</strong> Outputs a steady DC voltage when keyed.
+          Only works with <em>DC-coupled</em> sound cards (rare). Set amplitude to
+          1.0 for maximum voltage.<br><br>
+          <strong>Getting only ~100&ndash;200 mV?</strong> Most sound cards have
+          <em>AC coupling capacitors</em> that block DC &mdash; the output decays to
+          near-zero regardless of amplitude setting. This is a hardware limitation,
+          not a software issue (the digital output is already at 0&nbsp;dBFS full
+          scale).<br><br>
+          <strong>&rarr; Switch to AC Tone mode</strong> for AC-coupled sound cards.
+          A square wave passes through coupling caps at full amplitude (1&ndash;2&nbsp;V
+          peak). The opto LED half-wave rectifies it automatically; add a Schottky
+          bridge rectifier (4&times; BAT43) for full-wave rectification and maximum
+          drive current.<br><br>
+          <strong>True DC-coupled cards:</strong> If your card does pass DC (some pro
+          audio interfaces and certain USB sound cards), this mode produces a clean
+          DC level. Consider a transistor buffer if voltage is still insufficient:
+          NPN (2N2222 / BC547), base via 1&nbsp;kΩ from audio output,
+          collector &rarr; opto LED &rarr; 5&nbsp;V supply, emitter &rarr; GND.
+        } @else {
+          <strong>Wiring:</strong> Sound card channel → optocoupler LED anode.
+          Cathode → sound card GND. Set amplitude to 1.0.<br><br>
+          <strong>Low voltage (&lt;2V peak)?</strong> Most headphone outputs are only 1–2V.
+          With an opto LED Vf of ~1.1V, there is very little headroom.<br>
+          &bull; <em>Remove any series resistor</em> &mdash; the sound card&rsquo;s output impedance
+          (10–50Ω) already limits current. Connect the LED directly.<br>
+          &bull; <em>Bridge rectifier:</em> Use 4&times; small-signal Schottky diodes (e.g. BAT43,
+          Vf&asymp;0.3V) in a full-bridge to use both half-cycles, doubling average
+          current. This is the most effective approach for low-voltage outputs.<br>
+          &bull; <em>Transistor buffer:</em> Use a 2N2222/BC547 with base via 1kΩ from the
+          audio output, collector → opto LED → 5V supply, emitter → GND.
+          This uses external power and works reliably at any audio voltage.<br>
+          &bull; A 1N4148 reverse-protection diode across the LED is recommended.
+        }
+      </div>
+
+      <button [disabled]="!audioRunning" (click)="audioOutput.testOpto()" class="test-btn">
+        Test Output (1s)
+      </button>
+    </div>
+  }
+</div>

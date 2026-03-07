@@ -1,0 +1,97 @@
+<!-- Encoder mode: conversation + inline encoder buffer -->
+<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea
+     tabindex="0" (keydown)="onEncoderModalKeydown($event)">
+  @for (line of conversationLines; track $index) {
+    @if ($last && line.type === 'rx') {
+      <!-- RX last line: RX pattern inline, encoder buffer on new line -->
+      <span class="fs-line fs-line-inline"
+            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+            [style.color]="settings.modalDisplay().rxForeground"
+            [innerHTML]="formatLine(line)"></span><span class="cursor"
+            [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+      @if (decoder.txCurrentPattern()) {
+        <div><span class="cursor"
+              [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span></div>
+      }
+      @if (encoderPendingChars().length) {
+        <div class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+              [class.sending]="$first && encoder.isSending()"
+              [style.color]="$first && encoder.isSending()
+                ? settings.modalDisplay().sendingForeground
+                : settings.modalDisplay().bufferForeground"
+              [innerHTML]="formatTextNoEmoji(char)"></span>}</div>
+      }
+    } @else if ($last && line.type === 'tx') {
+      <!-- TX last line: encoder buffer inline, then pattern cursors -->
+      <span class="fs-line fs-line-inline"
+            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+            [style.color]="settings.modalDisplay().txForeground"
+            [innerHTML]="formatLine(line)"></span>@if (encoderPendingChars().length) {<span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+            [class.sending]="$first && encoder.isSending()"
+            [style.color]="$first && encoder.isSending()
+              ? settings.modalDisplay().sendingForeground
+              : settings.modalDisplay().bufferForeground"
+            [innerHTML]="formatTextNoEmoji(char)"></span>}</span>}<span class="cursor"
+            [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+      @if (decoder.rxCurrentPattern()) {
+        <div><span class="cursor"
+              [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span></div>
+      }
+    } @else {
+      <!-- Non-last line: block -->
+      <div class="fs-line"
+           [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+           [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+           [innerHTML]="formatLine(line)"></div>
+    }
+  }
+  @if (!conversationLines.length) {
+    @if (decoder.rxCurrentPattern()) {
+      <span class="cursor"
+            [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+    }
+    @if (decoder.txCurrentPattern()) {
+      <span class="cursor"
+            [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+    }
+    @if (!decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
+      <span class="cursor"></span>
+    }
+    @if (encoderPendingChars().length) {
+      <span class="fs-encoder-inline">
+        @for (char of encoderPendingChars(); track $index) {
+          <span [class.sending]="$first && encoder.isSending()"
+                [style.color]="$first && encoder.isSending()
+                  ? settings.modalDisplay().sendingForeground
+                  : settings.modalDisplay().bufferForeground"
+                [innerHTML]="formatTextNoEmoji(char)"></span>
+        }
+      </span>
+    }
+  }
+</div>
+
+<!-- Virtual keyboard support for touch/mobile devices -->
+@if (hasTouchInput) {
+  <input #virtualKeyInput
+         type="text"
+         inputmode="text"
+         class="virtual-key-input"
+         value=" "
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"
+         (input)="onVirtualKeyInput($event)"
+         (keydown)="onVirtualKeyKeydown($event)"
+         (blur)="virtualKeyboardVisible = false">
+  <button class="vk-toggle-btn"
+          [class.vk-active]="virtualKeyboardVisible"
+          (mousedown)="$event.preventDefault()"
+          (click)="toggleVirtualKeyboard()"
+          title="Toggle virtual keyboard">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="currentColor">
+      <path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+    </svg>
+  </button>
+}

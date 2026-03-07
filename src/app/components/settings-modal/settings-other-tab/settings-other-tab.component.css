@@ -1,0 +1,180 @@
+/**
+ * Morse Code Studio
+ * Copyright (c) 2026 5B4AON — Mike
+ * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
+ *
+ * Other-tab-specific styles — prosign action rows and emoji list/edit controls.
+ * Card layout, form controls, and shared responsive rules are in settings-shared.css.
+ */
+
+/* ===== Prosign Actions ===== */
+.prosign-actions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.prosign-action-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  background: #1a1a28;
+  border: 1px solid #335;
+  border-radius: 4px;
+}
+.prosign-action-enable {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.prosign-action-name {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #ffcc00;
+  min-width: 3.6rem;
+  flex-shrink: 0;
+}
+.prosign-action-select {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  flex: 1;
+  max-width: 180px;
+}
+.prosign-action-select:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* ===== Emojis ===== */
+.emoji-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.emoji-row {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.35rem 0.5rem;
+  background: #1a1a28;
+  border: 1px solid #335;
+  border-radius: 4px;
+}
+.emoji-row-disabled {
+  opacity: 0.5;
+}
+.emoji-enable {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.emoji-match-text {
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #ffcc00;
+  min-width: 3rem;
+  cursor: pointer;
+}
+.emoji-emoji-text {
+  font-size: 1.3rem;
+  min-width: 1.6rem;
+  cursor: pointer;
+  text-align: center;
+}
+.emoji-meaning-text {
+  font-size: 0.8rem;
+  color: #889;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 12rem;
+}
+.emoji-meaning-input {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  width: 8rem;
+}
+.emoji-row-spacer {
+  flex: 1;
+}
+.emoji-match-input {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.85rem;
+  font-family: monospace;
+  width: 6rem;
+}
+.emoji-emoji-input {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 3px;
+  padding: 0.2rem 0.4rem;
+  font-size: 1.1rem;
+  width: 3rem;
+  text-align: center;
+}
+.emoji-emoji-input-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+.emoji-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.emoji-btn svg {
+  display: block;
+}
+.emoji-btn-save { color: #4caf50; }
+.emoji-btn-save:hover { background: #2a3a2a; }
+.emoji-btn-cancel { color: #f44; }
+.emoji-btn-cancel:hover { background: #3a2a2a; }
+.emoji-btn-edit { color: #aaa; }
+.emoji-btn-edit:hover { color: #fff; background: #333; }
+.emoji-btn-delete { color: #a66; }
+.emoji-btn-delete:hover { color: #f44; background: #3a2a2a; }
+.emoji-btn-picker { color: #aaa; }
+.emoji-btn-picker:hover { color: #ffcc00; background: #333; }
+.emoji-error {
+  color: #f44;
+  font-size: 0.8rem;
+  padding-left: 2.5rem;
+  margin-top: -0.2rem;
+}
+.emoji-add-btn {
+  margin-top: 0.5rem;
+  background: #2a2a3e;
+  color: #8af;
+  border: 1px dashed #446;
+  border-radius: 4px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.emoji-add-btn:hover {
+  background: #333;
+}

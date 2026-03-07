@@ -1,0 +1,423 @@
+/**
+ * Morse Code Studio
+ * Copyright (c) 2026 5B4AON — Mike
+ * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
+ *
+ * Settings modal — parent component styles.
+ * Contains only the modal chrome (overlay, header, tabs, footer),
+ * validation/conflict banners, save button, and scan results overlay.
+ *
+ * Card layouts, form controls, and shared responsive rules live in
+ * settings-shared.css (referenced by each tab child component).
+ * Tab-specific styles live in each child's component CSS file.
+ */
+
+/* ===== Settings Modal Overlay ===== */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 8000;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.settings-modal {
+  background: #1a1a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 640px;
+  height: 92vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+/* Modal header */
+.settings-modal-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .75rem 1.25rem;
+  border-bottom: 1px solid #333;
+  flex-shrink: 0;
+}
+.settings-modal-header h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #8cf;
+  white-space: nowrap;
+}
+.settings-header-actions {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin-left: auto;
+}
+.settings-action-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  padding: 0;
+}
+.settings-action-btn svg { display: block; }
+.settings-action-btn:hover {
+  background: #3a4050;
+}
+.settings-action-btn:active {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+.settings-close-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  padding: 0;
+}
+.settings-close-btn:hover {
+  background: #3a4050;
+}
+.settings-close-btn:active {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+
+/* Tabs */
+.settings-tabs {
+  display: flex;
+  border-bottom: 2px solid #333;
+  padding: 0 1.25rem;
+  flex-shrink: 0;
+}
+.settings-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: #889;
+  font-size: .95rem;
+  font-weight: 600;
+  padding: .65rem 1rem;
+  cursor: pointer;
+  transition: color .15s, border-color .15s;
+  text-align: center;
+  border-radius: 0;
+  min-height: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
+}
+.settings-tab svg {
+  flex-shrink: 0;
+  opacity: .7;
+}
+.settings-tab.active svg {
+  opacity: 1;
+}
+.settings-tab:hover {
+  color: #bcd;
+  background: none;
+}
+.settings-tab.active {
+  color: #8cf;
+  border-bottom-color: #8cf;
+  background: none;
+}
+
+/* Scrollable content area */
+.settings-tab-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: .75rem 1.25rem;
+}
+
+/* Modal footer (sticky save) */
+.settings-modal-footer {
+  display: flex;
+  justify-content: center;
+  padding: .65rem 1.25rem;
+  border-top: 1px solid #333;
+  flex-shrink: 0;
+}
+.settings-modal-footer .save-btn {
+  min-width: 160px;
+}
+
+/* Conflict banner (used for parent-level channel conflicts) */
+.conflict-warning {
+  background: #a33;
+  color: #fff;
+  padding: .55rem 1rem;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: .9rem;
+  margin: .25rem 1.25rem 0;
+}
+
+/* Validation banner (new device config detected) */
+.validation-banner {
+  background: #4a3a10;
+  color: #fed;
+  border: 1px solid #8a6a20;
+  border-left: 4px solid #da2;
+  border-radius: 4px;
+  padding: .6rem 1rem;
+  font-size: .9rem;
+  margin: .5rem 1.25rem 0;
+}
+
+/* Save button */
+.save-btn {
+  background: #2a6;
+  color: #fff;
+  border: none;
+  font-weight: 600;
+  padding: .4rem 1.2rem;
+  font-size: .9rem;
+}
+.save-btn:hover:not(:disabled) {
+  background: #3b7;
+}
+.save-btn:disabled {
+  background: #2a4a2a;
+  color: #8a8;
+  border: 1px solid #3a5a3a;
+  cursor: default;
+}
+
+/* ============================================================
+   RESPONSIVE — TABLET (≤768px)
+   ============================================================ */
+@media (max-width: 768px) {
+  .settings-modal {
+    max-height: 95vh;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤480px)
+   ============================================================ */
+@media (max-width: 480px) {
+  .settings-overlay {
+    padding: 0;
+  }
+  .settings-modal {
+    max-width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    border-radius: 0;
+  }
+  .settings-modal-header {
+    padding: .5rem .75rem;
+  }
+  .settings-modal-header h2 {
+    font-size: 1rem;
+  }
+  .settings-header-actions {
+    gap: .3rem;
+  }
+  .settings-tabs {
+    padding: 0 .75rem;
+  }
+  .settings-tab {
+    font-size: .85rem;
+    padding: .5rem .5rem;
+  }
+  .settings-tab-content {
+    padding: .5rem .75rem;
+  }
+  .settings-modal-footer {
+    padding: .5rem .75rem;
+  }
+  .settings-modal-footer .save-btn {
+    width: 100%;
+  }
+}
+
+/* ============================================================
+   TOUCH IMPROVEMENTS — coarser pointer (phones/tablets)
+   ============================================================ */
+@media (pointer: coarse) {
+  .settings-tab {
+    min-height: 44px;
+  }
+}
+
+/* ===== Scan Results Modal ===== */
+.scan-results-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: scanResultsFadeIn .15s ease-out;
+}
+
+@keyframes scanResultsFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.scan-results-dialog {
+  background: #1a1a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 420px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: scanResultsSlideIn .15s ease-out;
+  overflow: hidden;
+}
+
+@keyframes scanResultsSlideIn {
+  from { transform: translateY(-12px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.scan-results-header {
+  padding: .85rem 1.25rem .5rem;
+}
+.scan-results-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #8cf;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+
+.scan-results-body {
+  padding: .25rem 1.25rem .75rem;
+  overflow-y: auto;
+}
+
+.scan-results-explanation {
+  margin: 0 0 .65rem;
+  font-size: .88rem;
+  color: #99a;
+  line-height: 1.45;
+}
+
+.scan-results-profile-note {
+  margin: 0 0 .65rem;
+  font-size: .88rem;
+  color: #fc6;
+  line-height: 1.45;
+  padding: .45rem .65rem;
+  background: rgba(255, 200, 60, 0.08);
+  border: 1px solid rgba(255, 200, 60, 0.2);
+  border-radius: 6px;
+}
+
+.scan-results-empty {
+  margin: .25rem 0;
+  font-size: .88rem;
+  color: #f88;
+  line-height: 1.45;
+}
+
+.scan-results-section {
+  margin-bottom: .6rem;
+}
+.scan-results-section h4 {
+  margin: 0 0 .3rem;
+  font-size: .92rem;
+  color: #aac;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.scan-results-section ul {
+  margin: 0;
+  padding: 0 0 0 .25rem;
+  list-style: none;
+}
+.scan-results-section li {
+  font-size: .85rem;
+  color: #ccd;
+  padding: .25rem .5rem;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 4px;
+  margin-bottom: .2rem;
+  border-left: 3px solid #446;
+}
+
+.scan-results-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: .65rem 1.25rem .85rem;
+  border-top: 1px solid #333;
+}
+
+.scan-results-ok-btn {
+  padding: .45rem 1.4rem;
+  font-size: .88rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #3a6a9a;
+  background: #1e4a6e;
+  color: #cdf;
+  cursor: pointer;
+  transition: background .12s, transform .08s;
+  min-height: 36px;
+}
+.scan-results-ok-btn:hover {
+  background: #285a80;
+}
+.scan-results-ok-btn:active {
+  transform: scale(0.96);
+}
+
+/* ===== Scan Results — Touch ===== */
+@media (pointer: coarse) {
+  .scan-results-ok-btn {
+    min-height: 44px;
+    padding: .55rem 1.6rem;
+    font-size: .92rem;
+  }
+}
+
+/* ===== Scan Results — Mobile ===== */
+@media (max-width: 480px) {
+  .scan-results-overlay {
+    padding: 1rem;
+  }
+  .scan-results-dialog {
+    max-width: 100%;
+  }
+}

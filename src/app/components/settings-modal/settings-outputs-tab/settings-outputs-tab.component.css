@@ -1,0 +1,67 @@
+/**
+ * Morse Code Studio
+ * Copyright (c) 2026 5B4AON — Mike
+ * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
+ *
+ * Outputs-tab-specific styles — MIDI output note row controls.
+ * Card layout, form controls, and shared responsive rules are in settings-shared.css.
+ */
+
+/* ===== MIDI Output Note Row ===== */
+.midi-output-note-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+}
+.midi-output-note-label {
+  min-width: 90px;
+  font-size: 0.88rem;
+  color: #ccc;
+}
+.midi-note-select {
+  width: 60px;
+  padding: 0.25rem 0.3rem;
+  background: #222;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.midi-octave-select {
+  width: 52px;
+  padding: 0.25rem 0.3rem;
+  background: #222;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.midi-raw-input {
+  width: 65px;
+  padding: 0.25rem 0.3rem;
+  background: #222;
+  color: #eee;
+  border: 1px solid #555;
+  border-radius: 4px;
+  font-size: 0.85rem;
+}
+.midi-mode-toggle {
+  background: transparent;
+  border: 1px solid #555;
+  color: #8cf;
+  border-radius: 4px;
+  padding: 0.2rem 0.45rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+.midi-mode-toggle:hover {
+  background: #333;
+}
+.midi-note-preview {
+  font-size: 0.8rem;
+  color: #888;
+  margin-left: 0.2rem;
+}

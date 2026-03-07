@@ -79,6 +79,11 @@ export class DisplayBuffer {
   /**
    * Execute a prosign action on this buffer.
    *
+   * When a prosign label is provided, it is rendered into the buffer so
+   * the user can see which prosign triggered the action:
+   *  - newLine / newParagraph: label appears at end of the current line
+   *  - clearLastWord / clearLine / clearScreen: label is not shown
+   *
    * Actions modify existing entries before rebuilding:
    *  - newLine:        appends a newline character
    *  - newParagraph:   appends two newline characters
@@ -86,12 +91,22 @@ export class DisplayBuffer {
    *  - clearLine:      removes entries back to the last newline (or start)
    *  - clearScreen:    clears all entries
    */
-  applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', userName?: string): void {
+  applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', userName?: string, prosignLabel?: string): void {
     switch (action) {
       case 'newLine':
+        if (prosignLabel) {
+          for (const ch of prosignLabel) {
+            this.entries.push({ type, char: ch, userName });
+          }
+        }
         this.entries.push({ type, char: '\n', userName });
         break;
       case 'newParagraph':
+        if (prosignLabel) {
+          for (const ch of prosignLabel) {
+            this.entries.push({ type, char: ch, userName });
+          }
+        }
         this.entries.push({ type, char: '\n', userName });
         this.entries.push({ type, char: '\n', userName });
         break;
@@ -209,11 +224,12 @@ export class DisplayBufferService {
     }
 
     // Check for prosign action
-    const action = this.resolveProsignAction(char);
-    if (action) {
-      this.mainOutput.applyProsignAction(action, type, userName);
-      this.fullscreenDecoder.applyProsignAction(action, type, userName);
-      this.fullscreenEncoder.applyProsignAction(action, type, userName);
+    const resolved = this.resolveProsignAction(char);
+    if (resolved) {
+      const label = resolved.prosignKey;
+      this.mainOutput.applyProsignAction(resolved.action, type, userName, label);
+      this.fullscreenDecoder.applyProsignAction(resolved.action, type, userName, label);
+      this.fullscreenEncoder.applyProsignAction(resolved.action, type, userName, label);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
@@ -237,11 +253,12 @@ export class DisplayBufferService {
     }
 
     // Check for prosign action
-    const action = this.resolveProsignAction(char);
-    if (action) {
-      this.mainOutput.applyProsignAction(action, 'tx', userName);
-      this.fullscreenDecoder.applyProsignAction(action, 'tx', userName);
-      this.fullscreenEncoder.applyProsignAction(action, 'tx', userName);
+    const resolved = this.resolveProsignAction(char);
+    if (resolved) {
+      const label = resolved.prosignKey;
+      this.mainOutput.applyProsignAction(resolved.action, 'tx', userName, label);
+      this.fullscreenDecoder.applyProsignAction(resolved.action, 'tx', userName, label);
+      this.fullscreenEncoder.applyProsignAction(resolved.action, 'tx', userName, label);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
@@ -257,9 +274,9 @@ export class DisplayBufferService {
    * Checks both direct prosign names (e.g. '<BK>') and punctuation equivalents
    * (e.g. '+' → '<AR>') against the user's prosign action configuration.
    *
-   * @returns The action to perform, or null if no action applies
+   * @returns The action and its prosign key, or null if no action applies
    */
-  private resolveProsignAction(char: string): ProsignAction | null {
+  private resolveProsignAction(char: string): { action: ProsignAction; prosignKey: string } | null {
     const s = this.settings.settings();
     if (!s.prosignActionsEnabled) return null;
 
@@ -275,7 +292,7 @@ export class DisplayBufferService {
 
     const entry = s.prosignActions[prosignKey];
     if (entry && entry.enabled) {
-      return entry.action;
+      return { action: entry.action, prosignKey };
     }
     return null;
   }

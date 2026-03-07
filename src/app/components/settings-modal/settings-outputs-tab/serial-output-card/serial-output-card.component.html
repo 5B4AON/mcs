@@ -1,0 +1,117 @@
+<!-- Serial Output (DTR/RTS keying) -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().serialEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Serial Output</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().serialForward === 'rx'" [class.source-tx]="settings.settings().serialForward === 'tx'" [class.source-both]="settings.settings().serialForward === 'both'">{{ settings.settings().serialForward === 'rx' ? 'RX' : settings.settings().serialForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    </div>
+    <span class="connectivity-badge" [class.connected]="serialOutput.connected()" [class.disconnected]="!serialOutput.connected()">
+      @if (serialOutput.connected()) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+    <label class="toggle-switch" (click)="$event.stopPropagation()"
+           [title]="!webSerialSupported ? 'Web Serial API is not supported in this browser' : isAndroid ? 'Serial port access is not available on Android' : ''">
+      <input type="checkbox" [checked]="settings.settings().serialEnabled"
+             [disabled]="!webSerialSupported || isAndroid"
+             (change)="onSerialEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <label>Forward:
+        <select [value]="settings.settings().serialForward"
+                (change)="onSettingChange('serialForward', $event)">
+          <option value="tx" [selected]="settings.settings().serialForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="rx" [selected]="settings.settings().serialForward === 'rx'">RX only &mdash; received morse</option>
+          <option value="both" [selected]="settings.settings().serialForward === 'both'">Both RX and TX</option>
+        </select>
+      </label>
+
+      @if (!webSerialSupported) {
+        <div class="conflict-warning">
+          Web Serial API is not supported in this browser. Serial port features require a
+          Chromium-based browser (Chrome or Edge).
+        </div>
+      } @else if (isAndroid) {
+        <div class="conflict-warning">
+          Serial port access is not available on Android. USB-to-serial adapters are not
+          supported by Chrome on Android even via USB OTG. This feature requires Chrome or
+          Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+        </div>
+      }
+
+      <div class="serial-port-row">
+        <button (click)="serialOutput.requestPort()" class="test-btn">
+          Add Serial Port…
+        </button>
+        <button (click)="serialOutput.refreshPorts()" class="test-btn">
+          Refresh
+        </button>
+      </div>
+
+      @if (serialOutput.ports().length === 0) {
+        <div class="cw-hint">
+          No serial ports available. Click "Add Serial Port…" to grant access to a COM port.
+          Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
+        </div>
+      }
+
+      @if (serialOutput.ports().length > 0) {
+        <label>Serial Port:
+          <select [value]="settings.settings().serialPortIndex"
+                  (change)="onSerialPortChange($event)">
+            <option [value]="-1">&mdash; Select &mdash;</option>
+            @for (port of serialOutput.ports(); track $index) {
+              <option [value]="$index" [selected]="$index === settings.settings().serialPortIndex">
+                {{ serialOutput.portLabel(port) }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+
+      <label>Output Pin:
+        <select [value]="settings.settings().serialPin"
+                (change)="onSettingChange('serialPin', $event)">
+          <option value="dtr" [selected]="settings.settings().serialPin === 'dtr'">DTR (Data Terminal Ready)</option>
+          <option value="rts" [selected]="settings.settings().serialPin === 'rts'">RTS (Request To Send)</option>
+        </select>
+      </label>
+
+      <label>
+        <input type="checkbox" [checked]="settings.settings().serialInvert"
+               (change)="onBoolChange('serialInvert', $event)">
+        Invert Output
+      </label>
+
+      <div class="cw-hint">
+        Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
+        DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
+        Wire the selected pin to your transmitter's keying circuit.
+        Most adapters provide &plusmn;5–12V on DTR/RTS; use a transistor or optocoupler
+        between the adapter and your radio if needed.
+      </div>
+
+      @if (serialOutput.lastError()) {
+        <div class="conflict-warning">{{ serialOutput.lastError() }}</div>
+      }
+
+      <div class="serial-port-row">
+        <button [disabled]="!serialOutput.connected()"
+                (click)="serialOutput.test()" class="test-btn">
+          Test Output (1s)
+        </button>
+        @if (serialOutput.connected()) {
+          <span class="serial-status connected">&#x2714; Connected</span>
+        } @else {
+          <span class="serial-status">&#x2716; Disconnected</span>
+        }
+      </div>
+    </div>
+  }
+</div>

@@ -1,0 +1,72 @@
+<!-- Show Prosigns -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().showProsigns">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Show Prosigns</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().showProsigns"
+             (change)="onBoolChange('showProsigns', $event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        <strong>Prosigns</strong> (procedural signals) are special multi-character morse
+        sequences transmitted without inter-character spacing. In International Morse,
+        some prosigns share identical patterns with punctuation marks, creating ambiguity
+        in text-based displays.<br><br>
+
+        When this setting is <strong>enabled</strong>, the decoder and encoder fullscreen
+        conversation logs will display prosign names (e.g., <span class="prosign-example">&lt;AR&gt;</span>)
+        instead of the underlying punctuation characters (e.g., +). This improves clarity
+        when communicating procedural signals.<br><br>
+
+        <table class="prosign-table">
+          <thead>
+            <tr>
+              <th>Punctuation</th>
+              <th>Prosign</th>
+              <th>Morse Pattern</th>
+              <th>Meaning</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>+</strong></td>
+              <td><span class="prosign-example">&lt;AR&gt;</span></td>
+              <td><code>.-.-.</code></td>
+              <td>End of message</td>
+            </tr>
+            <tr>
+              <td><strong>&amp;</strong></td>
+              <td><span class="prosign-example">&lt;AS&gt;</span></td>
+              <td><code>.-...</code></td>
+              <td>Wait</td>
+            </tr>
+            <tr>
+              <td><strong>=</strong></td>
+              <td><span class="prosign-example">&lt;BT&gt;</span></td>
+              <td><code>-...-</code></td>
+              <td>Break / new paragraph</td>
+            </tr>
+            <tr>
+              <td><strong>(</strong></td>
+              <td><span class="prosign-example">&lt;KN&gt;</span></td>
+              <td><code>-.--.</code></td>
+              <td>Go ahead (specific station)</td>
+            </tr>
+          </tbody>
+        </table>
+        <br>
+        <strong>Note:</strong> This translation is for <em>display purposes only</em>.
+        Behind the scenes, the application continues to send and receive punctuation
+        characters for efficiency. The conversion happens in real-time during rendering.
+        This applies to the decoder and encoder fullscreen conversation windows only
+        &mdash; main screen log panels are not affected.
+      </div>
+    </div>
+  }
+</div>

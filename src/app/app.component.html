@@ -219,7 +219,7 @@
   </section>
 
   <!-- ========== TOUCH STRAIGHT-KEY SPRITE BUTTON ========== -->
-  @if (settings.settings().touchKeyerEnabled && settings.settings().touchKeyerMode === 'straight' && spriteSpaceAvailable) {
+  @if (settings.settings().touchKeyerEnabled && settings.settings().touchKeyerMode === 'straight' && spriteSpaceAvailable && spriteReady) {
     <div class="touch-key-sprite-wrapper">
       <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
               (touchstart)="onSpriteTouch(true, $event)"

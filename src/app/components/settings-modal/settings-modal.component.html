@@ -1,0 +1,155 @@
+<div class="settings-overlay" (click)="close()">
+  <div class="settings-modal" (click)="$event.stopPropagation()">
+
+    <!-- Modal header -->
+    <div class="settings-modal-header">
+      <h2>Settings</h2>
+      <div class="settings-header-actions">
+        <button (click)="onRefreshDevices()" class="settings-action-btn" title="Refresh audio devices">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="1" width="11" height="9" rx="1.5" stroke-width="2"/><line x1="3" y1="5" x2="8" y2="5" stroke-width="2"/><line x1="3" y1="7.5" x2="7" y2="7.5" stroke-width="2"/><circle cx="15.5" cy="13" r="6.5" stroke-width="2"/><line x1="20" y1="17.5" x2="23.5" y2="21" stroke-width="3"/></svg>
+        </button>
+        <button (click)="confirmReset()" class="settings-action-btn" title="Reset all settings to defaults">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" overflow="visible" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M-2.2 12a14.2 14.2 0 1 1 14.2 14.2 14.85 14.85 0 0 1-10.4-4.3L-2.2 18.3" stroke-width="1.6"/><polygon points="-3.1 23.2 -3.1 18.3 2.3 18.3" fill="currentColor" stroke="none"/><g transform="translate(12,12) scale(0.828)"><circle cx="0" cy="0" r="3" stroke-width="2.2"/><path d="M7.4 3a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 3 7.32a1.65 1.65 0 0 0-1 1.51V9a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0-3 7.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0-7.32 3a1.65 1.65 0 0 0-1.51-1H-9a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0-7.4-3a1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0-3-7.32a1.65 1.65 0 0 0-1-1.51V-9a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 7.4-3a1.65 1.65 0 0 0 1.51 1H9a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2.2"/></g></svg>
+        </button>
+        <button class="settings-close-btn" (click)="close()" title="Close settings">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Validation banner -->
+    @if (settings.needsValidation()) {
+      <div class="validation-banner">
+        New device configuration detected. Please review your settings and click <strong>Save Settings</strong>.
+      </div>
+    }
+
+    <!-- Conflict warnings -->
+    @for (warn of settings.channelConflict() ?? []; track $index) {
+      <div class="conflict-warning">{{ warn }}</div>
+    }
+
+    <!-- Tab navigation -->
+    <div class="settings-tabs">
+      <button class="settings-tab" [class.active]="settingsTab === 'inputs'" (click)="settingsTab = 'inputs'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg>
+        Inputs
+      </button>
+      <button class="settings-tab" [class.active]="settingsTab === 'outputs'" (click)="settingsTab = 'outputs'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7V7"/><path d="M7 17 17 7"/></svg>
+        Outputs
+      </button>
+      <button class="settings-tab" [class.active]="settingsTab === 'other'" (click)="settingsTab = 'other'">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Other
+      </button>
+    </div>
+
+    <!-- Tab content — delegates to child components -->
+    <div class="settings-tab-content"
+         (touchstart)="onTabContentTouchStart($event)"
+         (touchend)="onTabContentTouchEnd($event)">
+
+      @if (settingsTab === 'inputs') {
+        <app-settings-inputs-tab [audioRunning]="audioRunning"></app-settings-inputs-tab>
+      }
+
+      @if (settingsTab === 'outputs') {
+        <app-settings-outputs-tab [audioRunning]="audioRunning"></app-settings-outputs-tab>
+      }
+
+      @if (settingsTab === 'other') {
+        <app-settings-other-tab></app-settings-other-tab>
+      }
+
+    </div>
+
+    <div class="settings-modal-footer">
+      <button class="save-btn" (click)="saveSettings()" [disabled]="!settings.isDirty()">
+        {{ settings.isDirty() ? 'Save Settings' : 'Saved ✓' }}
+      </button>
+    </div>
+
+  </div>
+</div>
+
+@if (showResetConfirm) {
+  <app-confirm-dialog
+    title="Reset Settings"
+    message="Reset all settings to their default values?
+This cannot be undone."
+    confirmLabel="Reset"
+    cancelLabel="Cancel"
+    [danger]="true"
+    (confirmed)="onResetConfirmed($event)">
+  </app-confirm-dialog>
+}
+
+@if (showScanResults) {
+  <div class="scan-results-overlay" (click)="dismissScanResults()">
+    <div class="scan-results-dialog" (click)="$event.stopPropagation()" role="dialog"
+         aria-label="Device scan results">
+
+      <!-- Header -->
+      <div class="scan-results-header">
+        <h3>
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="1" width="11" height="9" rx="1.5"/><line x1="3" y1="5" x2="8" y2="5"/><line x1="3" y1="7.5" x2="7" y2="7.5"/><circle cx="15.5" cy="13" r="6.5"/><line x1="20" y1="17.5" x2="23.5" y2="21" stroke-width="3"/></svg>
+          Device Scan Complete
+        </h3>
+      </div>
+
+      <!-- Body -->
+      <div class="scan-results-body">
+        <p class="scan-results-explanation">
+          The browser was asked for microphone permission and then
+          enumerated all available audio devices.
+        </p>
+
+        @if (scanProfileChanged) {
+          <p class="scan-results-profile-note">
+            A different hardware profile was detected — settings have
+            been loaded for this configuration.
+          </p>
+        }
+
+        @if (scanResultInputs.length === 0 && scanResultOutputs.length === 0) {
+          <p class="scan-results-empty">No audio devices found. Check that your
+          devices are connected and the browser has permission to access them.</p>
+        }
+
+        @if (scanResultInputs.length > 0) {
+          <div class="scan-results-section">
+            <h4>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+              Inputs ({{ scanResultInputs.length }})
+            </h4>
+            <ul>
+              @for (dev of scanResultInputs; track dev.label) {
+                <li>{{ dev.label }}</li>
+              }
+            </ul>
+          </div>
+        }
+
+        @if (scanResultOutputs.length > 0) {
+          <div class="scan-results-section">
+            <h4>
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+              Outputs ({{ scanResultOutputs.length }})
+            </h4>
+            <ul>
+              @for (dev of scanResultOutputs; track dev.label) {
+                <li>{{ dev.label }}</li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <!-- Actions -->
+      <div class="scan-results-actions">
+        <button class="scan-results-ok-btn" (click)="dismissScanResults()">OK</button>
+      </div>
+    </div>
+  </div>
+}
