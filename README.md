@@ -6,6 +6,8 @@
 
 A browser-based Morse code encoder, decoder and keyer built with Angular 19. Runs entirely in the browser — no installation, no backend. Provides real-time CW encoding and decoding with sub-millisecond timing precision, suitable for on-air operating at 5–50+ WPM.
 
+Connect a physical key or paddle, and decoded Morse code appears instantly on a fullscreen display with customisable letter size and colours — ideal for live demonstrations, training sessions, and events promoting interest in Morse code.
+
 ## Features
 
 **Decode** — Decodes incoming Morse code in real time from a radio receiver's audio via CW tone detection. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
