@@ -8,11 +8,11 @@ A browser-based Morse code encoder, decoder and keyer built with Angular 19. Run
 
 ## Features
 
-**Decode** — Decodes incoming Morse code in real time from a radio receiver's audio (CW tone detection) or from a physical key (via microphone input). Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
+**Decode** — Decodes incoming Morse code in real time from a radio receiver's audio via CW tone detection. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
 
-**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface, a computer keyboard, mouse, or touchscreen.
+**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface, a computer keyboard, mouse, or touchscreen. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
 **Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler, sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
 
