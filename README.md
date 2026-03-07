@@ -1,10 +1,4 @@
-<p align="center">
-  <a href="https://morse-code-studio.web.app/">
-    <img src="public/favicon.svg" alt="Morse Code Studio" width="96">
-  </a>
-</p>
-
-# Morse Code Studio
+<h1><img src="public/favicon.svg" alt="" width="36" style="vertical-align: middle;">&nbsp; Morse Code Studio</h1>
 
 [![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
 [![Live App](https://img.shields.io/badge/Live_App-morse--code--studio.web.app-green)](https://morse-code-studio.web.app/)
