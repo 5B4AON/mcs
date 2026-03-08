@@ -77,17 +77,17 @@
 <h2 id="s8-3">8.3 &nbsp;Fullscreen Mode</h2>
 
 <p>
-  Both the Decoder and Encoder panels have a <strong>⛶</strong> button. Clicking
-  it opens a fullscreen overlay optimised for operating.
+  The main toolbar has a <strong>⛶</strong> button that opens a menu with
+  <em>Fullscreen Decoder View</em> and <em>Fullscreen Encoder View</em> options.
+  Choosing either opens a fullscreen overlay optimised for operating.
 </p>
 
 <h3>Independent Display Buffers</h3>
 <p>
-  The application maintains <strong>four independent FIFO text buffers</strong>:
+  The application maintains <strong>three independent FIFO text buffers</strong>:
 </p>
 <ul>
-  <li><strong>Main Decoder</strong> &mdash; the Morse Decoder panel on the main screen.</li>
-  <li><strong>Main Encoder</strong> &mdash; the sent-character display in the Encoder panel.</li>
+  <li><strong>Main Output</strong> &mdash; the combined decoder/encoder output panel on the main screen.</li>
   <li><strong>Fullscreen Decoder</strong> &mdash; the conversation log in the fullscreen decoder view.</li>
   <li><strong>Fullscreen Encoder</strong> &mdash; the conversation log in the fullscreen encoder view.</li>
 </ul>
@@ -96,7 +96,7 @@
   sent encoder characters, and Firebase RTDB input) but can be
   <strong>cleared independently</strong>. Pressing the Clear button (🗑)
   opens a context menu with <strong>This text area</strong> (clears the current
-  buffer only) and <strong>All text areas</strong> (clears all four buffers at
+  buffer only) and <strong>All text areas</strong> (clears all three buffers at
   once). On the main screen, the encoder&rsquo;s clear menu adds an
   <strong>Input box</strong> option to empty the text-entry field without
   affecting any log.
@@ -104,7 +104,7 @@
 <p>
   Buffers are capped at approximately <strong>5 000 characters</strong>
   (~2× a full screen of text). When the limit is reached, the oldest
-  characters are silently discarded (FIFO). Both fullscreen buffers persist
+  characters are silently discarded (FIFO). The fullscreen buffers persist
   across close/reopen &mdash; you will not lose your conversation history by
   switching between views.
 </p>
@@ -112,8 +112,10 @@
 <h3>Decoder Fullscreen</h3>
 <p>
   Large, scrollable decoded text with RX/TX colour coding. The toolbar
-  provides WPM adjustment (RX, TX, Keyer), calibration reset
-  buttons, and level meters for the Key and CW inputs.
+  shows read-only WPM indicator pills (RX, TX, Keyer) and a CW level
+  meter (when CW input is enabled). The kebab menu (⋮) contains
+  interactive WPM adjustment with calibration reset buttons, display
+  settings, and links to the Symbols Reference and Help.
   When Firebase RTDB input or output is active, a small
   <strong>RTDB status indicator</strong> (wifi icon) turns green in
   the toolbar.
@@ -122,10 +124,12 @@
 <h3>Encoder Fullscreen</h3>
 <p>
   Conversation history plus your encoder buffer inline. Every keystroke is
-  captured directly &mdash; no need to click a text box. The toolbar shows encoder
-  WPM, sending mode, and TX ON/OFF controls. On mobile/tablet devices, a
-  floating keyboard button (⌨) appears to toggle the on-screen virtual
-  keyboard. The RTDB status indicator is also visible here.
+  captured directly &mdash; no need to click a text box. The toolbar shows
+  encoder WPM; the kebab menu (⋮) provides WPM adjustment, sending mode
+  selection (Send on Enter / Live), display settings, and links to the
+  Symbols Reference and Help. On touch-capable devices, a floating keyboard
+  button appears at the bottom to toggle the on-screen virtual keyboard.
+  The RTDB status indicator is also visible here.
 </p>
 
 <h3>Responsive Toolbars</h3>
@@ -135,7 +139,8 @@
   (⋮). Essential buttons — <em>Start Audio</em> on the main screen, and
   <em>Close</em> / <em>Clear</em> in fullscreen modals — remain visible at
   all times. Tap the ⋮ button to access the remaining controls in a dropdown.
-  A <strong>Help</strong> (?) entry at the bottom of each kebab menu opens
+  A <strong>Symbols Ref</strong> and <strong>Help</strong> entry at the bottom
+  of each kebab menu provide quick access to the symbols reference panel and
   the built-in help system.
   The toolbar restores to its full inline layout when the window is wide
   enough.
@@ -184,7 +189,7 @@
 </p>
 
 <p>
-  Three prosigns are supported, each individually enabled and mapped to one
+  Four prosigns are supported, each individually enabled and mapped to one
   of five actions:
 </p>
 
@@ -203,9 +208,14 @@
       <td>End of message &mdash; inserts two blank lines</td>
     </tr>
     <tr>
+      <td><code>&lt;BK&gt;</code></td>
+      <td>New Line</td>
+      <td>Break &mdash; inserts a line break</td>
+    </tr>
+    <tr>
       <td><code>&lt;BT&gt;</code></td>
       <td>New Line</td>
-      <td>Break / new paragraph &mdash; inserts a line break</td>
+      <td>New paragraph &mdash; inserts a line break</td>
     </tr>
     <tr>
       <td><code>&lt;HH&gt;</code></td>

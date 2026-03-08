@@ -9,9 +9,10 @@
   Morse Code Studio is a <strong>Progressive Web App (PWA)</strong> — a website
   that can be <em>installed</em> on your device like a native app, complete with
   a home-screen icon, its own window and the ability to
-  <strong>work fully offline</strong>. A service worker caches all code and
-  assets on first visit, so subsequent launches are instant with or without
-  an internet connection.
+  <strong>work fully offline</strong>. A service worker caches the
+  application code and core assets on first visit; other resources such as
+  help pages and icons are cached on demand. Once cached, subsequent
+  launches are instant with or without an internet connection.
 </p>
 
 <!-- 9.2 Installing on Mobile -->
@@ -139,7 +140,7 @@
 <h3>Browser Support</h3>
 <p>
   The Screen Wake Lock API is supported in <strong>Chrome</strong>,
-  <strong>Edge</strong> and <strong>Safari 16.4+</strong> (including iOS).
-  Firefox does not yet support this API. If the browser lacks support, the
-  toggle is hidden and a note is shown instead.
+  <strong>Edge</strong>, <strong>Firefox 126+</strong> and
+  <strong>Safari 16.4+</strong> (including iOS). If the browser lacks
+  support, a note is shown when the card is expanded.
 </p>
