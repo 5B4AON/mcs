@@ -64,6 +64,9 @@ flowchart TB
     end
 ```
 
+<img width="500" height="500" alt="image" src="https://github.com/user-attachments/assets/4e7b99f3-224f-415e-b1a8-87df6932f882" />
+
+
 ### nRF52840 Pin Overview
 
 The nRF52840 Pro Micro has the same pin layout plus 3 bottom pads (B+, B−, RST for battery). The onboard LEDs are **not used** by this sketch — the PCA10056 board definition maps LED constants to different GPIO pins than those on the Supermini/nice!nano, causing conflicts.
@@ -96,6 +99,10 @@ flowchart TB
         end
     end
 ```
+
+<img width="486" height="410" alt="image" src="https://github.com/user-attachments/assets/89838fd7-c45b-4380-b024-0340e8df165d" />
+
+
 
 ---
 
