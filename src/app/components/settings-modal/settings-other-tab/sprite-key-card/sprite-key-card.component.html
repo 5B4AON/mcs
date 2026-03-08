@@ -1,0 +1,58 @@
+<!-- Straight-Key Sprite Button -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().spriteButtonEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Straight-Key Sprite</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().spriteButtonEnabled"
+             (change)="onEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Shows an interactive straight-key button at the bottom of the
+        screen when there is enough space. Tap or click it to key Morse
+        code just like a physical straight key — press and hold for dashes,
+        tap briefly for dots. This is especially useful on touch-screen
+        devices but works with a mouse on desktop too.<br><br>
+        You can also have the button visually animate (depress) when a
+        straight-key press is detected from other input sources. This
+        provides a satisfying visual indicator of keying activity. Check
+        the sources below whose key presses should animate the sprite:
+      </div>
+
+      <div class="settings-row">
+        <label class="settings-checkbox">
+          <input type="checkbox" [checked]="settings.settings().spriteAnimateKeyboard"
+                 (change)="onAnimateChange('spriteAnimateKeyboard', $event)">
+          Keyboard straight key
+        </label>
+      </div>
+      <div class="settings-row">
+        <label class="settings-checkbox">
+          <input type="checkbox" [checked]="settings.settings().spriteAnimateMouse"
+                 (change)="onAnimateChange('spriteAnimateMouse', $event)">
+          Mouse straight key
+        </label>
+      </div>
+      <div class="settings-row">
+        <label class="settings-checkbox">
+          <input type="checkbox" [checked]="settings.settings().spriteAnimateMidi"
+                 (change)="onAnimateChange('spriteAnimateMidi', $event)">
+          MIDI straight key
+        </label>
+      </div>
+      <div class="settings-row">
+        <label class="settings-checkbox">
+          <input type="checkbox" [checked]="settings.settings().spriteAnimateMic"
+                 (change)="onAnimateChange('spriteAnimateMic', $event)">
+          Straight key via mic
+        </label>
+      </div>
+    </div>
+  }
+</div>

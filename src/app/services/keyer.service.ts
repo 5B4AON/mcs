@@ -99,6 +99,12 @@ export class KeyerService implements OnDestroy {
    */
   keyOutput$ = new Subject<boolean>();
 
+  /**
+   * Emits straight key press/release events with input path identifier.
+   * Used by the sprite button to animate in response to keyer activity.
+   */
+  straightKeyEvent$ = new Subject<{ down: boolean; inputPath: InputPath }>();
+
   constructor(
     private settings: SettingsService,
     private decoder: MorseDecoderService,
@@ -159,11 +165,13 @@ export class KeyerService implements OnDestroy {
     if (down && !this.straightKeyDown) {
       this.straightKeyDown = true;
       this.straightKeyPath = path;
+      this.straightKeyEvent$.next({ down: true, inputPath: path });
       this.zone.run(() => {
         this.decoder.onKeyDown(path, src, { fromMidi });
       });
     } else if (!down && this.straightKeyDown) {
       this.straightKeyDown = false;
+      this.straightKeyEvent$.next({ down: false, inputPath: path });
       this.zone.run(() => {
         this.decoder.onKeyUp(path, src, { fromMidi });
       });

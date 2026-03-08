@@ -242,6 +242,18 @@ export interface AppSettings {
   /** When true, ignore remote WPM and use local encoder WPM for playback */
   rtdbInputOverrideWpm: boolean;
 
+  // --- Sprite Key Button ---
+  /** Show the straight-key sprite button on the main screen */
+  spriteButtonEnabled: boolean;
+  /** Animate the sprite when keyboard straight key is pressed */
+  spriteAnimateKeyboard: boolean;
+  /** Animate the sprite when mouse straight key is pressed */
+  spriteAnimateMouse: boolean;
+  /** Animate the sprite when MIDI straight key is pressed */
+  spriteAnimateMidi: boolean;
+  /** Animate the sprite when straight key via mic is pressed */
+  spriteAnimateMic: boolean;
+
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
@@ -398,6 +410,12 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbInputChannelName: '',
   rtdbInputChannelSecret: '',
   rtdbInputOverrideWpm: false,
+
+  spriteButtonEnabled: true,
+  spriteAnimateKeyboard: false,
+  spriteAnimateMouse: false,
+  spriteAnimateMidi: false,
+  spriteAnimateMic: false,
 
   wakeLockEnabled: false,
 

@@ -278,12 +278,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     // Recheck sprite space when settings that affect panel height change
-    // (level-meter visibility, banner appearance, touch keyer settings).
+    // (level-meter visibility, banner appearance, sprite button toggle).
     effect(() => {
       this.settings.settings().micInputEnabled;
       this.settings.settings().cwInputEnabled;
-      this.settings.settings().touchKeyerEnabled;
-      this.settings.settings().touchKeyerMode;
+      this.settings.settings().spriteButtonEnabled;
       this.loopDetection.loopDetected();
       this.rtdbService.connectionWarning();
       // Wait one frame for the DOM to settle after @if blocks toggle
@@ -354,6 +353,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           ? this.settings.settings().encoderWpm
           : wpm;
         this.encoder.enqueueRxPlayback(char, source, playbackWpm);
+      })
+    );
+
+    // Sprite button animation — react to straight key events from other keyers
+    this.subs.push(
+      this.keyer.straightKeyEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (!s.spriteButtonEnabled) return;
+        const animate =
+          (evt.inputPath === 'keyboardStraightKey' && s.spriteAnimateKeyboard) ||
+          (evt.inputPath === 'mouseStraightKey' && s.spriteAnimateMouse) ||
+          (evt.inputPath === 'midiStraightKey' && s.spriteAnimateMidi);
+        if (animate) {
+          this.spriteKeyDown = evt.down;
+        }
+      })
+    );
+
+    // Sprite button animation — react to mic straight key events
+    this.subs.push(
+      this.audioInput.keyEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (s.spriteButtonEnabled && s.spriteAnimateMic) {
+          this.spriteKeyDown = evt.down;
+        }
       })
     );
 
@@ -804,9 +828,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.saveSettings();
   }
 
-  // ---- Touch straight-key sprite button ----
+  // ---- Straight-key sprite button ----
 
-  /** Visual pressed state for the touch straight-key sprite */
+  /** Visual pressed state for the straight-key sprite */
   spriteKeyDown = false;
   /** Guard to prevent duplicate mouse events when touch already active */
   private spriteMouseActive = false;

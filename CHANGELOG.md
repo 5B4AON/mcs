@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.12.0] - 2026-03-08
+
+### Added
+
+- **Standalone Straight-Key Sprite Button** — the on-screen straight-key sprite
+  button is now always available by default when screen space permits, no longer
+  requiring touch keyer to be enabled in straight-key mode. A new "Straight-Key
+  Sprite" settings card in Settings → Other allows disabling the button and
+  configuring animation associations with other input sources.
+- **Sprite Animation from Other Keyers** — the sprite button can optionally
+  animate (depress visually) when straight-key presses are detected from the
+  keyboard, mouse, MIDI, or mic input sources. Each source can be independently
+  toggled via checkboxes in the new settings card. All animation checkboxes
+  default to unchecked.
+- **Keyer Service `straightKeyEvent$` Observable** — a new RxJS Subject on
+  `KeyerService` emits `{ down, inputPath }` events for every straight-key
+  press/release, enabling external subscribers to react to keying activity
+  per input source.
+
+### Changed
+
+- **Sprite Button Enabled by Default** — the sprite button is now enabled on
+  all devices by default (rather than only on touch devices with straight mode
+  selected), and persists through settings resets.
+- **Settings Other Tab** — now contains 5 cards (was 4): Straight-Key Sprite,
+  Wake Lock, Show Prosigns, Prosign Actions, and Emojis.
+
 ## [0.11.0] - 2026-03-07
 
 ### Added
