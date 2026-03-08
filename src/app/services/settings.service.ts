@@ -36,6 +36,8 @@ export type DecoderSource = 'rx' | 'tx';
 export type OptoMode = 'ac' | 'dc';
 /** Serial port control pin used for keying */
 export type SerialPin = 'dtr' | 'rts';
+/** Serial port input signal name */
+export type SerialInputPin = 'dsr' | 'cts' | 'dcd' | 'ri';
 /** Output forwarding mode: which signal source (RX, TX, or both) drives an output */
 export type OutputForward = 'rx' | 'tx' | 'both';
 /** Action to perform when a prosign is decoded */
@@ -59,7 +61,9 @@ export type InputPath =
   | 'touchStraightKey'      // Touch screen straight key
   | 'touchPaddle'           // Touch screen paddle
   | 'midiStraightKey'       // MIDI note as straight key
-  | 'midiPaddle';           // MIDI note as paddle
+  | 'midiPaddle'            // MIDI note as paddle
+  | 'serialStraightKey'     // Serial port input signal as straight key
+  | 'serialPaddle';         // Serial port input signal as paddle
 
 /** Configuration for a single prosign action mapping */
 export interface ProsignActionEntry {
@@ -127,6 +131,28 @@ export interface AppSettings {
   serialInvert: boolean;
   serialEnabled: boolean;
   serialForward: OutputForward;
+
+  // --- Serial Input (read DSR/CTS/DCD/RI signals as keying source) ---
+  serialInputEnabled: boolean;
+  serialInputPortIndex: number;
+  serialInputPollInterval: number;
+  serialInputDebounceMs: number;
+  /** Decoder source for serial straight key ('rx' or 'tx') */
+  serialStraightKeySource: DecoderSource;
+  /** Which input signal pin to use for straight key (-1 = not assigned) */
+  serialStraightKeyPin: SerialInputPin;
+  /** Invert the straight key signal (active-low instead of active-high) */
+  serialStraightKeyInvert: boolean;
+  /** Decoder source for serial paddle ('rx' or 'tx') */
+  serialPaddleSource: DecoderSource;
+  /** Which input signal pin to use for dit paddle (-1 = not assigned) */
+  serialPaddleDitPin: SerialInputPin;
+  /** Which input signal pin to use for dah paddle (-1 = not assigned) */
+  serialPaddleDahPin: SerialInputPin;
+  /** Invert the paddle signals (active-low instead of active-high) */
+  serialPaddleInvert: boolean;
+  /** Reverse paddles for serial paddle input */
+  serialReversePaddles: boolean;
 
   // --- 2c. WinKeyer Output (K1EL WinKeyer via serial port) ---
   winkeyerEnabled: boolean;
@@ -253,6 +279,8 @@ export interface AppSettings {
   spriteAnimateMidi: boolean;
   /** Animate the sprite when straight key via mic is pressed */
   spriteAnimateMic: boolean;
+  /** Animate the sprite when serial straight key is pressed */
+  spriteAnimateSerial: boolean;
 
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
@@ -332,6 +360,19 @@ const DEFAULT_SETTINGS: AppSettings = {
   serialInvert: false,
   serialEnabled: false,
   serialForward: 'tx',
+
+  serialInputEnabled: false,
+  serialInputPortIndex: -1,
+  serialInputPollInterval: 10,
+  serialInputDebounceMs: 5,
+  serialStraightKeySource: 'tx',
+  serialStraightKeyPin: 'dsr',
+  serialStraightKeyInvert: false,
+  serialPaddleSource: 'tx',
+  serialPaddleDitPin: 'cts',
+  serialPaddleDahPin: 'dcd',
+  serialPaddleInvert: false,
+  serialReversePaddles: false,
 
   winkeyerEnabled: false,
   winkeyerPortIndex: -1,
@@ -416,6 +457,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   spriteAnimateMouse: false,
   spriteAnimateMidi: false,
   spriteAnimateMic: false,
+  spriteAnimateSerial: false,
 
   wakeLockEnabled: false,
 

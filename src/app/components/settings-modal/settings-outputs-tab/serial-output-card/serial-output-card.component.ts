@@ -38,6 +38,31 @@ export class SerialOutputCardComponent {
     public serialOutput: SerialKeyOutputService,
   ) {}
 
+  /** Toggle card expansion; refresh port list when opening */
+  toggleExpand(): void {
+    this.expanded = !this.expanded;
+    if (this.expanded) {
+      this.refreshAndAutoSelect();
+    }
+  }
+
+  /**
+   * Refresh the port list and auto-select if there is exactly one port
+   * and no port is currently selected.
+   */
+  async refreshAndAutoSelect(): Promise<void> {
+    await this.serialOutput.refreshPorts();
+    if (this.serialOutput.ports().length === 1 && this.settings.settings().serialPortIndex < 0) {
+      this.settings.update({ serialPortIndex: 0 });
+    }
+  }
+
+  /** Prompt user to add a serial port, then auto-select if only one */
+  async addPort(): Promise<void> {
+    await this.serialOutput.requestPort();
+    await this.refreshAndAutoSelect();
+  }
+
   /** Handle a string or numeric setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {
     const el = event.target as HTMLInputElement;

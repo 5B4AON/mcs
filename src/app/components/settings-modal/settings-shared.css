@@ -476,6 +476,73 @@
   color: #0f0;
 }
 
+/* Serial input signal indicators */
+.serial-input-signals {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  flex-wrap: wrap;
+  padding: .4rem .5rem;
+  background: #12122a;
+  border-radius: 4px;
+  border: 1px solid #2a2a4a;
+}
+.signal-label {
+  font-size: .78rem;
+  color: #8ab;
+  margin-right: .2rem;
+}
+.signal-led {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  font-size: .75rem;
+  font-family: monospace;
+  font-weight: 600;
+  padding: .15rem .5rem;
+  border-radius: 3px;
+  border: 1px solid #333;
+  transition: background .1s, color .1s, box-shadow .1s;
+}
+.signal-led.led-off {
+  background: #1a1a2e;
+  color: #556;
+}
+.signal-led.led-on {
+  background: #0a3a0a;
+  color: #0f0;
+  border-color: #0a0;
+  box-shadow: 0 0 6px rgba(0, 255, 0, 0.3);
+}
+.signal-hint {
+  font-size: .7rem;
+  color: #667;
+  font-style: italic;
+}
+.signal-mode-toggle {
+  font-size: .75rem;
+  color: #8ab;
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  cursor: pointer;
+}
+.signal-mode-toggle input {
+  width: 14px;
+  height: 14px;
+}
+.signal-mode-toggle input[type="number"] {
+  width: 60px;
+  height: auto;
+  padding: .15rem .3rem;
+  font-size: .75rem;
+  background: #1a1a2e;
+  color: #cde;
+  border: 1px solid #333;
+  border-radius: 3px;
+  text-align: center;
+}
+
 /* CW hint text */
 .cw-hint {
   font-size: .75rem;

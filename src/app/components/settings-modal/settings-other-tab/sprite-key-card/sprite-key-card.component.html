@@ -53,6 +53,13 @@
           Straight key via mic
         </label>
       </div>
+      <div class="settings-row">
+        <label class="settings-checkbox">
+          <input type="checkbox" [checked]="settings.settings().spriteAnimateSerial"
+                 (change)="onAnimateChange('spriteAnimateSerial', $event)">
+          Serial straight key
+        </label>
+      </div>
     </div>
   }
 </div>

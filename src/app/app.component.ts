@@ -10,6 +10,7 @@ import { MorseEncoderService } from './services/morse-encoder.service';
 import { KeyerService } from './services/keyer.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { SerialKeyOutputService } from './services/serial-key-output.service';
+import { SerialKeyInputService } from './services/serial-key-input.service';
 import { MouseKeyerService } from './services/mouse-keyer.service';
 import { MidiInputService } from './services/midi-input.service';
 import { MidiOutputService } from './services/midi-output.service';
@@ -147,6 +148,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public keyer: KeyerService,
     public devices: AudioDeviceService,
     public serialOutput: SerialKeyOutputService,
+    public serialInput: SerialKeyInputService,
     public mouseKeyer: MouseKeyerService,
     public midiInput: MidiInputService,
     public midiOutput: MidiOutputService,
@@ -195,11 +197,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
 
           // Forward to MIDI output — skip chars that originated from MIDI input
-          // (prevents echo loop) and skip chars from local keyer pipelines
-          // (keyboard, mouse, touch) because those are already keyed on the
-          // MIDI output in real-time via the decoder's keyDown/keyUp path.
+          // or serial input (prevents echo loops) and skip chars from local
+          // keyer pipelines (keyboard, mouse, touch) because those are already
+          // keyed on the MIDI output in real-time via the decoder's
+          // keyDown/keyUp path.
           // Only forward chars from audio inputs (mic, CW), encoder, and RTDB.
-          if (!entry.fromMidi) {
+          if (!entry.fromMidi && !entry.fromSerial) {
             const isLocalKeyer = entry.inputPath &&
               (entry.inputPath === 'keyboardStraightKey' || entry.inputPath === 'keyboardPaddle' ||
                entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
@@ -364,7 +367,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         const animate =
           (evt.inputPath === 'keyboardStraightKey' && s.spriteAnimateKeyboard) ||
           (evt.inputPath === 'mouseStraightKey' && s.spriteAnimateMouse) ||
-          (evt.inputPath === 'midiStraightKey' && s.spriteAnimateMidi);
+          (evt.inputPath === 'midiStraightKey' && s.spriteAnimateMidi) ||
+          (evt.inputPath === 'serialStraightKey' && s.spriteAnimateSerial);
         if (animate) {
           this.spriteKeyDown = evt.down;
         }
@@ -381,16 +385,28 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
+    // Sprite button animation — react to serial straight key events
+    this.subs.push(
+      this.serialInput.straightKeyEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (s.spriteButtonEnabled && s.spriteAnimateSerial) {
+          this.spriteKeyDown = evt.down;
+        }
+      })
+    );
+
     // MIDI cannot reliably auto-reconnect after a browser refresh because
     // Chrome's MIDI subsystem may return stale/empty data from
     // requestMIDIAccess(). We detect this after the device profile is
     // loaded (in refreshDeviceConfig) and show a banner prompting the
     // user to re-enable MIDI manually.
 
-    // Auto-open Serial Key Output if enabled — Chrome remembers previously
-    // granted serial ports across page refreshes via getPorts().
-    if (this.settings.settings().serialEnabled && 'serial' in navigator) {
-      this.autoOpenSerial();
+    // Serial Key Output auto-reconnects via its own constructor effect().
+    // No explicit autoOpenSerial() call needed here.
+
+    // Auto-open Serial Input if enabled
+    if (this.settings.settings().serialInputEnabled && 'serial' in navigator) {
+      this.autoOpenSerialInput();
     }
 
     // Auto-open WinKeyer if enabled
@@ -573,28 +589,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Auto-open Serial Key Output after a browser refresh.
-   * Chrome remembers previously granted serial ports via getPorts().
-   * The port list may not be immediately available, so we retry.
-   */
-  private async autoOpenSerial(): Promise<void> {
-    const idx = this.settings.settings().serialPortIndex;
-    if (idx < 0) return;
-
-    // Retry with increasing delays — getPorts() can return an empty list
-    // immediately after page load before the USB subsystem is fully enumerated.
-    for (const delay of [0, 500, 1500, 3000]) {
-      if (delay > 0) await new Promise(r => setTimeout(r, delay));
-      if (this.serialOutput.connected()) return; // Already connected
-      await this.serialOutput.refreshPorts();
-      if (idx < this.serialOutput.ports().length) {
-        await this.serialOutput.open(idx);
-        if (this.serialOutput.connected()) return;
-      }
-    }
-  }
-
-  /**
    * Auto-open WinKeyer after a browser refresh.
    * Chrome remembers previously granted serial ports via getPorts().
    */
@@ -609,6 +603,26 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       if (idx < this.winkeyerOutput.ports().length) {
         await this.winkeyerOutput.open(idx);
         if (this.winkeyerOutput.connected()) return;
+      }
+    }
+  }
+
+  /**
+   * Auto-open Serial Input after a browser refresh.
+   * The serial input service's effect() handles reactive attachment,
+   * but we need to ensure ports are enumerated first.
+   */
+  private async autoOpenSerialInput(): Promise<void> {
+    const idx = this.settings.settings().serialInputPortIndex;
+    if (idx < 0) return;
+
+    for (const delay of [0, 500, 1500, 3000]) {
+      if (delay > 0) await new Promise(r => setTimeout(r, delay));
+      if (this.serialInput.connected()) return;
+      await this.serialInput.refreshPorts();
+      if (idx < this.serialInput.ports().length) {
+        await this.serialInput.open(idx);
+        if (this.serialInput.connected()) return;
       }
     }
   }

@@ -11,12 +11,13 @@ import { KeyboardKeyerCardComponent } from './keyboard-keyer-card/keyboard-keyer
 import { MouseKeyerCardComponent } from './mouse-keyer-card/mouse-keyer-card.component';
 import { TouchKeyerCardComponent } from './touch-keyer-card/touch-keyer-card.component';
 import { MidiInputCardComponent } from './midi-input-card/midi-input-card.component';
+import { SerialInputCardComponent } from './serial-input-card/serial-input-card.component';
 import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.component';
 
 /**
  * Settings — Inputs tab.
  *
- * Thin shell that renders the seven input settings cards as independent
+ * Thin shell that renders the eight input settings cards as independent
  * child components. Each card encapsulates its own expand/collapse state,
  * service injections, subscriptions, and event handlers.
  */
@@ -30,6 +31,7 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
     MouseKeyerCardComponent,
     TouchKeyerCardComponent,
     MidiInputCardComponent,
+    SerialInputCardComponent,
     RtdbInputCardComponent,
   ],
   templateUrl: './settings-inputs-tab.component.html',

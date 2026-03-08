@@ -208,8 +208,10 @@
   <div class="example-title">Full-duplex echo prevention &amp; break-in (QSK)</div>
   <p>
     When MIDI input and output share the same bus or device, the app
-    automatically prevents feedback loops:
+    automatically prevents feedback loops at <strong>two independent
+    levels</strong>:
   </p>
+  <h4>1. Hardware-level: <code>isSending</code> muting</h4>
   <ul>
     <li><strong>Echo suppression</strong> &mdash; while a MIDI output note
         is physically held, all incoming note-on messages are treated as
@@ -219,10 +221,28 @@
         notes are released, and output is muted. New characters from the
         encoder are dropped until the remote party goes silent for a full
         word gap, at which point output resumes automatically.</li>
+  </ul>
+  <h4>2. Software-level: Decoder output routing</h4>
+  <ul>
+    <li><strong>Receive pipeline classification</strong> &mdash; MIDI input
+        events are tagged with <code>fromMidi</code> and classified as
+        &ldquo;receive&rdquo; pipelines in the decoder. Receive pipelines
+        activate <em>only</em> sidetone and vibration for monitoring.
+        They do <strong>not</strong> activate serial output or MIDI
+        output through the real-time keyDown/keyUp path. This prevents a
+        software feedback loop where a MIDI key press would trigger the
+        serial or MIDI output, which could then echo back.</li>
     <li><strong>Reverse-path tagging</strong> &mdash; characters decoded
         from MIDI input carry a <code>fromMidi</code> tag and are never
-        forwarded back to MIDI output.</li>
+        forwarded back to MIDI output or serial output through the
+        character forwarding path.</li>
   </ul>
+  <p>
+    Together, these two layers ensure that MIDI input can safely coexist
+    with any combination of outputs &mdash; even when both use the same
+    bus or source routing (RX/TX). The same pattern applies to Serial
+    Input (&sect;6.4).
+  </p>
 </div>
 
 <div class="example-box">
@@ -275,5 +295,194 @@
     connect your key or paddles, and the Arduino appears as a standard
     MIDI device &mdash; no drivers needed. Wiring diagrams and setup
     instructions are included.
+  </p>
+</div>
+
+<!-- 6.4 Serial Input -->
+<h2 id="s6-4">6.4 &nbsp;Serial Input (DSR/CTS/DCD/RI)</h2>
+
+<p>
+  Connect a straight key or paddles through a USB-to-serial adapter (FTDI,
+  CH340, CP2102, etc.) and use the adapter&rsquo;s input status signals
+  &mdash; DSR, CTS, DCD, and RI &mdash; as keying inputs.
+  This method provides low-latency, hardware-level key detection without
+  any audio processing.
+</p>
+
+<h3>How It Works</h3>
+<p>
+  USB-to-serial adapters expose several control/status signal pins.
+  Two of these pins &mdash; <strong>DTR</strong> and <strong>RTS</strong>
+  &mdash; are <em>output</em> pins controlled by the computer (used by
+  Serial Output for transmitter keying). The remaining four &mdash;
+  <strong>DSR</strong>, <strong>CTS</strong>, <strong>DCD</strong>, and
+  <strong>RI</strong> &mdash; are <em>input</em> pins that the computer
+  reads. By connecting a Morse key between one of these input pins and
+  ground (GND), closing the key pulls the pin low, which the app
+  detects.
+</p>
+<p>
+  The app polls the input signals via <code>getSignals()</code> at a
+  configurable interval (default 10&thinsp;ms). Per-signal debounce
+  (default 5&thinsp;ms) filters contact bounce from mechanical keys.
+  The combination of poll interval and debounce determines the maximum
+  usable keying speed.
+</p>
+
+<h3>Port Sharing</h3>
+<p>
+  If Serial Output is already using the same USB-serial adapter, Serial
+  Input automatically &ldquo;piggybacks&rdquo; on the open port &mdash;
+  no separate connection is needed. This allows you to use DTR or RTS
+  for transmitter keying <em>and</em> DSR/CTS/DCD/RI for key input on
+  the same adapter simultaneously.
+</p>
+
+<h3>Settings</h3>
+<ul>
+  <li><strong>Serial Port</strong> &mdash; Select the USB-serial adapter.
+      Click &ldquo;Add Serial Port&hellip;&rdquo; to grant access to a new
+      port. Previously granted ports are remembered across page refreshes.</li>
+  <li><strong>Poll Interval</strong> &mdash; How often the signal pins
+      are read, in milliseconds (5&ndash;50&thinsp;ms). Lower = faster
+      response but more CPU usage. Default: 10&thinsp;ms.</li>
+  <li><strong>Debounce</strong> &mdash; Minimum time a signal must remain
+      stable before a state change is accepted (2&ndash;10&thinsp;ms).
+      Filters contact bounce. Default: 5&thinsp;ms.</li>
+</ul>
+
+<h4>Straight Key</h4>
+<ul>
+  <li><strong>Signal Pin</strong> &mdash; Which input pin to use: DSR, CTS,
+      DCD, or RI.</li>
+  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX). See
+      <em>Chapter 5: Decoder Source Routing</em>.</li>
+  <li><strong>Invert</strong> &mdash; Swap active-high/active-low logic.
+      Most adapters assert a signal when the pin is grounded, so the
+      default (not inverted) treats grounded = key down. If your wiring
+      uses the opposite convention, enable invert.</li>
+</ul>
+
+<h4>Paddle</h4>
+<ul>
+  <li><strong>Dit Paddle Pin</strong> &mdash; Input pin for the dit paddle
+      (default: CTS).</li>
+  <li><strong>Dah Paddle Pin</strong> &mdash; Input pin for the dah paddle
+      (default: DCD).</li>
+  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX).</li>
+  <li><strong>Invert</strong> &mdash; Invert both paddle signals.</li>
+  <li><strong>Reverse Paddles</strong> &mdash; Swap dit and dah.</li>
+  <li><strong>Paddle Mode</strong> &mdash; Iambic A, Iambic B, Ultimatic,
+      or Single Lever (shared with other keyer inputs).</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Wiring a straight key</div>
+  <p>
+    Connect one terminal of your key to the adapter&rsquo;s <strong>DSR</strong>
+    pin, and the other terminal to <strong>GND</strong>. In settings, select
+    DSR as the straight key pin. Close the key &mdash; the DSR LED should
+    light up and the decoder should register a key-down.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Wiring paddles</div>
+  <p>
+    Connect the dit paddle between <strong>CTS</strong> and <strong>GND</strong>,
+    and the dah paddle between <strong>DCD</strong> and <strong>GND</strong>.
+    The common wire goes to GND. In settings, set Dit Pin = CTS and
+    Dah Pin = DCD. The iambic keyer generates correctly timed elements
+    at the configured WPM speed.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Simultaneous input and output</div>
+  <p>
+    A single USB-serial adapter can serve as both input and output at the
+    same time. Set Serial Output to key via DTR (or RTS), and Serial Input
+    to read paddles on CTS + DCD. Select the same port index in both cards.
+    The app shares the port automatically.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Echo suppression &amp; feedback prevention</div>
+  <p>
+    When Serial Input and Serial Output share the same adapter (or are
+    cross-wired), the app automatically prevents feedback loops at
+    <strong>two independent levels</strong>:
+  </p>
+  <h4>1. Hardware-level: <code>isSending</code> muting</h4>
+  <ul>
+    <li><strong>Output mute</strong> &mdash; while the Serial Output is
+        actively keying (DTR/RTS asserted), all incoming signal changes on
+        the input pins are suppressed. This prevents cross-talk between
+        output and input pins &mdash; especially on adapters where
+        toggling DTR/RTS can momentarily glitch DSR/CTS readings.</li>
+    <li><strong>30&thinsp;ms holdoff</strong> &mdash; after the output
+        releases the keying pin, input remains suppressed for an additional
+        30&thinsp;ms to allow the bus to settle. This eliminates
+        trailing edge echoes caused by cable capacitance and adapter
+        settling time.</li>
+  </ul>
+  <h4>2. Software-level: Decoder output routing</h4>
+  <ul>
+    <li><strong>Receive pipeline classification</strong> &mdash; Serial
+        input events are tagged with <code>fromSerial</code> and classified
+        as &ldquo;receive&rdquo; pipelines in the decoder. Receive
+        pipelines activate <em>only</em> sidetone and vibration for
+        monitoring. They do <strong>not</strong> activate serial output
+        or MIDI output through the real-time keyDown/keyUp path. Without
+        this, pressing a serial key would trigger the serial output
+        (asserting DTR/RTS), creating an immediate software feedback
+        loop &mdash; even when the hardware <code>isSending</code>
+        muting would eventually suppress the echo.</li>
+    <li><strong>Reverse-path tagging</strong> &mdash; characters decoded
+        from serial input carry a <code>fromSerial</code> tag and are
+        never forwarded back to MIDI output through the character
+        forwarding path. This prevents decoded serial input from echoing
+        onto the MIDI bus.</li>
+    <li><strong>Independent keyer</strong> &mdash; Serial Input has its
+        own self-contained iambic keyer that calls the decoder directly,
+        completely independent of the keyboard/mouse/touch keyer. This
+        prevents shared-state conflicts between input sources.</li>
+  </ul>
+  <p>
+    Together, these two layers ensure that Serial Input can safely coexist
+    with Serial Output and MIDI Output &mdash; even when using the same
+    adapter and the same source routing (RX/TX). The same pattern applies
+    to MIDI Input (&sect;6.3).
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Maximum keying speed</div>
+  <p>
+    With the default settings (10&thinsp;ms poll, 5&thinsp;ms debounce),
+    the maximum practical speed is about 60 WPM. At 5&thinsp;ms poll
+    and 2&thinsp;ms debounce, you can reach 120 WPM. The card shows
+    the estimated maximum WPM based on your current settings.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">FTDI adapters vs other chips</div>
+  <p>
+    FTDI-based adapters (FT232R, FT232H, FT2232) typically expose all
+    four input pins as solder pads or header pins. CH340 and CP2102
+    adapters may only break out DSR and CTS. Check your adapter&rsquo;s
+    documentation for available pins.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Browser compatibility</div>
+  <p>
+    Web Serial API is supported in <strong>Chrome</strong> and
+    <strong>Edge</strong> on desktop (Windows, macOS, Linux, ChromeOS).
+    It is <strong>not available</strong> on Android, iOS, Firefox, or Safari.
+    Serial Input requires the same browser support as Serial Output.
   </p>
 </div>

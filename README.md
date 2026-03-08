@@ -14,7 +14,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
 
-**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface, a computer keyboard, mouse, or touchscreen. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
+**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface, USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard, mouse, or touchscreen. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
 **Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler, sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
 
@@ -34,9 +34,21 @@ The [`arduino/`](arduino/) folder contains ready-made sketches for both board va
 
 The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
 
-### Serial Port (DTR/RTS)
+### Serial Port (Web Serial API)
 
-A USB-serial adapter can key your transmitter via DTR/RTS line toggling (Web Serial API — Chrome/Edge only). Reliable for keying **output**, but output-only — there is no event-driven input path for paddles.
+A USB-serial adapter provides **both input and output** via the Web Serial API (Chrome/Edge only). Serial adapters are significantly cheaper than an Arduino MIDI interface (often under $2), but come with trade-offs. Like MIDI, **serial port access works when the browser is in the background**, making it suitable for on-air use.
+
+- **Output (DTR/RTS)** — keys your transmitter by toggling DTR or RTS. Reliable, sub-millisecond switching.
+- **Input (DSR/CTS/DCD/RI)** — reads straight key or paddle closures from the adapter's input status pins via polling. Configurable poll interval (5–50 ms) and per-signal debounce (2–10 ms). Supports all five keyer modes with an independent iambic keyer. Each pin is individually assignable.
+
+When input and output are configured on the same port, the input service piggybacks on the output's open connection — no second port handle needed. Automatic mute suppression and decoder output routing prevent feedback when both are active simultaneously.
+
+Common adapters (FTDI FT232R, CH340, CP2102, PL2303) are supported. Works with any adapter that exposes standard modem-status pins.
+
+**Limitations compared to MIDI:**
+
+- **Desktop only** — the Web Serial API is not available on Android or iOS. Chrome on Android does not enumerate USB-serial adapters even with USB OTG. If you need mobile support, use the Arduino MIDI interface instead.
+- **Polling latency** — serial input relies on polling `getSignals()` rather than asynchronous events. With the default 10 ms poll interval and 5 ms debounce, expect up to ~15 ms of input latency. This is fine for most operators, but fast CW operators (above ~40 WPM) may notice a perceivable lag compared to MIDI's event-driven input which has near-zero latency. Reducing the poll interval to 5 ms and debounce to 2 ms improves responsiveness but increases CPU usage.
 
 ### WinKeyer
 
@@ -48,7 +60,7 @@ The sound card can serve double duty: an **optocoupler output** (DC or AC mode) 
 
 ## Signal Routing
 
-Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase RTDB, MIDI) has an independent **forward / active-on** selector controlling whether it fires on TX signals, RX signals, or both. Each input (Mic, CW Tone, Keyboard, Mouse, Touch, MIDI) can be assigned to the RX or TX decoder pool, controlling both calibration and colour tagging in the fullscreen conversation view. Automatic loop detection suppresses output routing when a feedback loop is detected between outputs and inputs.
+Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase RTDB, MIDI) has an independent **forward / active-on** selector controlling whether it fires on TX signals, RX signals, or both. Each input (Mic, CW Tone, Keyboard, Mouse, Touch, Serial, MIDI) can be assigned to the RX or TX decoder pool, controlling both calibration and colour tagging in the fullscreen conversation view. Automatic loop detection suppresses output routing when a feedback loop is detected between outputs and inputs.
 
 ## Additional Features
 

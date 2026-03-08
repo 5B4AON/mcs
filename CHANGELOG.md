@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.13.0] - 2026-03-08
+
+### Added
+
+- **Serial Input as First-Class Input Source** — serial key/paddle input via
+  DSR/CTS/DCD/RI now routes through the decoder with `fromSerial: true`,
+  enabling proper RX/TX pool assignment, colour tagging in the fullscreen view,
+  and independent calibration — matching the treatment of other input sources.
+- **Serial Output Auto-Reconnect** — Serial Output now automatically reconnects
+  to a previously granted port on page refresh, matching the existing behaviour
+  of Serial Input. Uses a one-shot `effect()` guard in the service constructor.
+- **Port Auto-Select** — when refreshing or adding a serial port yields exactly
+  one available port and none is selected, both the Serial Output and Serial
+  Input cards now auto-select it.
+- **Port Refresh on Card Expand** — expanding the Serial Output or Serial Input
+  settings card automatically refreshes the available port list, so ports
+  granted in the other card appear without a manual Refresh click.
+- **Shared Port Race-Condition Guard** — when Serial Input and Output are
+  configured on the same port, Serial Input now defers its connection until
+  Serial Output has connected first, preventing a race where both services
+  attempt to open the port simultaneously.
+
+### Fixed
+
+- **DTR/RTS Initial Pin State** — the `setSignals()` call that forces pins to
+  their idle state is now issued immediately after `port.open()`, preventing
+  FTDI/CH340 adapters from holding DTR/RTS HIGH and continuously keying an
+  attached transmitter on connection.
+- **FTDI Active-Low Pin Polarity** — corrected the `serialInvert` logic to
+  account for FTDI/CH340/CP2102 active-low DTR# and RTS# outputs, where
+  `setSignals({ dataTerminalReady: true })` drives the physical pin LOW and
+  `false` drives it HIGH. Default behaviour (checkbox unchecked) now correctly
+  idles the pin LOW and keys HIGH.
+- **Serial Input `isSending` Muting** — Serial Output's `isSending` signal
+  (with 30 ms holdoff) now properly suppresses Serial Input from processing
+  key-down events while the output is active, preventing software feedback
+  loops when both share the same adapter.
+
+### Changed
+
+- **Invert Output Checkbox** — simplified label to "Invert Output" with a hint
+  explaining the default polarity (physical pin LOW when idle, HIGH when keyed).
+- **Help Documentation — Serial Output** — the FTDI / CH340 Pin Behaviour
+  section now explains that adapters default pins HIGH on connection and that
+  the app reverses this to LOW. Includes a step-by-step connection procedure:
+  connect adapter → enable output → attach external hardware, to avoid keying
+  the transmitter during the brief HIGH glitch at `port.open()`.
+
 ## [0.12.0] - 2026-03-08
 
 ### Added

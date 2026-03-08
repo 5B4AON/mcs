@@ -37,7 +37,7 @@ export class SpriteKeyCardComponent {
   }
 
   /** Toggle a sprite animation association */
-  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateMic', event: Event): void {
+  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateMic' | 'spriteAnimateSerial', event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.settings.update({ [key]: checked });
   }

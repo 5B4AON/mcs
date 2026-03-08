@@ -52,6 +52,7 @@ src/app/
 │   ├── keyer.service.ts         — iambic/straight keyer logic
 │   ├── display-buffer.service.ts — decoded/encoded text buffer + prosign actions
 │   ├── serial-key-output.service.ts — Web Serial DTR/RTS radio keying
+│   ├── serial-key-input.service.ts  — Web Serial DSR/CTS/DCD/RI key/paddle input
 │   ├── winkeyer-output.service.ts   — WinKeyer serial protocol
 │   ├── midi-input.service.ts   — Web MIDI input
 │   ├── midi-output.service.ts  — Web MIDI output
@@ -64,13 +65,14 @@ src/app/
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
     │   ├── settings-shared.css          — shared card styles (loaded globally via angular.json)
-    │   ├── settings-inputs-tab/         — thin shell hosting 7 input card components
+    │   ├── settings-inputs-tab/         — thin shell hosting 8 input card components
     │   │   ├── mic-card/
     │   │   ├── cw-detector-card/
     │   │   ├── keyboard-keyer-card/
     │   │   ├── mouse-keyer-card/
     │   │   ├── touch-keyer-card/
     │   │   ├── midi-input-card/
+    │   │   ├── serial-input-card/
     │   │   └── rtdb-input-card/
     │   ├── settings-outputs-tab/        — thin shell hosting 7 output card components
     │   │   ├── audio-output-card/
@@ -106,7 +108,7 @@ src/app/
 ```
 AppComponent
 ├── SettingsModalComponent
-│   ├── SettingsInputsTabComponent → 7 *-card components
+│   ├── SettingsInputsTabComponent → 8 *-card components
 │   ├── SettingsOutputsTabComponent → 7 *-card components
 │   ├── SettingsOtherTabComponent → 4 *-card components
 │   └── ConfirmDialogComponent (reset confirmation)
@@ -129,6 +131,8 @@ AppComponent
 - **Morse table** (`morse-table.ts`): `MORSE_TABLE` maps characters/prosigns to dot-dash strings; `MORSE_REVERSE` is the inverse. Changes to the table can affect encoding, decoding, and the symbols reference panel.
 - **`DisplayBufferService`** bridges decoded/encoded text with prosign actions and emoji replacements — changes to prosign or emoji logic converge here.
 - **Audio chain**: `AudioDeviceService` → `AudioInputService` → `CwInputService` (detection) → `MorseDecoderService` (decode). Output: `MorseEncoderService` → `AudioOutputService` + optional `SerialKeyOutputService` / `WinkeyerOutputService` / `MidiOutputService` / `FirebaseRtdbService`.
+- **Serial input/output muting**: `SerialKeyOutputService.isSending` signal (with 30 ms holdoff) prevents `SerialKeyInputService` from processing key-down events while the output is active — same pattern as `MidiOutputService.isSending` / `MidiInputService`. `SerialKeyInputService` has its own independent iambic keyer (like `MidiInputService`), bypassing `KeyerService` entirely.
+- **Serial port sharing**: when serial input and output use the same port index, `SerialKeyInputService` piggybacks on `SerialKeyOutputService.openPort()` instead of opening a second connection.
 - **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone-card).
 
 ## Build and Test
@@ -163,7 +167,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 ## Integration Points
 - **Firebase RTDB**: config in `src/app/firebase.config.ts`, channel structure `/morse-code-studio/channels/{channelName}/{secret}`. Offline caching disabled; auto-reconnect with exponential backoff
 - **Web Audio API**: AudioContext, AudioWorklet, Goertzel tone detection, sidetone/opto-coupler output
-- **Web Serial API**: DTR/RTS keying for radio transmitters, WinKeyer protocol
+- **Web Serial API**: DTR/RTS keying for radio transmitters, DSR/CTS/DCD/RI polling for key/paddle input, WinKeyer protocol
 - **Web MIDI API**: external controller input/output
 - **PWA**: service worker via `ngsw-config.json`, manifest in `public/manifest.webmanifest`, `registerWhenStable:30000`
 

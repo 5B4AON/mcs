@@ -4,7 +4,7 @@
  * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
  */
 
-import { Injectable, NgZone, signal } from '@angular/core';
+import { effect, Injectable, NgZone, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 
 export type SerialPin = 'dtr' | 'rts';
@@ -48,11 +48,38 @@ export class SerialKeyOutputService {
   /** The currently opened port (null if not connected) */
   private activePort: SerialPort | null = null;
 
+  /** Public signal exposing the active port for other services (e.g. serial input) */
+  readonly openPort = signal<SerialPort | null>(null);
+
   /** Whether the port is currently open */
   readonly connected = signal(false);
 
   /** Last error message (for UI display) */
   readonly lastError = signal<string | null>(null);
+
+  /** True while serial output is actively keying (key held or holdoff pending) */
+  readonly isSending = signal(false);
+
+  /**
+   * Holdoff timer — keeps isSending() true for a few ms after key-up.
+   * The physical serial bus has settling time: the DTR/RTS line
+   * de-asserts, cable capacitance decays, and the serial input polling
+   * circuit needs time to stop seeing the signal.  Without this holdoff,
+   * a fast key-up → loopback echo can sneak through the isSending()
+   * gate before the bus has fully settled.
+   *
+   * *** DO NOT REMOVE OR SHORTEN THIS HOLDOFF ***
+   * It prevents feedback loops when serial input and output share the
+   * same physical port or when pins are cross-wired.
+   */
+  private isSendingHoldoff: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * Holdoff duration in milliseconds.  Empirically tested: 30 ms
+   * covers typical USB-serial adapter settling plus polling round-trip
+   * jitter.  Matches MidiOutputService.SENDING_HOLDOFF_MS.
+   */
+  private static readonly SENDING_HOLDOFF_MS = 30;
 
   /** Track current key state for idempotency */
   private keyIsDown = false;
@@ -66,6 +93,9 @@ export class SerialKeyOutputService {
   /** Whether auto-reconnect is in progress */
   private reconnecting = false;
 
+  /** Whether the initial auto-connect has been attempted (one-shot guard) */
+  private autoConnectAttempted = false;
+
   constructor(
     private settings: SettingsService,
     private zone: NgZone,
@@ -75,6 +105,21 @@ export class SerialKeyOutputService {
     if ('serial' in navigator) {
       navigator.serial.addEventListener('connect', this.onSerialConnect);
     }
+
+    // Auto-open on page load if previously enabled.
+    // Chrome remembers granted ports via getPorts(), so no user gesture
+    // is needed.  The one-shot guard prevents this from interfering
+    // with explicit connect/disconnect actions from the settings card.
+    effect(() => {
+      const s = this.settings.settings();
+      const enabled = s.serialEnabled;
+      const portIdx = s.serialPortIndex;
+
+      if (!this.autoConnectAttempted && enabled && portIdx >= 0) {
+        this.autoConnectAttempted = true;
+        this.autoConnect(portIdx);
+      }
+    });
   }
 
   /** Refresh the list of previously-granted serial ports */
@@ -136,7 +181,24 @@ export class SerialKeyOutputService {
     try {
       // Open with a low baud rate; we only use control signals, not data
       await port.open({ baudRate: 9600 });
+
+      // Force both pins to idle after open.
+      //
+      // FTDI/CH340 DTR# and RTS# are active-low at the hardware level:
+      //   setSignals({ dataTerminalReady: true  }) → physical pin LOW
+      //   setSignals({ dataTerminalReady: false }) → physical pin HIGH
+      //
+      // Default (serialInvert = false): idle = true → pin LOW (optocoupler off).
+      // Inverted (serialInvert = true):  idle = false → pin HIGH.
+      const s = this.settings.settings();
+      const idle = !s.serialInvert;
+      await port.setSignals({
+        dataTerminalReady: idle,
+        requestToSend: idle,
+      });
+
       this.activePort = port;
+      this.openPort.set(port);
       this.connected.set(true);
       this.lastError.set(null);
 
@@ -144,6 +206,7 @@ export class SerialKeyOutputService {
       this.portDisconnectHandler = () => {
         this.zone.run(() => {
           this.activePort = null;
+          this.openPort.set(null);
           this.connected.set(false);
           this.keyIsDown = false;
           this.portDisconnectHandler = null;
@@ -151,17 +214,10 @@ export class SerialKeyOutputService {
         });
       };
       port.addEventListener('disconnect', this.portDisconnectHandler);
-
-      // Set initial state (active when inverted, inactive when normal)
-      const s = this.settings.settings();
-      const idle = s.serialInvert;
-      await port.setSignals({
-        dataTerminalReady: idle,
-        requestToSend: idle,
-      });
     } catch (e: any) {
       this.lastError.set(e.message ?? 'Failed to open serial port.');
       this.activePort = null;
+      this.openPort.set(null);
       this.connected.set(false);
     }
   }
@@ -175,23 +231,21 @@ export class SerialKeyOutputService {
       this.portDisconnectHandler = null;
     }
     try {
-      // Ensure key-up before closing
-      if (this.keyIsDown) {
-        const s = this.settings.settings();
-        const idle = s.serialInvert;
-        await this.activePort.setSignals({
-          dataTerminalReady: idle,
-          requestToSend: idle,
-        });
-        this.keyIsDown = false;
-      }
+      this.keyIsDown = false;
       await this.activePort.close();
     } catch { /* port may already be closed */ }
     this.activePort = null;
+    this.openPort.set(null);
     this.connected.set(false);
+    // Immediate clear — no holdoff needed when explicitly closing
+    if (this.isSendingHoldoff) {
+      clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = null;
+    }
+    this.isSending.set(false);
   }
 
-  /** Assert the selected pin HIGH (key down) — or LOW when inverted */
+  /** Key down — drive pin HIGH (active-low: API false → physical HIGH) */
   keyDown(source: 'rx' | 'tx' = 'tx'): void {
     if (!this.activePort || this.keyIsDown) return;
     const s = this.settings.settings();
@@ -199,24 +253,44 @@ export class SerialKeyOutputService {
     if (s.serialForward !== 'both' && s.serialForward !== source) return;
     this.keyIsDown = true;
 
-    const active = !s.serialInvert;  // true=HIGH when normal, false=LOW when inverted
+    // Cancel any pending holdoff — we are actively sending again
+    if (this.isSendingHoldoff) {
+      clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = null;
+    }
+    this.isSending.set(true);
+
+    const active = s.serialInvert;  // false → physical HIGH when normal, true → physical LOW when inverted
     const signal: SerialOutputSignals = s.serialPin === 'dtr'
       ? { dataTerminalReady: active }
       : { requestToSend: active };
     this.activePort.setSignals(signal).catch(() => {});
   }
 
-  /** De-assert the selected pin LOW (key up) — or HIGH when inverted */
+  /** Key up — drive pin back to idle (LOW when normal, HIGH when inverted) */
   keyUp(): void {
     if (!this.activePort || !this.keyIsDown) return;
     this.keyIsDown = false;
 
     const s = this.settings.settings();
-    const idle = s.serialInvert;  // false=LOW when normal, true=HIGH when inverted
+    const idle = !s.serialInvert;  // true → physical LOW when normal, false → physical HIGH when inverted
     const signal: SerialOutputSignals = s.serialPin === 'dtr'
       ? { dataTerminalReady: idle }
       : { requestToSend: idle };
     this.activePort.setSignals(signal).catch(() => {});
+
+    // Don't clear isSending immediately — start a holdoff timer so
+    // the physical bus has time to settle before serial input is unmuted.
+    // If another keyDown arrives before the holdoff expires, the timer
+    // is cancelled in keyDown and isSending stays true throughout.
+    if (this.isSendingHoldoff) clearTimeout(this.isSendingHoldoff);
+    this.isSendingHoldoff = setTimeout(() => {
+      this.isSendingHoldoff = null;
+      // Only clear if key was not re-activated during the holdoff
+      if (!this.keyIsDown) {
+        this.isSending.set(false);
+      }
+    }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
   }
 
   /** Timed pulse for encoder — asserts pin for durationMs then de-asserts */
@@ -226,8 +300,15 @@ export class SerialKeyOutputService {
     if (!s.serialEnabled) return;
     if (s.serialForward !== 'both' && s.serialForward !== source) return;
 
-    const active = !s.serialInvert;
-    const idle = s.serialInvert;
+    // Cancel any pending holdoff — we are actively sending
+    if (this.isSendingHoldoff) {
+      clearTimeout(this.isSendingHoldoff);
+      this.isSendingHoldoff = null;
+    }
+    this.isSending.set(true);
+
+    const active = s.serialInvert;
+    const idle = !s.serialInvert;
     const onSignal: SerialOutputSignals = s.serialPin === 'dtr'
       ? { dataTerminalReady: active }
       : { requestToSend: active };
@@ -238,14 +319,23 @@ export class SerialKeyOutputService {
     await this.activePort.setSignals(onSignal);
     await new Promise(resolve => setTimeout(resolve, durationMs));
     await this.activePort.setSignals(offSignal);
+
+    // Start holdoff timer after pulse completes
+    if (this.isSendingHoldoff) clearTimeout(this.isSendingHoldoff);
+    this.isSendingHoldoff = setTimeout(() => {
+      this.isSendingHoldoff = null;
+      if (!this.keyIsDown) {
+        this.isSending.set(false);
+      }
+    }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
   }
 
   /** Test: toggle the pin on for 1 second */
   async test(): Promise<void> {
     if (!this.activePort) return;
     const s = this.settings.settings();
-    const active = !s.serialInvert;
-    const idle = s.serialInvert;
+    const active = s.serialInvert;
+    const idle = !s.serialInvert;
     const onSignal: SerialOutputSignals = s.serialPin === 'dtr'
       ? { dataTerminalReady: active }
       : { requestToSend: active };
@@ -293,5 +383,29 @@ export class SerialKeyOutputService {
         this.reconnecting = false;
       }
     }, 1000);
+  }
+
+  /**
+   * Auto-connect to the configured serial port.
+   * Called by the constructor effect() on page load and whenever
+   * settings change.  Retries with increasing delays to handle
+   * late USB enumeration.
+   */
+  private async autoConnect(portIndex: number): Promise<void> {
+    if (this.reconnecting) return;
+    this.reconnecting = true;
+    try {
+      for (const delay of [0, 500, 1500, 3000]) {
+        if (delay > 0) await new Promise(r => setTimeout(r, delay));
+        if (this.connected()) return;
+        await this.refreshPorts();
+        if (portIndex < this.ports().length) {
+          await this.open(portIndex);
+          if (this.connected()) return;
+        }
+      }
+    } finally {
+      this.reconnecting = false;
+    }
   }
 }

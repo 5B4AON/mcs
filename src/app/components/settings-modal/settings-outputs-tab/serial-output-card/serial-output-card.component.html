@@ -1,6 +1,6 @@
 <!-- Serial Output (DTR/RTS keying) -->
 <div class="settings-card" [class.disabled-card]="!settings.settings().serialEnabled">
-  <div class="settings-card-header" (click)="expanded = !expanded">
+  <div class="settings-card-header" (click)="toggleExpand()">
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Serial Output</span>
@@ -46,10 +46,10 @@
       }
 
       <div class="serial-port-row">
-        <button (click)="serialOutput.requestPort()" class="test-btn">
+        <button (click)="addPort()" class="test-btn">
           Add Serial Port…
         </button>
-        <button (click)="serialOutput.refreshPorts()" class="test-btn">
+        <button (click)="refreshAndAutoSelect()" class="test-btn">
           Refresh
         </button>
       </div>
@@ -92,9 +92,9 @@
       <div class="cw-hint">
         Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
         DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
-        Wire the selected pin to your transmitter's keying circuit.
-        Most adapters provide &plusmn;5–12V on DTR/RTS; use a transistor or optocoupler
-        between the adapter and your radio if needed.
+        By default, the pin is held <strong>LOW when idle</strong> and driven
+        <strong>HIGH when keyed</strong>.
+        Check &ldquo;Invert Output&rdquo; to reverse the polarity.
       </div>
 
       @if (serialOutput.lastError()) {

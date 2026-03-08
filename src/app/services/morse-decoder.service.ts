@@ -21,6 +21,8 @@ export interface DecoderKeyOptions {
   perfectTiming?: boolean;
   /** True when the event originated from MIDI input (prevents echo loops) */
   fromMidi?: boolean;
+  /** True when the event originated from serial input (prevents echo loops) */
+  fromSerial?: boolean;
 }
 
 /**
@@ -37,6 +39,7 @@ interface DecoderPipeline {
   source: 'rx' | 'tx';
   perfectTiming: boolean;
   fromMidi: boolean;
+  fromSerial: boolean;
   keyDownTime: number;
   keyUpTime: number;
   silenceTimer: ReturnType<typeof setTimeout> | null;
@@ -128,6 +131,7 @@ export class MorseDecoderService {
     userName?: string;
     fromRtdb?: boolean;
     fromMidi?: boolean;
+    fromSerial?: boolean;
     wpm?: number;
   }[]>([]);
 
@@ -167,16 +171,18 @@ export class MorseDecoderService {
    *
    * **Activation rules** (defined in onKeyDown):
    *
-   * | Pipeline type                    | audio | serial | vibration | midi |
-   * |----------------------------------|-------|--------|-----------|------|
-   * | Receive (mic, cwAudio, MIDI)     |   ✓   |   ✗    |     ✓     |  ✗   |
-   * | Local keyer (keyboard/mouse/touch)|  ✓   |   ✓    |     ✓     |  ✓   |
+   * | Pipeline type                       | audio | serial | vibration | midi |
+   * |-------------------------------------|-------|--------|-----------|------|
+   * | Receive (mic, cwAudio, MIDI, Serial)|   ✓   |   ✗    |     ✓     |  ✗   |
+   * | Local keyer (keyboard/mouse/touch)  |   ✓   |   ✓    |     ✓     |  ✓   |
    *
-   * Receive pipelines (mic, cwAudio, MIDI straight/paddle) must NOT
-   * activate serial or MIDI output. Their signals may originate from the
-   * same physical chain — serial output keys the radio whose CW feeds
-   * back into the CW detector or mic, and MIDI output echoes on the
-   * common MIDI bus. Activating these would create a feedback loop.
+   * Receive pipelines (mic, cwAudio, MIDI straight/paddle, Serial
+   * straight/paddle) must NOT activate serial or MIDI output. Their
+   * signals may originate from the same physical chain — serial output
+   * keys the radio whose CW feeds back into the CW detector or mic,
+   * MIDI output echoes on the common MIDI bus, and serial input pins
+   * may cross-talk with serial output pins on the same adapter.
+   * Activating these would create a feedback loop.
    *
    * Local keyer pipelines (keyboard, mouse, touch) represent operator
    * intent to transmit and legitimately drive all outputs.
@@ -268,15 +274,15 @@ export class MorseDecoderService {
     // independent reference counting. Each pipeline records which outputs
     // it activated so that onKeyUp only decrements those same ref counts.
     //
-    // Receive pipelines (mic, cwAudio, MIDI) activate ONLY monitoring
-    // outputs (sidetone + vibration). They must NOT drive serial or MIDI
-    // output because their signal may originate from the same physical
-    // chain — creating a feedback loop.
+    // Receive pipelines (mic, cwAudio, MIDI, Serial) activate ONLY
+    // monitoring outputs (sidetone + vibration). They must NOT drive
+    // serial or MIDI output because their signal may originate from the
+    // same physical chain — creating a feedback loop.
     //
     // Local keyer pipelines (keyboard, mouse, touch) represent operator
     // intent to transmit and activate ALL outputs.
     if (!this.loopDetection.isSuppressed) {
-      const isReceive = path === 'mic' || path === 'cwAudio' || pipeline.fromMidi;
+      const isReceive = path === 'mic' || path === 'cwAudio' || pipeline.fromMidi || pipeline.fromSerial;
 
       // Sidetone / audio: all pipelines (monitoring)
       pipeline.activatedOutputs.add('audio');
@@ -422,6 +428,7 @@ export class MorseDecoderService {
         source,
         perfectTiming: opts?.perfectTiming ?? false,
         fromMidi: opts?.fromMidi ?? false,
+        fromSerial: opts?.fromSerial ?? false,
         keyDownTime: 0,
         keyUpTime: 0,
         silenceTimer: null,
@@ -436,6 +443,7 @@ export class MorseDecoderService {
       pipeline.source = source;
       pipeline.perfectTiming = opts?.perfectTiming ?? false;
       pipeline.fromMidi = opts?.fromMidi ?? false;
+      pipeline.fromSerial = opts?.fromSerial ?? false;
     }
     return pipeline;
   }
@@ -557,8 +565,9 @@ export class MorseDecoderService {
     const wpm = this.pipelineWpm(pipeline);
     this.decodedText.update(t => t + char);
     const fromMidi = pipeline.fromMidi || undefined;
+    const fromSerial = pipeline.fromSerial || undefined;
     this.taggedOutput.update(arr => [...arr, {
-      type: pipeline.source, char, inputPath: path, wpm, fromMidi,
+      type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial,
     }]);
     pipeline.pattern = '';
     // A real character was decoded — allow a future trailing space
@@ -597,9 +606,10 @@ export class MorseDecoderService {
 
       const wpm = this.pipelineWpm(pipeline);
       const fromMidi = pipeline.fromMidi || undefined;
+      const fromSerial = pipeline.fromSerial || undefined;
       this.decodedText.update(t => t + ' ');
       this.taggedOutput.update(arr => [...arr, {
-        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi,
+        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial,
       }]);
     }
   }
