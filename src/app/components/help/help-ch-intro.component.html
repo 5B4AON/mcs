@@ -18,12 +18,46 @@
       display decoded text on screen in real time.</li>
   <li><strong>Encode</strong> — Convert typed text into perfectly timed Morse
       code audio and key signals.</li>
-  <li><strong>Key</strong> — Send Morse manually via keyboard, mouse or
-      touchscreen, supporting straight key and four paddle modes.</li>
+  <li><strong>Key</strong> — Send Morse manually using a physical key or paddle
+      connected via an Arduino MIDI interface, USB-serial adapter, computer
+      keyboard, mouse, or touchscreen. Supports straight key and four
+      paddle modes (Iambic A, Iambic B, Ultimatic, Single Lever).</li>
   <li><strong>Key your radio</strong> — Drive your transmitter's keying line
-      through an optocoupler (sound card channel) or a USB-serial adapter
-      (DTR/RTS).</li>
+      through an Arduino MIDI optocoupler, USB-serial adapter (DTR/RTS),
+      WinKeyer, or sound card optocoupler (experimental).</li>
 </ul>
+
+<h3>Connecting Your Key and Radio</h3>
+<p>
+  Several hardware interfaces are supported for physical key input and
+  transmitter keying output, each with different trade-offs:
+</p>
+<ol>
+  <li><strong>Arduino MIDI (recommended)</strong> — A simple Arduino Pro Micro
+      enumerates as a standard USB MIDI device (no drivers needed) and provides
+      both paddle/key input and optocoupler keying output over a single USB
+      connection. The Web MIDI API delivers input events asynchronously, so
+      timing is crisp even at high WPM. Crucially, MIDI works when the browser
+      is in the background or minimised, making it the most practical interface
+      for on-air use. Ready-made sketches and wiring diagrams are in the
+      project's <code>arduino/</code> folder.</li>
+  <li><strong>USB-serial adapter (second choice)</strong> — Significantly
+      cheaper (often under $2) and provides both input (DSR/CTS/DCD/RI for
+      key/paddle reading) and output (DTR/RTS for transmitter keying). Like
+      MIDI, serial works in the background. The trade-off is polling-based
+      input (up to ~15 ms latency vs. MIDI's near-zero) and desktop-only
+      support (no Android/iOS).</li>
+  <li><strong>Keyboard, mouse, and touch</strong> — No extra hardware needed,
+      convenient for practice and portable use. The main limitation is that the
+      browser tab must be in focus to receive these events, so they are not
+      suitable for background operation.</li>
+  <li><strong>Sound card (experimental)</strong> — A sound card optocoupler can
+      key the transmitter via the headphone jack, and microphone input with
+      ultrasonic pilot-tone detection can read key closures. The keying input
+      side is experimental and sensitive to audio hardware latency; MIDI or
+      serial is more robust for key input. CW tone decoding of received audio
+      (the primary decode path) works well and is not experimental.</li>
+</ol>
 
 <p>
   Everything happens in real time with sub-millisecond precision, suitable for
@@ -42,12 +76,13 @@
       header bar to open the Settings modal where you configure inputs,
       outputs and keyer options.</li>
   <li><strong>Choose your inputs</strong> — Enable the input method(s) you want:
-      <em>Straight Key via Mic</em> (pilot tone), <em>Straight Key via Audio
-      Channel</em> (CW tone), or any combination of the keyboard, mouse or
-      touch keyers.</li>
+      <em>MIDI Input</em> (Arduino paddle/key), <em>Serial Input</em>
+      (USB-serial adapter), keyboard, mouse, or touch keyers. For CW decoding
+      from a radio, enable the <em>CW Tone Detector</em>.</li>
   <li><strong>Choose your outputs</strong> — Enable the output(s) you need:
-      <em>Sidetone</em> (speaker), <em>Optocoupler</em> (sound card) and/or
-      <em>Serial Port</em> (DTR/RTS).</li>
+      <em>MIDI Output</em> (Arduino optocoupler), <em>Serial Port</em>
+      (DTR/RTS), <em>WinKeyer</em>, <em>Sidetone</em> (speaker), and/or
+      <em>Optocoupler</em> (sound card, experimental).</li>
   <li><strong>Save Settings</strong> — Click "Save Settings" at the bottom. Your
       settings are saved per device configuration and persist across
       sessions.</li>

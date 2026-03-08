@@ -190,7 +190,7 @@
 </div>
 <h3>Echo Suppression (when sharing port with Serial Input)</h3>
 <p>
-  When Serial Output and Serial Input (&sect;6.4) share the same adapter,
+  When Serial Output and Serial Input (&sect;6.3) share the same adapter,
   feedback is prevented at two levels:
 </p>
 <h4>Hardware-level: <code>isSending</code> muting</h4>
@@ -389,7 +389,7 @@
   appears as a native USB MIDI device &mdash; no drivers needed. The Arduino
   sketch monitors incoming MIDI notes and maps them to digital output
   pins, which in turn drive keying circuits, paddle jacks, or relay
-  boards. Combined with MIDI Input (&sect;6.3), the same Arduino can
+  boards. Combined with MIDI Input (&sect;6.2), the same Arduino can
   provide bidirectional real-time interfacing with the application.
 </p>
 <p>
@@ -508,7 +508,7 @@
   </p>
   <p>
     <strong>Note:</strong> The output notes (66/68/70) deliberately differ
-    from the input notes (60/62/64) used for MIDI Input (&sect;6.3).
+    from the input notes (60/62/64) used for MIDI Input (&sect;6.2).
     This prevents a feedback loop when both MIDI Input and MIDI Output
     are enabled on the same device simultaneously.
   </p>
@@ -517,7 +517,7 @@
 <div class="example-box">
   <div class="example-title">Example — Bidirectional MIDI interface</div>
   <p>
-    Enable both MIDI Input (&sect;6.3) and MIDI Output on the same
+    Enable both MIDI Input (&sect;6.2) and MIDI Output on the same
     Arduino. The Arduino reads physical paddle switches and sends MIDI
     notes to the app (input on notes 60/62/64), while the app decodes
     those key events into characters and plays them back on different

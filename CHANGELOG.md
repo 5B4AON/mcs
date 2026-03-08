@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.0] - 2026-03-08
+
+### Changed
+
+- **Help — Introduction Rewrite** — section 1.1 now lists hardware interface
+  options in priority order: Arduino MIDI (recommended, with reasoning),
+  USB-serial (second choice, with trade-offs), keyboard/mouse/touch, and
+  sound card (experimental). Aligns with README.md.
+- **Help — Chapter 6 Reordered and Renamed** — chapter renamed from "Audio
+  Inputs" to "Inputs". Sections reordered to reflect priority: §6.1 Decode
+  from Audio Channel (primary decode path, was §6.2), §6.2 MIDI Input
+  (recommended, was §6.3), §6.3 Serial Input (second choice, was §6.4),
+  §6.4 Straight Key via Mic (experimental, was §6.1). All cross-references
+  updated.
+- **Help §6.1 — Renamed** — "Straight Key via Audio Channel (CW Tone)"
+  renamed to "Decode from Audio Channel (CW Tone Detector)" to clarify this
+  is a decode input, not a keying input.
+- **Help §4.6 — Serial Straight Key** — the sprite button animation sources
+  now include "Serial straight key".
+- **Help §5.2 — Serial Input Source Assignment** — the per-input source table
+  now includes Serial Input (straight key and paddle) rows, and the
+  introductory text mentions Serial Input alongside Keyboard Keyer and MIDI
+  Input.
+- **Help §5.3 — Default Assignments** — updated reasoning to explain that
+  hardware inputs (MIDI, serial, CW tone, pilot tone) default to RX because
+  they typically carry Morse from another operator.
+- **Serial Input Default Source → RX** — `serialStraightKeySource` and
+  `serialPaddleSource` now default to `'rx'` (was `'tx'`), matching the
+  reasoning that hardware inputs typically receive Morse from another operator,
+  consistent with MIDI input defaults.
+
 ## [0.13.0] - 2026-03-08
 
 ### Added

@@ -26,19 +26,39 @@
 <p>
   Each input type has a <strong>"Used for:"</strong> selector in
   its Settings section. You can set each one independently to either
-  <strong>RX</strong> or <strong>TX</strong>. The Keyboard Keyer and
-  MIDI Input allow separate assignment for straight key and paddle:
+  <strong>RX</strong> or <strong>TX</strong>. The Keyboard Keyer, MIDI Input,
+  and Serial Input allow separate assignment for straight key and paddle:
 </p>
 
 <table>
   <tr><th>Input</th><th>Setting Name</th><th>Default</th></tr>
   <tr>
-    <td>Straight Key via Mic (Pilot Tone)</td>
+    <td>Decode from Audio Channel (CW Tone)</td>
     <td>Used for</td>
     <td><strong>RX</strong></td>
   </tr>
   <tr>
-    <td>Straight Key via Audio Channel (CW Tone)</td>
+    <td>MIDI Input &mdash; Straight Key</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>MIDI Input &mdash; Paddle</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>Serial Input &mdash; Straight Key</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>Serial Input &mdash; Paddle</td>
+    <td>Used for</td>
+    <td><strong>RX</strong></td>
+  </tr>
+  <tr>
+    <td>Straight Key via Mic (Pilot Tone)</td>
     <td>Used for</td>
     <td><strong>RX</strong></td>
   </tr>
@@ -62,16 +82,6 @@
     <td>Used for</td>
     <td><strong>TX</strong></td>
   </tr>
-  <tr>
-    <td>MIDI Input &mdash; Straight Key</td>
-    <td>Used for</td>
-    <td><strong>RX</strong></td>
-  </tr>
-  <tr>
-    <td>MIDI Input &mdash; Paddle</td>
-    <td>Used for</td>
-    <td><strong>RX</strong></td>
-  </tr>
 </table>
 
 <p>
@@ -84,9 +94,12 @@
 <h2 id="s5-3">5.3 &nbsp;Default Assignments and Reasoning</h2>
 
 <p>
-  The defaults are chosen for the most common use case: audio inputs receive
-  Morse from other operators (RX), while manual keyers generate your own
-  Morse (TX).
+  The defaults are chosen for the most common use case: the CW tone detector,
+  MIDI input, serial input and pilot-tone mic input default to
+  <strong>RX</strong> because hardware inputs typically carry Morse from
+  another operator (a radio receiver feeding audio, or a remote station's key
+  connected for demonstration or relay). Keyboard, mouse and touch keyers
+  default to <strong>TX</strong> because they represent your own sending.
 </p>
 
 <p>
@@ -94,9 +107,9 @@
 </p>
 <ul>
   <li><strong>Practice with a physical key:</strong> If you connect a straight
-      key via the pilot tone and want to practise your own sending, set the
-      mic input to <strong>TX</strong> so your keying shows as TX text and
-      calibrates the TX pool.</li>
+      key via MIDI, serial, or the pilot tone and want to practise your own
+      sending, set the input to <strong>TX</strong> so your keying shows as
+      TX text and calibrates the TX pool.</li>
   <li><strong>Remote keyer:</strong> If someone is keying remotely through an
       audio feed, their input is RX even though it comes through what might
       normally be a "local" source.</li>
