@@ -1,16 +1,16 @@
 {
   "name": "morse-code-studio",
-  "version": "0.14.0",
+  "version": "1.0.0",
   "description": "A browser-based Morse code encoder, decoder and keyer built with Angular and the Web Audio API",
   "author": "5B4AON — Mike",
   "repository": {
     "type": "git",
-    "url": "https://github.com/5B4AON/morse-code-studio.git"
+    "url": "https://github.com/5B4AON/mcs.git"
   },
   "bugs": {
-    "url": "https://github.com/5B4AON/morse-code-studio/issues"
+    "url": "https://github.com/5B4AON/mcs/issues"
   },
-  "homepage": "https://github.com/5B4AON/morse-code-studio#readme",
+  "homepage": "https://github.com/5B4AON/mcs#readme",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",

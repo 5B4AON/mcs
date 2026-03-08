@@ -4,7 +4,7 @@ Thank you for your interest in contributing! This guide explains how to get invo
 
 ## Reporting Bugs
 
-1. Search [existing issues](https://github.com/5B4AON/morse-code-studio/issues) to avoid duplicates.
+1. Search [existing issues](https://github.com/5B4AON/mcs/issues) to avoid duplicates.
 2. Open a new issue using the **Bug Report** template.
 3. Include your browser name/version, OS, and steps to reproduce the problem.
 
