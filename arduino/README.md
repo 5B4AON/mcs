@@ -256,5 +256,5 @@ The diagrams above are also available as standalone Mermaid files in [`diagrams/
 ---
 
 ## License
-
-GNU General Public License v3.0 — see [LICENSE](../LICENSE) for details.
+<a href="https://github.com/5B4AON/mcs">Morse Code Studio</a> is marked <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"><img src="https://mirrors.creativecommons.org/presskit/icons/zero.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;">  
+CC0 1.0 Universal — see [LICENSE](../LICENSE) for details.

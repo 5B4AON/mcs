@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [1.0.0] - 2026-03-08
 
-First official public release of Morse Code Studio as an open-source project.
+First official public release of Morse Code Studio as an open-source project under the CC0-1.0 Universal license.
 
 ### Features
 

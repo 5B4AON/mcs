@@ -805,7 +805,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
   know both values can read or write.
 - User Name prefix in fullscreen conversation — when RTDB is active,
   each line is prefixed with the sender's callsign in square brackets
-  (e.g. [5B4AON]) so both local and remote lines are clearly attributed.
+  so both local and remote lines are clearly attributed.
 - Help Chapter 10 (Firebase Realtime Database) with sections covering
   channel concepts, input/output settings, user name display,
   bidirectional setup, and requirements.

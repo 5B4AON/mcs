@@ -18,7 +18,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-  "license": "GPL-3.0",
+  "license": "CC0-1.0",
   "private": true,
   "dependencies": {
     "@angular/animations": "^19.0.0",

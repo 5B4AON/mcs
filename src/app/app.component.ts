@@ -26,8 +26,6 @@ import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.compon
 
 /**
  * Morse Code Studio
- * Copyright (c) 2026 5B4AON — Mike
- * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
  */
 
 /**

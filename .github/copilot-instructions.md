@@ -6,12 +6,10 @@ Browser-based Morse code encoder/decoder/keyer built with **Angular 19** (standa
 ## Code Style
 - **2-space indentation**, single quotes, UTF-8 — see [.editorconfig](.editorconfig)
 - No ESLint or Prettier configured; follow existing patterns
-- Every `.ts` file starts with the copyright header:
+- Every `.ts` file starts with the header:
   ```ts
   /**
    * Morse Code Studio
-   * Copyright (c) 2026 5B4AON — Mike
-   * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
    */
   ```
 - JSDoc on classes and public methods with domain-relevant explanations

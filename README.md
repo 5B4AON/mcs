@@ -1,6 +1,6 @@
 <h1><img src="public/favicon.svg" alt="" width="36" style="vertical-align: middle;">&nbsp; Morse Code Studio</h1>
 
-[![License: GPL-3.0](https://img.shields.io/badge/License-GPL--3.0-blue.svg)](LICENSE)
+[![License: CC0-1.0](https://img.shields.io/badge/License-CC0_1.0-lightgrey.svg)](LICENSE)
 [![Live App](https://img.shields.io/badge/Live_App-morse--code--studio.web.app-green)](https://morse-code-studio.web.app/)
 [![Changelog](https://img.shields.io/badge/Changelog-CHANGELOG.md-orange)](CHANGELOG.md)
 
@@ -85,6 +85,18 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 | Firefox | Partial | No Web Serial or Web MIDI — serial/MIDI unavailable |
 | Safari  | Partial | No Web Serial or Web MIDI — serial/MIDI unavailable |
 
+
+## AI-Generation Notice
+This project includes content that was **fully or partially generated with AI tools** (GitHub Copilot). 
+
+Some files may have been **edited, curated, or integrated by humans**, while others may be largely machine-generated.
+The project includes `.github/copilot-instructions.md` as an aid to others who may use GitHub Copilot on the codebase.
+
+Development followed an **AI-assisted, human-led** methodology where human creativity directed the architecture, system design, and hardware integration, while GitHub Copilot accelerated implementation and troubleshooting.  
+This approach compressed the development lifecycle from months into approximately 100 hours, enabling rapid iteration and extensive cross-device testing without sacrificing robust architecture or maintainability.  
+By shifting focus from boilerplate coding to high-level engineering — such as complex signals processing and loop detection — AI assistance made exploring new concepts faster, testing easier, and continuous refinement almost effortless *(31 iterations in PRE-RELEASE-CHANGELOG)*.
+
+
 ## Development
 
 ```bash
@@ -103,7 +115,21 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 To report a security vulnerability, please see [SECURITY.md](SECURITY.md).
 
 ## License
+To maximize freedom for downstream users, and because portions of AI-generated material may not be eligible for copyright protection in some jurisdictions, we dedicate this project to the **public domain** using **CC0 1.0 Universal**. 
 
-GPL-3.0 — see [LICENSE](LICENSE) for details.
+If any rights do exist, we **waive them** to the fullest extent permitted by law.
 
-© 2026 5B4AON — Mike
+<a href="https://github.com/5B4AON/mcs">Morse Code Studio</a> is marked <a href="https://creativecommons.org/publicdomain/zero/1.0/">CC0 1.0</a><img src="https://mirrors.creativecommons.org/presskit/icons/cc.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;"><img src="https://mirrors.creativecommons.org/presskit/icons/zero.svg" alt="" style="max-width: 1em;max-height:1em;margin-left: .2em;">
+ — see [LICENSE](LICENSE) for details.  
+
+
+### Third‑Party Licenses (Angular & npm Dependencies)
+
+This project uses the Angular framework and various npm packages, many of which are licensed under the **MIT License**, which requires preserving their original copyright and license notices in distributed builds. 
+
+During a production build, Angular extracts all dependency license texts into:
+`dist/3rdpartylicenses.txt`
+
+This is enabled by setting `"extractLicenses": true` in `angular.json`, which is the recommended way to ensure all license obligations are met.
+
+

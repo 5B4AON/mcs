@@ -123,7 +123,7 @@ Open two browser windows/tabs to `http://localhost:4200`.
 3. Toggle it **ON**
 4. Channel Name: `test-channel`
 5. Channel Secret: `my-secret-123`
-6. User Name: `5B4AON` (or your callsign)
+6. User Name: (or your CALLSIGN)
 7. Forward: **TX only** (or Both)
 8. Click **Save Settings**
 
@@ -142,7 +142,7 @@ Open two browser windows/tabs to `http://localhost:4200`.
 1. In **Window A**, type something in the Morse Encoder and send it (e.g. type
    `CQ CQ` and press Enter or use live mode)
 2. In **Window B**, the letters should appear in the decoder conversation,
-   prefixed with `[5B4AON]`
+   prefixed with `[CALLSIGN]`
 3. You can verify data is flowing by checking the Firebase Console →
    Realtime Database → **Data** tab. You should see entries under
    `morse-code-studio/channels/test-channel/my-secret-123`
