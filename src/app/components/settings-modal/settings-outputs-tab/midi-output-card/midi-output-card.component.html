@@ -4,7 +4,6 @@
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">MIDI Output</span>
-      <span class="source-badge" [class.source-rx]="settings.settings().midiOutputForward === 'rx'" [class.source-tx]="settings.settings().midiOutputForward === 'tx'" [class.source-both]="settings.settings().midiOutputForward === 'both'">{{ settings.settings().midiOutputForward === 'rx' ? 'RX' : settings.settings().midiOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
     </div>
     <span class="connectivity-badge" [class.connected]="midiOutput.connected()" [class.disconnected]="!midiOutput.connected()">
       @if (midiOutput.connected()) {
@@ -22,14 +21,6 @@
   </div>
   @if (expanded) {
     <div class="settings-card-body">
-      <label>Forward:
-        <select [value]="settings.settings().midiOutputForward"
-                (change)="onSettingChange('midiOutputForward', $event)">
-          <option value="tx" [selected]="settings.settings().midiOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
-          <option value="rx" [selected]="settings.settings().midiOutputForward === 'rx'">RX only &mdash; received morse</option>
-          <option value="both" [selected]="settings.settings().midiOutputForward === 'both'">Both RX and TX</option>
-        </select>
-      </label>
 
       @if (!midiOutput.supported) {
         <div class="conflict-warning">
@@ -41,27 +32,31 @@
         <div class="conflict-warning">{{ midiOutput.lastError() }}</div>
       }
 
-      <label>MIDI Device:
-        <select [value]="settings.settings().midiOutputDeviceId" (change)="onMidiOutputDeviceChange($event)">
-          <option value="">Any (first available)</option>
-          @for (dev of midiOutput.midiOutputs(); track dev.id) {
-            <option [value]="dev.id" [selected]="dev.id === settings.settings().midiOutputDeviceId">{{ dev.name }}</option>
-          }
-        </select>
-      </label>
+      <div class="midi-mapping-list">
+        @for (mapping of settings.settings().midiOutputMappings; track $index) {
+          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
+            <label class="midi-mapping-enable">
+              <input type="checkbox" [checked]="mapping.enabled"
+                     (change)="onMappingEnabledChange($index, $event)">
+            </label>
+            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+            <span class="midi-mapping-value" (click)="startEdit($index)">{{ mappingSummary(mapping) }}</span>
+            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.forward === 'rx'" [class.source-tx]="mapping.forward === 'tx'" [class.source-both]="mapping.forward === 'both'" (click)="startEdit($index)">{{ mapping.forward === 'rx' ? 'RX' : mapping.forward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+            <span class="midi-mapping-spacer"></span>
+            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+          </div>
+        }
+      </div>
+      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
 
-      <label>MIDI Channel:
-        <select [value]="settings.settings().midiOutputChannel" (change)="onSettingChange('midiOutputChannel', $event)">
-          @for (ch of midiChannels; track ch) {
-            <option [value]="ch" [selected]="ch === settings.settings().midiOutputChannel">Channel {{ ch }}</option>
-          }
-        </select>
-      </label>
-
-      <label>Velocity:
-        <input type="number" min="1" max="127" [value]="settings.settings().midiOutputVelocity"
-               (change)="onSettingChange('midiOutputVelocity', $event)">
-      </label>
+      <div class="cw-hint">
+        Characters from any input are played as morse elements (dits/dahs) at
+        Encoder WPM. <strong>Straight Key</strong> fires on every element.
+        <strong>Paddle</strong> fires dit/dah notes separately. Both
+        straight-key and element-specific notes fire simultaneously.
+      </div>
 
       <label class="checkbox-label">
         <input type="checkbox" [checked]="settings.settings().midiOutputOverrideWpm"
@@ -69,120 +64,9 @@
         Override remote WPM with local encoder WPM
       </label>
       <div class="cw-hint">
-        Characters received via Firebase RTDB carry the WPM speed that was
-        used to generate them. By default, MIDI output plays those characters
-        at the sender's original speed. Enable this option to ignore the
-        remote WPM and use your local Encoder WPM instead.
+        Firebase RTDB characters carry the sender's WPM. Enable to use your
+        local Encoder WPM instead.
       </div>
-
-      <!-- Straight Key Note -->
-      <div class="midi-output-note-row">
-        <span class="midi-output-note-label">Straight Key:</span>
-        @if (!midiOutputRawMode['midiOutputStraightKeyNote']) {
-          <select class="midi-note-select"
-                  [value]="midiOutputNoteNameIndex(settings.settings().midiOutputStraightKeyNote)"
-                  (change)="onMidiOutputNoteNameChange('midiOutputStraightKeyNote', $event)">
-            @for (name of noteNames; track $index) {
-              <option [value]="$index">{{ name }}</option>
-            }
-          </select>
-          <select class="midi-octave-select"
-                  [value]="midiOutputNoteOctave(settings.settings().midiOutputStraightKeyNote)"
-                  (change)="onMidiOutputOctaveChange('midiOutputStraightKeyNote', $event)">
-            @for (oct of octaves; track oct) {
-              <option [value]="oct">{{ oct }}</option>
-            }
-          </select>
-        } @else {
-          <input type="number" class="midi-raw-input" min="0" max="127"
-                 [value]="settings.settings().midiOutputStraightKeyNote"
-                 (change)="onMidiOutputRawNoteChange('midiOutputStraightKeyNote', $event)">
-        }
-        <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputStraightKeyNote')"
-                title="Toggle between note/octave picker and raw MIDI value">
-          {{ midiOutputRawMode['midiOutputStraightKeyNote'] ? '&#9835;' : '#' }}
-        </button>
-        <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputStraightKeyNote) }}</span>
-      </div>
-
-      <!-- Dit Paddle Note -->
-      <div class="midi-output-note-row">
-        <span class="midi-output-note-label">Dit Paddle:</span>
-        @if (!midiOutputRawMode['midiOutputDitNote']) {
-          <select class="midi-note-select"
-                  [value]="midiOutputNoteNameIndex(settings.settings().midiOutputDitNote)"
-                  (change)="onMidiOutputNoteNameChange('midiOutputDitNote', $event)">
-            @for (name of noteNames; track $index) {
-              <option [value]="$index">{{ name }}</option>
-            }
-          </select>
-          <select class="midi-octave-select"
-                  [value]="midiOutputNoteOctave(settings.settings().midiOutputDitNote)"
-                  (change)="onMidiOutputOctaveChange('midiOutputDitNote', $event)">
-            @for (oct of octaves; track oct) {
-              <option [value]="oct">{{ oct }}</option>
-            }
-          </select>
-        } @else {
-          <input type="number" class="midi-raw-input" min="0" max="127"
-                 [value]="settings.settings().midiOutputDitNote"
-                 (change)="onMidiOutputRawNoteChange('midiOutputDitNote', $event)">
-        }
-        <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputDitNote')"
-                title="Toggle between note/octave picker and raw MIDI value">
-          {{ midiOutputRawMode['midiOutputDitNote'] ? '&#9835;' : '#' }}
-        </button>
-        <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputDitNote) }}</span>
-      </div>
-
-      <!-- Dah Paddle Note -->
-      <div class="midi-output-note-row">
-        <span class="midi-output-note-label">Dah Paddle:</span>
-        @if (!midiOutputRawMode['midiOutputDahNote']) {
-          <select class="midi-note-select"
-                  [value]="midiOutputNoteNameIndex(settings.settings().midiOutputDahNote)"
-                  (change)="onMidiOutputNoteNameChange('midiOutputDahNote', $event)">
-            @for (name of noteNames; track $index) {
-              <option [value]="$index">{{ name }}</option>
-            }
-          </select>
-          <select class="midi-octave-select"
-                  [value]="midiOutputNoteOctave(settings.settings().midiOutputDahNote)"
-                  (change)="onMidiOutputOctaveChange('midiOutputDahNote', $event)">
-            @for (oct of octaves; track oct) {
-              <option [value]="oct">{{ oct }}</option>
-            }
-          </select>
-        } @else {
-          <input type="number" class="midi-raw-input" min="0" max="127"
-                 [value]="settings.settings().midiOutputDahNote"
-                 (change)="onMidiOutputRawNoteChange('midiOutputDahNote', $event)">
-        }
-        <button class="midi-mode-toggle" (click)="toggleMidiOutputRawMode('midiOutputDahNote')"
-                title="Toggle between note/octave picker and raw MIDI value">
-          {{ midiOutputRawMode['midiOutputDahNote'] ? '&#9835;' : '#' }}
-        </button>
-        <span class="midi-note-preview">{{ midiOutputNoteDisplay(settings.settings().midiOutputDahNote) }}</span>
-      </div>
-
-      <div class="cw-hint">
-        Decoded characters from any input are played back as individual
-        morse elements (dits and dahs) at Encoder WPM speed. Ideal for an
-        Arduino Pro Micro with MIDIUSB library &mdash; the Arduino's digital
-        pins can be wired to keying circuits.<br><br>
-        <strong>Straight Key</strong> note fires during every element (dit or dah).
-        <strong>Dit Paddle</strong> fires during dits only.
-        <strong>Dah Paddle</strong> fires during dahs only.
-        During each element, both the Straight Key and the element-specific
-        note fire simultaneously.<br><br>
-        Use the <strong>&#9835;</strong> button to switch between note/octave picker
-        and raw 0&ndash;127 value entry. Velocity defaults to 127 (maximum).
-      </div>
-
-      <button [disabled]="!midiOutput.connected()"
-              (click)="midiOutput.test()" class="test-btn">
-        Test Output (1s)
-      </button>
 
       <div class="serial-port-row">
         @if (midiOutput.connected()) {
@@ -194,3 +78,16 @@
     </div>
   }
 </div>
+
+<!-- MIDI output edit modal (hosted here because it's triggered from this card) -->
+@if (showEditModal) {
+  <app-midi-output-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [midiDevices]="midiOutput.midiOutputs()"
+    [allMappings]="settings.settings().midiOutputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-midi-output-edit-modal>
+}

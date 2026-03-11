@@ -83,39 +83,107 @@
   engine as the keyboard and mouse keyers.
 </p>
 
-<h3>Settings</h3>
+<h3>Multiple Mappings</h3>
+<p>
+  MIDI Input supports <strong>multiple independent mappings</strong> in a
+  table-based interface. Each mapping defines its own MIDI device, channel,
+  mode (straight key or paddle), note assignments, decoder source (RX/TX),
+  and reverse-paddles toggle. You can:
+</p>
+<ul>
+  <li><strong>Add</strong> a new mapping with the <strong>+&nbsp;Add</strong>
+      button.</li>
+  <li><strong>Edit</strong> any mapping via the pencil button to open the
+      edit modal.</li>
+  <li><strong>Duplicate</strong> an existing mapping as a starting point for
+      a new one.</li>
+  <li><strong>Remove</strong> a mapping with the delete button.</li>
+  <li><strong>Enable / disable</strong> individual mappings with the
+      checkbox.</li>
+</ul>
+<p>
+  This allows you to connect several MIDI devices simultaneously &mdash;
+  for example, one operator on a MIDI paddle and another on a MIDI foot
+  switch &mdash; each with independent settings and decoder source
+  routing.
+</p>
+
+<h3>Name &amp; Colour (Multi-User Conversations)</h3>
+<p>
+  Each mapping has optional <strong>Name</strong> and
+  <strong>Colour</strong> fields. When a name is set (e.g. a callsign
+  or operator name):
+</p>
+<ul>
+  <li>Decoded text from that mapping appears on a <strong>new line</strong>
+      in the fullscreen conversation views, prefixed with
+      <strong>[Name]</strong> &mdash; the same format used by Firebase RTDB
+      user names.</li>
+  <li>If a colour is set, the text is rendered in that colour instead of the
+      default RX or TX colour.</li>
+  <li>If no colour is set, the mapping uses the default RX colour (light
+      blue) or TX colour (light orange) based on the source assignment.</li>
+</ul>
+<p>
+  This feature enables <strong>multi-user conversation views</strong>: connect
+  two or more MIDI keys or paddles (e.g. two Arduino Pro Micros), assign each
+  mapping a different name and colour, and the fullscreen decoder view
+  displays each operator&rsquo;s text on separate colour-coded lines &mdash;
+  ideal for live demonstrations, training sessions, or two-person practice
+  where both operators&rsquo; morse is decoded and displayed simultaneously
+  on a single screen.
+</p>
+
+<h3>Settings (per mapping)</h3>
 <ul>
   <li><strong>MIDI Device</strong> &mdash; Select a specific MIDI input, or
       leave on &ldquo;Any&rdquo; to accept messages from the first available
       device.</li>
   <li><strong>MIDI Channel</strong> &mdash; Filter by MIDI channel (1&ndash;16),
       or &ldquo;Omni&rdquo; to accept all channels.</li>
-  <li><strong>Straight Key</strong> &mdash; Click the capture button and press
-      a key/pad on your MIDI controller. That note will act as a straight
-      key (press = key down, release = key up).</li>
-  <li><strong>Dit Paddle</strong> &mdash; Capture a MIDI note for the dit
-      paddle. Used with iambic keyer modes.</li>
-  <li><strong>Dah Paddle</strong> &mdash; Capture a MIDI note for the dah
-      paddle.</li>
+  <li><strong>Mode</strong> &mdash; Straight key or Paddle.</li>
+  <li><strong>Note</strong> &mdash; The MIDI note for straight key or dit
+      paddle. Use the capture button or note/octave picker.</li>
+  <li><strong>Dah Note</strong> &mdash; (Paddle mode only) The MIDI note for
+      the dah paddle.</li>
   <li><strong>Reverse Paddles</strong> &mdash; Swap dit and dah paddle
       assignments.</li>
-  <li><strong>Paddle Mode</strong> &mdash; Iambic A, Iambic B, Ultimatic,
-      or Single Lever (shared with keyboard and mouse keyers).</li>
   <li><strong>Used for</strong> &mdash; Decoder source (RX or TX). See
       <em>Chapter 5: Decoder Source Routing</em>.</li>
+  <li><strong>Name</strong> &mdash; Optional display name (e.g. callsign).
+      Triggers line breaks in fullscreen conversation views.</li>
+  <li><strong>Colour</strong> &mdash; Optional text colour for fullscreen
+      views. Overrides the default RX/TX colour.</li>
 </ul>
 
 <div class="example-box">
   <div class="example-title">Assigning MIDI notes</div>
   <p>
     1. Enable MIDI Input and expand the settings card.<br>
-    2. Click the &ldquo;Straight Key&rdquo; capture button &mdash; it shows
-    &ldquo;Press a MIDI key&hellip;&rdquo;.<br>
-    3. Press the desired key or pedal on your MIDI controller.<br>
-    4. The button updates to show the captured note name (e.g.
-    &ldquo;C4 (60)&rdquo;).<br>
-    5. Repeat for Dit and Dah paddles if using paddle mode.<br>
-    6. Click the &times; button next to any assignment to clear it.
+    2. Click the pencil (edit) button on a mapping row to open the
+    edit modal.<br>
+    3. Select your MIDI device and channel. Choose straight key or
+    paddle mode.<br>
+    4. Use the note/octave picker or click the capture button and press
+    the desired key or pedal on your MIDI controller. The button updates
+    to show the captured note (e.g. &ldquo;C4 (60)&rdquo;).<br>
+    5. Repeat for the dah paddle note if using paddle mode.<br>
+    6. Click <strong>Save</strong> to apply the mapping.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Multi-user demonstration setup</div>
+  <p>
+    Connect two Arduino Pro Micros, each with a paddle attached. Add two
+    MIDI input mappings &mdash; one per Arduino. Set each mapping to a
+    different MIDI device, assign a <strong>Name</strong> (e.g. the
+    operator&rsquo;s callsign) and a <strong>Colour</strong> (e.g. cyan
+    for one, orange for the other). Open the fullscreen decoder view.
+    Both operators can key simultaneously, and each operator&rsquo;s
+    decoded text appears on separate colour-coded lines with their name
+    prefix &mdash; perfect for live events, training, or CW practice
+    with a partner.
   </p>
 </div>
 
@@ -221,13 +289,13 @@
   <p>
     The project includes ready-made Arduino sketches (in the
     <code>arduino/</code> folder of the source repository) that turn a
-    Pro Micro into a USB MIDI device with straight key and paddle inputs
-    on pins 2, 3 and 4. Two board variants are provided: <strong>ATmega32U4</strong>
-    (classic Pro Micro, using the MIDIUSB library) and <strong>nRF52840</strong>
-    (Supermini / nice!nano, using Adafruit TinyUSB). Flash the sketch,
-    connect your key or paddles, and the Arduino appears as a standard
-    MIDI device &mdash; no drivers needed. Wiring diagrams and setup
-    instructions are included.
+    Pro Micro into a USB MIDI device with up to 16 configurable pins for
+    inputs and outputs. Two board variants are provided:
+    <strong>ATmega32U4</strong> (classic Pro Micro, using the MIDIUSB
+    library) and <strong>nRF52840</strong> (Supermini / nice!nano, using
+    Adafruit TinyUSB). Flash the sketch, connect your key or paddles,
+    and the Arduino appears as a standard MIDI device &mdash; no drivers
+    needed. Wiring diagrams and setup instructions are included.
   </p>
 </div>
 

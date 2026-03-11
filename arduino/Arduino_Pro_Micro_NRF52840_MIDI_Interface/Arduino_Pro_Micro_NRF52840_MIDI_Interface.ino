@@ -1,5 +1,6 @@
 /**
  * Arduino Pro Micro (nRF52840) MIDI Interface for Morse Code Studio
+ * Version 1.1.0
  *
  * ============================================================
  * OVERVIEW

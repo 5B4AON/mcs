@@ -4,20 +4,22 @@
 
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, AppSettings } from '../../../../services/settings.service';
+import { SettingsService, AppSettings, MidiOutputMapping } from '../../../../services/settings.service';
 import { MidiOutputService, midiOutputNoteName } from '../../../../services/midi-output.service';
+import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../../midi-output-edit-modal/midi-output-edit-modal.component';
 
 /**
  * Settings card — MIDI Output (key events as MIDI note-on/off).
  *
- * Sends decoded morse elements as MIDI notes to an external device (e.g.
- * Arduino Pro Micro). Includes device/channel selection, velocity,
- * note assignment with picker/raw toggle, and WPM override option.
+ * Displays a table of MIDI output mappings (straight key / paddle),
+ * with add/edit/delete support via the MIDI output edit modal.
+ * Each mapping has its own device, channel, mode, and note assignments.
+ * Global settings (forward mode, override WPM) are at the card level.
  */
 @Component({
   selector: 'app-midi-output-card',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, MidiOutputEditModalComponent],
   templateUrl: './midi-output-card.component.html',
   styles: [':host { display: contents; }'],
 })
@@ -25,29 +27,22 @@ export class MidiOutputCardComponent {
   /** Whether this card's body is expanded */
   expanded = false;
 
-  /** MIDI channel numbers 1–16 for the channel select dropdown */
-  readonly midiChannels = Array.from({ length: 16 }, (_, i) => i + 1);
-  /** Note names for the MIDI output note picker dropdowns */
-  readonly noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  /** Octave range for MIDI output picker (-1 to 9) */
-  readonly octaves = [-1, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  /** Whether to show the raw 0–127 input for each MIDI output note (vs note/octave picker) */
-  midiOutputRawMode: Record<string, boolean> = {};
+  /** Index of the mapping currently being edited, or -1 for new */
+  editIndex = -1;
+
+  /** Scratch copy of the mapping passed to the edit modal */
+  editMapping: MidiOutputMapping = {
+    enabled: true, deviceId: '', channel: 1,
+    forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1,
+  };
+
+  /** Whether the edit modal is visible */
+  showEditModal = false;
 
   constructor(
     public settings: SettingsService,
     public midiOutput: MidiOutputService,
   ) {}
-
-  /** Handle a string or numeric setting change */
-  onSettingChange(key: keyof AppSettings, event: Event): void {
-    const el = event.target as HTMLInputElement;
-    let value: string | number = el.value;
-    if (el.type === 'number' || el.type === 'range') {
-      value = parseFloat(el.value);
-    }
-    this.settings.update({ [key]: value } as Partial<AppSettings>);
-  }
 
   /** Handle a boolean setting change from a checkbox */
   onBoolChange(key: keyof AppSettings, event: Event): void {
@@ -70,61 +65,105 @@ export class MidiOutputCardComponent {
     }
   }
 
-  /** Handle MIDI output device selection change */
-  onMidiOutputDeviceChange(event: Event): void {
-    const value = (event.target as HTMLSelectElement).value;
-    this.settings.update({ midiOutputDeviceId: value });
+  /** Toggle an individual mapping on/off */
+  onMappingEnabledChange(index: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const mappings = this.settings.settings().midiOutputMappings.map((m, i) =>
+      i === index ? { ...m, enabled: checked } : m
+    );
+    this.settings.update({ midiOutputMappings: mappings });
     this.midiOutput.reattach();
   }
 
-  /** Display a MIDI output note number as a human-readable name (e.g. "C4 (60)") */
-  midiOutputNoteDisplay(note: number): string {
-    if (note < 0) return '(none)';
-    return `${midiOutputNoteName(note)} (${note})`;
+  /** Open the edit modal for an existing mapping */
+  startEdit(index: number): void {
+    const m = this.settings.settings().midiOutputMappings[index];
+    this.editIndex = index;
+    this.editMapping = { ...m };
+    this.showEditModal = true;
+    this.ensureDevicesEnumerated();
   }
 
-  /** Get note name index (0–11) from a MIDI note number */
-  midiOutputNoteNameIndex(note: number): number {
-    return note >= 0 ? note % 12 : 0;
+  /** Open the edit modal for a new mapping */
+  addMapping(): void {
+    this.editIndex = -1;
+    this.editMapping = {
+      enabled: true, deviceId: '', channel: 1,
+      forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1,
+    };
+    this.showEditModal = true;
+    this.ensureDevicesEnumerated();
   }
 
-  /** Get octave from a MIDI note number */
-  midiOutputNoteOctave(note: number): number {
-    return note >= 0 ? Math.floor(note / 12) - 1 : 4;
-  }
-
-  /** Update a MIDI output note from the note name picker dropdown */
-  onMidiOutputNoteNameChange(settingKey: string, event: Event): void {
-    const nameIdx = parseInt((event.target as HTMLSelectElement).value, 10);
-    const current = (this.settings.settings() as any)[settingKey] as number;
-    const octave = current >= 0 ? Math.floor(current / 12) - 1 : 4;
-    const note = (octave + 1) * 12 + nameIdx;
-    if (note >= 0 && note <= 127) {
-      this.settings.update({ [settingKey]: note } as Partial<AppSettings>);
+  /** Handle save from the edit modal */
+  onEditSaved(event: MidiOutputEditSaveEvent): void {
+    const mappings = [...this.settings.settings().midiOutputMappings];
+    if (this.editIndex >= 0) {
+      mappings[this.editIndex] = {
+        ...mappings[this.editIndex],
+        deviceId: event.deviceId,
+        channel: event.channel,
+        forward: event.forward,
+        mode: event.mode,
+        value: event.value,
+        dahValue: event.dahValue,
+      };
+    } else {
+      mappings.push({
+        enabled: true,
+        deviceId: event.deviceId,
+        channel: event.channel,
+        forward: event.forward,
+        mode: event.mode,
+        value: event.value,
+        dahValue: event.dahValue,
+      });
     }
+    this.settings.update({ midiOutputMappings: mappings });
+    this.showEditModal = false;
+    this.midiOutput.reattach();
   }
 
-  /** Update a MIDI output note from the octave picker dropdown */
-  onMidiOutputOctaveChange(settingKey: string, event: Event): void {
-    const octave = parseInt((event.target as HTMLSelectElement).value, 10);
-    const current = (this.settings.settings() as any)[settingKey] as number;
-    const nameIdx = current >= 0 ? current % 12 : 0;
-    const note = (octave + 1) * 12 + nameIdx;
-    if (note >= 0 && note <= 127) {
-      this.settings.update({ [settingKey]: note } as Partial<AppSettings>);
+  /** Handle cancel from the edit modal */
+  onEditCancelled(): void {
+    this.showEditModal = false;
+  }
+
+  /** Handle delete from the edit modal */
+  onEditDeleted(): void {
+    if (this.editIndex >= 0) {
+      const mappings = this.settings.settings().midiOutputMappings.filter((_, i) => i !== this.editIndex);
+      this.settings.update({ midiOutputMappings: mappings });
+      this.midiOutput.reattach();
     }
+    this.showEditModal = false;
   }
 
-  /** Update a MIDI output note from raw 0–127 numeric input */
-  onMidiOutputRawNoteChange(settingKey: string, event: Event): void {
-    const value = parseInt((event.target as HTMLInputElement).value, 10);
-    if (!isNaN(value) && value >= 0 && value <= 127) {
-      this.settings.update({ [settingKey]: value } as Partial<AppSettings>);
+  /** Display a MIDI note as human-readable name */
+  noteDisplay(note: number): string {
+    if (note < 0) return '—';
+    return `${midiOutputNoteName(note)}(${note})`;
+  }
+
+  /** Get a short summary for a mapping row */
+  mappingSummary(m: MidiOutputMapping): string {
+    if (m.mode === 'straightKey') {
+      return `${m.channel}/${this.noteDisplay(m.value)}`;
     }
+    return `${m.channel}/${this.noteDisplay(m.value)}/${this.noteDisplay(m.dahValue)}`;
   }
 
-  /** Toggle between note/octave picker and raw MIDI value entry */
-  toggleMidiOutputRawMode(key: string): void {
-    this.midiOutputRawMode[key] = !this.midiOutputRawMode[key];
+  /** Get a device display name for a mapping */
+  deviceDisplay(m: MidiOutputMapping): string {
+    if (!m.deviceId) return 'Any';
+    const dev = this.midiOutput.midiOutputs().find(d => d.id === m.deviceId);
+    return dev ? dev.name : 'Disconnected';
+  }
+
+  /** Ensure MIDI devices are enumerated for the edit modal dropdown */
+  private ensureDevicesEnumerated(): void {
+    if (this.midiOutput.midiOutputs().length === 0) {
+      this.midiOutput.enumerateDevices();
+    }
   }
 }

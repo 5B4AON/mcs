@@ -33,7 +33,7 @@ interface RtdbLetterEntry {
   /** The morse character (single letter/digit/punctuation) */
   char: string;
   /** User name (callsign) of the sender */
-  userName: string;
+  name: string;
   /** Server timestamp (ms since epoch) */
   ts: object | number;
   /** WPM speed used to generate this character (2-digit number) */
@@ -81,7 +81,7 @@ export class FirebaseRtdbService implements OnDestroy {
   readonly connectionWarning = signal<string | null>(null);
 
   /** Emits received characters from the subscribed input channel */
-  readonly incomingChar$ = new Subject<{ char: string; source: 'rx' | 'tx'; userName: string; wpm: number }>();
+  readonly incomingChar$ = new Subject<{ char: string; source: 'rx' | 'tx'; name: string; wpm: number }>();
 
   /** Whether we are actively listening to an input channel */
   readonly inputListening = signal(false);
@@ -341,10 +341,10 @@ export class FirebaseRtdbService implements OnDestroy {
           }
         }
 
-        // Skip our own echoes: if the incoming userName matches our output
-        // userName, this is a character we wrote — don't feed it back.
-        const ourName = this.settings.settings().rtdbOutputUserName.trim();
-        if (ourName && data.userName === ourName) return;
+        // Skip our own echoes: if the incoming name matches our output
+        // name, this is a character we wrote — don't feed it back.
+        const ourName = this.settings.settings().rtdbOutputName.trim();
+        if (ourName && data.name === ourName) return;
 
         this.lastInputChar = data.char;
         this.lastInputTs = ts;
@@ -354,7 +354,7 @@ export class FirebaseRtdbService implements OnDestroy {
         const wpm = (typeof data.wpm === 'number' && data.wpm >= 5 && data.wpm <= 60)
           ? data.wpm
           : this.settings.settings().encoderWpm;
-        this.incomingChar$.next({ char: data.char, source, userName: data.userName || '', wpm });
+        this.incomingChar$.next({ char: data.char, source, name: data.name || '', wpm });
       });
     }, (err) => {
       this.zone.run(() => {
@@ -540,7 +540,7 @@ export class FirebaseRtdbService implements OnDestroy {
 
     const channelName = s.rtdbOutputChannelName.trim();
     const channelSecret = s.rtdbOutputChannelSecret.trim();
-    const userName = s.rtdbOutputUserName.trim();
+    const name = s.rtdbOutputName.trim();
 
     if (!channelName || !channelSecret) return;
 
@@ -550,7 +550,7 @@ export class FirebaseRtdbService implements OnDestroy {
     try {
       await set(entryRef, {
         char,
-        userName: userName || 'Anonymous',
+        name: name || 'Anonymous',
         ts: serverTimestamp(),
         wpm: wpm ?? s.encoderWpm,
       });

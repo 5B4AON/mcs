@@ -12,7 +12,8 @@ import { PUNCTUATION_TO_PROSIGN } from '../morse-table';
 export interface DisplayEntry {
   type: 'rx' | 'tx';
   char: string;
-  userName?: string;
+  name?: string;
+  color?: string;
 }
 
 /**
@@ -21,7 +22,8 @@ export interface DisplayEntry {
 export interface DisplayLine {
   type: 'rx' | 'tx';
   text: string;
-  userName?: string;
+  name?: string;
+  color?: string;
 }
 
 /**
@@ -60,9 +62,9 @@ export class DisplayBuffer {
   }
 
   /** Append one or more characters. */
-  push(type: 'rx' | 'tx', text: string, userName?: string): void {
+  push(type: 'rx' | 'tx', text: string, name?: string, color?: string): void {
     for (const char of text) {
-      this.entries.push({ type, char, userName });
+      this.entries.push({ type, char, name, color });
     }
     this.trim();
     this.rebuild();
@@ -89,24 +91,24 @@ export class DisplayBuffer {
    *  - clearLine:      removes entries back to the last newline (or start)
    *  - clearScreen:    clears all entries
    */
-  applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', userName?: string, prosignLabel?: string): void {
+  applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', name?: string, prosignLabel?: string, color?: string): void {
     switch (action) {
       case 'newLine':
         if (prosignLabel) {
           for (const ch of prosignLabel) {
-            this.entries.push({ type, char: ch, userName });
+            this.entries.push({ type, char: ch, name, color });
           }
         }
-        this.entries.push({ type, char: '\n', userName });
+        this.entries.push({ type, char: '\n', name, color });
         break;
       case 'newParagraph':
         if (prosignLabel) {
           for (const ch of prosignLabel) {
-            this.entries.push({ type, char: ch, userName });
+            this.entries.push({ type, char: ch, name, color });
           }
         }
-        this.entries.push({ type, char: '\n', userName });
-        this.entries.push({ type, char: '\n', userName });
+        this.entries.push({ type, char: '\n', name, color });
+        this.entries.push({ type, char: '\n', name, color });
         break;
       case 'clearLastWord': {
         // Remove entries back to the most recent space or newline (including trailing space)
@@ -158,20 +160,23 @@ export class DisplayBuffer {
     const lines: DisplayLine[] = [];
     let flat = '';
     let lastType: 'rx' | 'tx' | null = null;
+    let lastName: string | undefined = undefined;
 
     for (const entry of this.entries) {
-      // Insert newline when source type changes (conversation-style)
-      if (this.conversationNewlines && lastType !== null && entry.type !== lastType
+      // Insert newline when source type or name changes (conversation-style)
+      if (this.conversationNewlines && lastType !== null
+          && (entry.type !== lastType || entry.name !== lastName)
           && entry.char !== '\n' && !flat.endsWith('\n')) {
         flat += '\n';
       }
       lastType = entry.type;
+      lastName = entry.name;
       flat += entry.char;
       const last = lines.length > 0 ? lines[lines.length - 1] : null;
-      if (last && last.type === entry.type && last.userName === entry.userName) {
+      if (last && last.type === entry.type && last.name === entry.name && last.color === entry.color) {
         last.text += entry.char;
       } else {
-        lines.push({ type: entry.type, text: entry.char, userName: entry.userName });
+        lines.push({ type: entry.type, text: entry.char, name: entry.name, color: entry.color });
       }
     }
 
@@ -214,7 +219,7 @@ export class DisplayBufferService {
    * If the character is a prosign with an enabled action, the action
    * is applied to all buffers instead of the raw text.
    */
-  pushDecoded(type: 'rx' | 'tx', char: string, userName?: string): void {
+  pushDecoded(type: 'rx' | 'tx', char: string, name?: string, color?: string): void {
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
@@ -225,15 +230,15 @@ export class DisplayBufferService {
     const resolved = this.resolveProsignAction(char);
     if (resolved) {
       const label = resolved.prosignKey;
-      this.mainOutput.applyProsignAction(resolved.action, type, userName, label);
-      this.fullscreenDecoder.applyProsignAction(resolved.action, type, userName, label);
-      this.fullscreenEncoder.applyProsignAction(resolved.action, type, userName, label);
+      this.mainOutput.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenDecoder.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenEncoder.applyProsignAction(resolved.action, type, name, label, color);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainOutput.push(type, char, userName);
-      this.fullscreenDecoder.push(type, char, userName);
-      this.fullscreenEncoder.push(type, char, userName);
+      this.mainOutput.push(type, char, name, color);
+      this.fullscreenDecoder.push(type, char, name, color);
+      this.fullscreenEncoder.push(type, char, name, color);
     }
   }
 
@@ -243,7 +248,7 @@ export class DisplayBufferService {
    * If the character is a prosign with an enabled action, the action
    * is applied to all buffers instead of the raw text.
    */
-  pushSent(char: string, userName?: string): void {
+  pushSent(char: string, name?: string): void {
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
@@ -254,15 +259,15 @@ export class DisplayBufferService {
     const resolved = this.resolveProsignAction(char);
     if (resolved) {
       const label = resolved.prosignKey;
-      this.mainOutput.applyProsignAction(resolved.action, 'tx', userName, label);
-      this.fullscreenDecoder.applyProsignAction(resolved.action, 'tx', userName, label);
-      this.fullscreenEncoder.applyProsignAction(resolved.action, 'tx', userName, label);
+      this.mainOutput.applyProsignAction(resolved.action, 'tx', name, label);
+      this.fullscreenDecoder.applyProsignAction(resolved.action, 'tx', name, label);
+      this.fullscreenEncoder.applyProsignAction(resolved.action, 'tx', name, label);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainOutput.push('tx', char, userName);
-      this.fullscreenDecoder.push('tx', char, userName);
-      this.fullscreenEncoder.push('tx', char, userName);
+      this.mainOutput.push('tx', char, name);
+      this.fullscreenDecoder.push('tx', char, name);
+      this.fullscreenEncoder.push('tx', char, name);
     }
   }
 

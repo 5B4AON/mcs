@@ -357,6 +357,47 @@
   the output produces properly timed morse elements.
 </p>
 
+<h3>Multiple Mappings</h3>
+<p>
+  MIDI Output supports <strong>multiple independent mappings</strong> in a
+  table-based interface (the same pattern as MIDI Input &sect;6.2). Each
+  mapping defines its own MIDI device, channel, mode (straight key or
+  paddle), note assignments, and <strong>forward selector</strong>. You can:
+</p>
+<ul>
+  <li><strong>Add</strong> a new mapping with the <strong>+&nbsp;Add</strong>
+      button.</li>
+  <li><strong>Edit</strong> any mapping via the pencil button to open the
+      edit modal.</li>
+  <li><strong>Duplicate</strong> an existing mapping as a starting point.</li>
+  <li><strong>Remove</strong> a mapping with the delete button.</li>
+  <li><strong>Enable / disable</strong> individual mappings with the
+      checkbox.</li>
+</ul>
+<p>
+  This allows you to drive multiple MIDI devices (or multiple channels on
+  the same device) simultaneously &mdash; for example, one mapping keying a
+  transmitter via an Arduino optocoupler on channel 1, while another mapping
+  drives an LED indicator on channel 2.
+</p>
+
+<h3>Per-Mapping Forward Selector</h3>
+<p>
+  Each mapping has its own <strong>Forward</strong> setting that controls
+  which signal sources drive it:
+</p>
+<ul>
+  <li><strong>TX only</strong> (default) &mdash; Fires only for transmitted
+      morse (encoder, keyer inputs tagged as TX).</li>
+  <li><strong>RX only</strong> &mdash; Fires only for received morse
+      (decoded audio inputs, Firebase RTDB).</li>
+  <li><strong>Both</strong> &mdash; Fires for all morse activity.</li>
+</ul>
+<p>
+  This per-mapping control lets you route RX and TX to different MIDI
+  devices or channels independently.
+</p>
+
 <h3>All Input Sources Supported</h3>
 <p>
   MIDI output works with <strong>every input type</strong>:
@@ -397,27 +438,31 @@
   MIDIUSB) and the nRF52840 variant (Supermini / nice!nano, using
   Adafruit TinyUSB) are included in the <code>arduino/</code> folder of
   the source repository, along with wiring diagrams and setup instructions.
+  The v1.1.0 sketches support <strong>16 configurable pins</strong>
+  (10 inputs, 6 outputs by default) across two MIDI channels.
 </p>
 
-<h3>Three Output Notes</h3>
+<h3>Output Modes</h3>
 <p>
-  Each decoded character is broken into its morse elements (dits and dahs).
-  During each element, one or more MIDI notes are held:
+  Each mapping is configured as either <strong>Straight Key</strong> or
+  <strong>Paddle</strong> mode:
 </p>
 <ul>
-  <li><strong>Straight Key</strong> &mdash; Note-on during <em>every</em>
-      element (dit or dah), note-off during the gap between elements.
-      Provides a single "key down / key up" signal for simple keying
-      circuits.</li>
-  <li><strong>Dit Paddle</strong> &mdash; Note-on during dit elements only.
-      Allows the Arduino to distinguish dit from dah.</li>
-  <li><strong>Dah Paddle</strong> &mdash; Note-on during dah elements only.</li>
+  <li><strong>Straight Key</strong> &mdash; A single MIDI note fires during
+      <em>every</em> element (dit or dah) and releases during the gap
+      between elements. Provides a simple &ldquo;key down / key up&rdquo;
+      signal for keying circuits.</li>
+  <li><strong>Paddle</strong> &mdash; Two MIDI notes: one for dit elements,
+      one for dah elements. The dit note fires during dit elements, the dah
+      note fires during dah elements. This allows the Arduino to distinguish
+      dit from dah for advanced control (e.g. driving separate paddle
+      jacks).</li>
 </ul>
 <p>
-  During a dit element, both the Straight Key and Dit Paddle notes fire
-  simultaneously. During a dah element, the Straight Key and Dah Paddle
-  notes fire together. The Arduino can use just the straight key note for
-  simple keying, or the individual paddle notes for more advanced control.
+  Both modes can coexist &mdash; you can have a straight-key mapping and
+  a paddle mapping enabled simultaneously. During a dit element, the
+  straight-key note and the dit paddle note fire together. During a dah
+  element, the straight-key note and the dah paddle note fire together.
 </p>
 
 <h3>Independent Lifecycle</h3>
@@ -430,27 +475,26 @@
   output reconnects automatically on page load.
 </p>
 
-<h3>Settings</h3>
+<h3>Settings (per mapping)</h3>
 <ul>
-  <li><strong>Forward</strong> &mdash; Which signal sources drive the MIDI
-      output: TX only, RX only, or Both.</li>
   <li><strong>MIDI Device</strong> &mdash; Select the target MIDI output
       device. &ldquo;Any (first available)&rdquo; uses the first connected
       output.</li>
   <li><strong>MIDI Channel</strong> &mdash; Output channel (1&ndash;16).</li>
-  <li><strong>Velocity</strong> &mdash; Note-on velocity (1&ndash;127).
-      Default is 127 (maximum intensity).</li>
+  <li><strong>Forward</strong> &mdash; Which signal sources drive this
+      mapping: TX only, RX only, or Both.</li>
+  <li><strong>Mode</strong> &mdash; Straight key or Paddle.</li>
+  <li><strong>Note</strong> &mdash; The MIDI note for straight key or dit
+      paddle. Use the note/octave picker or raw 0&ndash;127 entry.</li>
+  <li><strong>Dah Note</strong> &mdash; (Paddle mode only) The MIDI note for
+      the dah paddle.</li>
   <li><strong>Override remote WPM with local encoder WPM</strong> &mdash;
       Characters received via Firebase RTDB carry the sender&rsquo;s original
       WPM speed. By default MIDI output uses that remote speed so the
       playback matches the sender&rsquo;s timing. Enable this option to
       ignore the remote WPM and use your local Encoder WPM instead.</li>
-  <li><strong>Note assignments</strong> &mdash; Each output (Straight Key,
-      Dit Paddle, Dah Paddle) has a configurable MIDI note. Use the
-      note/octave picker or click <strong>#</strong> to switch to raw
-      0&ndash;127 value entry.</li>
-  <li><strong>Test Output</strong> &mdash; Sends a 1-second note-on/off on
-      the Straight Key note to verify the connection.</li>
+  <li><strong>Test</strong> &mdash; Sends a 1-second note-on/off on
+      the mapping&rsquo;s note to verify the connection.</li>
 </ul>
 
 <h3>Browser Requirements</h3>
@@ -498,16 +542,18 @@
 <div class="example-box">
   <div class="example-title">Example — Arduino Pro Micro MIDI keyer</div>
   <p>
-    Flash an Arduino Pro Micro with a MIDIUSB sketch that reads incoming
-    MIDI notes and drives pins 2, 3, and 4 (straight key, dit, dah).
-    In Outputs &rarr; MIDI Output, select the Arduino MIDI device, set
-    Channel 1, and assign notes F&sharp;4 (66), G&sharp;4 (68), A&sharp;4 (70) to the three
-    outputs. Enable MIDI Output. When you send text via the Encoder or
-    key with any input, the decoded characters are played back as properly
-    timed morse elements on the Arduino&rsquo;s output pins.
+    Flash an Arduino Pro Micro with the v1.1.0 MIDIUSB sketch. The sketch
+    drives output pins 11&ndash;16 based on incoming MIDI notes. In
+    Outputs &rarr; MIDI Output, the default mappings already match the
+    Arduino&rsquo;s default output notes: straight key on G&sharp;5 (80)
+    and paddle on A&sharp;5/C6 (82/84), all on channel 1. Select the
+    Arduino MIDI device in each mapping and enable MIDI Output. When you
+    send text via the Encoder or key with any input, the decoded
+    characters are played back as properly timed morse elements on the
+    Arduino&rsquo;s output pins.
   </p>
   <p>
-    <strong>Note:</strong> The output notes (66/68/70) deliberately differ
+    <strong>Note:</strong> The output notes (80/82/84) deliberately differ
     from the input notes (60/62/64) used for MIDI Input (&sect;6.2).
     This prevents a feedback loop when both MIDI Input and MIDI Output
     are enabled on the same device simultaneously.
@@ -521,7 +567,7 @@
     Arduino. The Arduino reads physical paddle switches and sends MIDI
     notes to the app (input on notes 60/62/64), while the app decodes
     those key events into characters and plays them back on different
-    MIDI output notes (66/68/70) to drive an LED, buzzer, or relay.
+    MIDI output notes (80/82/84) to drive an LED, buzzer, or relay.
     Using separate note numbers for input and output prevents feedback
     loops. This creates a complete hardware interface with no serial port
     drivers or custom protocols needed.

@@ -4,9 +4,8 @@
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">MIDI Input</span>
-      <span class="source-badge" [class.source-rx]="settings.settings().midiStraightKeySource === 'rx'" [class.source-tx]="settings.settings().midiStraightKeySource === 'tx'">{{ settings.settings().midiStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
-      @if (settings.settings().midiPaddleSource !== settings.settings().midiStraightKeySource) {
-        <span class="source-badge" [class.source-rx]="settings.settings().midiPaddleSource === 'rx'" [class.source-tx]="settings.settings().midiPaddleSource === 'tx'">{{ settings.settings().midiPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+      @for (src of sourceBadges(); track src) {
+        <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
       }
     </div>
     <span class="connectivity-badge" [class.connected]="midiInput.connected()" [class.disconnected]="!midiInput.connected()">
@@ -35,92 +34,35 @@
         <div class="conflict-warning">{{ midiInput.lastError() }}</div>
       }
 
-      <label>MIDI Device:
-        <select [value]="settings.settings().midiInputDeviceId" (change)="onMidiDeviceChange($event)">
-          <option value="">Any (first available)</option>
-          @for (dev of midiInput.midiInputs(); track dev.id) {
-            <option [value]="dev.id" [selected]="dev.id === settings.settings().midiInputDeviceId">{{ dev.name }}</option>
-          }
-        </select>
-      </label>
-
-      <label>MIDI Channel:
-        <select [value]="settings.settings().midiInputChannel" (change)="onSettingChange('midiInputChannel', $event)">
-          <option [value]="0">Omni (all channels)</option>
-          @for (ch of midiChannels; track ch) {
-            <option [value]="ch" [selected]="ch === settings.settings().midiInputChannel">Channel {{ ch }}</option>
-          }
-        </select>
-      </label>
-
-      <div class="card-section-divider">Straight Key</div>
-
-      <label>Used for:
-        <select [value]="settings.settings().midiStraightKeySource" (change)="onSettingChange('midiStraightKeySource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Straight Key:
-        <button class="key-capture"
-                (click)="onMidiCapture('midiStraightKeyNote')">
-          {{ midiCapturing === 'midiStraightKeyNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiStraightKeyNote) }}
-        </button>
-        @if (settings.settings().midiStraightKeyNote >= 0) {
-          <button class="key-capture-clear" (click)="clearMidiNote('midiStraightKeyNote')" title="Clear">&times;</button>
+      <div class="midi-mapping-list">
+        @for (mapping of settings.settings().midiInputMappings; track $index) {
+          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
+            <label class="midi-mapping-enable">
+              <input type="checkbox" [checked]="mapping.enabled"
+                     (change)="onMappingEnabledChange($index, $event)">
+            </label>
+            @if (mapping.name) {
+              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
+            }
+            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+            <span class="midi-mapping-value" (click)="startEdit($index)">{{ mappingSummary(mapping) }}</span>
+            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'" (click)="startEdit($index)">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+            @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+              <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Paddles reversed">↔</span>
+            }
+            <span class="midi-mapping-spacer"></span>
+            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+          </div>
         }
-      </label>
-
-      <div class="card-section-divider">Paddle</div>
-
-      <label>Used for:
-        <select [value]="settings.settings().midiPaddleSource" (change)="onSettingChange('midiPaddleSource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Dit Paddle:
-        <button class="key-capture"
-                (click)="onMidiCapture('midiDitNote')">
-          {{ midiCapturing === 'midiDitNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiDitNote) }}
-        </button>
-        @if (settings.settings().midiDitNote >= 0) {
-          <button class="key-capture-clear" (click)="clearMidiNote('midiDitNote')" title="Clear">&times;</button>
-        }
-      </label>
-
-      <label>Dah Paddle:
-        <button class="key-capture"
-                (click)="onMidiCapture('midiDahNote')">
-          {{ midiCapturing === 'midiDahNote' ? 'Press a MIDI key...' : midiNoteDisplay(settings.settings().midiDahNote) }}
-        </button>
-        @if (settings.settings().midiDahNote >= 0) {
-          <button class="key-capture-clear" (click)="clearMidiNote('midiDahNote')" title="Clear">&times;</button>
-        }
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().midiReversePaddles"
-               (change)="onBoolChange('midiReversePaddles', $event)">
-        Reverse Paddles
-      </label>
-
-      <label>Paddle Mode:
-        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
-          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
-          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
-          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
-          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
-        </select>
-      </label>
+      </div>
+      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
 
       <div class="keyer-hint">
         MIDI input works even when the app is in the background, another window
         is focused, or the screen is locked. Connect a MIDI pedal, keyboard, or
-        controller and assign notes to straight key or paddles using the capture
-        buttons above.
+        controller and assign notes to straight key or paddles.
       </div>
 
       <div class="serial-port-row">
@@ -133,3 +75,16 @@
     </div>
   }
 </div>
+
+<!-- MIDI input edit modal (hosted here because it's triggered from this card) -->
+@if (showEditModal) {
+  <app-midi-input-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [midiDevices]="midiInput.midiInputs()"
+    [allMappings]="settings.settings().midiInputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-midi-input-edit-modal>
+}

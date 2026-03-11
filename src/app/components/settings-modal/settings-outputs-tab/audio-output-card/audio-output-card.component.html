@@ -1,9 +1,9 @@
-<!-- Audio Output (Optocoupler) -->
+<!-- Audio Key Output (Optocoupler) -->
 <div class="settings-card" [class.disabled-card]="!settings.settings().optoEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
-      <span class="settings-card-name">Audio Output</span>
+      <span class="settings-card-name">Audio Key Output</span>
       <span class="source-badge" [class.source-rx]="settings.settings().optoForward === 'rx'" [class.source-tx]="settings.settings().optoForward === 'tx'" [class.source-both]="settings.settings().optoForward === 'both'">{{ settings.settings().optoForward === 'rx' ? 'RX' : settings.settings().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
     </div>
     <label class="toggle-switch" (click)="$event.stopPropagation()">

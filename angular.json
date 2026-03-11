@@ -29,6 +29,7 @@
             "styles": [
               "src/styles.css",
               "src/app/components/settings-modal/settings-shared.css",
+              "src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.css",
               "src/app/components/settings-modal/settings-outputs-tab/settings-outputs-tab.component.css",
               "src/app/components/settings-modal/settings-other-tab/settings-other-tab.component.css"
             ],
@@ -44,8 +45,8 @@
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "1.5MB",
-                  "maximumError": "2MB"
+                  "maximumWarning": "2MB",
+                  "maximumError": "2.5MB"
                 },
                 {
                   "type": "anyComponentStyle",

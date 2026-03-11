@@ -6,9 +6,9 @@
       <!-- RX last line: RX pattern inline, encoder buffer on new line -->
       <span class="fs-line fs-line-inline"
             [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-            [style.color]="settings.modalDisplay().rxForeground"
+            [style.color]="line.color || settings.modalDisplay().rxForeground"
             [innerHTML]="formatLine(line)"></span><span class="cursor"
-            [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+            [style.color]="line.color || settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
       @if (decoder.txCurrentPattern()) {
         <div><span class="cursor"
               [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span></div>
@@ -25,7 +25,7 @@
       <!-- TX last line: encoder buffer inline, then pattern cursors -->
       <span class="fs-line fs-line-inline"
             [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-            [style.color]="settings.modalDisplay().txForeground"
+            [style.color]="line.color || settings.modalDisplay().txForeground"
             [innerHTML]="formatLine(line)"></span>@if (encoderPendingChars().length) {<span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
             [class.sending]="$first && encoder.isSending()"
             [style.color]="$first && encoder.isSending()
@@ -41,7 +41,7 @@
       <!-- Non-last line: block -->
       <div class="fs-line"
            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-           [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+           [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
            [innerHTML]="formatLine(line)"></div>
     }
   }

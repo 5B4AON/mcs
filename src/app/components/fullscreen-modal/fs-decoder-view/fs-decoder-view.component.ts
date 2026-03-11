@@ -24,7 +24,7 @@ import { formatText, formatLine } from '../fullscreen-format.utils';
  * Attaches the mouse keyer to the conversation area so that mouse button
  * presses anywhere in the text area act as morse key input.
  *
- * Text formatting (prosign patterns, emoji replacements, RTDB username prefixes)
+ * Text formatting (prosign patterns, emoji replacements, RTDB name prefixes)
  * is handled by shared utility functions from fullscreen-format.utils.
  */
 @Component({
@@ -117,7 +117,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
 
   // ---- Text formatting (delegates to shared utility functions) ----
 
-  /** Format a display line with optional username prefix and prosign/emoji styling */
+  /** Format a display line with optional name prefix and prosign/emoji styling */
   formatLine(line: DisplayLine): SafeHtml {
     return formatLine(line, this.settings.settings(), this.sanitizer);
   }

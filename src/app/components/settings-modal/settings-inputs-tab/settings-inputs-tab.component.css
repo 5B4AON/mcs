@@ -1,6 +1,101 @@
 /**
  * Morse Code Studio — Settings Inputs Tab
  *
- * Component-specific styles (currently empty — all card styles are in
- * the shared settings-shared.css referenced via styleUrls).
+ * Inputs-tab-specific styles — MIDI input mapping list rows and controls.
+ * Loaded globally via angular.json (not via component styleUrls) so all
+ * card child components can use these classes without duplication.
  */
+
+/* ===== MIDI Input Mapping List ===== */
+.midi-mapping-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+}
+.midi-mapping-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.5rem;
+  background: #1a1a28;
+  border: 1px solid #335;
+  border-radius: 4px;
+}
+.midi-mapping-row-disabled {
+  opacity: 0.5;
+}
+.midi-mapping-enable {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+.midi-mapping-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 6rem;
+}
+.midi-mapping-mode {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #8af;
+  min-width: 3.2rem;
+  cursor: pointer;
+}
+.midi-mapping-value {
+  font-family: monospace;
+  font-size: 0.85rem;
+  color: #ddd;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.source-badge-sm {
+  font-size: 0.65rem;
+  padding: 0.05rem 0.3rem;
+  cursor: pointer;
+}
+.midi-mapping-reverse {
+  font-size: 0.85rem;
+  color: #aaa;
+  cursor: pointer;
+}
+.midi-mapping-spacer {
+  flex: 1;
+}
+.midi-mapping-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.25rem 0.35rem;
+  border-radius: 3px;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.midi-mapping-btn svg {
+  display: block;
+}
+.midi-mapping-btn-edit { color: #aaa; }
+.midi-mapping-btn-edit:hover { color: #fff; background: #333; }
+.midi-mapping-add-btn {
+  margin-top: 0.5rem;
+  background: #2a2a3e;
+  color: #8af;
+  border: 1px dashed #446;
+  border-radius: 4px;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.midi-mapping-add-btn:hover {
+  background: #333;
+}
