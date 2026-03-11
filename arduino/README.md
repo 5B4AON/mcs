@@ -22,38 +22,70 @@ Both use the **same pin positions and wiring** — only the software differs.
 
 ---
 
-## Pin assignments
+## ⚠️ Upgrading from v1.0.0
 
-Both board variants use the same pins:
+If you are upgrading from the v1.0.0 sketch (3 inputs + 3 outputs on pins 2–7):
 
-| Pin | Function | Direction | Notes |
-|-----|----------|-----------|-------|
-| 2 | Straight Key | Input | Internal pull-up; short to GND to activate |
-| 3 | Dit Paddle | Input | Internal pull-up; short to GND to activate |
-| 4 | Dah Paddle | Input | Internal pull-up; short to GND to activate |
-| 5 | Straight Key | Output | LOW by default; goes HIGH on MIDI command |
-| 6 | Dit | Output | LOW by default; goes HIGH on MIDI command |
-| 7 | Dah | Output | LOW by default; goes HIGH on MIDI command |
-| GND | Common ground | — | Shared by both inputs and outputs |
+- **Inputs on pins 2, 3, 4 still work** — these pins remain inputs with the same MIDI notes (60, 62, 64). No rewiring needed for keys/paddles.
+- **Outputs have moved** — outputs are no longer on pins 5, 6, 7. They are now on pins 11–16 (GPIO 14, 15, A0, A1, A2, A3 on ATmega32U4). You must **rewire output connections** to the new pins.
+- **Output MIDI notes have changed** — from F♯4/G♯4/A♯4 (66/68/70) to G♯5/A♯5/C6 (80/82/84). Update your **MIDI Output mappings** in Morse Code Studio to match (new profiles already use the correct defaults).
+- **Reprogramming required** — upload the new v1.1.0 sketch to your Arduino.
+
+---
+
+## Pin assignments (v1.1.0)
+
+Both board variants now support **16 configurable pins** — 10 inputs and 6 outputs by default, split across two MIDI channels. Every pin's direction, MIDI channel, and note are fully configurable at the top of each sketch.
+
+| Pin | GPIO (ATmega32U4) | Dir | Ch | Note |
+|-----|-------------------|-----|----|------|
+| 1 | 2 | IN | 1 | C4 (60) |
+| 2 | 3 | IN | 1 | D4 (62) |
+| 3 | 4 | IN | 1 | E4 (64) |
+| 4 | 5 | IN | 1 | F♯4 (66) |
+| 5 | 6 | IN | 1 | G♯4 (68) |
+| 6 | 7 | IN | 2 | A♯4 (70) |
+| 7 | 8 | IN | 2 | C5 (72) |
+| 8 | 9 | IN | 2 | D5 (74) |
+| 9 | 10 | IN | 2 | E5 (76) |
+| 10 | 16 | IN | 2 | F♯5 (78) |
+| 11 | 14 | OUT | 1 | G♯5 (80) |
+| 12 | 15 | OUT | 1 | A♯5 (82) |
+| 13 | A0 | OUT | 1 | C6 (84) |
+| 14 | A1 | OUT | 2 | D6 (86) |
+| 15 | A2 | OUT | 2 | E6 (88) |
+| 16 | A3 | OUT | 2 | F♯6 (90) |
+
+GND is available on both sides of the board.
 
 ### ATmega32U4 Pin Overview
 
 ```mermaid
 flowchart TB
-    subgraph board["Arduino Pro Micro ATmega32U4 — Pin Assignments"]
+    subgraph board["Arduino Pro Micro ATmega32U4 — Pin Assignments (v1.1.0)"]
         direction TB
 
-        subgraph inputs["⬅️ INPUTS  —  active LOW, internal pull-up"]
-            P2["Pin 2 → Straight Key"]
-            P3["Pin 3 → Dit Paddle"]
-            P4["Pin 4 → Dah Paddle"]
+        subgraph inputs["⬅️ INPUTS (10 pins) — active LOW, internal pull-up"]
+            P1["Pin 1: GPIO 2 → Ch1, C4 (60)"]
+            P2["Pin 2: GPIO 3 → Ch1, D4 (62)"]
+            P3["Pin 3: GPIO 4 → Ch1, E4 (64)"]
+            P4["Pin 4: GPIO 5 → Ch1, F#4 (66)"]
+            P5["Pin 5: GPIO 6 → Ch1, G#4 (68)"]
+            P6["Pin 6: GPIO 7 → Ch2, A#4 (70)"]
+            P7["Pin 7: GPIO 8 → Ch2, C5 (72)"]
+            P8["Pin 8: GPIO 9 → Ch2, D5 (74)"]
+            P9["Pin 9: GPIO 10 → Ch2, E5 (76)"]
+            P10["Pin 10: GPIO 16 → Ch2, F#5 (78)"]
             GND_IN["GND → Common ground for keys/paddles"]
         end
 
-        subgraph outputs["➡️ OUTPUTS  —  active HIGH"]
-            P5["Pin 5 → Straight Key Out"]
-            P6["Pin 6 → Dit Out"]
-            P7["Pin 7 → Dah Out"]
+        subgraph outputs["➡️ OUTPUTS (6 pins) — active HIGH"]
+            P11["Pin 11: GPIO 14 → Ch1, G#5 (80)"]
+            P12["Pin 12: GPIO 15 → Ch1, A#5 (82)"]
+            P13["Pin 13: GPIO A0 → Ch1, C6 (84)"]
+            P14["Pin 14: GPIO A1 → Ch2, D6 (86)"]
+            P15["Pin 15: GPIO A2 → Ch2, E6 (88)"]
+            P16["Pin 16: GPIO A3 → Ch2, F#6 (90)"]
             GND_OUT["GND → Common ground for optocouplers"]
         end
 
@@ -73,20 +105,30 @@ The nRF52840 Pro Micro has the same pin layout plus 3 bottom pads (B+, B−, RST
 
 ```mermaid
 flowchart TB
-    subgraph board["Pro Micro nRF52840 — Pin Assignments"]
+    subgraph board["Pro Micro nRF52840 — Pin Assignments (v1.1.0)"]
         direction TB
 
-        subgraph inputs["⬅️ INPUTS  —  active LOW, internal pull-up"]
-            P2["Pin 2 → Straight Key"]
-            P3["Pin 3 → Dit Paddle"]
-            P4["Pin 4 → Dah Paddle"]
+        subgraph inputs["⬅️ INPUTS (10 pins) — active LOW, internal pull-up"]
+            P1["Pin 1: P0.17 → Ch1, C4 (60)"]
+            P2["Pin 2: P0.20 → Ch1, D4 (62)"]
+            P3["Pin 3: P0.22 → Ch1, E4 (64)"]
+            P4["Pin 4: P0.24 → Ch1, F#4 (66)"]
+            P5["Pin 5: P1.00 → Ch1, G#4 (68)"]
+            P6["Pin 6: P0.11 → Ch2, A#4 (70)"]
+            P7["Pin 7: P1.04 → Ch2, C5 (72)"]
+            P8["Pin 8: P1.06 → Ch2, D5 (74)"]
+            P9["Pin 9: P0.09 → Ch2, E5 (76)"]
+            P10["Pin 10: P0.10 → Ch2, F#5 (78)"]
             GND_IN["GND → Common ground for keys/paddles"]
         end
 
-        subgraph outputs["➡️ OUTPUTS  —  active HIGH"]
-            P5["Pin 5 → Straight Key Out"]
-            P6["Pin 6 → Dit Out"]
-            P7["Pin 7 → Dah Out"]
+        subgraph outputs["➡️ OUTPUTS (6 pins) — active HIGH"]
+            P11["Pin 11: P1.11 → Ch1, G#5 (80)"]
+            P12["Pin 12: P1.13 → Ch1, A#5 (82)"]
+            P13["Pin 13: P0.02 → Ch1, C6 (84)"]
+            P14["Pin 14: P0.03 → Ch2, D6 (86)"]
+            P15["Pin 15: P0.28 → Ch2, E6 (88)"]
+            P16["Pin 16: P0.29 → Ch2, F#6 (90)"]
             GND_OUT["GND → Common ground for optocouplers"]
         end
 
@@ -110,16 +152,18 @@ flowchart TB
 
 | Parameter | Value |
 |-----------|-------|
-| Channel | 1 (shown as 0 in some software) |
 | Velocity | 127 |
+| Debounce | 5 ms |
 | **Input** notes (Arduino → PC): | |
-| Straight Key | 60 (C4) |
-| Dit | 62 (D4) |
-| Dah | 64 (E4) |
+| Straight Key (Pin 1) | Ch 1, 60 (C4) |
+| Dit Paddle (Pin 2) | Ch 1, 62 (D4) |
+| Dah Paddle (Pin 3) | Ch 1, 64 (E4) |
+| Pins 4–10 | Ch 1–2, 66–78 (configurable) |
 | **Output** notes (PC → Arduino): | |
-| Straight Key | 66 (F#4) |
-| Dit | 68 (G#4) |
-| Dah | 70 (A#4) |
+| Straight Key (Pin 11) | Ch 1, 80 (G♯5) |
+| Dit (Pin 12) | Ch 1, 82 (A♯5) |
+| Dah (Pin 13) | Ch 1, 84 (C6) |
+| Pins 14–16 | Ch 2, 86–90 (configurable) |
 
 Input and output notes are deliberately different to prevent feedback loops when both MIDI input and MIDI output are enabled on the same device.
 
@@ -131,7 +175,7 @@ All values are configurable at the top of each sketch before uploading.
 
 ### Straight Key Input
 
-Connect a straight key (or any normally-open switch) between **Pin 2** and **GND**. No external resistors are needed — the Arduino's internal pull-up keeps the pin HIGH when the key is open.
+Connect a straight key (or any normally-open switch) between **Pin 1** (GPIO 2) and **GND**. No external resistors are needed — the Arduino's internal pull-up keeps the pin HIGH when the key is open.
 
 ```mermaid
 flowchart LR
@@ -141,7 +185,7 @@ flowchart LR
     end
 
     subgraph board["Arduino Pro Micro"]
-        P2["Pin 2"]
+        P2["Pin 1 (GPIO 2)"]
         GND["GND"]
     end
 
@@ -151,7 +195,7 @@ flowchart LR
 
 ### Iambic Paddle Input
 
-Connect an iambic paddle's **dit** contact to **Pin 3**, **dah** contact to **Pin 4**, and **common** to **GND**.
+Connect an iambic paddle's **dit** contact to **Pin 2** (GPIO 3), **dah** contact to **Pin 3** (GPIO 4), and **common** to **GND**.
 
 ```mermaid
 flowchart LR
@@ -162,8 +206,8 @@ flowchart LR
     end
 
     subgraph board["Arduino Pro Micro"]
-        P3["Pin 3"]
-        P4["Pin 4"]
+        P3["Pin 2 (GPIO 3)"]
+        P4["Pin 3 (GPIO 4)"]
         GND["GND"]
     end
 
@@ -176,12 +220,12 @@ flowchart LR
 
 To key a radio transmitter, connect an output pin through a **220 Ω resistor** to the anode of an optocoupler (e.g. 4N25). The optocoupler's output side connects to the radio's key line, providing electrical isolation.
 
-This diagram shows one channel — repeat for each output pin you need (Pin 5, 6, or 7).
+This diagram shows one channel — repeat for each output pin you need (Pin 11, 12, or 13 on ATmega32U4 / corresponding nRF52840 pins).
 
 ```mermaid
 flowchart LR
     subgraph board["Arduino Pro Micro"]
-        P5["Pin 5 — or 6 / 7"]
+        P5["Pin 11 (GPIO 14) — or 12 / 13"]
         GND["GND"]
     end
 
@@ -234,7 +278,7 @@ flowchart LR
    - **nRF52840:** `Arduino_Pro_Micro_NRF52840_MIDI_Interface/`
 2. Install the required libraries (see above).
 3. Select your board and port under **Tools**.
-4. Review the pin and MIDI configuration constants at the top of the sketch — change them if needed.
+4. Review the pin and MIDI configuration constants at the top of the sketch — all 16 pins are configurable with custom direction, channel, and note.
 5. Upload the sketch.
 6. Wire your key/paddles to the input pins (see diagrams above).
 7. In Morse Code Studio, enable **MIDI Input** and/or **MIDI Output** in Settings and select the Arduino device.

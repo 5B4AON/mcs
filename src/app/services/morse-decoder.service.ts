@@ -21,6 +21,10 @@ export interface DecoderKeyOptions {
   fromMidi?: boolean;
   /** True when the event originated from serial input (prevents echo loops) */
   fromSerial?: boolean;
+  /** Optional display name (e.g. MIDI mapping name or RTDB callsign) */
+  name?: string;
+  /** Optional text colour override (CSS colour string from MIDI mapping) */
+  color?: string;
 }
 
 /**
@@ -38,6 +42,8 @@ interface DecoderPipeline {
   perfectTiming: boolean;
   fromMidi: boolean;
   fromSerial: boolean;
+  name: string;
+  color: string;
   keyDownTime: number;
   keyUpTime: number;
   silenceTimer: ReturnType<typeof setTimeout> | null;
@@ -126,7 +132,8 @@ export class MorseDecoderService {
     type: 'rx' | 'tx';
     char: string;
     inputPath?: InputPath;
-    userName?: string;
+    name?: string;
+    color?: string;
     fromRtdb?: boolean;
     fromMidi?: boolean;
     fromSerial?: boolean;
@@ -427,6 +434,8 @@ export class MorseDecoderService {
         perfectTiming: opts?.perfectTiming ?? false,
         fromMidi: opts?.fromMidi ?? false,
         fromSerial: opts?.fromSerial ?? false,
+        name: opts?.name ?? '',
+        color: opts?.color ?? '',
         keyDownTime: 0,
         keyUpTime: 0,
         silenceTimer: null,
@@ -442,6 +451,8 @@ export class MorseDecoderService {
       pipeline.perfectTiming = opts?.perfectTiming ?? false;
       pipeline.fromMidi = opts?.fromMidi ?? false;
       pipeline.fromSerial = opts?.fromSerial ?? false;
+      pipeline.name = opts?.name ?? '';
+      pipeline.color = opts?.color ?? '';
     }
     return pipeline;
   }
@@ -564,8 +575,10 @@ export class MorseDecoderService {
     this.decodedText.update(t => t + char);
     const fromMidi = pipeline.fromMidi || undefined;
     const fromSerial = pipeline.fromSerial || undefined;
+    const name = pipeline.name || undefined;
+    const color = pipeline.color || undefined;
     this.taggedOutput.update(arr => [...arr, {
-      type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial,
+      type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial, name, color,
     }]);
     pipeline.pattern = '';
     // A real character was decoded — allow a future trailing space
@@ -605,9 +618,11 @@ export class MorseDecoderService {
       const wpm = this.pipelineWpm(pipeline);
       const fromMidi = pipeline.fromMidi || undefined;
       const fromSerial = pipeline.fromSerial || undefined;
+      const name = pipeline.name || undefined;
+      const color = pipeline.color || undefined;
       this.decodedText.update(t => t + ' ');
       this.taggedOutput.update(arr => [...arr, {
-        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial,
+        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial, name, color,
       }]);
     }
   }

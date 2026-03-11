@@ -69,6 +69,52 @@ export interface ProsignActionEntry {
   action: ProsignAction;
 }
 
+/** Mode for a MIDI input mapping entry */
+export type MidiInputMode = 'straightKey' | 'paddle';
+
+/** Mode for a MIDI output mapping entry */
+export type MidiOutputMode = 'straightKey' | 'paddle';
+
+/** Configuration for a single MIDI input mapping */
+export interface MidiInputMapping {
+  enabled: boolean;
+  /** MIDI input device ID (empty = any/first available) */
+  deviceId: string;
+  /** MIDI channel filter: 0 = omni (all channels), 1-16 = specific channel */
+  channel: number;
+  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
+  source: DecoderSource;
+  /** Mode: straight key or paddle */
+  mode: MidiInputMode;
+  /** MIDI note number for straight key, or dit paddle (-1 = not assigned) */
+  value: number;
+  /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
+  dahValue: number;
+  /** Reverse paddles (only used when mode is 'paddle') */
+  reversePaddles: boolean;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  name: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  color: string;
+}
+
+/** Configuration for a single MIDI output mapping */
+export interface MidiOutputMapping {
+  enabled: boolean;
+  /** MIDI output device ID (empty = any/first available) */
+  deviceId: string;
+  /** MIDI channel (1-16) */
+  channel: number;
+  /** Output forwarding mode: which signal source drives this mapping */
+  forward: OutputForward;
+  /** Mode: straight key or paddle */
+  mode: MidiOutputMode;
+  /** MIDI note number for straight key, or dit paddle */
+  value: number;
+  /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
+  dahValue: number;
+}
+
 /** Configuration for a single emoji replacement mapping */
 export interface EmojiMapping {
   enabled: boolean;
@@ -163,7 +209,7 @@ export interface AppSettings {
   rtdbOutputForward: OutputForward;
   rtdbOutputChannelName: string;
   rtdbOutputChannelSecret: string;
-  rtdbOutputUserName: string;
+  rtdbOutputName: string;
 
   // --- 3. Audio Output (sidetone / headphone / speaker) ---
   sidetoneOutputDeviceId: string;
@@ -222,38 +268,12 @@ export interface AppSettings {
 
   // --- MIDI Input ---
   midiInputEnabled: boolean;
-  /** Decoder source for MIDI straight key ('rx' or 'tx') */
-  midiStraightKeySource: DecoderSource;
-  /** Decoder source for MIDI paddle ('rx' or 'tx') */
-  midiPaddleSource: DecoderSource;
-  /** MIDI input device ID (empty = any/first available) */
-  midiInputDeviceId: string;
-  /** MIDI channel filter: 0 = omni (all channels), 1-16 = specific channel */
-  midiInputChannel: number;
-  /** MIDI note number for straight key (-1 = not assigned) */
-  midiStraightKeyNote: number;
-  /** MIDI note number for dit paddle (-1 = not assigned) */
-  midiDitNote: number;
-  /** MIDI note number for dah paddle (-1 = not assigned) */
-  midiDahNote: number;
-  /** Reverse paddles for MIDI paddle input */
-  midiReversePaddles: boolean;
+  /** Ordered list of MIDI input mappings (straight key / paddle entries) */
+  midiInputMappings: MidiInputMapping[];
   // --- MIDI Output ---
   midiOutputEnabled: boolean;
-  /** MIDI output device ID (empty = first available) */
-  midiOutputDeviceId: string;
-  /** MIDI channel for output (1-16) */
-  midiOutputChannel: number;
-  /** MIDI note number for straight key output (-1 = not assigned) */
-  midiOutputStraightKeyNote: number;
-  /** MIDI note number for dit paddle output (-1 = not assigned) */
-  midiOutputDitNote: number;
-  /** MIDI note number for dah paddle output (-1 = not assigned) */
-  midiOutputDahNote: number;
-  /** MIDI velocity for note-on messages (0-127, default 127) */
-  midiOutputVelocity: number;
-  /** Output forwarding mode: which signal source drives MIDI output */
-  midiOutputForward: OutputForward;
+  /** Ordered list of MIDI output mappings (straight key / paddle entries) */
+  midiOutputMappings: MidiOutputMapping[];
   /** When true, ignore remote WPM and use local encoder WPM for MIDI output */
   midiOutputOverrideWpm: boolean;
 
@@ -381,7 +401,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbOutputForward: 'tx',
   rtdbOutputChannelName: '',
   rtdbOutputChannelSecret: '',
-  rtdbOutputUserName: '',
+  rtdbOutputName: '',
 
   sidetoneOutputDeviceId: 'default',
   sidetoneOutputChannel: 'left',
@@ -425,23 +445,54 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchReversePaddles: false,
 
   midiInputEnabled: false,
-  midiStraightKeySource: 'rx',
-  midiPaddleSource: 'rx',
-  midiInputDeviceId: '',
-  midiInputChannel: 0,
-  midiStraightKeyNote: 60,
-  midiDitNote: 62,
-  midiDahNote: 64,
-  midiReversePaddles: false,
+  midiInputMappings: [
+    {
+      enabled: true,
+      deviceId: '',
+      channel: 0,
+      source: 'rx',
+      mode: 'straightKey',
+      value: 60,
+      dahValue: -1,
+      reversePaddles: false,
+      name: '',
+      color: '',
+    },
+    {
+      enabled: true,
+      deviceId: '',
+      channel: 0,
+      source: 'rx',
+      mode: 'paddle',
+      value: 62,
+      dahValue: 64,
+      reversePaddles: false,
+      name: '',
+      color: '',
+    },
+  ],
 
   midiOutputEnabled: false,
-  midiOutputDeviceId: '',
-  midiOutputChannel: 1,
-  midiOutputStraightKeyNote: 66,
-  midiOutputDitNote: 68,
-  midiOutputDahNote: 70,
-  midiOutputVelocity: 127,
-  midiOutputForward: 'tx',
+  midiOutputMappings: [
+    {
+      enabled: true,
+      deviceId: '',
+      channel: 1,
+      forward: 'tx',
+      mode: 'straightKey',
+      value: 80,
+      dahValue: -1,
+    },
+    {
+      enabled: true,
+      deviceId: '',
+      channel: 1,
+      forward: 'tx',
+      mode: 'paddle',
+      value: 82,
+      dahValue: 84,
+    },
+  ],
   midiOutputOverrideWpm: false,
 
   rtdbInputEnabled: false,
@@ -673,6 +724,7 @@ export class SettingsService {
       // Ensure nested collections have all expected keys (e.g. new prosign
       // keys added after the profile was saved).
       this.backfillProsignActions();
+      this.backfillMidiOutputMappings();
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -731,6 +783,26 @@ export class SettingsService {
     this.modalDisplay.set({ ...DEFAULT_MODAL_DISPLAY });
     localStorage.setItem(MODAL_DISPLAY_KEY, JSON.stringify(DEFAULT_MODAL_DISPLAY));
     this.isDirty.set(true);
+  }
+
+  /**
+   * Ensure every MIDI output mapping has a 'forward' field.
+   * Profiles saved before forward was moved from global to per-mapping
+   * will have mappings without it; default to 'tx'.
+   */
+  private backfillMidiOutputMappings(): void {
+    const s = this.settings();
+    let patched = false;
+    const mappings = s.midiOutputMappings.map(m => {
+      if (!m.forward) {
+        patched = true;
+        return { ...m, forward: ((s as any).midiOutputForward || 'tx') as OutputForward };
+      }
+      return m;
+    });
+    if (patched) {
+      this.settings.set({ ...s, midiOutputMappings: mappings });
+    }
   }
 
   /**

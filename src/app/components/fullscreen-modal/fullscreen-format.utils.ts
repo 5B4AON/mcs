@@ -158,20 +158,20 @@ export function formatTextNoEmoji(text: string, settings: AppSettings, sanitizer
 }
 
 /**
- * Format a complete display line including optional username prefix and text.
+ * Format a complete display line including optional name prefix and text.
  *
- * Username prefixes appear as muted labels before the line content, used for
- * Firebase RTDB relay to identify remote stations.
+ * Name prefixes appear as muted labels before the line content, used for
+ * Firebase RTDB relay and MIDI input mappings to identify sources.
  *
  * @param line The display line to format
  * @param settings Current application settings
  * @param sanitizer Angular DOM sanitizer for safe HTML binding
- * @returns Formatted SafeHtml with optional username prefix and prosign-styled text
+ * @returns Formatted SafeHtml with optional name prefix and prosign-styled text
  */
 export function formatLine(line: DisplayLine, settings: AppSettings, sanitizer: DomSanitizer): SafeHtml {
   let result = '';
-  if (line.userName) {
-    result += `<span class="rtdb-user-prefix">[${escapeHtml(line.userName)}] </span>`;
+  if (line.name) {
+    result += `<span class="rtdb-user-prefix">[${escapeHtml(line.name)}] </span>`;
   }
   result += formatTextInternal(line.text, settings);
   return sanitizer.bypassSecurityTrustHtml(result);

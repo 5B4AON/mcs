@@ -53,10 +53,9 @@ export function noteOctave(note: number): number {
  * paddle inputs, or other CW hardware for real-time, zero-latency
  * interfacing with the application.
  *
- * Three independent output notes are supported:
- *  1. **Straight key** — note-on during each element (dit or dah), note-off between.
- *  2. **Dit paddle** — note-on during dit elements only.
- *  3. **Dah paddle** — note-on during dah elements only.
+ * Multiple output mappings are supported, each targeting a specific MIDI
+ * device, channel, note, and mode (straight key or paddle). Each enabled
+ * mapping fires independently during playback.
  *
  * Operation is character-based (like WinKeyer): decoded characters from any
  * input source are played back as individual morse elements using the encoder
@@ -75,9 +74,8 @@ export function noteOctave(note: number): number {
  * when the user enables MIDI output and stays alive across audio restarts
  * and browser refreshes (Chrome remembers the grant).
  *
- * Each output has a configurable MIDI note number (0-127) and the user can
- * choose from a note/octave picker or enter a raw value. Velocity is
- * configurable (default 127).
+ * Each output mapping has a configurable MIDI note number (0-127) and
+ * mode (straight key or paddle). Velocity is always 127.
  *
  * The service shares the same Web MIDI access obtained by MidiInputService.
  * It enumerates MIDI *output* ports and allows the user to select one.
@@ -126,14 +124,16 @@ export class MidiOutputService implements OnDestroy {
   private started = false;
   private startingPromise: Promise<void> | null = null;
 
-  /** Currently active output port */
-  private activeOutput: MIDIOutput | null = null;
-
-  /** Track which notes are currently held (to release on stop) */
-  private activeNotes = new Set<number>();
+  /**
+   * Track currently held notes for proper release.
+   * Key: "note:channel" — value: { note, channel, output } so we can
+   * send the note-off on the correct port and channel even if settings
+   * change between note-on and note-off.
+   */
+  private activeNotes = new Map<string, { note: number; channel: number; output: MIDIOutput }>();
 
   /** Character playback queue */
-  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number }[] = [];
+  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean }[] = [];
   private playing = false;
   private abortPlayback = false;
 
@@ -224,7 +224,7 @@ export class MidiOutputService implements OnDestroy {
 
       // Enumerate whatever is already available
       this.refreshOutputs();
-      this.resolveActiveOutput();
+      this.updateConnected();
 
       this.installKeepAlive();
     } catch (err: any) {
@@ -264,7 +264,6 @@ export class MidiOutputService implements OnDestroy {
       this.midiAccess = null;
     }
 
-    this.activeOutput = null;
     this.started = false;
     this.zone.run(() => {
       this.connected.set(false);
@@ -272,10 +271,36 @@ export class MidiOutputService implements OnDestroy {
     });
   }
 
-  /** Re-resolve the active output (e.g. after settings change) */
+  /** Re-resolve the connected state (e.g. after settings change) */
   reattach(): void {
     if (this.started) {
-      this.resolveActiveOutput();
+      this.updateConnected();
+    }
+  }
+
+  /**
+   * Enumerate available MIDI output devices without starting the full
+   * service pipeline. Used by the settings UI to populate device
+   * dropdowns even when MIDI output is disabled.
+   */
+  async enumerateDevices(): Promise<void> {
+    if (!this.supported) return;
+    // If already started, devices are already populated
+    if (this.started && this.midiAccess) {
+      this.refreshOutputs();
+      return;
+    }
+    try {
+      const access = await (navigator as any).requestMIDIAccess({ sysex: false });
+      const outputs: { id: string; name: string }[] = [];
+      for (const output of access.outputs.values()) {
+        if (output.state === 'connected') {
+          outputs.push({ id: output.id, name: output.name || `MIDI Output ${output.id}` });
+        }
+      }
+      this.zone.run(() => this.midiOutputs.set(outputs));
+    } catch {
+      // Silently ignore — the dropdown will just be empty
     }
   }
 
@@ -291,15 +316,18 @@ export class MidiOutputService implements OnDestroy {
    * Works for ALL input types: encoder text, keyer paddles, straight key,
    * audio inputs, MIDI input, and Firebase RTDB.
    *
-   * @param char   The decoded character (e.g. 'A', ' ')
-   * @param source 'rx' or 'tx' — checked against forward setting
-   * @param wpm    Optional WPM from the source (e.g. Firebase RTDB remote speed)
+   * @param char       The decoded character (e.g. 'A', ' ')
+   * @param source     'rx' or 'tx' — checked against forward setting
+   * @param wpm        Optional WPM from the source (e.g. Firebase RTDB remote speed)
+   * @param paddleOnly When true, only paddle-mode mappings fire; straight-key
+   *                   mappings are skipped (they are already keyed in real-time
+   *                   via the keyDown/keyUp path for local keyer inputs).
    */
-  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number): void {
-    if (!this.canOutput(source)) return;
+  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false): void {
+    if (!this.isActive()) return;
     // During break-in the remote party has priority — drop outgoing chars.
     if (this.breakInActive) return;
-    this.charQueue.push({ char, source, wpm });
+    this.charQueue.push({ char, source, wpm, paddleOnly });
     // If we're sleeping through a word gap and a real character arrives,
     // cut the sleep short so the new character plays immediately.
     if (char !== ' ' && this.spaceSleepResolve) {
@@ -318,7 +346,7 @@ export class MidiOutputService implements OnDestroy {
     try {
       while (this.charQueue.length > 0 && !this.abortPlayback) {
         const entry = this.charQueue.shift()!;
-        await this.playCharElements(entry.char, entry.wpm);
+        await this.playCharElements(entry.char, entry.source, entry.wpm, entry.paddleOnly);
       }
     } finally {
       this.playing = false;
@@ -332,19 +360,14 @@ export class MidiOutputService implements OnDestroy {
    * Uses the provided remote WPM if available and the override setting is off;
    * otherwise falls back to the local encoder WPM.
    */
-  private async playCharElements(char: string, wpm?: number): Promise<void> {
+  private async playCharElements(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false): Promise<void> {
     const s0 = this.settings.settings();
     const effectiveWpm = (wpm && !s0.midiOutputOverrideWpm) ? wpm : s0.encoderWpm;
     const timings = timingsFromWpm(effectiveWpm);
     const s = this.settings.settings();
-    const channel = s.midiOutputChannel;
-    const velocity = s.midiOutputVelocity;
+    const velocity = 127;
 
     if (char === ' ') {
-      // Word space = 7 dit units; 3 already elapsed as inter-char.
-      // Use an interruptible sleep so that if a new character arrives
-      // while we're waiting, the gap is cut short and playback resumes
-      // immediately — eliminating the perceived input delay.
       await this.interruptibleSleepMs(timings.interWord - timings.interChar);
       return;
     }
@@ -352,24 +375,50 @@ export class MidiOutputService implements OnDestroy {
     const morse = MORSE_TABLE[char];
     if (!morse) return;
 
+    // Collect enabled mappings whose forward filter matches the source.
+    // When paddleOnly is set, skip straight-key mappings (they are already
+    // keyed in real-time via keyDown/keyUp for local keyer inputs).
+    const enabledMappings = s.midiOutputMappings.filter(m =>
+      m.enabled && (m.forward === 'both' || m.forward === source)
+      && (!paddleOnly || m.mode === 'paddle')
+    );
+
     for (let i = 0; i < morse.length; i++) {
       if (this.abortPlayback) return;
 
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
 
-      // Build note list: straight key + element-specific note
-      const notes: number[] = [];
-      if (s.midiOutputStraightKeyNote >= 0) notes.push(s.midiOutputStraightKeyNote);
-      if (element === '.' && s.midiOutputDitNote >= 0) notes.push(s.midiOutputDitNote);
-      if (element === '-' && s.midiOutputDahNote >= 0) notes.push(s.midiOutputDahNote);
+      // Fire notes for every enabled mapping
+      const fired: { note: number; channel: number; output: MIDIOutput }[] = [];
+      for (const mapping of enabledMappings) {
+        const output = this.getOutputForDevice(mapping.deviceId);
+        if (!output) continue;
 
-      if (notes.length > 0) {
-        for (const note of notes) this.sendNoteOn(note, velocity, channel);
-        await this.sleepMs(duration);
-        for (const note of notes) this.sendNoteOff(note, channel);
-      } else {
-        await this.sleepMs(duration);
+        if (mapping.mode === 'straightKey') {
+          // Straight key fires on every element
+          if (mapping.value >= 0) {
+            this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
+            fired.push({ note: mapping.value, channel: mapping.channel, output });
+          }
+        } else {
+          // Paddle mode: dit note for '.', dah note for '-'
+          if (element === '.' && mapping.value >= 0) {
+            this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
+            fired.push({ note: mapping.value, channel: mapping.channel, output });
+          }
+          if (element === '-' && mapping.dahValue >= 0) {
+            this.sendNoteOn(mapping.dahValue, velocity, mapping.channel, output);
+            fired.push({ note: mapping.dahValue, channel: mapping.channel, output });
+          }
+        }
+      }
+
+      await this.sleepMs(duration);
+
+      // Release all notes fired for this element
+      for (const { note, channel, output } of fired) {
+        this.sendNoteOff(note, channel, output);
       }
 
       // Intra-character gap
@@ -416,10 +465,13 @@ export class MidiOutputService implements OnDestroy {
    * Not called for MIDI-originated inputs (fromMidi) to prevent echo loops.
    */
   keyDown(source: 'rx' | 'tx' = 'tx'): void {
-    if (!this.canOutput(source)) return;
+    if (!this.isActive()) return;
     const s = this.settings.settings();
-    if (s.midiOutputStraightKeyNote >= 0) {
-      this.sendNoteOn(s.midiOutputStraightKeyNote, s.midiOutputVelocity, s.midiOutputChannel);
+    const velocity = 127;
+    for (const mapping of s.midiOutputMappings) {
+      if (!mapping.enabled || mapping.mode !== 'straightKey') continue;      if (mapping.forward !== 'both' && mapping.forward !== source) continue;      const output = this.getOutputForDevice(mapping.deviceId);
+      if (!output || mapping.value < 0) continue;
+      this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
     }
   }
 
@@ -430,34 +482,32 @@ export class MidiOutputService implements OnDestroy {
    * the method checks activeNotes before sending.
    */
   keyUp(): void {
-    if (!this.activeOutput) return;
-    const s = this.settings.settings();
-    if (s.midiOutputStraightKeyNote >= 0 && this.activeNotes.has(s.midiOutputStraightKeyNote)) {
-      this.sendNoteOff(s.midiOutputStraightKeyNote, s.midiOutputChannel);
+    // Release all active straight-key notes
+    for (const [key, info] of this.activeNotes) {
+      this.sendNoteOff(info.note, info.channel, info.output);
     }
   }
 
   /**
-   * Test output — send a 1-second pulse on the straight key note.
+   * Test a specific mapping — send a 1-second pulse on the given note/channel.
+   * Called from the MIDI output edit modal's test button.
    */
-  async test(): Promise<void> {
-    if (!this.activeOutput) return;
-    const s = this.settings.settings();
-    const note = s.midiOutputStraightKeyNote;
-    if (note < 0) return;
-    this.sendNoteOn(note, s.midiOutputVelocity, s.midiOutputChannel);
+  async testMapping(note: number, channel: number, deviceId: string = ''): Promise<void> {
+    const output = this.getOutputForDevice(deviceId);
+    if (!output || note < 0) return;
+    this.sendNoteOn(note, 127, channel, output);
     await new Promise(resolve => setTimeout(resolve, 1000));
-    this.sendNoteOff(note, s.midiOutputChannel);
+    this.sendNoteOff(note, channel, output);
   }
 
   // ---- Internal MIDI message methods ----
 
-  private sendNoteOn(note: number, velocity: number, channel: number): void {
-    if (!this.activeOutput || note < 0 || note > 127) return;
+  private sendNoteOn(note: number, velocity: number, channel: number, output: MIDIOutput): void {
+    if (note < 0 || note > 127) return;
     // MIDI note-on: 0x90 + channel (0-based)
     const status = 0x90 | ((channel - 1) & 0x0f);
-    this.activeOutput.send([status, note, velocity & 0x7f]);
-    this.activeNotes.add(note);
+    output.send([status, note, velocity & 0x7f]);
+    this.activeNotes.set(`${note}:${channel}`, { note, channel, output });
     // Cancel any pending holdoff — we are actively sending again
     if (this.isSendingHoldoff) {
       clearTimeout(this.isSendingHoldoff);
@@ -466,12 +516,12 @@ export class MidiOutputService implements OnDestroy {
     this.isSending.set(true);
   }
 
-  private sendNoteOff(note: number, channel: number): void {
-    if (!this.activeOutput || note < 0 || note > 127) return;
+  private sendNoteOff(note: number, channel: number, output: MIDIOutput): void {
+    if (note < 0 || note > 127) return;
     // MIDI note-off: 0x80 + channel (0-based)
     const status = 0x80 | ((channel - 1) & 0x0f);
-    this.activeOutput.send([status, note, 0]);
-    this.activeNotes.delete(note);
+    output.send([status, note, 0]);
+    this.activeNotes.delete(`${note}:${channel}`);
     if (this.activeNotes.size === 0) {
       // Don't clear isSending immediately — start a holdoff timer so
       // the physical bus has time to settle before MIDI input is unmuted.
@@ -488,22 +538,19 @@ export class MidiOutputService implements OnDestroy {
     }
   }
 
-  /** Check whether output should be active for the given source */
-  private canOutput(source: 'rx' | 'tx'): boolean {
-    if (!this.activeOutput) return false;
+  /** Check whether MIDI output is globally active */
+  private isActive(): boolean {
+    if (!this.midiAccess) return false;
     const s = this.settings.settings();
     if (!s.midiOutputEnabled) return false;
-    if (s.midiOutputForward !== 'both' && s.midiOutputForward !== source) return false;
     return true;
   }
 
   /** Release all currently held notes */
   private releaseAll(): void {
-    if (!this.activeOutput) return;
-    const s = this.settings.settings();
-    const channel = s.midiOutputChannel;
-    for (const note of this.activeNotes) {
-      this.sendNoteOff(note, channel);
+    for (const [, info] of this.activeNotes) {
+      const status = 0x80 | ((info.channel - 1) & 0x0f);
+      info.output.send([status, info.note, 0]);
     }
     this.activeNotes.clear();
     // Immediate clear — no holdoff needed when explicitly releasing all
@@ -522,14 +569,14 @@ export class MidiOutputService implements OnDestroy {
     if (!this.midiAccess) return;
     this.midiAccess.onstatechange = () => {
       this.zone.run(() => this.refreshOutputs());
-      this.resolveActiveOutput();
+      this.updateConnected();
       // Retry after short delays for ports that need time to settle
       // after a physical reconnection.
       for (const delay of [500, 1500]) {
         setTimeout(() => {
           if (this.started && this.midiAccess) {
             this.zone.run(() => this.refreshOutputs());
-            this.resolveActiveOutput();
+            this.updateConnected();
           }
         }, delay);
       }
@@ -546,30 +593,35 @@ export class MidiOutputService implements OnDestroy {
       }
     }
     this.midiOutputs.set(outputs);
-    this.connected.set(this.activeOutput !== null && outputs.length > 0);
+    this.connected.set(outputs.length > 0);
   }
 
-  /** Resolve the active MIDI output port from settings */
-  private resolveActiveOutput(): void {
-    if (!this.midiAccess) return;
-    const configuredId = this.settings.settings().midiOutputDeviceId;
-    let found: MIDIOutput | null = null;
-
+  /**
+   * Resolve a MIDI output port for the given device ID.
+   * If deviceId is empty, returns the first available connected output.
+   */
+  getOutputForDevice(deviceId: string): MIDIOutput | null {
+    if (!this.midiAccess) return null;
+    let first: MIDIOutput | null = null;
     for (const output of this.midiAccess.outputs.values()) {
       if (output.state !== 'connected') continue;
-      if (configuredId && output.id === configuredId) {
-        found = output;
-        break;
-      }
-      if (!configuredId && !found) {
-        found = output; // First available if none configured
-      }
+      if (deviceId && output.id === deviceId) return output;
+      if (!first) first = output;
     }
+    return deviceId ? null : first;
+  }
 
-    this.activeOutput = found;
-    this.zone.run(() => {
-      this.connected.set(found !== null);
-    });
+  /** Update the connected signal based on available outputs */
+  private updateConnected(): void {
+    if (!this.midiAccess) {
+      this.zone.run(() => this.connected.set(false));
+      return;
+    }
+    let hasOutput = false;
+    for (const output of this.midiAccess.outputs.values()) {
+      if (output.state === 'connected') { hasOutput = true; break; }
+    }
+    this.zone.run(() => this.connected.set(hasOutput));
   }
 
   private installKeepAlive(): void {
@@ -577,7 +629,7 @@ export class MidiOutputService implements OnDestroy {
     this.keepAliveTimer = setInterval(() => {
       if (!this.started || !this.midiAccess) return;
       this.zone.run(() => this.refreshOutputs());
-      this.resolveActiveOutput();
+      this.updateConnected();
     }, 5000);
   }
 

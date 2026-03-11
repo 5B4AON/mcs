@@ -14,9 +14,9 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
 
-**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface, USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard, mouse, or touchscreen. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
+**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard, mouse, or touchscreen. MIDI input supports optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
-**Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler, sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
+**Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
 
 **Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM so the receiving station plays it back at the original rhythm. Channels use a name + secret pair for access control, with callsign-prefixed lines in the fullscreen conversation view.
 
@@ -26,9 +26,11 @@ The app supports several hardware interfaces for physical key input and transmit
 
 ### Arduino MIDI (Recommended)
 
-The **preferred interface** is a simple Arduino-based USB MIDI adapter. An Arduino Pro Micro (ATmega32U4 or nRF52840) enumerates as a standard USB MIDI device — no drivers needed — and provides both **paddle/key input** and **optocoupler keying output** over a single USB connection. The Web MIDI API delivers input events asynchronously (no polling), so timing is crisp and responsive even at high WPM. Crucially, **MIDI works when the browser is in the background or minimised**, unlike keyboard and mouse keyers which require the app to be in focus. This makes MIDI the most practical interface for on-air use where you may need to switch between applications while operating.
+The **preferred interface** is a simple Arduino-based USB MIDI adapter. An Arduino Pro Micro (ATmega32U4 or nRF52840) enumerates as a standard USB MIDI device — no drivers needed — and provides both **paddle/key input** and **optocoupler keying output** over a single USB connection. The v1.1.0 sketches support **16 configurable pins** (10 inputs and 6 outputs by default) across two MIDI channels. The Web MIDI API delivers input events asynchronously (no polling), so timing is crisp and responsive even at high WPM. Crucially, **MIDI works when the browser is in the background or minimised**, unlike keyboard and mouse keyers which require the app to be in focus. This makes MIDI the most practical interface for on-air use where you may need to switch between applications while operating.
 
 The [`arduino/`](arduino/) folder contains ready-made sketches for both board variants, with wiring diagrams for straight keys, iambic paddles, and optocoupler output circuits. See the [Arduino README](arduino/README.md) for build details.
+
+Multiple MIDI devices can be used simultaneously — each MIDI Input and MIDI Output mapping is independently configurable with its own device, channel, notes, and routing. MIDI Input mappings also support optional **Name** and **Colour** fields, enabling multi-user conversation views where each operator's decoded text appears on separate colour-coded lines in the fullscreen display.
 
 ### Keyboard, Mouse and Touch
 

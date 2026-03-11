@@ -5,9 +5,9 @@
       <!-- Last line: show text inline, then same-source pattern cursor -->
       <span class="fs-line fs-line-inline"
             [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-            [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+            [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
             [innerHTML]="formatLine(line)"></span><span class="cursor"
-            [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground">{{ line.type === 'rx' ? decoder.rxCurrentPattern() : decoder.txCurrentPattern() }}</span>
+            [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)">{{ line.type === 'rx' ? decoder.rxCurrentPattern() : decoder.txCurrentPattern() }}</span>
       <!-- Other-source pattern on new line (if any active pattern from opposite direction) -->
       @if (line.type === 'rx' && decoder.txCurrentPattern()) {
         <div><span class="cursor"
@@ -19,7 +19,7 @@
     } @else {
       <div class="fs-line"
            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-           [style.color]="line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground"
+           [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
            [innerHTML]="formatLine(line)"></div>
     }
   }

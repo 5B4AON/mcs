@@ -1,25 +1,30 @@
 /**
  * Arduino Pro Micro (nRF52840) MIDI Interface for Morse Code Studio
+ * Version 1.1.0
  *
  * ============================================================
  * OVERVIEW
  * ============================================================
  * This sketch turns an nRF52840-based Pro Micro board (such as
  * the Supermini nRF52840, nice!nano, or similar) into a USB
- * MIDI device that bridges physical morse keys/paddles with
- * Morse Code Studio running in a browser.
+ * MIDI device that bridges physical momentary switches (morse
+ * keys, paddles, foot switches, etc.) with Morse Code Studio
+ * running in a browser.
  *
  * This is the nRF52840 variant. For the classic ATmega32U4
  * Pro Micro, use the other sketch instead.
  *
- * INPUTS  — A straight key or iambic paddles wired to input
- *           pins. When a key/paddle contact closes (shorts to
- *           GND), the Arduino sends a MIDI Note On message to
- *           the PC. When the contact opens, it sends Note Off.
+ * All 16 usable GPIO pins are configurable. Each pin has four
+ * settings: GPIO number, direction (input or output), MIDI
+ * channel, and MIDI note. Change any combination to suit your
+ * wiring and MIDI mapping.
  *
- * OUTPUTS — When the PC sends a MIDI Note On, the Arduino
- *           drives the corresponding output pin HIGH (e.g. to
- *           drive an optocoupler that keys a radio transmitter).
+ * INPUTS  — When a contact closes (shorts to GND), the
+ *           Arduino sends a MIDI Note On. When it opens, it
+ *           sends Note Off.
+ *
+ * OUTPUTS — When the PC sends a MIDI Note On matching a pin's
+ *           channel + note, the Arduino drives that pin HIGH.
  *           On Note Off the pin goes LOW again.
  *
  * The onboard LEDs are NOT used by this sketch — the PCA10056
@@ -63,7 +68,7 @@
  * 3. Tools → USB Stack → "TinyUSB"
  *
  * ============================================================
- * PIN LAYOUT
+ * ARDUINO PRO MICRO PINOUT
  * ============================================================
  * The nRF52840 Pro Micro (Supermini / nice!nano) has the same
  * physical footprint as the ATmega32U4 Pro Micro, but the
@@ -71,30 +76,32 @@
  * This sketch uses raw GPIO numbers for the Nordic DK board
  * definition.
  *
- * Silkscreen → nRF52840 GPIO mapping (nice!nano / Supermini):
+ *   PIN  Silk  nRF GPIO   Dir  Ch  Note
+ *   ───  ────  ────────   ───  ──  ────
+ *    1   "2"   P0.17 (17) IN   1  C4  (60)
+ *    2   "3"   P0.20 (20) IN   1  D4  (62)
+ *    3   "4"   P0.22 (22) IN   1  E4  (64)
+ *    4   "5"   P0.24 (24) IN   1  F#4 (66)
+ *    5   "6"   P1.00 (32) IN   1  G#4 (68)
+ *    6   "7"   P0.11 (11) IN   2  A#4 (70)
+ *    7   "8"   P1.04 (36) IN   2  C5  (72)
+ *    8   "9"   P1.06 (38) IN   2  D5  (74)
+ *    9   "10"  P0.09  (9) IN   2  E5  (76)
+ *   10   "16"  P0.10 (10) IN   2  F#5 (78)
+ *   11   "14"  P1.11 (43) OUT  1  G#5 (80)
+ *   12   "15"  P1.13 (45) OUT  1  A#5 (82)
+ *   13   "A0"  P0.02  (2) OUT  1  C6  (84)
+ *   14   "A1"  P0.03  (3) OUT  2  D6  (86)
+ *   15   "A2"  P0.28 (28) OUT  2  E6  (88)
+ *   16   "A3"  P0.29 (29) OUT  2  F#6 (90)
  *
- *   ┌─────────────────────────────────────────────────────┐
- *   │                  USB Connector                      │
- *   ├────────────────┬────────────────────────────────────┤
- *   │  D1/TX         │     RAW / VIN                     │
- *   │  D0/RX         │     GND  ← output ground          │
- *   │  GND     ◄──── │ ── input ground                   │
- *   │  GND           │     RST                           │
- *   │  "2"  P0.17 ← │ ── Straight Key IN   (GPIO 17)    │
- *   │  "3"  P0.20 ← │ ── Dit Paddle IN     (GPIO 20)    │
- *   │  "4"  P0.22 ← │ ── Dah Paddle IN     (GPIO 22)    │
- *   │  "5"  P0.24 → │ ── Straight Key OUT  (GPIO 24)    │
- *   │  "6"  P1.00 → │ ── Dit OUT           (GPIO 32)    │
- *   │  "7"  P0.11 → │ ── Dah OUT           (GPIO 11)    │
- *   │  "8"  P1.04   │     ...                            │
- *   │  "9"  P1.06   │     ...                            │
- *   │  ...          │     ...                            │
- *   ├────────────────┴────────────────────────────────────┤
- *   │       (B+)      (B−)      (RST)                    │
- *   └─────────────────────────────────────────────────────┘
+ *   GND is available on both sides of the board.
+ *
+ *   Every pin's direction, MIDI channel, and note are fully
+ *   configurable — edit the PIN/DIR/CH/NOTE constants below.
  *
  *   Input pins use internal pull-up resistors (no external
- *   components needed — just wire the key between the pin
+ *   components needed — just wire the switch between the pin
  *   and GND).
  *
  *   Output pins are LOW by default and go HIGH when the PC
@@ -151,62 +158,56 @@ MIDI_CREATE_INSTANCE(Adafruit_USBD_MIDI, usbMidi, MIDI);
 // remapping), we must use the actual nRF52840 GPIO numbers,
 // NOT the silkscreen labels printed on the board.
 //
-// The table below maps silkscreen → GPIO for the nice!nano /
-// Supermini nRF52840. If your board differs, update these.
+// Each slot below defines one pin with four properties:
 //
-//   Silkscreen "2" → P0.17 → GPIO 17
-//   Silkscreen "3" → P0.20 → GPIO 20
-//   Silkscreen "4" → P0.22 → GPIO 22
-//   Silkscreen "5" → P0.24 → GPIO 24
-//   Silkscreen "6" → P1.00 → GPIO 32  (32 + 0)
-//   Silkscreen "7" → P0.11 → GPIO 11
+//   PIN_n  — raw nRF52840 GPIO number
+//   DIR_n  — direction: 0 = input, 1 = output
+//   CH_n   — MIDI channel (1–16; the MIDI Library is 1-based,
+//            so 1 here = channel 0 in the ATmega sketch / MCS)
+//   NOTE_n — MIDI note number (0–127)
+//
+// Change any value to reconfigure the board. Slots whose
+// direction is set to input will use debounced switch
+// reading; slots set to output will respond to incoming
+// MIDI messages matching their channel + note.
+//
+// Silkscreen → GPIO mapping (nice!nano / Supermini nRF52840):
+//   "2"→17  "3"→20  "4"→22  "5"→24  "6"→32  "7"→11
+//   "8"→36  "9"→38  "10"→9  "16"→10  "14"→43  "15"→45
+//   "A0"→2  "A1"→3  "A2"→28  "A3"→29
 
-/** Straight key input — silkscreen "2", GPIO P0.17 */
-const int PIN_IN_STRAIGHT = 17;
+/** Total number of configurable pin slots */
+const int NUM_PINS = 16;
 
-/** Dit (dot) paddle input — silkscreen "3", GPIO P0.20 */
-const int PIN_IN_DIT      = 20;
+/** Direction constants */
+const byte DIR_IN  = 0;
+const byte DIR_OUT = 1;
 
-/** Dah (dash) paddle input — silkscreen "4", GPIO P0.22 */
-const int PIN_IN_DAH      = 22;
-
-/** Straight key output — silkscreen "5", GPIO P0.24 */
-const int PIN_OUT_STRAIGHT = 24;
-
-/** Dit output — silkscreen "6", GPIO P1.00 */
-const int PIN_OUT_DIT      = 32;
-
-/** Dah output — silkscreen "7", GPIO P0.11 */
-const int PIN_OUT_DAH      = 11;
+//        Pin    Dir      Ch  Note
+// ──────────────────────────────────────
+const int  PIN_1  = 17;  const byte DIR_1  = DIR_IN;   const byte CH_1  = 1;  const byte NOTE_1  = 60;  // C4
+const int  PIN_2  = 20;  const byte DIR_2  = DIR_IN;   const byte CH_2  = 1;  const byte NOTE_2  = 62;  // D4
+const int  PIN_3  = 22;  const byte DIR_3  = DIR_IN;   const byte CH_3  = 1;  const byte NOTE_3  = 64;  // E4
+const int  PIN_4  = 24;  const byte DIR_4  = DIR_IN;   const byte CH_4  = 1;  const byte NOTE_4  = 66;  // F#4
+const int  PIN_5  = 32;  const byte DIR_5  = DIR_IN;   const byte CH_5  = 1;  const byte NOTE_5  = 68;  // G#4
+const int  PIN_6  = 11;  const byte DIR_6  = DIR_IN;   const byte CH_6  = 2;  const byte NOTE_6  = 70;  // A#4
+const int  PIN_7  = 36;  const byte DIR_7  = DIR_IN;   const byte CH_7  = 2;  const byte NOTE_7  = 72;  // C5
+const int  PIN_8  = 38;  const byte DIR_8  = DIR_IN;   const byte CH_8  = 2;  const byte NOTE_8  = 74;  // D5
+const int  PIN_9  =  9;  const byte DIR_9  = DIR_IN;   const byte CH_9  = 2;  const byte NOTE_9  = 76;  // E5
+const int  PIN_10 = 10;  const byte DIR_10 = DIR_IN;   const byte CH_10 = 2;  const byte NOTE_10 = 78;  // F#5
+const int  PIN_11 = 43;  const byte DIR_11 = DIR_OUT;  const byte CH_11 = 1;  const byte NOTE_11 = 80;  // G#5
+const int  PIN_12 = 45;  const byte DIR_12 = DIR_OUT;  const byte CH_12 = 1;  const byte NOTE_12 = 82;  // A#5
+const int  PIN_13 =  2;  const byte DIR_13 = DIR_OUT;  const byte CH_13 = 1;  const byte NOTE_13 = 84;  // C6
+const int  PIN_14 =  3;  const byte DIR_14 = DIR_OUT;  const byte CH_14 = 2;  const byte NOTE_14 = 86;  // D6
+const int  PIN_15 = 28;  const byte DIR_15 = DIR_OUT;  const byte CH_15 = 2;  const byte NOTE_15 = 88;  // E6
+const int  PIN_16 = 29;  const byte DIR_16 = DIR_OUT;  const byte CH_16 = 2;  const byte NOTE_16 = 90;  // F#6
 
 // ============================================================
-// MIDI CONFIGURATION
+// MIDI VELOCITY
 // ============================================================
-// These defaults match the Morse Code Studio MIDI settings.
-// Change them here if you customise MCS to use different values.
-
-/**
- * MIDI channel (1–16).
- * Note: The MIDI Library uses 1-based channels (1 = first channel),
- * unlike MIDIUSB which uses 0-based. Channel 1 here corresponds
- * to channel 0 in the ATmega32U4 sketch and in MCS settings.
- */
-const byte MIDI_CH = 1;
 
 /** MIDI velocity for Note On messages (0–127). */
 const byte MIDI_VELOCITY = 127;
-
-// --- Input note numbers (sent TO the PC when a key is pressed) ---
-const byte NOTE_IN_STRAIGHT = 60;   // C4
-const byte NOTE_IN_DIT      = 62;   // D4
-const byte NOTE_IN_DAH      = 64;   // E4
-
-// --- Output note numbers (received FROM the PC to drive pins) ---
-// These MUST differ from the input notes to prevent feedback loops
-// when both MIDI input and output are enabled simultaneously.
-const byte NOTE_OUT_STRAIGHT = 66;  // F#4
-const byte NOTE_OUT_DIT      = 68;  // G#4
-const byte NOTE_OUT_DAH      = 70;  // A#4
 
 // ============================================================
 // DEBOUNCE
@@ -223,20 +224,37 @@ const unsigned long DEBOUNCE_MS = 5;
 
 /** Tracks the debounced state of one input pin. */
 struct InputState {
-  int      pin;
-  byte     note;
-  bool     pressed;
-  bool     rawLast;
-  unsigned long lastEdge;
+  int      pin;           // raw nRF GPIO number
+  byte     channel;       // MIDI channel (1-based)
+  byte     note;          // MIDI note to send
+  bool     pressed;       // current debounced state (true = closed)
+  bool     rawLast;       // last raw reading
+  unsigned long lastEdge; // millis() of last raw state change
 };
 
-InputState inputs[3];
+/** Maps one output channel+note combination to its GPIO pin. */
+struct OutputMapping {
+  int  pin;      // raw nRF GPIO number
+  byte channel;  // MIDI channel (1-based)
+  byte note;     // MIDI note that triggers this output
+};
 
-/** Map an output note number to its GPIO pin. Returns -1 if not matched. */
-int outputPinForNote(byte note) {
-  if (note == NOTE_OUT_STRAIGHT) return PIN_OUT_STRAIGHT;
-  if (note == NOTE_OUT_DIT)      return PIN_OUT_DIT;
-  if (note == NOTE_OUT_DAH)      return PIN_OUT_DAH;
+/** Runtime arrays — sized to NUM_PINS (worst case all one direction). */
+InputState    inputs[NUM_PINS];
+OutputMapping outputMaps[NUM_PINS];
+int numInputs  = 0;
+int numOutputs = 0;
+
+/**
+ * Find the output GPIO pin for a given MIDI channel and note.
+ * Returns -1 if no output is mapped to that combination.
+ */
+int outputPinForMessage(byte channel, byte note) {
+  for (int i = 0; i < numOutputs; i++) {
+    if (outputMaps[i].channel == channel && outputMaps[i].note == note) {
+      return outputMaps[i].pin;
+    }
+  }
   return -1;
 }
 
@@ -246,8 +264,7 @@ int outputPinForNote(byte note) {
 
 /** Called when the PC sends a Note On message. */
 void handleNoteOn(byte channel, byte note, byte velocity) {
-  if (channel != MIDI_CH) return;
-  int pin = outputPinForNote(note);
+  int pin = outputPinForMessage(channel, note);
   if (pin >= 0 && velocity > 0) {
     gpioWrite(pin, true);
   } else if (pin >= 0) {
@@ -258,8 +275,7 @@ void handleNoteOn(byte channel, byte note, byte velocity) {
 
 /** Called when the PC sends a Note Off message. */
 void handleNoteOff(byte channel, byte note, byte velocity) {
-  if (channel != MIDI_CH) return;
-  int pin = outputPinForNote(note);
+  int pin = outputPinForMessage(channel, note);
   if (pin >= 0) {
     gpioWrite(pin, false);
   }
@@ -269,25 +285,38 @@ void handleNoteOff(byte channel, byte note, byte velocity) {
 // SETUP
 // ============================================================
 void setup() {
-  // Configure input pins with internal pull-up resistors
-  // Using nRF HAL directly to bypass PCA10056 pin map
-  gpioMode(PIN_IN_STRAIGHT, false);
-  gpioMode(PIN_IN_DIT,      false);
-  gpioMode(PIN_IN_DAH,      false);
+  // Collect all slot definitions into local arrays for iteration
+  const int  pins[]  = { PIN_1,  PIN_2,  PIN_3,  PIN_4,  PIN_5,  PIN_6,
+                          PIN_7,  PIN_8,  PIN_9,  PIN_10, PIN_11, PIN_12,
+                          PIN_13, PIN_14, PIN_15, PIN_16 };
+  const byte dirs[]  = { DIR_1,  DIR_2,  DIR_3,  DIR_4,  DIR_5,  DIR_6,
+                          DIR_7,  DIR_8,  DIR_9,  DIR_10, DIR_11, DIR_12,
+                          DIR_13, DIR_14, DIR_15, DIR_16 };
+  const byte chs[]   = { CH_1,   CH_2,   CH_3,   CH_4,   CH_5,   CH_6,
+                          CH_7,   CH_8,   CH_9,   CH_10,  CH_11,  CH_12,
+                          CH_13,  CH_14,  CH_15,  CH_16  };
+  const byte notes[] = { NOTE_1,  NOTE_2,  NOTE_3,  NOTE_4,  NOTE_5,  NOTE_6,
+                          NOTE_7,  NOTE_8,  NOTE_9,  NOTE_10, NOTE_11, NOTE_12,
+                          NOTE_13, NOTE_14, NOTE_15, NOTE_16 };
 
-  // Configure output pins — start LOW (off)
-  gpioMode(PIN_OUT_STRAIGHT, true);
-  gpioMode(PIN_OUT_DIT,      true);
-  gpioMode(PIN_OUT_DAH,      true);
-  gpioWrite(PIN_OUT_STRAIGHT, false);
-  gpioWrite(PIN_OUT_DIT,      false);
-  gpioWrite(PIN_OUT_DAH,      false);
+  numInputs  = 0;
+  numOutputs = 0;
 
-
-  // Initialise input state tracking
-  inputs[0] = { PIN_IN_STRAIGHT, NOTE_IN_STRAIGHT, false, false, 0 };
-  inputs[1] = { PIN_IN_DIT,      NOTE_IN_DIT,      false, false, 0 };
-  inputs[2] = { PIN_IN_DAH,      NOTE_IN_DAH,      false, false, 0 };
+  for (int i = 0; i < NUM_PINS; i++) {
+    if (dirs[i] == DIR_IN) {
+      // Input: enable internal pull-up via nRF HAL; when switch
+      // is open the pin reads HIGH, when shorted to GND it reads LOW.
+      gpioMode(pins[i], false);
+      inputs[numInputs] = { pins[i], chs[i], notes[i], false, false, 0 };
+      numInputs++;
+    } else {
+      // Output: start LOW (off) via nRF HAL.
+      gpioMode(pins[i], true);
+      gpioWrite(pins[i], false);
+      outputMaps[numOutputs] = { pins[i], chs[i], notes[i] };
+      numOutputs++;
+    }
+  }
 
   // Initialise USB MIDI
   usbMidi.setStringDescriptor("MCS MIDI Interface");
@@ -308,10 +337,9 @@ void setup() {
 // ============================================================
 void loop() {
   unsigned long now = millis();
-  bool anyInputPressed = false;
 
   // --- 1. Scan input pins (debounced) ---
-  for (int i = 0; i < 3; i++) {
+  for (int i = 0; i < numInputs; i++) {
     bool raw = !gpioRead(inputs[i].pin);  // active LOW: pressed = pin reads 0
 
     if (raw != inputs[i].rawLast) {
@@ -323,14 +351,12 @@ void loop() {
       if (raw != inputs[i].pressed) {
         inputs[i].pressed = raw;
         if (raw) {
-          MIDI.sendNoteOn(inputs[i].note, MIDI_VELOCITY, MIDI_CH);
+          MIDI.sendNoteOn(inputs[i].note, MIDI_VELOCITY, inputs[i].channel);
         } else {
-          MIDI.sendNoteOff(inputs[i].note, 0, MIDI_CH);
+          MIDI.sendNoteOff(inputs[i].note, 0, inputs[i].channel);
         }
       }
     }
-
-    if (inputs[i].pressed) anyInputPressed = true;
   }
 
   // --- 2. Process incoming MIDI via raw TinyUSB C API ---

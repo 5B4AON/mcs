@@ -133,7 +133,7 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
 
   // ---- Text formatting (delegates to shared utility functions) ----
 
-  /** Format a display line with optional username prefix and prosign/emoji styling */
+  /** Format a display line with optional name prefix and prosign/emoji styling */
   formatLine(line: DisplayLine): SafeHtml {
     return formatLine(line, this.settings.settings(), this.sanitizer);
   }

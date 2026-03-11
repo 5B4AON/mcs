@@ -71,7 +71,7 @@ export class RtdbOutputCardComponent implements OnDestroy {
     const value = (event.target as HTMLInputElement).value;
     this.settings.update({ [key]: value } as Partial<AppSettings>);
 
-    const rtdbOutputKeys: (keyof AppSettings)[] = ['rtdbOutputChannelName', 'rtdbOutputChannelSecret', 'rtdbOutputUserName'];
+    const rtdbOutputKeys: (keyof AppSettings)[] = ['rtdbOutputChannelName', 'rtdbOutputChannelSecret', 'rtdbOutputName'];
     if (rtdbOutputKeys.includes(key) && this.settings.settings().rtdbOutputEnabled) {
       if (this.rtdbOutputDebounce) clearTimeout(this.rtdbOutputDebounce);
       this.rtdbOutputDebounce = setTimeout(() => this.rtdbService.startOutput(), 600);

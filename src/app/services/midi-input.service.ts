@@ -4,7 +4,7 @@
 
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode } from './settings.service';
+import { SettingsService, PaddleMode, DecoderSource } from './settings.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { MidiOutputService } from './midi-output.service';
 import { timingsFromWpm } from '../morse-table';
@@ -25,6 +25,16 @@ export function midiNoteName(note: number): string {
   if (note < 0 || note > 127) return '—';
   const octave = Math.floor(note / 12) - 1;
   return `${NOTE_NAMES[note % 12]}${octave}`;
+}
+
+/**
+ * Data captured during MIDI learn/capture mode.
+ */
+export interface MidiLearnResult {
+  note: number;
+  channel: number;
+  deviceId: string;
+  deviceName: string;
 }
 
 /**
@@ -69,7 +79,7 @@ export class MidiInputService implements OnDestroy {
   readonly lastError = signal('');
 
   /** Emits captured note during learn mode */
-  readonly learnedNote$ = new Subject<{ note: number; channel: number; deviceId: string; deviceName: string }>();
+  readonly learnedNote$ = new Subject<MidiLearnResult>();
 
   private midiAccess: MIDIAccess | null = null;
   private started = false;
@@ -78,10 +88,10 @@ export class MidiInputService implements OnDestroy {
   private startingPromise: Promise<void> | null = null;
 
   /** Learn mode: when set, the next note-on is captured instead of acted on */
-  private learnCallback: ((note: number) => void) | null = null;
+  private learnCallback: ((result: MidiLearnResult) => void) | null = null;
 
   /** Track which notes are currently held (to release on stop) */
-  private activeNotes = new Map<number, 'straightKey' | 'dit' | 'dah'>();
+  private activeNotes = new Map<number, { action: 'straightKey' | 'dit' | 'dah'; source: DecoderSource; name: string; color: string }>();
 
   /**
    * Keep-alive timer — periodically re-attaches MIDI listeners and verifies
@@ -114,6 +124,8 @@ export class MidiInputService implements OnDestroy {
   private midiElementPlaying = false;
   private midiKeyerRunning = false;
   private midiPaddleSource: 'rx' | 'tx' = 'rx';
+  private midiPaddleName = '';
+  private midiPaddleColor = '';
 
   constructor(
     private settings: SettingsService,
@@ -220,9 +232,9 @@ export class MidiInputService implements OnDestroy {
   /**
    * Enter learn mode: the next MIDI note-on will be captured and returned
    * via the callback instead of being processed as a keyer input.
-   * Used by the settings UI for the "capture" buttons.
+   * Used by the settings UI for the "capture" / auto-detect buttons.
    */
-  startLearn(callback: (note: number) => void): void {
+  startLearn(callback: (result: MidiLearnResult) => void): void {
     this.learnCallback = callback;
   }
 
@@ -240,6 +252,32 @@ export class MidiInputService implements OnDestroy {
   reattach(): void {
     if (this.started) {
       this.attachListeners();
+    }
+  }
+
+  /**
+   * Enumerate available MIDI input devices without starting the full
+   * listener pipeline. Used by the settings UI to populate device
+   * dropdowns even when MIDI input is disabled.
+   */
+  async enumerateDevices(): Promise<void> {
+    if (!this.supported) return;
+    // If already started, devices are already populated
+    if (this.started && this.midiAccess) {
+      this.refreshInputs();
+      return;
+    }
+    try {
+      const access = await (navigator as any).requestMIDIAccess({ sysex: false });
+      const inputs: { id: string; name: string }[] = [];
+      for (const input of access.inputs.values()) {
+        if (input.state === 'connected') {
+          inputs.push({ id: input.id, name: input.name || `MIDI Input ${input.id}` });
+        }
+      }
+      this.zone.run(() => this.midiInputs.set(inputs));
+    } catch {
+      // Silently ignore — the dropdown will just be empty
     }
   }
 
@@ -287,7 +325,9 @@ export class MidiInputService implements OnDestroy {
   }
 
   /**
-   * Attach onmidimessage to all connected inputs (or just the configured device).
+   * Attach onmidimessage to all connected inputs that are referenced
+   * by at least one enabled mapping (or all inputs if any mapping uses
+   * 'any' device).
    *
    * Explicitly opens each port before assigning the message handler.
    * Per the Web MIDI spec, simply assigning `onmidimessage` should auto-open
@@ -298,11 +338,13 @@ export class MidiInputService implements OnDestroy {
    */
   private attachListeners(): void {
     if (!this.midiAccess) return;
-    const configuredId = this.settings.settings().midiInputDeviceId;
+    const mappings = this.settings.settings().midiInputMappings.filter(m => m.enabled);
+    const listenAll = mappings.some(m => !m.deviceId);
+    const deviceIds = new Set(mappings.map(m => m.deviceId).filter(Boolean));
 
     for (const input of this.midiAccess.inputs.values()) {
-      // Skip disconnected devices and devices that don't match the configured ID
-      if (input.state !== 'connected' || (configuredId && input.id !== configuredId)) {
+      // Skip disconnected devices and devices that don't match any mapping
+      if (input.state !== 'connected' || (!listenAll && !deviceIds.has(input.id))) {
         input.onmidimessage = null;
         continue;
       }
@@ -338,19 +380,20 @@ export class MidiInputService implements OnDestroy {
 
     if (!isNoteOn && !isNoteOff) return;
 
-    // Channel filter: 0 = omni (accept all), 1-16 = specific
-    const channelFilter = this.settings.settings().midiInputChannel;
-    if (channelFilter > 0 && channel !== channelFilter) return;
-
     // Learn mode: capture the note and return
     if (isNoteOn && this.learnCallback) {
       const cb = this.learnCallback;
       this.learnCallback = null;
+      const target = msg.target as MIDIInput | null;
+      const result: MidiLearnResult = {
+        note,
+        channel,
+        deviceId: target?.id || '',
+        deviceName: target?.name || 'Unknown',
+      };
       this.zone.run(() => {
-        cb(note);
-        // Also emit for the UI
-        const deviceName = this.getDeviceName(msg);
-        this.learnedNote$.next({ note, channel, deviceId: '', deviceName });
+        cb(result);
+        this.learnedNote$.next(result);
       });
       return;
     }
@@ -382,53 +425,68 @@ export class MidiInputService implements OnDestroy {
     // ======================================================================
     if (isNoteOn && this.midiOutput.isSending()) return;
 
-    const s = this.settings.settings();
-    const straightSource = s.midiStraightKeySource;
-    const paddleSource = s.midiPaddleSource;
-    const reverse = s.midiReversePaddles;
-
-    // Straight key and paddle inputs bypass KeyerService completely.
-    // MIDI input talks to the decoder directly (for straight key) or
-    // through its own independent iambic keyer (for paddles).  This
-    // ensures zero shared state with the keyboard/mouse/touch keyer.
-    if (isNoteOn) {
-      if (note === s.midiStraightKeyNote) {
-        this.activeNotes.set(note, 'straightKey');
-        this.zone.run(() => {
-          this.decoder.onKeyDown('midiStraightKey', straightSource, { fromMidi: true });
-        });
-      } else if (note === s.midiDitNote) {
-        this.activeNotes.set(note, reverse ? 'dah' : 'dit');
-        if (reverse) {
-          this.midiDahPaddleInput(true, paddleSource);
-        } else {
-          this.midiDitPaddleInput(true, paddleSource);
-        }
-      } else if (note === s.midiDahNote) {
-        this.activeNotes.set(note, reverse ? 'dit' : 'dah');
-        if (reverse) {
-          this.midiDitPaddleInput(true, paddleSource);
-        } else {
-          this.midiDahPaddleInput(true, paddleSource);
-        }
-      }
-    } else if (isNoteOff) {
-      const action = this.activeNotes.get(note);
-      if (!action) return;
+    // Note-off: use stored action state
+    if (isNoteOff) {
+      const active = this.activeNotes.get(note);
+      if (!active) return;
       this.activeNotes.delete(note);
-
-      switch (action) {
+      switch (active.action) {
         case 'straightKey':
           this.zone.run(() => {
-            this.decoder.onKeyUp('midiStraightKey', straightSource, { fromMidi: true });
+            this.decoder.onKeyUp('midiStraightKey', active.source, {
+              fromMidi: true, name: active.name, color: active.color,
+            });
           });
           break;
         case 'dit':
-          this.midiDitPaddleInput(false, paddleSource);
+          this.midiDitPaddleInput(false, active.source);
           break;
         case 'dah':
-          this.midiDahPaddleInput(false, paddleSource);
+          this.midiDahPaddleInput(false, active.source);
           break;
+      }
+      return;
+    }
+
+    // Note-on: find matching mapping
+    const deviceId = (msg.target as MIDIInput | null)?.id || '';
+    const mappings = this.settings.settings().midiInputMappings;
+
+    for (const mapping of mappings) {
+      if (!mapping.enabled) continue;
+      // Device filter
+      if (mapping.deviceId && mapping.deviceId !== deviceId) continue;
+      // Channel filter
+      if (mapping.channel > 0 && mapping.channel !== channel) continue;
+
+      if (mapping.mode === 'straightKey' && note === mapping.value) {
+        this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
+        this.zone.run(() => {
+          this.decoder.onKeyDown('midiStraightKey', mapping.source, {
+            fromMidi: true, name: mapping.name || undefined, color: mapping.color || undefined,
+          });
+        });
+        return;
+      }
+
+      if (mapping.mode === 'paddle') {
+        const reverse = mapping.reversePaddles;
+        const ditValue = reverse ? mapping.dahValue : mapping.value;
+        const dahValue = reverse ? mapping.value : mapping.dahValue;
+        if (note === ditValue) {
+          this.activeNotes.set(note, { action: 'dit', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
+          this.midiPaddleName = mapping.name || '';
+          this.midiPaddleColor = mapping.color || '';
+          this.midiDitPaddleInput(true, mapping.source);
+          return;
+        }
+        if (note === dahValue) {
+          this.activeNotes.set(note, { action: 'dah', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
+          this.midiPaddleName = mapping.name || '';
+          this.midiPaddleColor = mapping.color || '';
+          this.midiDahPaddleInput(true, mapping.source);
+          return;
+        }
       }
     }
   }
@@ -457,21 +515,18 @@ export class MidiInputService implements OnDestroy {
 
   /** Release any currently active notes (called on stop) */
   private releaseAll(): void {
-    const s = this.settings.settings();
-    const straightSource = s.midiStraightKeySource;
-    const paddleSource = s.midiPaddleSource;
-    for (const [, action] of this.activeNotes) {
-      switch (action) {
+    for (const [, active] of this.activeNotes) {
+      switch (active.action) {
         case 'straightKey':
           this.zone.run(() => {
-            this.decoder.onKeyUp('midiStraightKey', straightSource, { fromMidi: true });
+            this.decoder.onKeyUp('midiStraightKey', active.source, { fromMidi: true });
           });
           break;
         case 'dit':
-          this.midiDitPaddleInput(false, paddleSource);
+          this.midiDitPaddleInput(false, active.source);
           break;
         case 'dah':
-          this.midiDahPaddleInput(false, paddleSource);
+          this.midiDahPaddleInput(false, active.source);
           break;
       }
     }
@@ -526,6 +581,8 @@ export class MidiInputService implements OnDestroy {
       this.zone.run(() => {
         this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
           perfectTiming: true, fromMidi: true,
+          name: this.midiPaddleName || undefined,
+          color: this.midiPaddleColor || undefined,
         });
       });
     }
@@ -558,6 +615,8 @@ export class MidiInputService implements OnDestroy {
     this.zone.run(() => {
       this.decoder.onKeyDown('midiPaddle', this.midiPaddleSource, {
         perfectTiming: true, fromMidi: true,
+        name: this.midiPaddleName || undefined,
+        color: this.midiPaddleColor || undefined,
       });
     });
 
@@ -566,6 +625,8 @@ export class MidiInputService implements OnDestroy {
       this.zone.run(() => {
         this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
           perfectTiming: true, fromMidi: true,
+          name: this.midiPaddleName || undefined,
+          color: this.midiPaddleColor || undefined,
         });
       });
       this.midiLastElement = this.midiCurrentElement;
@@ -621,12 +682,6 @@ export class MidiInputService implements OnDestroy {
     if (picked === 'dit') this.midiDitMemory = false;
     else if (picked === 'dah') this.midiDahMemory = false;
     return picked;
-  }
-
-  /** Try to get the device name from a MIDI message event */
-  private getDeviceName(msg: MIDIMessageEvent): string {
-    const target = msg.target as MIDIInput | null;
-    return target?.name || 'Unknown';
   }
 
   /**

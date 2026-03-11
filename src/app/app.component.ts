@@ -175,8 +175,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         for (let i = this.lastTaggedLen; i < tagged.length; i++) {
           const entry = tagged[i];
           // Push to independent display buffers for all entries
-          const userName = this.getDisplayUserName(entry.type, entry.userName);
-          this.displayBuffers.pushDecoded(entry.type, entry.char, userName);
+          const displayName = this.getDisplayName(entry.type, entry.name);
+          this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
 
           // Record input for loop detection (non-RTDB chars are from local inputs)
           if (!entry.fromRtdb) {
@@ -195,19 +195,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
 
           // Forward to MIDI output — skip chars that originated from MIDI input
-          // or serial input (prevents echo loops) and skip chars from local
-          // keyer pipelines (keyboard, mouse, touch) because those are already
-          // keyed on the MIDI output in real-time via the decoder's
-          // keyDown/keyUp path.
-          // Only forward chars from audio inputs (mic, CW), encoder, and RTDB.
+          // or serial input (prevents echo loops). Local keyer pipelines
+          // (keyboard, mouse, touch) already fire straight-key notes in
+          // real-time via keyDown/keyUp, so pass paddleOnly=true for those
+          // to avoid double-firing straight-key mappings while still
+          // driving paddle-mode mappings through the character path.
           if (!entry.fromMidi && !entry.fromSerial) {
             const isLocalKeyer = entry.inputPath &&
               (entry.inputPath === 'keyboardStraightKey' || entry.inputPath === 'keyboardPaddle' ||
                entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
                entry.inputPath === 'touchStraightKey' || entry.inputPath === 'touchPaddle');
-            if (!isLocalKeyer) {
-              this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm);
-            }
+            this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm, !!isLocalKeyer);
           }
 
           // Forward to RTDB output only for non-RTDB chars (prevent echo)
@@ -231,11 +229,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // (buf='', idx=0). Flush any remaining unpushed characters from
         // the old buffer so they reach the display (and prosign actions fire).
         if (buf === '' && this.lastSentBuf && this.lastSentIdx < this.lastSentBuf.length) {
-          const userName = this.getDisplayUserName('tx');
+          const displayName = this.getDisplayName('tx');
           let i = this.lastSentIdx;
           while (i < this.lastSentBuf.length) {
             const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
-            this.displayBuffers.pushSent(token, userName);
+            this.displayBuffers.pushSent(token, displayName);
             i = endIdx;
           }
         }
@@ -253,13 +251,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // Enter again). Reset tracking so subsequent advances are picked up.
         this.lastSentIdx = idx;
       } else if (idx > this.lastSentIdx) {
-        const userName = this.getDisplayUserName('tx');
+        const displayName = this.getDisplayName('tx');
         // Walk through newly sent characters using token extraction so
         // prosign patterns (e.g. '<SK>') are pushed as whole strings.
         let i = this.lastSentIdx;
         while (i < idx) {
           const { token, endIdx } = this.encoder.extractToken(buf, i);
-          this.displayBuffers.pushSent(token, userName);
+          this.displayBuffers.pushSent(token, displayName);
           i = endIdx;
         }
         this.lastSentIdx = idx;
@@ -272,8 +270,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       const count = this.encoder.wordGapCount();
       if (count > this.lastWordGapCount) {
-        const userName = this.getDisplayUserName('tx');
-        this.displayBuffers.pushSent(' ', userName);
+        const displayName = this.getDisplayName('tx');
+        this.displayBuffers.pushSent(' ', displayName);
       }
       this.lastWordGapCount = count;
     });
@@ -343,10 +341,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Firebase RTDB incoming characters → decoder display + sidetone only
     this.subs.push(
-      this.rtdbService.incomingChar$.subscribe(({ char, source, userName, wpm }) => {
+      this.rtdbService.incomingChar$.subscribe(({ char, source, name, wpm }) => {
         // Add to decoder tagged output so it appears in conversation / fullscreen
         // Mark fromRtdb so the forwarding effect doesn't echo it back to RTDB
-        this.decoder.taggedOutput.update(arr => [...arr, { type: source, char, userName, fromRtdb: true, wpm }]);
+        this.decoder.taggedOutput.update(arr => [...arr, { type: source, char, name, fromRtdb: true, wpm }]);
         this.decoder.decodedText.update(t => t + char);
         // Play through all outputs whose forward mode matches the source
         // Use remote WPM unless the user has chosen to override with local encoder WPM
@@ -702,19 +700,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Determine the userName prefix for a display buffer entry.
+   * Determine the name prefix for a display buffer entry.
    *
-   * - If the entry already has an RTDB userName (remote sender), use it.
+   * - If the entry already has a name (remote sender or MIDI mapping), use it.
    * - If RTDB output is enabled and the type matches forward mode,
    *   use our own callsign so the local display mirrors the remote view.
    */
-  private getDisplayUserName(type: 'rx' | 'tx', rtdbUserName?: string): string | undefined {
-    if (rtdbUserName) return rtdbUserName;
+  private getDisplayName(type: 'rx' | 'tx', entryName?: string): string | undefined {
+    if (entryName) return entryName;
     const s = this.settings.settings();
-    if (s.rtdbOutputEnabled && s.rtdbOutputUserName.trim()) {
+    if (s.rtdbOutputEnabled && s.rtdbOutputName.trim()) {
       const fwd = s.rtdbOutputForward;
       if (fwd === 'both' || fwd === type) {
-        return s.rtdbOutputUserName.trim();
+        return s.rtdbOutputName.trim();
       }
     }
     return undefined;
