@@ -123,10 +123,10 @@ export class MouseKeyerService implements OnDestroy {
         this.keyer.straightKeyInput(down, source, false, 'mouseStraightKey');
         break;
       case 'dit':
-        if (reverse) this.keyer.dahPaddleInput(down, source, false, 'mousePaddle'); else this.keyer.ditPaddleInput(down, source, false, 'mousePaddle');
+        if (reverse) this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode); else this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode);
         break;
       case 'dah':
-        if (reverse) this.keyer.ditPaddleInput(down, source, false, 'mousePaddle'); else this.keyer.dahPaddleInput(down, source, false, 'mousePaddle');
+        if (reverse) this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode); else this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode);
         break;
     }
   }

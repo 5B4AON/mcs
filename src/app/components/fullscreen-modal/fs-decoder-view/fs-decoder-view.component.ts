@@ -168,9 +168,9 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
     const element = button === 'left' ? 'dit' : 'dah';
     const effective = reverse ? (element === 'dit' ? 'dah' : 'dit') : element;
     if (effective === 'dit') {
-      this.keyer.ditPaddleInput(down, source, false, 'touchPaddle');
+      this.keyer.ditPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode);
     } else {
-      this.keyer.dahPaddleInput(down, source, false, 'touchPaddle');
+      this.keyer.dahPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode);
     }
   }
 

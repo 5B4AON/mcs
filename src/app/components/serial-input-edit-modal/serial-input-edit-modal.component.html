@@ -1,0 +1,193 @@
+<div class="serial-edit-overlay" (click)="cancel()">
+  <div class="serial-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+       aria-label="Edit Serial Input Mapping">
+
+    <!-- Header -->
+    <div class="serial-edit-header">
+      <h3>{{ editIndex >= 0 ? 'Edit' : 'Add' }} Serial Input Mapping</h3>
+      <span class="serial-edit-connected-badge" [class.connected]="isConnected" [class.disconnected]="!isConnected">
+        @if (isConnected) {
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+        }
+      </span>
+      <button type="button" class="close-btn" (click)="cancel()" title="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="serial-edit-body">
+      <!-- Serial Port selection -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label" for="serialEditPort">Serial Port</label>
+        @if (serialInput.ports().length === 0) {
+          <span class="serial-edit-hint">No serial ports available. Connect a USB-serial adapter and re-open this dialog.</span>
+        } @else {
+          <select id="serialEditPort" class="serial-edit-select" [value]="editPortIndex"
+                  (change)="onPortChange($event)">
+            <option [value]="-1">&mdash; Select &mdash;</option>
+            @for (port of serialInput.ports(); track $index) {
+              <option [value]="$index" [selected]="$index === editPortIndex">
+                {{ serialInput.portLabel(port) }}
+              </option>
+            }
+          </select>
+        }
+      </div>
+
+      @if (isSharing) {
+        <div class="serial-edit-hint" style="color: #0f8;">
+          &#x1F517; Sharing port with Serial Output &mdash; no separate connection needed.
+        </div>
+      }
+
+      <!-- Signal LED indicators (only when port connected) -->
+      @if (isConnected) {
+        <div class="serial-edit-signals">
+          <span class="signal-label">Signals:</span>
+          <span class="signal-led" [class.led-on]="signalDsr" [class.led-off]="!signalDsr" title="Data Set Ready">DSR</span>
+          <span class="signal-led" [class.led-on]="signalCts" [class.led-off]="!signalCts" title="Clear To Send">CTS</span>
+          <span class="signal-led" [class.led-on]="signalDcd" [class.led-off]="!signalDcd" title="Data Carrier Detect">DCD</span>
+          <span class="signal-led" [class.led-on]="signalRi" [class.led-off]="!signalRi" title="Ring Indicator">RI</span>
+        </div>
+      }
+
+      <!-- Polling & debounce settings -->
+      <div class="serial-edit-poll-row">
+        <label class="serial-edit-poll-label">
+          Poll interval:
+          <input type="number" class="serial-edit-poll-input"
+                 [value]="editPollInterval"
+                 [min]="5" [max]="50" step="1"
+                 (change)="onPollIntervalChange($event)">
+          ms
+        </label>
+        <label class="serial-edit-poll-label">
+          Debounce:
+          <input type="number" class="serial-edit-poll-input"
+                 [value]="editDebounceMs"
+                 [min]="2" [max]="10" step="1"
+                 (change)="onDebounceChange($event)">
+          ms
+        </label>
+      </div>
+      <div class="serial-edit-hint">
+        Max ~{{ maxWpm }} WPM at {{ editPollInterval }}ms poll / {{ editDebounceMs }}ms debounce.
+      </div>
+
+      <!-- Mode (Straight Key / Paddle) -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label" for="serialEditMode">Mode</label>
+        <select id="serialEditMode" class="serial-edit-select" [(ngModel)]="editMode">
+          <option value="straightKey">Straight Key</option>
+          <option value="paddle">Paddle</option>
+        </select>
+      </div>
+
+      <!-- Pin (Straight Key pin / Dit pin) -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label" for="serialEditPin">{{ editMode === 'paddle' ? 'Dit Paddle Pin' : 'Straight Key Pin' }}</label>
+        <select id="serialEditPin" class="serial-edit-select" [(ngModel)]="editPin">
+          @for (p of pins; track p.value) {
+            <option [value]="p.value">{{ p.label }}</option>
+          }
+        </select>
+      </div>
+
+      <!-- Dah Pin (only for paddle mode) -->
+      @if (editMode === 'paddle') {
+        <div class="serial-edit-field">
+          <label class="serial-edit-label" for="serialEditDahPin">Dah Paddle Pin</label>
+          <select id="serialEditDahPin" class="serial-edit-select" [(ngModel)]="editDahPin">
+            @for (p of pins; track p.value) {
+              <option [value]="p.value">{{ p.label }}</option>
+            }
+          </select>
+        </div>
+      }
+
+      <!-- Invert -->
+      <div class="serial-edit-field serial-edit-checkbox-row">
+        <label>
+          <input type="checkbox" [(ngModel)]="editInvert">
+          Invert Signal
+        </label>
+        <span class="serial-edit-hint">Swap active-high and active-low for this mapping.</span>
+      </div>
+
+      <!-- Used for (RX/TX) -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label" for="serialEditSource">Used for</label>
+        <select id="serialEditSource" class="serial-edit-select" [(ngModel)]="editSource">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </div>
+
+      <!-- Paddle-only options -->
+      @if (editMode === 'paddle') {
+        <!-- Reverse Paddles -->
+        <div class="serial-edit-field serial-edit-checkbox-row">
+          <label>
+            <input type="checkbox" [(ngModel)]="editReversePaddles">
+            Reverse Paddles
+          </label>
+        </div>
+
+        <!-- Paddle Mode -->
+        <div class="serial-edit-field">
+          <label class="serial-edit-label" for="serialEditPaddleMode">Paddle Mode</label>
+          <select id="serialEditPaddleMode" class="serial-edit-select" [(ngModel)]="editPaddleMode">
+            <option value="iambic-b">Iambic B</option>
+            <option value="iambic-a">Iambic A</option>
+            <option value="ultimatic">Ultimatic</option>
+            <option value="single-lever">Single Lever</option>
+          </select>
+        </div>
+      }
+
+      <!-- Error -->
+      @if (error) {
+        <div class="serial-edit-error">{{ error }}</div>
+      }
+
+      <!-- Name (optional) -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label" for="serialEditName">Name</label>
+        <input id="serialEditName" type="text" class="serial-edit-input" maxlength="20"
+               [(ngModel)]="editName" placeholder="e.g. callsign (optional)">
+        <span class="serial-edit-hint">Triggers a line break in conversation views when a different name appears.</span>
+      </div>
+
+      <!-- Color (optional) -->
+      <div class="serial-edit-field">
+        <label class="serial-edit-label">Color</label>
+        <div class="serial-color-row">
+          <input type="color" class="serial-color-picker"
+                 [ngModel]="editColor || '#ffffff'"
+                 (ngModelChange)="editColor = $event">
+          @if (editColor) {
+            <button type="button" class="serial-color-clear" (click)="editColor = ''" title="Clear color">&#10005;</button>
+          }
+          <span class="serial-color-preview" [style.color]="editColor || 'inherit'">Sample</span>
+        </div>
+        <span class="serial-edit-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="serial-edit-actions">
+      @if (editIndex >= 0) {
+        <button type="button" class="action-btn delete-btn" (click)="delete()" title="Delete this mapping">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+          Delete
+        </button>
+      }
+      <span class="actions-spacer"></span>
+      <button type="button" class="action-btn cancel-btn" (click)="cancel()">Cancel</button>
+      <button type="button" class="action-btn save-btn" (click)="save()">OK</button>
+    </div>
+  </div>
+</div>

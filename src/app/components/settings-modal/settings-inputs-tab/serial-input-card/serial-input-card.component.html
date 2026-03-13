@@ -4,9 +4,8 @@
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Serial Input</span>
-      <span class="source-badge" [class.source-rx]="settings.settings().serialStraightKeySource === 'rx'" [class.source-tx]="settings.settings().serialStraightKeySource === 'tx'">{{ settings.settings().serialStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
-      @if (settings.settings().serialPaddleSource !== settings.settings().serialStraightKeySource) {
-        <span class="source-badge" [class.source-rx]="settings.settings().serialPaddleSource === 'rx'" [class.source-tx]="settings.settings().serialPaddleSource === 'tx'">{{ settings.settings().serialPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+      @for (src of sourceBadges(); track src) {
+        <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
       }
     </div>
     <span class="connectivity-badge" [class.connected]="serialInput.connected()" [class.disconnected]="!serialInput.connected()">
@@ -39,168 +38,69 @@
         </div>
       }
 
-      <div class="serial-port-row">
-        <button (click)="addPort()" class="test-btn">
-          Add Serial Port&hellip;
-        </button>
-        <button (click)="refreshAndAutoSelect()" class="test-btn">
-          Refresh
-        </button>
-      </div>
-
-      @if (serialInput.ports().length === 0) {
-        <div class="cw-hint">
-          No serial ports available. Click &ldquo;Add Serial Port&hellip;&rdquo; to grant access.
-          If the port is already open via Serial Output, select the same port index to share it.
-        </div>
-      }
-
-      @if (serialInput.ports().length > 0) {
-        <label>Serial Port:
-          <select [value]="settings.settings().serialInputPortIndex"
-                  (change)="onSerialPortChange($event)">
-            <option [value]="-1">&mdash; Select &mdash;</option>
-            @for (port of serialInput.ports(); track $index) {
-              <option [value]="$index" [selected]="$index === settings.settings().serialInputPortIndex">
-                {{ serialInput.portLabel(port) }}
-              </option>
-            }
-          </select>
-        </label>
-      }
-
-      @if (serialInput.sharingPort()) {
-        <div class="cw-hint" style="color: #0f8;">
-          &#x1F517; Sharing port with Serial Output &mdash; no separate connection needed.
-        </div>
-      }
-
-      <!-- Signal LED indicators -->
-      @if (serialInput.connected()) {
-        <div class="serial-input-signals">
-          <span class="signal-label">Signals:</span>
-          <span class="signal-led" [class.led-on]="serialInput.dsr()" [class.led-off]="!serialInput.dsr()" title="Data Set Ready">DSR</span>
-          <span class="signal-led" [class.led-on]="serialInput.cts()" [class.led-off]="!serialInput.cts()" title="Clear To Send">CTS</span>
-          <span class="signal-led" [class.led-on]="serialInput.dcd()" [class.led-off]="!serialInput.dcd()" title="Data Carrier Detect">DCD</span>
-          <span class="signal-led" [class.led-on]="serialInput.ri()" [class.led-off]="!serialInput.ri()" title="Ring Indicator">RI</span>
-        </div>
-      }
-
-      <!-- Polling & debounce settings -->
-      <div class="serial-input-signals">
-        <label class="signal-mode-toggle">
-          Poll interval:
-          <input type="number" class="poll-interval-input"
-                 [value]="settings.settings().serialInputPollInterval"
-                 [min]="5" [max]="50" step="1"
-                 (change)="onPollIntervalChange($event)">
-          ms
-        </label>
-        <label class="signal-mode-toggle">
-          Debounce:
-          <input type="number" class="poll-interval-input"
-                 [value]="settings.settings().serialInputDebounceMs"
-                 [min]="2" [max]="10" step="1"
-                 (change)="onDebounceChange($event)">
-          ms
-        </label>
-      </div>
-      @if (serialInput.pollingActive()) {
-        <div class="cw-hint">
-          Polling at {{ settings.settings().serialInputPollInterval }}ms, debounce {{ settings.settings().serialInputDebounceMs }}ms &mdash; max ~{{ serialInput.maxWpm() }} WPM
-        </div>
-      }
-
-      <!-- ======= Straight Key Section ======= -->
-      <div class="card-section-divider">Straight Key</div>
-
-      <label>Used for:
-        <select [value]="settings.settings().serialStraightKeySource" (change)="onSettingChange('serialStraightKeySource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Signal Pin:
-        <select [value]="settings.settings().serialStraightKeyPin" (change)="onSettingChange('serialStraightKeyPin', $event)">
-          @for (pin of pinOptions; track pin.value) {
-            <option [value]="pin.value" [selected]="pin.value === settings.settings().serialStraightKeyPin">{{ pin.label }}</option>
-          }
-        </select>
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().serialStraightKeyInvert"
-               (change)="onBoolChange('serialStraightKeyInvert', $event)">
-        Invert straight key (active-low)
-      </label>
-
-      <!-- ======= Paddle Section ======= -->
-      <div class="card-section-divider">Paddle</div>
-
-      <label>Used for:
-        <select [value]="settings.settings().serialPaddleSource" (change)="onSettingChange('serialPaddleSource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Dit Paddle Pin:
-        <select [value]="settings.settings().serialPaddleDitPin" (change)="onSettingChange('serialPaddleDitPin', $event)">
-          @for (pin of pinOptions; track pin.value) {
-            <option [value]="pin.value" [selected]="pin.value === settings.settings().serialPaddleDitPin">{{ pin.label }}</option>
-          }
-        </select>
-      </label>
-
-      <label>Dah Paddle Pin:
-        <select [value]="settings.settings().serialPaddleDahPin" (change)="onSettingChange('serialPaddleDahPin', $event)">
-          @for (pin of pinOptions; track pin.value) {
-            <option [value]="pin.value" [selected]="pin.value === settings.settings().serialPaddleDahPin">{{ pin.label }}</option>
-          }
-        </select>
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().serialPaddleInvert"
-               (change)="onBoolChange('serialPaddleInvert', $event)">
-        Invert paddles (active-low)
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().serialReversePaddles"
-               (change)="onBoolChange('serialReversePaddles', $event)">
-        Reverse Paddles
-      </label>
-
-      <label>Paddle Mode:
-        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
-          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
-          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
-          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
-          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
-        </select>
-      </label>
-
-      <div class="keyer-hint">
-        Connect a straight key or paddles via a USB-serial adapter (FTDI, CH340, CP2102).
-        Each input signal pin (DSR, CTS, DCD, RI) can be assigned to straight key, dit,
-        or dah. Wire your key between the adapter&rsquo;s signal pin and ground.
-        Most adapters require grounding a pin to assert it. Use &ldquo;Invert&rdquo; if
-        your wiring uses the opposite logic level.
-      </div>
-
       @if (serialInput.lastError()) {
         <div class="conflict-warning">{{ serialInput.lastError() }}</div>
       }
 
-      <div class="serial-port-row">
-        @if (serialInput.connected()) {
-          <span class="serial-status connected">&#x2714; Connected</span>
-        } @else if (settings.settings().serialInputEnabled) {
-          <span class="serial-status">&#x2716; Disconnected</span>
+      <div class="midi-mapping-list">
+        @for (mapping of settings.settings().serialInputMappings; track $index) {
+          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
+            <label class="midi-mapping-enable">
+              <input type="checkbox" [checked]="mapping.enabled"
+                     (change)="onMappingEnabledChange($index, $event)">
+            </label>
+            @if (mapping.name) {
+              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="mapping.color || null">{{ mapping.name }}</span>
+            }
+            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+            <span class="midi-mapping-value" (click)="startEdit($index)">
+              @if (mapping.mode === 'straightKey') {
+                {{ pinLabel(mapping.pin) }}
+              } @else {
+                {{ pinLabel(mapping.pin) }}/{{ pinLabel(mapping.dahPin) }}
+              }
+            </span>
+            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'" (click)="startEdit($index)">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+            @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+              <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Paddles reversed">↔</span>
+            }
+            <!-- Per-row connectivity icon -->
+            @if (mapping.portIndex >= 0) {
+              <span class="midi-mapping-connected-icon" [class.connected]="isMappingConnected(mapping)" [class.disconnected]="!isMappingConnected(mapping)" [title]="isMappingConnected(mapping) ? 'Port ' + mapping.portIndex + ' connected' : 'Port ' + mapping.portIndex + ' not connected'">
+                @if (isMappingConnected(mapping)) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/></g></svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/></g></svg>
+                }
+              </span>
+            }
+            <span class="midi-mapping-spacer"></span>
+            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+          </div>
         }
+      </div>
+      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
+
+      <div class="keyer-hint">
+        Connect a straight key or paddles via a USB-serial adapter (FTDI, CH340, CP2102).
+        Each mapping specifies its own port, pin assignment, and polling parameters.
+        Wire your key between the adapter&rsquo;s signal pin and ground.
       </div>
     </div>
   }
 </div>
+
+<!-- Serial input edit modal -->
+@if (showEditModal) {
+  <app-serial-input-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [allMappings]="settings.settings().serialInputMappings"
+    [serialInput]="serialInput"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-serial-input-edit-modal>
+}
