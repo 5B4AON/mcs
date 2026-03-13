@@ -14,7 +14,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
 
-**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard, mouse, or touchscreen. MIDI input supports optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
+**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard (multiple mappings with per-mapping paddle mode), mouse, or touchscreen. MIDI and keyboard input mappings support optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
 **Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
 
@@ -34,7 +34,7 @@ Multiple MIDI devices can be used simultaneously — each MIDI Input and MIDI Ou
 
 ### Keyboard, Mouse and Touch
 
-The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
+The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The keyboard keyer supports **multiple independent mappings**, each with its own mode (straight key or paddle), key bindings, paddle mode, decoder source (RX/TX), reverse paddles toggle, and optional **Name** and **Colour** for multi-user conversation views. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
 
 ### Serial Port (Web Serial API)
 

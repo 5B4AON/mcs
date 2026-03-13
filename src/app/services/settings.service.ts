@@ -53,13 +53,16 @@ export type InputPath =
   | 'mic'                   // Pilot tone detection (straight key via mic)
   | 'cwAudio'               // CW tone detection (straight key via audio channel)
   | 'keyboardStraightKey'   // Keyboard straight key
-  | 'keyboardPaddle'        // Keyboard iambic/ultimatic paddle
+  | 'keyboardPaddle'        // Keyboard iambic/ultimatic paddle (external callers)
+  | `keyboardPaddle:${number}` // Per-mapping keyboard paddle pipeline
   | 'mouseStraightKey'      // Mouse button as straight key
   | 'mousePaddle'           // Mouse button as paddle
   | 'touchStraightKey'      // Touch screen straight key
   | 'touchPaddle'           // Touch screen paddle
-  | 'midiStraightKey'       // MIDI note as straight key
-  | 'midiPaddle'            // MIDI note as paddle
+  | 'midiStraightKey'       // MIDI note as straight key (external callers)
+  | `midiStraightKey:${number}` // Per-mapping MIDI straight key pipeline
+  | 'midiPaddle'            // MIDI note as paddle (external callers)
+  | `midiPaddle:${number}`  // Per-mapping MIDI paddle pipeline
   | 'serialStraightKey'     // Serial port input signal as straight key
   | 'serialPaddle';         // Serial port input signal as paddle
 
@@ -69,8 +72,32 @@ export interface ProsignActionEntry {
   action: ProsignAction;
 }
 
-/** Mode for a MIDI input mapping entry */
-export type MidiInputMode = 'straightKey' | 'paddle';
+/** Mode for a key input mapping entry (shared by keyboard and MIDI) */
+export type KeyInputMode = 'straightKey' | 'paddle';
+
+/** @deprecated Use KeyInputMode instead */
+export type MidiInputMode = KeyInputMode;
+
+/** Configuration for a single keyboard key input mapping */
+export interface KeyboardInputMapping {
+  enabled: boolean;
+  /** Mode: straight key or paddle */
+  mode: KeyInputMode;
+  /** KeyboardEvent.code for straight key, or dit paddle */
+  keyCode: string;
+  /** KeyboardEvent.code for dah paddle (only used when mode is 'paddle', '' if unused) */
+  dahKeyCode: string;
+  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
+  source: DecoderSource;
+  /** Reverse paddles (only used when mode is 'paddle') */
+  reversePaddles: boolean;
+  /** Paddle mode for this mapping (only used when mode is 'paddle') */
+  paddleMode: PaddleMode;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  name: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  color: string;
+}
 
 /** Mode for a MIDI output mapping entry */
 export type MidiOutputMode = 'straightKey' | 'paddle';
@@ -85,7 +112,7 @@ export interface MidiInputMapping {
   /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
   source: DecoderSource;
   /** Mode: straight key or paddle */
-  mode: MidiInputMode;
+  mode: KeyInputMode;
   /** MIDI note number for straight key, or dit paddle (-1 = not assigned) */
   value: number;
   /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
@@ -237,16 +264,12 @@ export interface AppSettings {
   // --- Keyer ---
   /** Enable/disable keyboard keyer input */
   keyboardKeyerEnabled: boolean;
-  /** Decoder source for keyboard straight key ('rx' or 'tx') */
-  keyboardStraightKeySource: DecoderSource;
-  /** Decoder source for keyboard paddle ('rx' or 'tx') */
-  keyboardPaddleSource: DecoderSource;
-  straightKeyCode: string;
-  leftPaddleKeyCode: string;
-  rightPaddleKeyCode: string;
+  /** Ordered list of keyboard key input mappings (straight key / paddle entries) */
+  keyboardInputMappings: KeyboardInputMapping[];
+  /** Paddle mode for MIDI input (keyboard mappings each have their own paddleMode) */
   paddleMode: PaddleMode;
+  /** Keyer WPM for all paddle inputs (keyboard + MIDI) */
   keyerWpm: number;
-  keyboardReversePaddles: boolean;
 
   // --- Mouse Keyer ---
   mouseKeyerEnabled: boolean;
@@ -421,14 +444,43 @@ const DEFAULT_SETTINGS: AppSettings = {
   encoderMode: 'enter',
 
   keyboardKeyerEnabled: true,
-  keyboardStraightKeySource: 'tx',
-  keyboardPaddleSource: 'tx',
-  straightKeyCode: 'Space',
-  leftPaddleKeyCode: 'BracketLeft',
-  rightPaddleKeyCode: 'BracketRight',
+  keyboardInputMappings: [
+    {
+      enabled: true,
+      mode: 'straightKey',
+      keyCode: 'Space',
+      dahKeyCode: '',
+      source: 'tx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      name: '',
+      color: '',
+    },
+    {
+      enabled: true,
+      mode: 'paddle',
+      keyCode: 'BracketLeft',
+      dahKeyCode: 'BracketRight',
+      source: 'tx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      name: '',
+      color: '',
+    },
+    {
+      enabled: true,
+      mode: 'paddle',
+      keyCode: 'ControlLeft',
+      dahKeyCode: 'ControlRight',
+      source: 'tx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      name: '',
+      color: '',
+    },
+  ],
   paddleMode: 'iambic-b',
   keyerWpm: 12,
-  keyboardReversePaddles: false,
 
   mouseKeyerEnabled: false,
   mouseKeyerSource: 'tx',
@@ -725,6 +777,7 @@ export class SettingsService {
       // keys added after the profile was saved).
       this.backfillProsignActions();
       this.backfillMidiOutputMappings();
+      this.backfillKeyboardInputMappings();
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -802,6 +855,18 @@ export class SettingsService {
     });
     if (patched) {
       this.settings.set({ ...s, midiOutputMappings: mappings });
+    }
+  }
+
+  /**
+   * Ensure keyboardInputMappings exists. Profiles saved before the
+   * multi-mapping feature was added will have the old single-key fields
+   * instead; replace them with the new default mappings array.
+   */
+  private backfillKeyboardInputMappings(): void {
+    const s = this.settings();
+    if (!Array.isArray(s.keyboardInputMappings) || s.keyboardInputMappings.length === 0) {
+      this.settings.set({ ...s, keyboardInputMappings: [...DEFAULT_SETTINGS.keyboardInputMappings] });
     }
   }
 

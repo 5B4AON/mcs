@@ -165,7 +165,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
       return;
     }
     const reverse = s.touchReversePaddles;
-    const element = button === 'left' ? s.touchLeftPaddle : s.touchRightPaddle;
+    const element = button === 'left' ? 'dit' : 'dah';
     const effective = reverse ? (element === 'dit' ? 'dah' : 'dit') : element;
     if (effective === 'dit') {
       this.keyer.ditPaddleInput(down, source, false, 'touchPaddle');
@@ -177,7 +177,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   /** Returns the effective paddle element for a touch button, accounting for reverse */
   effectiveTouchElement(button: 'left' | 'right'): 'dit' | 'dah' {
     const s = this.settings.settings();
-    const element = button === 'left' ? s.touchLeftPaddle : s.touchRightPaddle;
+    const element = button === 'left' ? 'dit' : 'dah';
     return s.touchReversePaddles ? (element === 'dit' ? 'dah' : 'dit') : element;
   }
 }

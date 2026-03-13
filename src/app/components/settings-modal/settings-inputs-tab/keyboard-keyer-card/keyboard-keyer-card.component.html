@@ -4,9 +4,8 @@
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Keyboard Keyer</span>
-      <span class="source-badge" [class.source-rx]="settings.settings().keyboardStraightKeySource === 'rx'" [class.source-tx]="settings.settings().keyboardStraightKeySource === 'tx'">{{ settings.settings().keyboardStraightKeySource === 'rx' ? 'RX' : 'TX' }}</span>
-      @if (settings.settings().keyboardPaddleSource !== settings.settings().keyboardStraightKeySource) {
-        <span class="source-badge" [class.source-rx]="settings.settings().keyboardPaddleSource === 'rx'" [class.source-tx]="settings.settings().keyboardPaddleSource === 'tx'">{{ settings.settings().keyboardPaddleSource === 'rx' ? 'RX' : 'TX' }}</span>
+      @for (src of sourceBadges(); track src) {
+        <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
       }
     </div>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
@@ -18,79 +17,51 @@
   @if (expanded) {
     <div class="settings-card-body">
 
-      <div class="card-section-divider">Straight Key</div>
+      <div class="midi-mapping-list">
+        @for (mapping of settings.settings().keyboardInputMappings; track $index) {
+          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
+            <label class="midi-mapping-enable">
+              <input type="checkbox" [checked]="mapping.enabled"
+                     (change)="onMappingEnabledChange($index, $event)">
+            </label>
+            @if (mapping.name) {
+              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
+            }
+            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+            <span class="midi-mapping-value" (click)="startEdit($index)">{{ keySummary(mapping) }}</span>
+            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'" (click)="startEdit($index)">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+            @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+              <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Paddles reversed">↔</span>
+            }
+            @if (mapping.mode === 'paddle') {
+              <span class="midi-mapping-mode-detail" (click)="startEdit($index)" title="Paddle mode">{{ paddleModeLabel(mapping.paddleMode) }}</span>
+            }
+            <span class="midi-mapping-spacer"></span>
+            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+          </div>
+        }
+      </div>
+      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
 
-      <label>Used for:
-        <select [value]="settings.settings().keyboardStraightKeySource" (change)="onSettingChange('keyboardStraightKeySource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Straight Key:
-        <button class="key-capture"
-                (keydown)="onCaptureKeyDown($event, 'straightKeyCode')">
-          {{ settings.settings().straightKeyCode }}
-        </button>
-      </label>
-
-      <div class="card-section-divider">Paddle</div>
-
-      <label>Used for:
-        <select [value]="settings.settings().keyboardPaddleSource" (change)="onSettingChange('keyboardPaddleSource', $event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-      </label>
-
-      <label>Left Paddle {{ settings.settings().keyboardReversePaddles ? '(dah)' : '(dit)' }}:
-        <button class="key-capture"
-                (keydown)="onCaptureKeyDown($event, 'leftPaddleKeyCode')">
-          {{ settings.settings().leftPaddleKeyCode }}
-        </button>
-      </label>
-
-      <label>Right Paddle {{ settings.settings().keyboardReversePaddles ? '(dit)' : '(dah)' }}:
-        <button class="key-capture"
-                (keydown)="onCaptureKeyDown($event, 'rightPaddleKeyCode')">
-          {{ settings.settings().rightPaddleKeyCode }}
-        </button>
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().keyboardReversePaddles"
-               (change)="onBoolChange('keyboardReversePaddles', $event)">
-        Reverse Paddles
-      </label>
-
-      <label>Paddle Mode:
-        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
-          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
-          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
-          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
-          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
-        </select>
-      </label>
-
-      @if (settings.settings().paddleMode === 'iambic-a' || settings.settings().paddleMode === 'iambic-b') {
-        <div class="keyer-hint">
-          Dit/dah memory active &mdash; press the opposite paddle during an element to queue it.
-          @if (settings.settings().paddleMode === 'iambic-b') {
-            In Iambic B, releasing both paddles completes the alternating element.
-          } @else {
-            In Iambic A, releasing both paddles stops immediately.
-          }
-        </div>
-      } @else if (settings.settings().paddleMode === 'ultimatic') {
-        <div class="keyer-hint">
-          Ultimatic: when both paddles are held, the <em>last pressed</em> paddle repeats.
-        </div>
-      } @else {
-        <div class="keyer-hint">
-          Single Lever: each paddle sends only its element. No alternation or memory.
-        </div>
-      }
+      <div class="keyer-hint">
+        Map one or more keyboard keys as a straight key or paddle.
+        Each paddle mapping has its own mode and independent keyer.
+      </div>
 
     </div>
   }
 </div>
+
+<!-- Keyboard input edit modal (hosted here because it's triggered from this card) -->
+@if (showEditModal) {
+  <app-keyboard-input-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [allMappings]="settings.settings().keyboardInputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-keyboard-input-edit-modal>
+}

@@ -1,0 +1,318 @@
+/* ===== Keyboard Input Edit Modal Overlay ===== */
+.kb-edit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: rgba(0, 0, 0, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  animation: kbEditFadeIn .15s ease-out;
+}
+
+@keyframes kbEditFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Dialog box */
+.kb-edit-dialog {
+  background: #1a1a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 460px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+  animation: kbEditSlideIn .15s ease-out;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+@keyframes kbEditSlideIn {
+  from { transform: translateY(-12px) scale(0.97); opacity: 0; }
+  to   { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* Header */
+.kb-edit-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1.25rem 0.5rem;
+  border-bottom: 1px solid #333;
+}
+
+.kb-edit-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  color: #ffcc00;
+  font-weight: 600;
+}
+
+.close-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s;
+  padding: 0;
+}
+
+.close-btn:hover {
+  background: #3a4050;
+}
+
+.close-btn:active {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+
+/* Body */
+.kb-edit-body {
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.kb-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.kb-edit-label {
+  font-size: 0.85rem;
+  color: #aab;
+  font-weight: 600;
+}
+
+.kb-edit-select {
+  background: #222;
+  color: #ddd;
+  border: 1px solid #555;
+  border-radius: 4px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.kb-edit-select:focus {
+  outline: none;
+  border-color: #ffcc00;
+}
+
+/* Key capture row */
+.kb-key-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.kb-capture-btn {
+  background: #2a2a3e;
+  border: 1px solid #555;
+  color: #ddd;
+  cursor: pointer;
+  padding: 0.45rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-family: monospace;
+  min-width: 120px;
+  text-align: center;
+  transition: all 0.15s;
+}
+
+.kb-capture-btn:hover {
+  color: #ffcc00;
+  border-color: #ffcc00;
+  background: #333;
+}
+
+.kb-capture-btn.capturing {
+  color: #ffcc00;
+  border-color: #ffcc00;
+  background: #333;
+  animation: kbCapturePulse 1s infinite;
+}
+
+@keyframes kbCapturePulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.kb-edit-hint {
+  font-size: 0.75rem;
+  color: #667;
+  line-height: 1.3;
+}
+
+.kb-edit-error {
+  color: #f44;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+}
+
+/* Text input for Name field */
+.kb-edit-input {
+  width: 100%;
+  padding: 0.4rem 0.6rem;
+  font-size: 0.9rem;
+  background: #12121e;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 6px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.kb-edit-input:focus {
+  border-color: #667;
+}
+
+/* Color picker row */
+.kb-color-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.kb-color-picker {
+  width: 36px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  background: transparent;
+}
+
+.kb-color-clear {
+  background: transparent;
+  color: #888;
+  border: 1px solid #444;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.15rem 0.4rem;
+  line-height: 1;
+}
+
+.kb-color-clear:hover {
+  color: #ccc;
+  border-color: #666;
+}
+
+.kb-color-preview {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.kb-edit-checkbox-row label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  color: #ccc;
+  cursor: pointer;
+}
+
+.kb-edit-checkbox-row input[type="checkbox"] {
+  accent-color: #ffcc00;
+}
+
+/* Actions row */
+.kb-edit-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.65rem 1.25rem 0.85rem;
+  border-top: 1px solid #333;
+}
+
+.actions-spacer {
+  flex: 1;
+}
+
+/* Shared button base */
+.action-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #555;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.08s;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.action-btn:active {
+  transform: scale(0.96);
+}
+
+/* Cancel button */
+.cancel-btn {
+  background: #282c34;
+  color: #bbc;
+}
+
+.cancel-btn:hover {
+  background: #3a4050;
+}
+
+/* Save button */
+.save-btn {
+  background: #1e4a6e;
+  color: #cdf;
+  border-color: #3a6a9a;
+}
+
+.save-btn:hover {
+  background: #285a80;
+}
+
+/* Delete button */
+.delete-btn {
+  background: #3a2020;
+  color: #faa;
+  border-color: #644;
+}
+
+.delete-btn:hover {
+  background: #4a2a2a;
+  color: #fcc;
+}
+
+.delete-btn svg {
+  display: block;
+}
+
+/* ===== TOUCH IMPROVEMENTS ===== */
+@media (pointer: coarse) {
+  .action-btn {
+    min-height: 44px;
+    padding: 0.55rem 1.3rem;
+    font-size: 0.92rem;
+  }
+
+  .kb-capture-btn {
+    min-height: 44px;
+    padding: 0.55rem 1rem;
+  }
+}

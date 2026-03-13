@@ -1,2 +1,2 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '1.1.0';
+export const APP_VERSION = '1.2.0';

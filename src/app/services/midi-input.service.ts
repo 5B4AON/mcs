@@ -4,7 +4,7 @@
 
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, DecoderSource } from './settings.service';
+import { SettingsService, PaddleMode, DecoderSource, InputPath } from './settings.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { MidiOutputService } from './midi-output.service';
 import { timingsFromWpm } from '../morse-table';
@@ -35,6 +35,28 @@ export interface MidiLearnResult {
   channel: number;
   deviceId: string;
   deviceName: string;
+}
+
+/**
+ * Per-mapping iambic keyer state for MIDI paddle inputs.
+ *
+ * Each MIDI paddle mapping gets its own independent keyer instance
+ * so multiple paddle mappings can operate simultaneously.
+ */
+interface MidiPaddleKeyerState {
+  leftPaddleDown: boolean;
+  rightPaddleDown: boolean;
+  ditMemory: boolean;
+  dahMemory: boolean;
+  keyerTimeout: ReturnType<typeof setTimeout> | null;
+  currentElement: 'dit' | 'dah' | null;
+  lastElement: 'dit' | 'dah' | null;
+  elementPlaying: boolean;
+  keyerRunning: boolean;
+  source: 'rx' | 'tx';
+  name: string;
+  color: string;
+  path: InputPath;
 }
 
 /**
@@ -91,7 +113,7 @@ export class MidiInputService implements OnDestroy {
   private learnCallback: ((result: MidiLearnResult) => void) | null = null;
 
   /** Track which notes are currently held (to release on stop) */
-  private activeNotes = new Map<number, { action: 'straightKey' | 'dit' | 'dah'; source: DecoderSource; name: string; color: string }>();
+  private activeNotes = new Map<number, { action: 'straightKey' | 'dit' | 'dah'; source: DecoderSource; name: string; color: string; mappingIndex: number }>();
 
   /**
    * Keep-alive timer — periodically re-attaches MIDI listeners and verifies
@@ -110,22 +132,10 @@ export class MidiInputService implements OnDestroy {
    */
   private breakInClearTimer: ReturnType<typeof setTimeout> | null = null;
 
-  // ---- Independent MIDI paddle keyer state ----
-  // MIDI input has its own iambic keyer that is completely independent of
-  // the keyboard/mouse/touch KeyerService. This ensures MIDI paddles have
-  // zero shared state with other input sources — true parallel operation.
-  private midiLeftPaddleDown = false;
-  private midiRightPaddleDown = false;
-  private midiDitMemory = false;
-  private midiDahMemory = false;
-  private midiKeyerTimeout: ReturnType<typeof setTimeout> | null = null;
-  private midiCurrentElement: 'dit' | 'dah' | null = null;
-  private midiLastElement: 'dit' | 'dah' | null = null;
-  private midiElementPlaying = false;
-  private midiKeyerRunning = false;
-  private midiPaddleSource: 'rx' | 'tx' = 'rx';
-  private midiPaddleName = '';
-  private midiPaddleColor = '';
+  // ---- Independent MIDI paddle keyer state (per mapping) ----
+  // Each MIDI paddle mapping gets its own iambic keyer so multiple
+  // paddle mappings can operate simultaneously without shared state.
+  private midiPaddleKeyers = new Map<number, MidiPaddleKeyerState>();
 
   constructor(
     private settings: SettingsService,
@@ -431,18 +441,20 @@ export class MidiInputService implements OnDestroy {
       if (!active) return;
       this.activeNotes.delete(note);
       switch (active.action) {
-        case 'straightKey':
+        case 'straightKey': {
+          const skPath: InputPath = `midiStraightKey:${active.mappingIndex}`;
           this.zone.run(() => {
-            this.decoder.onKeyUp('midiStraightKey', active.source, {
+            this.decoder.onKeyUp(skPath, active.source, {
               fromMidi: true, name: active.name, color: active.color,
             });
           });
           break;
+        }
         case 'dit':
-          this.midiDitPaddleInput(false, active.source);
+          this.midiDitPaddleInput(false, active.source, active.mappingIndex, active.name, active.color);
           break;
         case 'dah':
-          this.midiDahPaddleInput(false, active.source);
+          this.midiDahPaddleInput(false, active.source, active.mappingIndex, active.name, active.color);
           break;
       }
       return;
@@ -452,7 +464,8 @@ export class MidiInputService implements OnDestroy {
     const deviceId = (msg.target as MIDIInput | null)?.id || '';
     const mappings = this.settings.settings().midiInputMappings;
 
-    for (const mapping of mappings) {
+    for (let mi = 0; mi < mappings.length; mi++) {
+      const mapping = mappings[mi];
       if (!mapping.enabled) continue;
       // Device filter
       if (mapping.deviceId && mapping.deviceId !== deviceId) continue;
@@ -460,9 +473,10 @@ export class MidiInputService implements OnDestroy {
       if (mapping.channel > 0 && mapping.channel !== channel) continue;
 
       if (mapping.mode === 'straightKey' && note === mapping.value) {
-        this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
+        this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi });
+        const skPath: InputPath = `midiStraightKey:${mi}`;
         this.zone.run(() => {
-          this.decoder.onKeyDown('midiStraightKey', mapping.source, {
+          this.decoder.onKeyDown(skPath, mapping.source, {
             fromMidi: true, name: mapping.name || undefined, color: mapping.color || undefined,
           });
         });
@@ -474,17 +488,13 @@ export class MidiInputService implements OnDestroy {
         const ditValue = reverse ? mapping.dahValue : mapping.value;
         const dahValue = reverse ? mapping.value : mapping.dahValue;
         if (note === ditValue) {
-          this.activeNotes.set(note, { action: 'dit', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
-          this.midiPaddleName = mapping.name || '';
-          this.midiPaddleColor = mapping.color || '';
-          this.midiDitPaddleInput(true, mapping.source);
+          this.activeNotes.set(note, { action: 'dit', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi });
+          this.midiDitPaddleInput(true, mapping.source, mi, mapping.name || '', mapping.color || '');
           return;
         }
         if (note === dahValue) {
-          this.activeNotes.set(note, { action: 'dah', source: mapping.source, name: mapping.name || '', color: mapping.color || '' });
-          this.midiPaddleName = mapping.name || '';
-          this.midiPaddleColor = mapping.color || '';
-          this.midiDahPaddleInput(true, mapping.source);
+          this.activeNotes.set(note, { action: 'dah', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi });
+          this.midiDahPaddleInput(true, mapping.source, mi, mapping.name || '', mapping.color || '');
           return;
         }
       }
@@ -517,129 +527,168 @@ export class MidiInputService implements OnDestroy {
   private releaseAll(): void {
     for (const [, active] of this.activeNotes) {
       switch (active.action) {
-        case 'straightKey':
+        case 'straightKey': {
+          const skPath: InputPath = `midiStraightKey:${active.mappingIndex}`;
           this.zone.run(() => {
-            this.decoder.onKeyUp('midiStraightKey', active.source, { fromMidi: true });
+            this.decoder.onKeyUp(skPath, active.source, { fromMidi: true });
           });
           break;
+        }
         case 'dit':
-          this.midiDitPaddleInput(false, active.source);
+          this.midiDitPaddleInput(false, active.source, active.mappingIndex, active.name, active.color);
           break;
         case 'dah':
-          this.midiDahPaddleInput(false, active.source);
+          this.midiDahPaddleInput(false, active.source, active.mappingIndex, active.name, active.color);
           break;
       }
     }
     this.activeNotes.clear();
-    this.stopMidiKeyer();
+    this.stopAllMidiKeyers();
   }
 
-  // ---- Independent MIDI paddle keyer ----
-  // Self-contained iambic keyer that calls the decoder directly.
-  // Completely independent of KeyerService — no shared state.
+  // ---- Independent MIDI paddle keyer (per mapping) ----
+  // Each MIDI paddle mapping gets its own iambic keyer that calls the
+  // decoder directly — no shared state with KeyerService or other mappings.
 
-  /** Activate/deactivate the dit paddle on the MIDI keyer. */
-  private midiDitPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
-    this.midiPaddleSource = source;
-    if (down && !this.midiLeftPaddleDown) {
-      this.midiLeftPaddleDown = true;
-      this.midiDitMemory = true;
-      this.startMidiKeyer();
+  /** Get or create a keyer state for the given mapping index. */
+  private getOrCreateMidiKeyer(
+    idx: number, source: 'rx' | 'tx', name: string, color: string,
+  ): MidiPaddleKeyerState {
+    let ks = this.midiPaddleKeyers.get(idx);
+    const path: InputPath = `midiPaddle:${idx}`;
+    if (!ks) {
+      ks = {
+        leftPaddleDown: false,
+        rightPaddleDown: false,
+        ditMemory: false,
+        dahMemory: false,
+        keyerTimeout: null,
+        currentElement: null,
+        lastElement: null,
+        elementPlaying: false,
+        keyerRunning: false,
+        source,
+        name,
+        color,
+        path,
+      };
+      this.midiPaddleKeyers.set(idx, ks);
+    }
+    ks.source = source;
+    ks.path = path;
+    ks.name = name;
+    ks.color = color;
+    return ks;
+  }
+
+  /** Activate/deactivate the dit paddle on a per-mapping MIDI keyer. */
+  private midiDitPaddleInput(down: boolean, source: 'rx' | 'tx', mappingIndex: number, name: string, color: string): void {
+    const ks = this.getOrCreateMidiKeyer(mappingIndex, source, name, color);
+    if (down && !ks.leftPaddleDown) {
+      ks.leftPaddleDown = true;
+      ks.ditMemory = true;
+      this.startMidiKeyer(ks);
     } else if (!down) {
-      this.midiLeftPaddleDown = false;
-      this.checkStopMidiKeyer();
+      ks.leftPaddleDown = false;
+      this.checkStopMidiKeyer(ks);
     }
   }
 
-  /** Activate/deactivate the dah paddle on the MIDI keyer. */
-  private midiDahPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
-    this.midiPaddleSource = source;
-    if (down && !this.midiRightPaddleDown) {
-      this.midiRightPaddleDown = true;
-      this.midiDahMemory = true;
-      this.startMidiKeyer();
+  /** Activate/deactivate the dah paddle on a per-mapping MIDI keyer. */
+  private midiDahPaddleInput(down: boolean, source: 'rx' | 'tx', mappingIndex: number, name: string, color: string): void {
+    const ks = this.getOrCreateMidiKeyer(mappingIndex, source, name, color);
+    if (down && !ks.rightPaddleDown) {
+      ks.rightPaddleDown = true;
+      ks.dahMemory = true;
+      this.startMidiKeyer(ks);
     } else if (!down) {
-      this.midiRightPaddleDown = false;
-      this.checkStopMidiKeyer();
+      ks.rightPaddleDown = false;
+      this.checkStopMidiKeyer(ks);
     }
   }
 
-  private startMidiKeyer(): void {
-    if (this.midiKeyerRunning) return;
-    this.midiKeyerRunning = true;
-    this.runMidiKeyerLoop();
+  private startMidiKeyer(ks: MidiPaddleKeyerState): void {
+    if (ks.keyerRunning) return;
+    ks.keyerRunning = true;
+    this.runMidiKeyerLoop(ks);
   }
 
-  private stopMidiKeyer(): void {
-    this.midiKeyerRunning = false;
-    if (this.midiKeyerTimeout) {
-      clearTimeout(this.midiKeyerTimeout);
-      this.midiKeyerTimeout = null;
+  private stopMidiKeyer(ks: MidiPaddleKeyerState): void {
+    ks.keyerRunning = false;
+    if (ks.keyerTimeout) {
+      clearTimeout(ks.keyerTimeout);
+      ks.keyerTimeout = null;
     }
-    if (this.midiElementPlaying) {
-      this.midiElementPlaying = false;
+    if (ks.elementPlaying) {
+      ks.elementPlaying = false;
       this.zone.run(() => {
-        this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
+        this.decoder.onKeyUp(ks.path, ks.source, {
           perfectTiming: true, fromMidi: true,
-          name: this.midiPaddleName || undefined,
-          color: this.midiPaddleColor || undefined,
+          name: ks.name || undefined,
+          color: ks.color || undefined,
         });
       });
     }
-    this.midiCurrentElement = null;
-    this.midiLastElement = null;
-    this.midiDitMemory = false;
-    this.midiDahMemory = false;
+    ks.currentElement = null;
+    ks.lastElement = null;
+    ks.ditMemory = false;
+    ks.dahMemory = false;
   }
 
-  private checkStopMidiKeyer(): void {
-    if (!this.midiLeftPaddleDown && !this.midiRightPaddleDown &&
-        !this.midiDitMemory && !this.midiDahMemory && !this.midiElementPlaying) {
-      this.stopMidiKeyer();
+  private stopAllMidiKeyers(): void {
+    for (const [, ks] of this.midiPaddleKeyers) {
+      this.stopMidiKeyer(ks);
     }
   }
 
-  private runMidiKeyerLoop(): void {
-    if (!this.midiKeyerRunning) return;
+  private checkStopMidiKeyer(ks: MidiPaddleKeyerState): void {
+    if (!ks.leftPaddleDown && !ks.rightPaddleDown &&
+        !ks.ditMemory && !ks.dahMemory && !ks.elementPlaying) {
+      this.stopMidiKeyer(ks);
+    }
+  }
+
+  private runMidiKeyerLoop(ks: MidiPaddleKeyerState): void {
+    if (!ks.keyerRunning) return;
     const mode: PaddleMode = this.settings.settings().paddleMode;
     const timings = timingsFromWpm(this.settings.settings().keyerWpm);
-    const nextElement = this.pickMidiNextElement(mode);
+    const nextElement = this.pickMidiNextElement(ks, mode);
     if (!nextElement) {
-      this.stopMidiKeyer();
+      this.stopMidiKeyer(ks);
       return;
     }
-    this.midiCurrentElement = nextElement;
+    ks.currentElement = nextElement;
     const duration = nextElement === 'dit' ? timings.dit : timings.dah;
 
-    this.midiElementPlaying = true;
+    ks.elementPlaying = true;
     this.zone.run(() => {
-      this.decoder.onKeyDown('midiPaddle', this.midiPaddleSource, {
+      this.decoder.onKeyDown(ks.path, ks.source, {
         perfectTiming: true, fromMidi: true,
-        name: this.midiPaddleName || undefined,
-        color: this.midiPaddleColor || undefined,
+        name: ks.name || undefined,
+        color: ks.color || undefined,
       });
     });
 
-    this.midiKeyerTimeout = setTimeout(() => {
-      this.midiElementPlaying = false;
+    ks.keyerTimeout = setTimeout(() => {
+      ks.elementPlaying = false;
       this.zone.run(() => {
-        this.decoder.onKeyUp('midiPaddle', this.midiPaddleSource, {
+        this.decoder.onKeyUp(ks.path, ks.source, {
           perfectTiming: true, fromMidi: true,
-          name: this.midiPaddleName || undefined,
-          color: this.midiPaddleColor || undefined,
+          name: ks.name || undefined,
+          color: ks.color || undefined,
         });
       });
-      this.midiLastElement = this.midiCurrentElement;
-      this.midiCurrentElement = null;
+      ks.lastElement = ks.currentElement;
+      ks.currentElement = null;
 
       // Inter-element space (1 dit)
-      this.midiKeyerTimeout = setTimeout(() => {
-        if (this.midiKeyerRunning) {
-          if (this.midiLeftPaddleDown || this.midiRightPaddleDown ||
-              this.midiDitMemory || this.midiDahMemory) {
-            this.runMidiKeyerLoop();
+      ks.keyerTimeout = setTimeout(() => {
+        if (ks.keyerRunning) {
+          if (ks.leftPaddleDown || ks.rightPaddleDown ||
+              ks.ditMemory || ks.dahMemory) {
+            this.runMidiKeyerLoop(ks);
           } else {
-            this.stopMidiKeyer();
+            this.stopMidiKeyer(ks);
           }
         }
       }, timings.intraChar);
@@ -648,27 +697,27 @@ export class MidiInputService implements OnDestroy {
 
   /**
    * Pick the next element to play based on the current paddle mode.
-   * Mirrors KeyerService.pickNextElement but uses MIDI-local state.
+   * Mirrors KeyerService.pickNextElement but uses per-mapping MIDI state.
    */
-  private pickMidiNextElement(mode: PaddleMode): 'dit' | 'dah' | null {
-    const hasDit = this.midiLeftPaddleDown || this.midiDitMemory;
-    const hasDah = this.midiRightPaddleDown || this.midiDahMemory;
+  private pickMidiNextElement(ks: MidiPaddleKeyerState, mode: PaddleMode): 'dit' | 'dah' | null {
+    const hasDit = ks.leftPaddleDown || ks.ditMemory;
+    const hasDah = ks.rightPaddleDown || ks.dahMemory;
     let picked: 'dit' | 'dah' | null = null;
     const bothActive = hasDit && hasDah;
 
     if (mode === 'iambic-b' || mode === 'iambic-a') {
       if (bothActive) {
-        picked = this.midiLastElement === 'dit' ? 'dah' : 'dit';
+        picked = ks.lastElement === 'dit' ? 'dah' : 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
         picked = 'dah';
-      } else if (mode === 'iambic-b' && this.midiLastElement) {
-        picked = this.midiLastElement === 'dit' ? 'dah' : 'dit';
+      } else if (mode === 'iambic-b' && ks.lastElement) {
+        picked = ks.lastElement === 'dit' ? 'dah' : 'dit';
       }
     } else if (mode === 'ultimatic') {
       if (bothActive) {
-        picked = this.midiLastElement || 'dit';
+        picked = ks.lastElement || 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
@@ -679,8 +728,8 @@ export class MidiInputService implements OnDestroy {
       else if (hasDah) picked = 'dah';
     }
 
-    if (picked === 'dit') this.midiDitMemory = false;
-    else if (picked === 'dah') this.midiDahMemory = false;
+    if (picked === 'dit') ks.ditMemory = false;
+    else if (picked === 'dah') ks.dahMemory = false;
     return picked;
   }
 
