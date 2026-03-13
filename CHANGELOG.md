@@ -4,6 +4,79 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-03-14
+
+### Added
+
+- **Serial Input Multi-Mapping** — Serial input now supports multiple
+  independent mappings in a table-based interface, mirroring the MIDI input
+  pattern. Each mapping has its own serial port, mode (straight key or
+  paddle), pin assignments, poll interval, debounce, decoder source (RX/TX),
+  invert, reverse paddles, and paddle mode (Iambic B/A, Ultimatic, Single
+  Lever). Add, edit, or remove mappings freely via the new edit modal.
+  Each mapping runs its own independent iambic keyer, completely independent
+  of the keyboard/mouse/touch keyer. Default mapping: straight key on DSR,
+  paddle on CTS/DCD.
+- **Serial Input Name & Colour** — Each serial input mapping can now have an
+  optional **Name** (e.g. a callsign) and **Colour**, enabling multi-user
+  conversation views where each operator's decoded text appears on separate
+  colour-coded lines in the fullscreen display — same as MIDI and keyboard
+  input.
+- **Serial Output Multi-Mapping** — Serial output now supports multiple
+  independent mappings in a table-based interface, mirroring the MIDI output
+  pattern. Each mapping has its own serial port, output pin (DTR or RTS),
+  invert setting, and **per-mapping forward selector** (TX only, RX only, or
+  Both). Multiple mappings can target different ports or different pins on
+  the same port. Add, edit, or remove mappings via the new edit modal.
+- **Serial Input Edit Modal** — New dedicated edit modal for configuring
+  serial input mappings, with port selection, mode/pin pickers, live signal
+  LED indicators, polling/debounce settings, name/colour fields, and
+  estimated maximum WPM display.
+- **Serial Output Edit Modal** — New dedicated edit modal for configuring
+  serial output mappings, with port selection, pin picker, invert toggle,
+  forward selector, and test button.
+- **Per-Entry Connectivity Icons (Serial & MIDI)** — Each mapping row in the
+  Serial Input, Serial Output, MIDI Input, and MIDI Output cards now shows a
+  per-entry connectivity icon (connected/disconnected) matching the card
+  header icon style. This replaces the text-based "✔ Connected" / "✖ Not
+  connected" status that was previously shown at the bottom of MIDI cards.
+- **Silent Port-Already-Open Handling** — When a serial port is already open
+  (e.g. from a previous connection), both Serial Input and Serial Output now
+  silently adopt the port instead of showing an error. Serial Input checks
+  for output port sharing (piggyback) or adopts the port as owned. Serial
+  Output adopts the port, registers a disconnect handler, and adds it to
+  the open ports map.
+
+### Changed
+
+- **Serial Output Architecture** — Replaced scalar serial output settings
+  (`serialPortIndex`, `serialPin`, `serialInvert`, `serialForward`) with a
+  `serialOutputMappings` array of `SerialOutputMapping` objects. The service
+  now manages multiple open ports via an `openPorts` signal
+  (Map&lt;number,&nbsp;PortState&gt;) with per-mapping key state and holdoff
+  timers.
+- **Serial Input Architecture** — Replaced scalar serial input settings with
+  a `serialInputMappings` array of `SerialInputMapping` objects. The service
+  manages multiple ports with per-mapping independent iambic keyers and
+  signal polling.
+- **Serial Port Sharing** — Serial Input now piggybacks on Serial Output via
+  `SerialKeyOutputService.getOpenPort(portIndex)` (was `openPort()`), and
+  watches the `openPorts()` signal for reactivity. Deferral logic checks
+  `serialOutputMappings.some(m => m.enabled && m.portIndex === portIndex)`.
+- **Serial Output Holdoff** — The 30 ms `isSending` holdoff is now tracked
+  per mapping, so mappings on different ports operate independently.
+- **Mouse Keyer Paddle Mode** — Added `mousePaddleMode` and
+  `touchPaddleMode` settings with a UI selector.
+
+### Fixed
+
+- **Serial Input Name/Colour Not Showing in Fullscreen** — Fixed all six
+  `decoder.onKeyDown`/`onKeyUp` call sites in `SerialKeyInputService` to
+  pass `name` and `color` from the mapping, so named serial input mappings
+  now appear correctly in the fullscreen conversation views.
+
+---
+
 ## [1.2.0] - 2026-03-13
 
 ### Added

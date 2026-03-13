@@ -2,22 +2,23 @@
  * Morse Code Studio
  */
 
-import { Component } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, AppSettings } from '../../../../services/settings.service';
+import { SettingsService, SerialOutputMapping, OutputForward } from '../../../../services/settings.service';
 import { SerialKeyOutputService } from '../../../../services/serial-key-output.service';
+import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../../serial-output-edit-modal/serial-output-edit-modal.component';
 
 /**
  * Settings card — Serial Output (DTR/RTS keying via USB-serial adapter).
  *
- * Configures serial port keying for radio transmitters via Web Serial API.
- * Includes port selection, pin choice (DTR/RTS), invert toggle, and
- * connectivity status.
+ * Displays a table of serial output mappings (one per port+pin),
+ * with add/edit/delete support via the serial output edit modal.
+ * Each mapping specifies its own port, pin, invert, and forward direction.
  */
 @Component({
   selector: 'app-serial-output-card',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, SerialOutputEditModalComponent],
   templateUrl: './serial-output-card.component.html',
   styles: [':host { display: contents; }'],
 })
@@ -25,11 +26,32 @@ export class SerialOutputCardComponent {
   /** Whether this card's body is expanded */
   expanded = false;
 
+  /** Index of the mapping currently being edited, or -1 for new */
+  editIndex = -1;
+
+  /** Scratch copy of the mapping passed to the edit modal */
+  editMapping: SerialOutputMapping = {
+    enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx',
+  };
+
+  /** Whether the edit modal is visible */
+  showEditModal = false;
+
   /** Whether the browser supports the Web Serial API */
   readonly webSerialSupported = 'serial' in navigator;
 
-  /** Whether the device is running Android (serial API exists but USB-serial typically fails) */
+  /** Whether the device is running Android */
   readonly isAndroid = /android/i.test(navigator.userAgent);
+
+  /** Unique forward badges from all enabled mappings */
+  readonly forwardBadges = computed(() => {
+    const mappings = this.settings.settings().serialOutputMappings;
+    const forwards = new Set<OutputForward>();
+    for (const m of mappings) {
+      if (m.enabled) forwards.add(m.forward);
+    }
+    return [...forwards];
+  });
 
   constructor(
     public settings: SettingsService,
@@ -40,54 +62,11 @@ export class SerialOutputCardComponent {
   toggleExpand(): void {
     this.expanded = !this.expanded;
     if (this.expanded) {
-      this.refreshAndAutoSelect();
+      this.serialOutput.refreshPorts();
     }
   }
 
-  /**
-   * Refresh the port list and auto-select if there is exactly one port
-   * and no port is currently selected.
-   */
-  async refreshAndAutoSelect(): Promise<void> {
-    await this.serialOutput.refreshPorts();
-    if (this.serialOutput.ports().length === 1 && this.settings.settings().serialPortIndex < 0) {
-      this.settings.update({ serialPortIndex: 0 });
-    }
-  }
-
-  /** Prompt user to add a serial port, then auto-select if only one */
-  async addPort(): Promise<void> {
-    await this.serialOutput.requestPort();
-    await this.refreshAndAutoSelect();
-  }
-
-  /** Handle a string or numeric setting change */
-  onSettingChange(key: keyof AppSettings, event: Event): void {
-    const el = event.target as HTMLInputElement;
-    let value: string | number = el.value;
-    if (el.type === 'number' || el.type === 'range') {
-      value = parseFloat(el.value);
-    }
-    this.settings.update({ [key]: value } as Partial<AppSettings>);
-  }
-
-  /** Handle a boolean setting change from a checkbox */
-  onBoolChange(key: keyof AppSettings, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ [key]: checked } as Partial<AppSettings>);
-  }
-
-  /** Handle serial port selection — closes current port and opens selected */
-  async onSerialPortChange(event: Event): Promise<void> {
-    const idx = parseInt((event.target as HTMLSelectElement).value, 10);
-    this.settings.update({ serialPortIndex: idx });
-    await this.serialOutput.close();
-    if (idx >= 0) {
-      await this.serialOutput.open(idx);
-    }
-  }
-
-  /** Handle serial output enabled toggle — opens/closes the serial connection */
+  /** Handle serial output enabled toggle */
   async onSerialEnabledChange(event: Event): Promise<void> {
     const checked = (event.target as HTMLInputElement).checked;
     if (checked && (!this.webSerialSupported || this.isAndroid)) {
@@ -96,12 +75,85 @@ export class SerialOutputCardComponent {
     }
     this.settings.update({ serialEnabled: checked });
     if (checked) {
-      const idx = this.settings.settings().serialPortIndex;
-      if (idx >= 0 && !this.serialOutput.connected()) {
-        await this.serialOutput.open(idx);
-      }
+      await this.serialOutput.connectAllEnabled();
     } else {
-      await this.serialOutput.close();
+      await this.serialOutput.closeAll();
     }
+  }
+
+  /** Toggle an individual mapping on/off */
+  onMappingEnabledChange(index: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    const mappings = this.settings.settings().serialOutputMappings.map((m, i) =>
+      i === index ? { ...m, enabled: checked } : m
+    );
+    this.settings.update({ serialOutputMappings: mappings });
+  }
+
+  /** Open the edit modal for an existing mapping */
+  startEdit(index: number): void {
+    const m = this.settings.settings().serialOutputMappings[index];
+    this.editIndex = index;
+    this.editMapping = { ...m };
+    this.showEditModal = true;
+    this.serialOutput.refreshPorts();
+  }
+
+  /** Open the edit modal for a new mapping */
+  addMapping(): void {
+    this.editIndex = -1;
+    this.editMapping = {
+      enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx',
+    };
+    this.showEditModal = true;
+    this.serialOutput.refreshPorts();
+  }
+
+  /** Handle save from the edit modal */
+  onEditSaved(event: SerialOutputEditSaveEvent): void {
+    const mappings = [...this.settings.settings().serialOutputMappings];
+    if (this.editIndex >= 0) {
+      mappings[this.editIndex] = {
+        ...mappings[this.editIndex],
+        portIndex: event.portIndex,
+        pin: event.pin,
+        invert: event.invert,
+        forward: event.forward,
+      };
+    } else {
+      mappings.push({
+        enabled: true,
+        portIndex: event.portIndex,
+        pin: event.pin,
+        invert: event.invert,
+        forward: event.forward,
+      });
+    }
+    this.settings.update({ serialOutputMappings: mappings });
+    this.showEditModal = false;
+  }
+
+  /** Handle delete from the edit modal */
+  onEditDeleted(): void {
+    if (this.editIndex >= 0) {
+      const mappings = this.settings.settings().serialOutputMappings.filter((_, i) => i !== this.editIndex);
+      this.settings.update({ serialOutputMappings: mappings });
+    }
+    this.showEditModal = false;
+  }
+
+  /** Handle cancel from the edit modal */
+  onEditCancelled(): void {
+    this.showEditModal = false;
+  }
+
+  /** Whether a specific mapping's port is connected */
+  isMappingConnected(mapping: SerialOutputMapping): boolean {
+    return mapping.portIndex >= 0 && this.serialOutput.isPortConnected(mapping.portIndex);
+  }
+
+  /** Forward label for badge display */
+  forwardLabel(forward: OutputForward): string {
+    return forward === 'rx' ? 'RX' : forward === 'tx' ? 'TX' : 'RX/TX';
   }
 }

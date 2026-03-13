@@ -62,11 +62,11 @@
       </label>
 
       <label>Paddle Mode:
-        <select [value]="settings.settings().paddleMode" (change)="onSettingChange('paddleMode', $event)">
-          <option value="iambic-b" [selected]="settings.settings().paddleMode === 'iambic-b'">Iambic B</option>
-          <option value="iambic-a" [selected]="settings.settings().paddleMode === 'iambic-a'">Iambic A</option>
-          <option value="ultimatic" [selected]="settings.settings().paddleMode === 'ultimatic'">Ultimatic</option>
-          <option value="single-lever" [selected]="settings.settings().paddleMode === 'single-lever'">Single Lever</option>
+        <select [value]="settings.settings().mousePaddleMode" (change)="onSettingChange('mousePaddleMode', $event)">
+          <option value="iambic-b" [selected]="settings.settings().mousePaddleMode === 'iambic-b'">Iambic B</option>
+          <option value="iambic-a" [selected]="settings.settings().mousePaddleMode === 'iambic-a'">Iambic A</option>
+          <option value="ultimatic" [selected]="settings.settings().mousePaddleMode === 'ultimatic'">Ultimatic</option>
+          <option value="single-lever" [selected]="settings.settings().mousePaddleMode === 'single-lever'">Single Lever</option>
         </select>
       </label>
 

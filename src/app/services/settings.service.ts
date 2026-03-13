@@ -63,8 +63,10 @@ export type InputPath =
   | `midiStraightKey:${number}` // Per-mapping MIDI straight key pipeline
   | 'midiPaddle'            // MIDI note as paddle (external callers)
   | `midiPaddle:${number}`  // Per-mapping MIDI paddle pipeline
-  | 'serialStraightKey'     // Serial port input signal as straight key
-  | 'serialPaddle';         // Serial port input signal as paddle
+  | 'serialStraightKey'     // Serial port input signal as straight key (external callers)
+  | `serialStraightKey:${number}` // Per-mapping serial straight key pipeline
+  | 'serialPaddle'          // Serial port input signal as paddle (external callers)
+  | `serialPaddle:${number}`; // Per-mapping serial paddle pipeline
 
 /** Configuration for a single prosign action mapping */
 export interface ProsignActionEntry {
@@ -142,6 +144,48 @@ export interface MidiOutputMapping {
   dahValue: number;
 }
 
+/** Configuration for a single serial input mapping */
+export interface SerialInputMapping {
+  enabled: boolean;
+  /** Mode: straight key or paddle */
+  mode: KeyInputMode;
+  /** Which input signal pin to use for straight key, or dit paddle */
+  pin: SerialInputPin;
+  /** Which input signal pin to use for dah paddle (only used when mode is 'paddle') */
+  dahPin: SerialInputPin;
+  /** Invert the signal (active-low instead of active-high) */
+  invert: boolean;
+  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
+  source: DecoderSource;
+  /** Reverse paddles (only used when mode is 'paddle') */
+  reversePaddles: boolean;
+  /** Paddle mode for this mapping (only used when mode is 'paddle') */
+  paddleMode: PaddleMode;
+  /** Serial port index (-1 = not assigned) */
+  portIndex: number;
+  /** Polling interval in ms (5–50) */
+  pollInterval: number;
+  /** Debounce duration in ms (2–10) */
+  debounceMs: number;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  name: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  color: string;
+}
+
+/** Configuration for a single serial output mapping */
+export interface SerialOutputMapping {
+  enabled: boolean;
+  /** Serial port index (-1 = not assigned) */
+  portIndex: number;
+  /** Which output pin to drive (DTR or RTS) */
+  pin: SerialPin;
+  /** Invert the signal (active-high instead of default active-low) */
+  invert: boolean;
+  /** Output forwarding mode: which signal source drives this mapping */
+  forward: OutputForward;
+}
+
 /** Configuration for a single emoji replacement mapping */
 export interface EmojiMapping {
   enabled: boolean;
@@ -197,33 +241,14 @@ export interface AppSettings {
   optoForward: OutputForward;
 
   // --- 2b. Key Output via Serial Port (DTR/RTS) ---
-  serialPortIndex: number;
-  serialPin: SerialPin;
-  serialInvert: boolean;
   serialEnabled: boolean;
-  serialForward: OutputForward;
+  /** Ordered list of serial output mappings (one per port+pin combination) */
+  serialOutputMappings: SerialOutputMapping[];
 
   // --- Serial Input (read DSR/CTS/DCD/RI signals as keying source) ---
   serialInputEnabled: boolean;
-  serialInputPortIndex: number;
-  serialInputPollInterval: number;
-  serialInputDebounceMs: number;
-  /** Decoder source for serial straight key ('rx' or 'tx') */
-  serialStraightKeySource: DecoderSource;
-  /** Which input signal pin to use for straight key (-1 = not assigned) */
-  serialStraightKeyPin: SerialInputPin;
-  /** Invert the straight key signal (active-low instead of active-high) */
-  serialStraightKeyInvert: boolean;
-  /** Decoder source for serial paddle ('rx' or 'tx') */
-  serialPaddleSource: DecoderSource;
-  /** Which input signal pin to use for dit paddle (-1 = not assigned) */
-  serialPaddleDitPin: SerialInputPin;
-  /** Which input signal pin to use for dah paddle (-1 = not assigned) */
-  serialPaddleDahPin: SerialInputPin;
-  /** Invert the paddle signals (active-low instead of active-high) */
-  serialPaddleInvert: boolean;
-  /** Reverse paddles for serial paddle input */
-  serialReversePaddles: boolean;
+  /** Ordered list of serial input mappings (straight key / paddle entries) */
+  serialInputMappings: SerialInputMapping[];
 
   // --- 2c. WinKeyer Output (K1EL WinKeyer via serial port) ---
   winkeyerEnabled: boolean;
@@ -279,6 +304,7 @@ export interface AppSettings {
   mouseMiddleAction: MouseButtonAction;
   mouseRightAction: MouseButtonAction;
   mouseReversePaddles: boolean;
+  mousePaddleMode: PaddleMode;
 
   // --- Touch Keyer ---
   touchKeyerEnabled: boolean;
@@ -288,6 +314,7 @@ export interface AppSettings {
   touchLeftPaddle: PaddleElement;
   touchRightPaddle: PaddleElement;
   touchReversePaddles: boolean;
+  touchPaddleMode: PaddleMode;
 
   // --- MIDI Input ---
   midiInputEnabled: boolean;
@@ -396,24 +423,50 @@ const DEFAULT_SETTINGS: AppSettings = {
   optoEnabled: false,
   optoForward: 'tx',
 
-  serialPortIndex: -1,
-  serialPin: 'dtr',
-  serialInvert: false,
   serialEnabled: false,
-  serialForward: 'tx',
+  serialOutputMappings: [
+    {
+      enabled: true,
+      portIndex: -1,
+      pin: 'dtr',
+      invert: false,
+      forward: 'tx',
+    },
+  ],
 
   serialInputEnabled: false,
-  serialInputPortIndex: -1,
-  serialInputPollInterval: 10,
-  serialInputDebounceMs: 5,
-  serialStraightKeySource: 'rx',
-  serialStraightKeyPin: 'dsr',
-  serialStraightKeyInvert: false,
-  serialPaddleSource: 'rx',
-  serialPaddleDitPin: 'cts',
-  serialPaddleDahPin: 'dcd',
-  serialPaddleInvert: false,
-  serialReversePaddles: false,
+  serialInputMappings: [
+    {
+      enabled: true,
+      mode: 'straightKey',
+      pin: 'dsr',
+      dahPin: 'cts',
+      invert: false,
+      source: 'rx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      portIndex: -1,
+      pollInterval: 10,
+      debounceMs: 5,
+      name: '',
+      color: '',
+    },
+    {
+      enabled: true,
+      mode: 'paddle',
+      pin: 'cts',
+      dahPin: 'dcd',
+      invert: false,
+      source: 'rx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      portIndex: -1,
+      pollInterval: 10,
+      debounceMs: 5,
+      name: '',
+      color: '',
+    },
+  ],
 
   winkeyerEnabled: false,
   winkeyerPortIndex: -1,
@@ -488,6 +541,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   mouseMiddleAction: 'none',
   mouseRightAction: 'none',
   mouseReversePaddles: false,
+  mousePaddleMode: 'iambic-b',
 
   touchKeyerEnabled: isTouchDevice(),
   touchKeyerSource: 'tx',
@@ -495,6 +549,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchLeftPaddle: 'dit',
   touchRightPaddle: 'dah',
   touchReversePaddles: false,
+  touchPaddleMode: 'iambic-b',
 
   midiInputEnabled: false,
   midiInputMappings: [
@@ -778,6 +833,9 @@ export class SettingsService {
       this.backfillProsignActions();
       this.backfillMidiOutputMappings();
       this.backfillKeyboardInputMappings();
+      this.backfillSerialInputMappings();
+      this.backfillSerialOutputMappings();
+      this.backfillIndependentPaddleModes();
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -893,6 +951,172 @@ export class SettingsService {
 
   getDefaults(): AppSettings {
     return { ...DEFAULT_SETTINGS };
+  }
+
+  /**
+   * Migrate old scalar serial input settings (serialStraightKeyPin etc.)
+   * to the new serialInputMappings array. Also ensure the array exists.
+   */
+  private backfillSerialInputMappings(): void {
+    const s = this.settings() as any;
+
+    // Phase 1: Migrate from ancient scalar fields (pre-mapping era)
+    if (!Array.isArray(s.serialInputMappings) || s.serialInputMappings.length === 0) {
+      const mappings: SerialInputMapping[] = [];
+      const portIndex = typeof s.serialInputPortIndex === 'number' ? s.serialInputPortIndex : -1;
+      const pollInterval = typeof s.serialInputPollInterval === 'number' ? s.serialInputPollInterval : 10;
+      const debounceMs = typeof s.serialInputDebounceMs === 'number' ? s.serialInputDebounceMs : 5;
+
+      if (s.serialStraightKeyPin && s.serialStraightKeyPin !== -1) {
+        mappings.push({
+          enabled: true,
+          mode: 'straightKey',
+          pin: s.serialStraightKeyPin,
+          dahPin: 'cts',
+          invert: !!s.serialStraightKeyInvert,
+          source: s.serialStraightKeySource || 'rx',
+          reversePaddles: false,
+          paddleMode: s.paddleMode || 'iambic-b',
+          portIndex,
+          pollInterval,
+          debounceMs,
+          name: '',
+          color: '',
+        });
+      }
+
+      if (s.serialPaddleDitPin && s.serialPaddleDitPin !== -1) {
+        mappings.push({
+          enabled: true,
+          mode: 'paddle',
+          pin: s.serialPaddleDitPin,
+          dahPin: s.serialPaddleDahPin || 'dcd',
+          invert: !!s.serialPaddleInvert,
+          source: s.serialPaddleSource || 'rx',
+          reversePaddles: !!s.serialReversePaddles,
+          paddleMode: s.paddleMode || 'iambic-b',
+          portIndex,
+          pollInterval,
+          debounceMs,
+          name: '',
+          color: '',
+        });
+      }
+
+      // If no legacy fields produced mappings, use defaults
+      if (mappings.length === 0) {
+        mappings.push(...DEFAULT_SETTINGS.serialInputMappings.map(m => ({ ...m })));
+      }
+
+      const patch: any = { serialInputMappings: mappings };
+      // Clean up legacy fields from the persisted object
+      delete s.serialInputPortIndex;
+      delete s.serialInputPollInterval;
+      delete s.serialInputDebounceMs;
+      delete s.serialStraightKeySource;
+      delete s.serialStraightKeyPin;
+      delete s.serialStraightKeyInvert;
+      delete s.serialPaddleSource;
+      delete s.serialPaddleDitPin;
+      delete s.serialPaddleDahPin;
+      delete s.serialPaddleInvert;
+      delete s.serialReversePaddles;
+      this.settings.set({ ...s, ...patch });
+      return;
+    }
+
+    // Phase 2: Ensure per-mapping portIndex/pollInterval/debounceMs exist
+    // (profiles saved before these moved from card-level to per-mapping)
+    let patched = false;
+    const fallbackPort = typeof s.serialInputPortIndex === 'number' ? s.serialInputPortIndex : -1;
+    const fallbackPoll = typeof s.serialInputPollInterval === 'number' ? s.serialInputPollInterval : 10;
+    const fallbackDebounce = typeof s.serialInputDebounceMs === 'number' ? s.serialInputDebounceMs : 5;
+    const mappings = (s.serialInputMappings as SerialInputMapping[]).map(m => {
+      const updated = { ...m };
+      if (typeof updated.portIndex !== 'number') {
+        updated.portIndex = fallbackPort;
+        patched = true;
+      }
+      if (typeof updated.pollInterval !== 'number') {
+        updated.pollInterval = fallbackPoll;
+        patched = true;
+      }
+      if (typeof updated.debounceMs !== 'number') {
+        updated.debounceMs = fallbackDebounce;
+        patched = true;
+      }
+      return updated;
+    });
+    if (patched) {
+      this.settings.set({ ...s, serialInputMappings: mappings });
+    }
+  }
+
+  /**
+   * Migrate old scalar serial output settings (serialPortIndex, serialPin, etc.)
+   * to the new serialOutputMappings array. Also ensure the array exists.
+   */
+  private backfillSerialOutputMappings(): void {
+    const s = this.settings() as any;
+
+    if (Array.isArray(s.serialOutputMappings) && s.serialOutputMappings.length > 0) {
+      // Ensure every mapping has all expected fields
+      let patched = false;
+      const mappings = (s.serialOutputMappings as SerialOutputMapping[]).map(m => {
+        const updated = { ...m };
+        if (typeof updated.forward !== 'string') {
+          updated.forward = 'tx';
+          patched = true;
+        }
+        return updated;
+      });
+      if (patched) {
+        this.settings.set({ ...s, serialOutputMappings: mappings });
+      }
+      return;
+    }
+
+    // Migrate from scalar fields (pre-mapping era)
+    const portIndex = typeof s.serialPortIndex === 'number' ? s.serialPortIndex : -1;
+    const pin: SerialPin = s.serialPin === 'rts' ? 'rts' : 'dtr';
+    const invert = !!s.serialInvert;
+    const forward: OutputForward = ['rx', 'tx', 'both'].includes(s.serialForward) ? s.serialForward : 'tx';
+
+    const mappings: SerialOutputMapping[] = [{
+      enabled: true,
+      portIndex,
+      pin,
+      invert,
+      forward,
+    }];
+
+    const patch: any = { serialOutputMappings: mappings };
+    delete s.serialPortIndex;
+    delete s.serialPin;
+    delete s.serialInvert;
+    delete s.serialForward;
+    this.settings.set({ ...s, ...patch });
+  }
+
+  /**
+   * Ensure mousePaddleMode and touchPaddleMode exist on profiles saved
+   * before these fields were added. Falls back to global paddleMode.
+   */
+  private backfillIndependentPaddleModes(): void {
+    const s = this.settings() as any;
+    let patched = false;
+    const patch: any = {};
+    if (typeof s.mousePaddleMode !== 'string') {
+      patch.mousePaddleMode = s.paddleMode || 'iambic-b';
+      patched = true;
+    }
+    if (typeof s.touchPaddleMode !== 'string') {
+      patch.touchPaddleMode = s.paddleMode || 'iambic-b';
+      patched = true;
+    }
+    if (patched) {
+      this.settings.set({ ...s, ...patch });
+    }
   }
 
   private _getProfiles(): Record<string, StoredProfile> {

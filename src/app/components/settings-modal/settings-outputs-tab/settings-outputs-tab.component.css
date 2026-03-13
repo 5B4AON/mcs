@@ -63,3 +63,22 @@
   color: #888;
   margin-left: 0.2rem;
 }
+
+/* ===== Per-Row Connectivity Icon (Serial/MIDI Mappings) ===== */
+.midi-mapping-connected-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.15rem;
+  transition: color 0.15s;
+  height: 0;
+  overflow: visible;
+  line-height: 0;
+}
+.midi-mapping-connected-icon.connected { color: #4a8; }
+.midi-mapping-connected-icon.disconnected { color: #556; }
+.midi-mapping-connected-icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}

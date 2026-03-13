@@ -364,7 +364,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           (evt.inputPath === 'keyboardStraightKey' && s.spriteAnimateKeyboard) ||
           (evt.inputPath === 'mouseStraightKey' && s.spriteAnimateMouse) ||
           (evt.inputPath === 'midiStraightKey' && s.spriteAnimateMidi) ||
-          (evt.inputPath === 'serialStraightKey' && s.spriteAnimateSerial);
+          (evt.inputPath?.startsWith('serialStraightKey') && s.spriteAnimateSerial);
         if (animate) {
           this.spriteKeyDown = evt.down;
         }
@@ -609,17 +609,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * but we need to ensure ports are enumerated first.
    */
   private async autoOpenSerialInput(): Promise<void> {
-    const idx = this.settings.settings().serialInputPortIndex;
-    if (idx < 0) return;
+    // Collect unique port indices from all enabled mappings
+    const portIndices = new Set<number>();
+    for (const m of this.settings.settings().serialInputMappings) {
+      if (m.enabled && m.portIndex >= 0) portIndices.add(m.portIndex);
+    }
+    if (portIndices.size === 0) return;
 
     for (const delay of [0, 500, 1500, 3000]) {
       if (delay > 0) await new Promise(r => setTimeout(r, delay));
-      if (this.serialInput.connected()) return;
       await this.serialInput.refreshPorts();
-      if (idx < this.serialInput.ports().length) {
-        await this.serialInput.open(idx);
-        if (this.serialInput.connected()) return;
+      let allConnected = true;
+      for (const idx of portIndices) {
+        if (!this.serialInput.isPortConnected(idx) && idx < this.serialInput.ports().length) {
+          await this.serialInput.openPort(idx);
+        }
+        if (!this.serialInput.isPortConnected(idx)) allConnected = false;
       }
+      if (allConnected) return;
     }
   }
 

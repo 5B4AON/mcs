@@ -2,9 +2,9 @@
  * Morse Code Studio
  */
 
-import { Injectable, NgZone, OnDestroy, effect, signal } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, computed, effect, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, SerialInputPin } from './settings.service';
+import { SettingsService, PaddleMode, SerialInputPin, SerialInputMapping, InputPath } from './settings.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { timingsFromWpm } from '../morse-table';
@@ -24,54 +24,106 @@ const SERIAL_FILTERS: SerialPortFilter[] = [
   { usbVendorId: 0x2E8A },  // Raspberry Pi (Pico)
 ];
 
+/** Per-signal debounce tracking  */
+interface DebounceEntry { pending: boolean; since: number; confirmed: boolean; }
+
+/** Connection state for a single physical serial port */
+interface PortConnectionState {
+  port: SerialPort;
+  owned: boolean;
+  sharing: boolean;
+  pollTimer: ReturnType<typeof setInterval> | null;
+  disconnectHandler: (() => void) | null;
+  debounce: Record<SerialInputPin, DebounceEntry>;
+  signals: Record<SerialInputPin, boolean>;
+  pollInterval: number;
+  debounceMs: number;
+  lastError: string | null;
+}
+
+/** Per-mapping iambic keyer state (for paddle mappings) */
+interface MappingKeyerState {
+  straightKeyDown: boolean;
+  leftPaddleDown: boolean;
+  rightPaddleDown: boolean;
+  ditMemory: boolean;
+  dahMemory: boolean;
+  keyerTimeout: ReturnType<typeof setTimeout> | null;
+  currentElement: 'dit' | 'dah' | null;
+  lastElement: 'dit' | 'dah' | null;
+  elementPlaying: boolean;
+  keyerRunning: boolean;
+  source: 'rx' | 'tx';
+}
+
+/** Create a fresh per-mapping keyer state */
+function newKeyerState(): MappingKeyerState {
+  return {
+    straightKeyDown: false,
+    leftPaddleDown: false,
+    rightPaddleDown: false,
+    ditMemory: false,
+    dahMemory: false,
+    keyerTimeout: null,
+    currentElement: null,
+    lastElement: null,
+    elementPlaying: false,
+    keyerRunning: false,
+    source: 'tx',
+  };
+}
+
+/** Create a fresh debounce bank for all four input pins */
+function newDebounceBank(): Record<SerialInputPin, DebounceEntry> {
+  return {
+    dsr: { pending: false, since: 0, confirmed: false },
+    cts: { pending: false, since: 0, confirmed: false },
+    dcd: { pending: false, since: 0, confirmed: false },
+    ri:  { pending: false, since: 0, confirmed: false },
+  };
+}
+
 /**
  * Serial Key Input Service — reads serial port input signals (DSR, CTS, DCD, RI)
  * and maps them to straight key and paddle inputs for the Morse decoder.
  *
- * Monitors serial port control/status signals via polling (getSignals()).
- * Per-signal debounce filters contact bounce from mechanical keys.
+ * Supports multiple simultaneous serial ports: each mapping in
+ * `serialInputMappings` specifies its own `portIndex`, `pollInterval`,
+ * and `debounceMs`. Ports are shared when multiple mappings reference
+ * the same index — the tightest (fastest) polling interval wins.
  *
- * Port sharing: when the same port index is used by both Serial Output and
- * Serial Input, this service piggybacks on SerialKeyOutputService's open port
+ * Port sharing with Serial Output: when a mapping's port index matches
+ * the Serial Output port, this service piggybacks on that open port
  * instead of opening a second connection.
  *
- * Has its own independent iambic keyer for paddle mode (same pattern as
- * MidiInputService) — no shared state with KeyerService.
+ * Each paddle mapping has its own independent iambic keyer (same pattern
+ * as MidiInputService) — no shared state with KeyerService.
  */
 @Injectable({ providedIn: 'root' })
 export class SerialKeyInputService implements OnDestroy {
-  /** Current state of the DSR (Data Set Ready) input pin */
-  readonly dsr = signal(false);
-
-  /** Current state of the CTS (Clear To Send) input pin */
-  readonly cts = signal(false);
-
-  /** Current state of the DCD (Data Carrier Detect) input pin */
-  readonly dcd = signal(false);
-
-  /** Current state of the RI (Ring Indicator) input pin */
-  readonly ri = signal(false);
-
   /** Available serial ports (previously granted by the user) */
   readonly ports = signal<SerialPort[]>([]);
 
-  /** Whether the input port is currently connected */
-  readonly connected = signal(false);
+  /** Per-port connection state (portIndex → state). Private mutable map, exposed as signal. */
+  readonly portStates = signal<Map<number, PortConnectionState>>(new Map());
 
-  /** Whether polling is active */
-  readonly pollingActive = signal(false);
+  /** Whether any serial input port is currently connected */
+  readonly connected = computed(() => {
+    const map = this.portStates();
+    for (const ps of map.values()) {
+      if (ps.port) return true;
+    }
+    return false;
+  });
 
-  /** Last error from getSignals (for diagnostics) */
+  /** Last error from any port (for diagnostics) */
   readonly lastError = signal<string | null>(null);
-
-  /** Whether we're piggybacking on the serial output's port */
-  readonly sharingPort = signal(false);
 
   /**
    * Emits straight key press/release events.
    * Used by AppComponent for sprite animation.
    */
-  readonly straightKeyEvent$ = new Subject<{ down: boolean }>();
+  readonly straightKeyEvent$ = new Subject<{ down: boolean; mappingIndex: number }>();
 
   /** Polling interval limits in ms */
   static readonly MIN_POLL_INTERVAL = 5;
@@ -81,46 +133,14 @@ export class SerialKeyInputService implements OnDestroy {
   static readonly MIN_DEBOUNCE = 2;
   static readonly MAX_DEBOUNCE = 10;
 
-  /** Per-signal debounce tracking: pending value + timestamp */
-  private debounce = {
-    dsr: { pending: false, since: 0, confirmed: false },
-    cts: { pending: false, since: 0, confirmed: false },
-    dcd: { pending: false, since: 0, confirmed: false },
-    ri:  { pending: false, since: 0, confirmed: false },
-  };
-
-  /** Polling interval handle */
-  private pollTimer: ReturnType<typeof setInterval> | null = null;
-
-  /** Reference to the currently attached port */
-  private attachedPort: SerialPort | null = null;
-
-  /** Whether we opened this port ourselves (vs piggybacking) */
-  private ownedPort = false;
+  /** Per-mapping keyer state (mapping index → state) */
+  private keyerStates = new Map<number, MappingKeyerState>();
 
   /** Bound handler for navigator.serial connect events */
   private readonly onSerialConnect = () => this.handleSerialConnect();
 
-  /** Bound handler for port disconnect events */
-  private portDisconnectHandler: (() => void) | null = null;
-
   /** Whether auto-reconnect is in progress */
   private reconnecting = false;
-
-  // ---- Straight key state ----
-  private straightKeyDown = false;
-
-  // ---- Independent serial paddle keyer state ----
-  private serialLeftPaddleDown = false;
-  private serialRightPaddleDown = false;
-  private serialDitMemory = false;
-  private serialDahMemory = false;
-  private serialKeyerTimeout: ReturnType<typeof setTimeout> | null = null;
-  private serialCurrentElement: 'dit' | 'dah' | null = null;
-  private serialLastElement: 'dit' | 'dah' | null = null;
-  private serialElementPlaying = false;
-  private serialKeyerRunning = false;
-  private serialPaddleSource: 'rx' | 'tx' = 'tx';
 
   constructor(
     private serialOutput: SerialKeyOutputService,
@@ -137,20 +157,23 @@ export class SerialKeyInputService implements OnDestroy {
     effect(() => {
       const s = this.settings.settings();
       const enabled = s.serialInputEnabled;
-      const portIdx = s.serialInputPortIndex;
-      const interval = s.serialInputPollInterval;
-      // Also watch the serial output's open port for piggyback changes
-      const outputPort = this.serialOutput.openPort();
+      const mappings = s.serialInputMappings;
+      // Watch the serial output's open ports for piggyback changes
+      const outputPorts = this.serialOutput.openPorts();
 
-      this.detach();
-      if (enabled) {
-        this.connectPort(portIdx, interval);
-      }
+      // Schedule the async reconnect outside the effect context
+      // to avoid writing signals during synchronous effect execution
+      queueMicrotask(() => {
+        this.detachAll();
+        if (enabled) {
+          this.connectAllPorts(mappings);
+        }
+      });
     });
   }
 
   ngOnDestroy(): void {
-    this.detach();
+    this.detachAll();
     if ('serial' in navigator) {
       navigator.serial.removeEventListener('connect', this.onSerialConnect);
     }
@@ -199,17 +222,27 @@ export class SerialKeyInputService implements OnDestroy {
     }
   }
 
-  /** Open the port at the given index — piggyback or open independently */
-  async open(portIndex: number): Promise<void> {
-    this.detach();
-    const s = this.settings.settings();
-    const interval = s.serialInputPollInterval;
-    await this.connectPort(portIndex, interval);
+  /** Open a specific port by index (for manual connect from card) */
+  async openPort(portIndex: number): Promise<void> {
+    const existing = this.portStates().get(portIndex);
+    if (existing?.port) return; // already connected
+    await this.connectPort(portIndex, 10, 5);
   }
 
-  /** Close the serial input connection */
-  async close(): Promise<void> {
-    this.detach();
+  /** Close a specific port by index */
+  closePort(portIndex: number): void {
+    const map = new Map(this.portStates());
+    const ps = map.get(portIndex);
+    if (ps) {
+      this.teardownPort(ps);
+      map.delete(portIndex);
+      this.portStates.set(map);
+    }
+  }
+
+  /** Close all serial input connections */
+  closeAll(): void {
+    this.detachAll();
   }
 
   /** Get a human-readable label for a serial port */
@@ -221,50 +254,98 @@ export class SerialKeyInputService implements OnDestroy {
     return 'Serial Port';
   }
 
+  /** Check if a specific port is connected */
+  isPortConnected(portIndex: number): boolean {
+    return this.portStates().get(portIndex)?.port != null;
+  }
+
+  /** Get current signal values for a specific port */
+  getPortSignals(portIndex: number): Record<SerialInputPin, boolean> | null {
+    const ps = this.portStates().get(portIndex);
+    return ps ? { ...ps.signals } : null;
+  }
+
+  /** Whether a specific port is piggybacking on serial output */
+  isPortSharing(portIndex: number): boolean {
+    return this.portStates().get(portIndex)?.sharing ?? false;
+  }
+
   /**
-   * Calculate approximate max WPM accounting for both poll interval and debounce.
+   * Calculate approximate max WPM for a specific mapping.
    * Nyquist on polling: dit ≥ 2 × pollInterval → WPM ≤ 600 / pollInterval.
    * Debounce: dit must remain stable for debounceMs → WPM ≤ 1200 / debounceMs.
    */
-  maxWpm(): number {
-    const s = this.settings.settings();
-    const fromPoll = 600 / s.serialInputPollInterval;
-    const fromDebounce = 1200 / s.serialInputDebounceMs;
+  maxWpmForMapping(mapping: SerialInputMapping): number {
+    const fromPoll = 600 / mapping.pollInterval;
+    const fromDebounce = 1200 / mapping.debounceMs;
     return Math.floor(Math.min(fromPoll, fromDebounce));
   }
 
   // ---- Private: port connection ----
 
   /**
+   * Connect all ports needed by the current set of enabled mappings.
+   * Groups mappings by portIndex and opens each unique port once,
+   * using the tightest (fastest) polling interval across all mappings
+   * that share the same port.
+   */
+  private async connectAllPorts(mappings: SerialInputMapping[]): Promise<void> {
+    // Collect unique port indices and their fastest poll/debounce
+    const portParams = new Map<number, { pollInterval: number; debounceMs: number }>();
+    for (const m of mappings) {
+      if (!m.enabled || m.portIndex < 0) continue;
+      const existing = portParams.get(m.portIndex);
+      if (existing) {
+        existing.pollInterval = Math.min(existing.pollInterval, m.pollInterval);
+        existing.debounceMs = Math.min(existing.debounceMs, m.debounceMs);
+      } else {
+        portParams.set(m.portIndex, { pollInterval: m.pollInterval, debounceMs: m.debounceMs });
+      }
+    }
+
+    for (const [portIndex, params] of portParams) {
+      await this.connectPort(portIndex, params.pollInterval, params.debounceMs);
+    }
+  }
+
+  /**
    * Connect to the serial port at the given index.
    * If the serial output is already using the same port, piggyback on it.
-   * If serial output is *expected* to use the same port but hasn't opened
-   * yet, defer — the effect() watches openPort and will re-run when the
-   * output service connects, avoiding a race where we lock the port first.
-   * Otherwise, open the port independently.
    */
-  private async connectPort(portIndex: number, pollInterval: number): Promise<void> {
+  private async connectPort(portIndex: number, pollInterval: number, debounceMs: number): Promise<void> {
     if (portIndex < 0) return;
 
-    // Check if serial output is using the same port index
     const s = this.settings.settings();
-    const outputPortIdx = s.serialPortIndex;
-    const outputPort = this.serialOutput.openPort();
+    const outputPort = this.serialOutput.getOpenPort(portIndex);
 
-    if (outputPort && portIndex === outputPortIdx) {
+    const ps: PortConnectionState = {
+      port: null!,
+      owned: false,
+      sharing: false,
+      pollTimer: null,
+      disconnectHandler: null,
+      debounce: newDebounceBank(),
+      signals: { dsr: false, cts: false, dcd: false, ri: false },
+      pollInterval,
+      debounceMs,
+      lastError: null,
+    };
+
+    if (outputPort) {
       // Piggyback on the serial output's open port
-      this.attachedPort = outputPort;
-      this.ownedPort = false;
-      this.sharingPort.set(true);
-      this.connected.set(true);
+      ps.port = outputPort;
+      ps.owned = false;
+      ps.sharing = true;
+      this.setPortState(portIndex, ps);
       this.lastError.set(null);
-      this.startPolling(outputPort, pollInterval);
+      this.startPolling(portIndex, ps);
       return;
     }
 
-    // If serial output is enabled on the same port but hasn't connected
-    // yet, defer — we'll re-run when openPort() updates.
-    if (s.serialEnabled && portIndex === outputPortIdx && !outputPort) {
+    // If serial output is enabled on the same port but hasn't connected yet, defer
+    const outputUsesThisPort = s.serialEnabled &&
+      s.serialOutputMappings.some(m => m.enabled && m.portIndex === portIndex);
+    if (outputUsesThisPort && !outputPort) {
       return;
     }
 
@@ -277,63 +358,72 @@ export class SerialKeyInputService implements OnDestroy {
     try {
       await port.open({ baudRate: 9600 });
 
-      // Force both pins to idle — FTDI/CH340 DTR#/RTS# are active-low:
-      // true → physical LOW, false → physical HIGH.
-      // Same logic as SerialKeyOutputService.open().
-      const idle = !s.serialInvert;
       await port.setSignals({
-        dataTerminalReady: idle,
-        requestToSend: idle,
+        dataTerminalReady: true,
+        requestToSend: true,
       });
 
-      this.attachedPort = port;
-      this.ownedPort = true;
-      this.sharingPort.set(false);
-      this.connected.set(true);
-      this.lastError.set(null);
+      ps.port = port;
+      ps.owned = true;
+      ps.sharing = false;
 
       // Listen for physical disconnection
-      this.portDisconnectHandler = () => {
+      ps.disconnectHandler = () => {
         this.zone.run(() => {
-          this.detach();
+          this.closePort(portIndex);
           this.refreshPorts();
         });
       };
-      port.addEventListener('disconnect', this.portDisconnectHandler);
+      port.addEventListener('disconnect', ps.disconnectHandler);
 
-      this.startPolling(port, pollInterval);
+      this.setPortState(portIndex, ps);
+      this.lastError.set(null);
+      this.startPolling(portIndex, ps);
     } catch (e: any) {
       if (e.message?.includes('already open')) {
-        // Port is already open — it might be the serial output's port
-        // Try to piggyback by checking if the output port matches
-        if (outputPort && port === outputPort) {
-          this.attachedPort = outputPort;
-          this.ownedPort = false;
-          this.sharingPort.set(true);
-          this.connected.set(true);
-          this.lastError.set(null);
-          this.startPolling(outputPort, pollInterval);
-          return;
+        // Port is already open — typically because a previous close()
+        // hasn't settled yet, or serial output opened it in the interim.
+        // Silently adopt the open port instead of reporting an error.
+        const outputPortRetry = this.serialOutput.getOpenPort(portIndex);
+        if (outputPortRetry) {
+          ps.port = outputPortRetry;
+          ps.owned = false;
+          ps.sharing = true;
+        } else {
+          ps.port = port;
+          ps.owned = true;
+          ps.sharing = false;
+          ps.disconnectHandler = () => {
+            this.zone.run(() => {
+              this.closePort(portIndex);
+              this.refreshPorts();
+            });
+          };
+          port.addEventListener('disconnect', ps.disconnectHandler);
         }
+        this.setPortState(portIndex, ps);
+        this.lastError.set(null);
+        this.startPolling(portIndex, ps);
+        return;
       }
       this.lastError.set(e.message ?? 'Failed to open serial port.');
-      this.connected.set(false);
     }
   }
 
+  /** Update the portStates signal immutably */
+  private setPortState(portIndex: number, ps: PortConnectionState): void {
+    const map = new Map(this.portStates());
+    map.set(portIndex, ps);
+    this.portStates.set(map);
+  }
+
   /**
-   * Read all input signals from the port, apply per-signal debounce,
-   * and route debounced state changes to the keyer.
-   *
-   * Debounce logic (same pattern as key-detect-processor.js):
-   * A raw value must remain stable for debounceMs consecutive reads
-   * before the confirmed output changes.
+   * Read all input signals from a port, apply per-signal debounce,
+   * and route debounced state changes to the keyer for each mapping.
    */
-  private readSignals(port: SerialPort): void {
-    port.getSignals().then(signals => {
+  private readSignals(portIndex: number, ps: PortConnectionState): void {
+    ps.port.getSignals().then(signals => {
       const now = performance.now();
-      const s = this.settings.settings();
-      const debounceMs = s.serialInputDebounceMs;
 
       const raw = {
         dsr: signals.dataSetReady,
@@ -342,13 +432,9 @@ export class SerialKeyInputService implements OnDestroy {
         ri:  signals.ringIndicator,
       };
 
-      const outputs = {
-        dsr: this.dsr, cts: this.cts, dcd: this.dcd, ri: this.ri,
-      } as const;
-
       this.zone.run(() => {
         for (const name of ['dsr', 'cts', 'dcd', 'ri'] as const) {
-          const d = this.debounce[name];
+          const d = ps.debounce[name];
           const rawVal = raw[name];
 
           if (rawVal !== d.pending) {
@@ -356,30 +442,32 @@ export class SerialKeyInputService implements OnDestroy {
             d.since = now;
           }
 
-          if (d.pending !== d.confirmed && (now - d.since) >= debounceMs) {
+          if (d.pending !== d.confirmed && (now - d.since) >= ps.debounceMs) {
             const oldConfirmed = d.confirmed;
             d.confirmed = d.pending;
-            outputs[name].set(d.confirmed);
+            ps.signals[name] = d.confirmed;
 
-            // Route state change to the keyer
-            this.onPinChanged(name, d.confirmed, oldConfirmed);
+            // Route state change to all mappings on this port
+            this.onPinChanged(portIndex, name, d.confirmed, oldConfirmed);
           }
         }
-        this.lastError.set(null);
+        ps.lastError = null;
+        // Trigger signal update for UI reactivity
+        this.portStates.set(new Map(this.portStates()));
       });
     }).catch((e: any) => {
       this.zone.run(() => {
-        this.lastError.set(e.message ?? 'getSignals() failed');
+        ps.lastError = e.message ?? 'getSignals() failed';
+        this.lastError.set(ps.lastError);
       });
     });
   }
 
   /**
-   * Handle a debounced pin state change. Maps the pin to the configured
-   * keyer role (straight key, paddle dit, paddle dah) and generates
-   * the appropriate decoder events.
+   * Handle a debounced pin state change on a specific port.
+   * Routes to all enabled mappings on this port.
    */
-  private onPinChanged(pin: SerialInputPin, value: boolean, oldValue: boolean): void {
+  private onPinChanged(portIndex: number, pin: SerialInputPin, value: boolean, oldValue: boolean): void {
     const s = this.settings.settings();
     if (!s.serialInputEnabled) return;
 
@@ -390,296 +478,299 @@ export class SerialKeyInputService implements OnDestroy {
     // and serial input may share the SAME PHYSICAL PORT and adapter.
     // When the serial output asserts DTR/RTS, some adapters (especially
     // FTDI and CH340) can cross-talk between output pins and input pins
-    // due to shared ground references, cable coupling, or user wiring
-    // (e.g. DTR→DSR loopback).  The pin identities are irrelevant —
-    // only "bus active / bus idle" matters.  Therefore we must mute ALL
-    // serial input while ANY serial output pin is asserted, regardless
-    // of which specific pin is changing.
-    //
-    // True parallel operation (e.g. receiving serial input while the
-    // keyboard keyer is active on serial output) is achieved by:
-    //  1. Real-time serial output keying in the decoder (keyDown/keyUp),
-    //     which keeps isSending() true only during actual key-down —
-    //     not during the decoder's word-gap silence timers.
-    //  2. Not forwarding local-keyer decoded characters to serial output
-    //     via forwardDecodedChar (they are already keyed in real-time).
-    //  3. This service bypassing KeyerService entirely (own iambic keyer
-    //     + direct decoder calls), so no shared state with keyboard.
+    // due to shared ground references, cable coupling, or user wiring.
     // ======================================================================
 
-    // Check if this pin is the straight key
-    if (pin === s.serialStraightKeyPin) {
-      const effective = s.serialStraightKeyInvert ? !value : value;
-      const wasEffective = s.serialStraightKeyInvert ? !oldValue : oldValue;
-      if (effective !== wasEffective) {
-        // Suppress key-down while serial output is sending (prevent loopback)
-        if (effective && this.serialOutput.isSending()) return;
-        this.handleStraightKey(effective, s.serialStraightKeySource);
-      }
-    }
+    s.serialInputMappings.forEach((m, idx) => {
+      if (!m.enabled || m.portIndex !== portIndex) return;
+      this.routePinToMapping(m, idx, pin, value, oldValue);
+    });
+  }
 
-    // Check if this pin is a paddle dit
-    const reverse = s.serialReversePaddles;
-    if (pin === s.serialPaddleDitPin) {
-      const effective = s.serialPaddleInvert ? !value : value;
-      const wasEffective = s.serialPaddleInvert ? !oldValue : oldValue;
-      if (effective !== wasEffective) {
-        // Suppress paddle activation while serial output is sending
-        if (effective && this.serialOutput.isSending()) return;
-        if (reverse) {
-          this.serialDahPaddleInput(effective, s.serialPaddleSource);
-        } else {
-          this.serialDitPaddleInput(effective, s.serialPaddleSource);
+  /** Route a pin change to a specific mapping */
+  private routePinToMapping(
+    m: SerialInputMapping, mappingIndex: number,
+    pin: SerialInputPin, value: boolean, oldValue: boolean,
+  ): void {
+    if (m.mode === 'straightKey') {
+      if (pin === m.pin) {
+        const effective = m.invert ? !value : value;
+        const wasEffective = m.invert ? !oldValue : oldValue;
+        if (effective !== wasEffective) {
+          if (effective && this.serialOutput.isSending()) return;
+          this.handleStraightKey(mappingIndex, effective, m.source);
         }
       }
-    }
-
-    // Check if this pin is a paddle dah
-    if (pin === s.serialPaddleDahPin) {
-      const effective = s.serialPaddleInvert ? !value : value;
-      const wasEffective = s.serialPaddleInvert ? !oldValue : oldValue;
-      if (effective !== wasEffective) {
-        // Suppress paddle activation while serial output is sending
-        if (effective && this.serialOutput.isSending()) return;
-        if (reverse) {
-          this.serialDitPaddleInput(effective, s.serialPaddleSource);
-        } else {
-          this.serialDahPaddleInput(effective, s.serialPaddleSource);
+    } else {
+      // Paddle mode
+      const reverse = m.reversePaddles;
+      if (pin === m.pin) {
+        const effective = m.invert ? !value : value;
+        const wasEffective = m.invert ? !oldValue : oldValue;
+        if (effective !== wasEffective) {
+          if (effective && this.serialOutput.isSending()) return;
+          if (reverse) {
+            this.dahPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
+          } else {
+            this.ditPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
+          }
+        }
+      }
+      if (pin === m.dahPin) {
+        const effective = m.invert ? !value : value;
+        const wasEffective = m.invert ? !oldValue : oldValue;
+        if (effective !== wasEffective) {
+          if (effective && this.serialOutput.isSending()) return;
+          if (reverse) {
+            this.ditPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
+          } else {
+            this.dahPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
+          }
         }
       }
     }
   }
 
-  /** Handle straight key press/release from serial input */
-  private handleStraightKey(down: boolean, source: 'rx' | 'tx'): void {
-    if (down && !this.straightKeyDown) {
-      this.straightKeyDown = true;
-      this.straightKeyEvent$.next({ down: true });
-      this.decoder.onKeyDown('serialStraightKey', source, { fromSerial: true });
-    } else if (!down && this.straightKeyDown) {
-      this.straightKeyDown = false;
-      this.straightKeyEvent$.next({ down: false });
-      this.decoder.onKeyUp('serialStraightKey', source, { fromSerial: true });
+  /** Handle straight key press/release for a specific mapping */
+  private handleStraightKey(mappingIndex: number, down: boolean, source: 'rx' | 'tx'): void {
+    const ks = this.getKeyerState(mappingIndex);
+    const m = this.settings.settings().serialInputMappings[mappingIndex];
+    const inputPath: InputPath = `serialStraightKey:${mappingIndex}`;
+    const opts = { fromSerial: true, name: m?.name, color: m?.color };
+    if (down && !ks.straightKeyDown) {
+      ks.straightKeyDown = true;
+      this.straightKeyEvent$.next({ down: true, mappingIndex });
+      this.decoder.onKeyDown(inputPath, source, opts);
+    } else if (!down && ks.straightKeyDown) {
+      ks.straightKeyDown = false;
+      this.straightKeyEvent$.next({ down: false, mappingIndex });
+      this.decoder.onKeyUp(inputPath, source, opts);
     }
   }
 
-  /** Start polling at the given interval */
-  private startPolling(port: SerialPort, intervalMs: number): void {
-    if (this.pollTimer) return;
+  /** Start polling a port at the given interval */
+  private startPolling(portIndex: number, ps: PortConnectionState): void {
+    if (ps.pollTimer) return;
     const clamped = Math.max(SerialKeyInputService.MIN_POLL_INTERVAL,
-      Math.min(SerialKeyInputService.MAX_POLL_INTERVAL, intervalMs));
-    this.pollingActive.set(true);
-    // Initial read
-    this.readSignals(port);
-    this.pollTimer = setInterval(() => {
-      if (this.attachedPort === port) {
-        this.readSignals(port);
+      Math.min(SerialKeyInputService.MAX_POLL_INTERVAL, ps.pollInterval));
+    this.readSignals(portIndex, ps);
+    ps.pollTimer = setInterval(() => {
+      if (ps.port) {
+        this.readSignals(portIndex, ps);
       } else {
-        this.stopPolling();
+        this.stopPolling(ps);
       }
     }, clamped);
   }
 
-  /** Stop polling */
-  private stopPolling(): void {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
+  /** Stop polling a specific port */
+  private stopPolling(ps: PortConnectionState): void {
+    if (ps.pollTimer) {
+      clearInterval(ps.pollTimer);
+      ps.pollTimer = null;
     }
-    this.pollingActive.set(false);
   }
 
-  /** Remove listeners, stop polling, release straight key and paddles, reset state */
-  private detach(): void {
-    this.stopPolling();
-
-    // Release any active keying
-    if (this.straightKeyDown) {
-      this.straightKeyDown = false;
-      this.straightKeyEvent$.next({ down: false });
-      this.decoder.onKeyUp('serialStraightKey', this.settings.settings().serialStraightKeySource, { fromSerial: true });
+  /** Tear down a single port connection */
+  private teardownPort(ps: PortConnectionState): void {
+    this.stopPolling(ps);
+    if (ps.port && ps.disconnectHandler) {
+      ps.port.removeEventListener('disconnect', ps.disconnectHandler);
+      ps.disconnectHandler = null;
     }
-    this.stopSerialKeyer();
-
-    // Clean up port
-    if (this.attachedPort && this.portDisconnectHandler) {
-      this.attachedPort.removeEventListener('disconnect', this.portDisconnectHandler);
-      this.portDisconnectHandler = null;
+    if (ps.port && ps.owned) {
+      ps.port.close().catch(() => {});
     }
-    if (this.attachedPort && this.ownedPort) {
-      this.attachedPort.close().catch(() => {});
-    }
-    this.attachedPort = null;
-    this.ownedPort = false;
-    this.connected.set(false);
-    this.sharingPort.set(false);
+  }
 
-    // Reset signal states
-    this.dsr.set(false);
-    this.cts.set(false);
-    this.dcd.set(false);
-    this.ri.set(false);
+  /** Detach all ports and release all keyer state */
+  private detachAll(): void {
+    const map = this.portStates();
+    for (const ps of map.values()) {
+      this.teardownPort(ps);
+    }
+    this.portStates.set(new Map());
+
+    // Release any active keying across all mappings
+    for (const [idx, ks] of this.keyerStates) {
+      if (ks.straightKeyDown) {
+        ks.straightKeyDown = false;
+        this.straightKeyEvent$.next({ down: false, mappingIndex: idx });
+        const m = this.settings.settings().serialInputMappings[idx];
+        if (m) {
+          this.decoder.onKeyUp(`serialStraightKey:${idx}`, m.source, {
+            fromSerial: true, name: m.name, color: m.color,
+          });
+        }
+      }
+      this.stopMappingKeyer(idx);
+    }
+    this.keyerStates.clear();
     this.lastError.set(null);
-
-    // Reset debounce state
-    for (const name of ['dsr', 'cts', 'dcd', 'ri'] as const) {
-      this.debounce[name] = { pending: false, since: 0, confirmed: false };
-    }
   }
 
   /**
    * Handle a serial device being physically connected.
-   * If the service is enabled and currently disconnected, attempt to
-   * re-open the configured port after a short settling delay.
+   * Attempt to re-open configured ports after a settling delay.
    */
   private handleSerialConnect(): void {
     if (!this.settings.settings().serialInputEnabled) return;
-    if (this.connected()) return;
     if (this.reconnecting) return;
     this.reconnecting = true;
     setTimeout(async () => {
       try {
         await this.refreshPorts();
         const s = this.settings.settings();
-        const idx = s.serialInputPortIndex;
-        if (idx >= 0 && idx < this.ports().length && !this.connected()) {
-          await this.connectPort(idx, s.serialInputPollInterval);
-        }
+        if (!s.serialInputEnabled) return;
+        await this.connectAllPorts(s.serialInputMappings);
       } finally {
         this.reconnecting = false;
       }
     }, 1000);
   }
 
-  // ---- Independent serial paddle keyer ----
-  // Self-contained iambic keyer that calls the decoder directly.
-  // Completely independent of KeyerService — no shared state.
+  // ---- Per-mapping independent paddle keyer ----
 
-  /** Activate/deactivate the dit paddle on the serial keyer. */
-  private serialDitPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
-    this.serialPaddleSource = source;
-    if (down && !this.serialLeftPaddleDown) {
-      this.serialLeftPaddleDown = true;
-      this.serialDitMemory = true;
-      this.startSerialKeyer();
+  private getKeyerState(mappingIndex: number): MappingKeyerState {
+    let ks = this.keyerStates.get(mappingIndex);
+    if (!ks) {
+      ks = newKeyerState();
+      this.keyerStates.set(mappingIndex, ks);
+    }
+    return ks;
+  }
+
+  private ditPaddleInput(mappingIndex: number, down: boolean, source: 'rx' | 'tx', paddleMode: PaddleMode): void {
+    const ks = this.getKeyerState(mappingIndex);
+    ks.source = source;
+    if (down && !ks.leftPaddleDown) {
+      ks.leftPaddleDown = true;
+      ks.ditMemory = true;
+      this.startMappingKeyer(mappingIndex, paddleMode);
     } else if (!down) {
-      this.serialLeftPaddleDown = false;
-      this.checkStopSerialKeyer();
+      ks.leftPaddleDown = false;
+      this.checkStopMappingKeyer(mappingIndex);
     }
   }
 
-  /** Activate/deactivate the dah paddle on the serial keyer. */
-  private serialDahPaddleInput(down: boolean, source: 'rx' | 'tx'): void {
-    this.serialPaddleSource = source;
-    if (down && !this.serialRightPaddleDown) {
-      this.serialRightPaddleDown = true;
-      this.serialDahMemory = true;
-      this.startSerialKeyer();
+  private dahPaddleInput(mappingIndex: number, down: boolean, source: 'rx' | 'tx', paddleMode: PaddleMode): void {
+    const ks = this.getKeyerState(mappingIndex);
+    ks.source = source;
+    if (down && !ks.rightPaddleDown) {
+      ks.rightPaddleDown = true;
+      ks.dahMemory = true;
+      this.startMappingKeyer(mappingIndex, paddleMode);
     } else if (!down) {
-      this.serialRightPaddleDown = false;
-      this.checkStopSerialKeyer();
+      ks.rightPaddleDown = false;
+      this.checkStopMappingKeyer(mappingIndex);
     }
   }
 
-  private startSerialKeyer(): void {
-    if (this.serialKeyerRunning) return;
-    this.serialKeyerRunning = true;
-    this.runSerialKeyerLoop();
+  private startMappingKeyer(mappingIndex: number, paddleMode: PaddleMode): void {
+    const ks = this.getKeyerState(mappingIndex);
+    if (ks.keyerRunning) return;
+    ks.keyerRunning = true;
+    this.runMappingKeyerLoop(mappingIndex, paddleMode);
   }
 
-  private stopSerialKeyer(): void {
-    this.serialKeyerRunning = false;
-    if (this.serialKeyerTimeout) {
-      clearTimeout(this.serialKeyerTimeout);
-      this.serialKeyerTimeout = null;
+  private stopMappingKeyer(mappingIndex: number): void {
+    const ks = this.keyerStates.get(mappingIndex);
+    if (!ks) return;
+    ks.keyerRunning = false;
+    if (ks.keyerTimeout) {
+      clearTimeout(ks.keyerTimeout);
+      ks.keyerTimeout = null;
     }
-    if (this.serialElementPlaying) {
-      this.serialElementPlaying = false;
+    if (ks.elementPlaying) {
+      ks.elementPlaying = false;
+      const inputPath: InputPath = `serialPaddle:${mappingIndex}`;
+      const m = this.settings.settings().serialInputMappings[mappingIndex];
       this.zone.run(() => {
-        this.decoder.onKeyUp('serialPaddle', this.serialPaddleSource, {
-          perfectTiming: true, fromSerial: true,
+        this.decoder.onKeyUp(inputPath, ks.source, {
+          perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
         });
       });
     }
-    this.serialCurrentElement = null;
-    this.serialLastElement = null;
-    this.serialDitMemory = false;
-    this.serialDahMemory = false;
+    ks.currentElement = null;
+    ks.lastElement = null;
+    ks.ditMemory = false;
+    ks.dahMemory = false;
   }
 
-  private checkStopSerialKeyer(): void {
-    if (!this.serialLeftPaddleDown && !this.serialRightPaddleDown &&
-        !this.serialDitMemory && !this.serialDahMemory && !this.serialElementPlaying) {
-      this.stopSerialKeyer();
+  private checkStopMappingKeyer(mappingIndex: number): void {
+    const ks = this.keyerStates.get(mappingIndex);
+    if (!ks) return;
+    if (!ks.leftPaddleDown && !ks.rightPaddleDown &&
+        !ks.ditMemory && !ks.dahMemory && !ks.elementPlaying) {
+      this.stopMappingKeyer(mappingIndex);
     }
   }
 
-  private runSerialKeyerLoop(): void {
-    if (!this.serialKeyerRunning) return;
-    const mode: PaddleMode = this.settings.settings().paddleMode;
+  private runMappingKeyerLoop(mappingIndex: number, paddleMode: PaddleMode): void {
+    const ks = this.keyerStates.get(mappingIndex);
+    if (!ks || !ks.keyerRunning) return;
     const timings = timingsFromWpm(this.settings.settings().keyerWpm);
-    const nextElement = this.pickSerialNextElement(mode);
+    const nextElement = this.pickNextElement(ks, paddleMode);
     if (!nextElement) {
-      this.stopSerialKeyer();
+      this.stopMappingKeyer(mappingIndex);
       return;
     }
-    this.serialCurrentElement = nextElement;
+    ks.currentElement = nextElement;
     const duration = nextElement === 'dit' ? timings.dit : timings.dah;
+    const inputPath: InputPath = `serialPaddle:${mappingIndex}`;
 
-    this.serialElementPlaying = true;
+    const m = this.settings.settings().serialInputMappings[mappingIndex];
+    ks.elementPlaying = true;
     this.zone.run(() => {
-      this.decoder.onKeyDown('serialPaddle', this.serialPaddleSource, {
-        perfectTiming: true, fromSerial: true,
+      this.decoder.onKeyDown(inputPath, ks.source, {
+        perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
       });
     });
 
-    this.serialKeyerTimeout = setTimeout(() => {
-      this.serialElementPlaying = false;
+    ks.keyerTimeout = setTimeout(() => {
+      ks.elementPlaying = false;
       this.zone.run(() => {
-        this.decoder.onKeyUp('serialPaddle', this.serialPaddleSource, {
-          perfectTiming: true, fromSerial: true,
+        this.decoder.onKeyUp(inputPath, ks.source, {
+          perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
         });
       });
-      this.serialLastElement = this.serialCurrentElement;
-      this.serialCurrentElement = null;
+      ks.lastElement = ks.currentElement;
+      ks.currentElement = null;
 
       // Inter-element space (1 dit)
-      this.serialKeyerTimeout = setTimeout(() => {
-        if (this.serialKeyerRunning) {
-          if (this.serialLeftPaddleDown || this.serialRightPaddleDown ||
-              this.serialDitMemory || this.serialDahMemory) {
-            this.runSerialKeyerLoop();
+      ks.keyerTimeout = setTimeout(() => {
+        if (ks.keyerRunning) {
+          if (ks.leftPaddleDown || ks.rightPaddleDown ||
+              ks.ditMemory || ks.dahMemory) {
+            this.runMappingKeyerLoop(mappingIndex, paddleMode);
           } else {
-            this.stopSerialKeyer();
+            this.stopMappingKeyer(mappingIndex);
           }
         }
       }, timings.intraChar);
     }, duration);
   }
 
-  /**
-   * Pick the next element to play based on the current paddle mode.
-   * Mirrors KeyerService.pickNextElement but uses serial-local state.
-   */
-  private pickSerialNextElement(mode: PaddleMode): 'dit' | 'dah' | null {
-    const hasDit = this.serialLeftPaddleDown || this.serialDitMemory;
-    const hasDah = this.serialRightPaddleDown || this.serialDahMemory;
+  /** Pick the next element to play based on the current paddle mode */
+  private pickNextElement(ks: MappingKeyerState, mode: PaddleMode): 'dit' | 'dah' | null {
+    const hasDit = ks.leftPaddleDown || ks.ditMemory;
+    const hasDah = ks.rightPaddleDown || ks.dahMemory;
     let picked: 'dit' | 'dah' | null = null;
     const bothActive = hasDit && hasDah;
 
     if (mode === 'iambic-b' || mode === 'iambic-a') {
       if (bothActive) {
-        picked = this.serialLastElement === 'dit' ? 'dah' : 'dit';
+        picked = ks.lastElement === 'dit' ? 'dah' : 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
         picked = 'dah';
-      } else if (mode === 'iambic-b' && this.serialLastElement) {
-        picked = this.serialLastElement === 'dit' ? 'dah' : 'dit';
+      } else if (mode === 'iambic-b' && ks.lastElement) {
+        picked = ks.lastElement === 'dit' ? 'dah' : 'dit';
       }
     } else if (mode === 'ultimatic') {
       if (bothActive) {
-        picked = this.serialLastElement || 'dit';
+        picked = ks.lastElement || 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
@@ -690,8 +781,8 @@ export class SerialKeyInputService implements OnDestroy {
       else if (hasDah) picked = 'dah';
     }
 
-    if (picked === 'dit') this.serialDitMemory = false;
-    else if (picked === 'dah') this.serialDahMemory = false;
+    if (picked === 'dit') ks.ditMemory = false;
+    else if (picked === 'dah') ks.dahMemory = false;
     return picked;
   }
 }

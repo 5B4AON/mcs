@@ -99,3 +99,22 @@
 .midi-mapping-add-btn:hover {
   background: #333;
 }
+
+/* ===== Per-row connectivity icon (serial & MIDI) ===== */
+.midi-mapping-connected-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: 0.15rem;
+  flex-shrink: 0;
+  height: 0;
+  overflow: visible;
+  line-height: 0;
+}
+.midi-mapping-connected-icon.connected { color: #4a8; }
+.midi-mapping-connected-icon.disconnected { color: #556; }
+.midi-mapping-connected-icon svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+}

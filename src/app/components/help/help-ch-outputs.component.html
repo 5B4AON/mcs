@@ -95,17 +95,17 @@
 
 <h3>Requirements</h3>
 <ul>
-  <li>A <strong>Chromium-based browser</strong> (Chrome or Edge) — Firefox and
+  <li>A <strong>Chromium-based browser</strong> (Chrome or Edge) &mdash; Firefox and
       Safari do not support the Web Serial API.</li>
   <li>A <strong>desktop operating system</strong> (Windows, macOS, Linux or
-      ChromeOS). <strong>Android is not supported</strong> — Chrome on Android
+      ChromeOS). <strong>Android is not supported</strong> &mdash; Chrome on Android
       does not provide access to USB-serial adapters, even when connected via
       USB OTG. The Web Serial API flag exists in Android Chrome but
       USB-to-serial devices are not enumerated.</li>
   <li>A <strong>USB-serial adapter</strong> such as FTDI FT232, CH340, CP2102
       or similar.</li>
   <li>An <strong>optocoupler or transistor</strong> between the adapter and
-      your radio, unless your radio accepts ±5–12 V keying directly.</li>
+      your radio, unless your radio accepts &plusmn;5&ndash;12&thinsp;V keying directly.</li>
 </ul>
 
 <figure class="diagram-figure">
@@ -117,27 +117,64 @@
   <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>serial-port-output.mmd</code></p>
 </figure>
 
-<h3>Settings</h3>
+<h3>Multiple Mappings</h3>
+<p>
+  Serial Output supports <strong>multiple independent mappings</strong> in a
+  table-based interface (the same pattern as MIDI Output &sect;7.4). Each
+  mapping defines its own serial port, output pin (DTR or RTS), invert
+  setting, and <strong>forward selector</strong>. You can:
+</p>
 <ul>
-  <li><strong>Add Serial Port</strong> — Opens the browser's serial port
-      picker. Select your adapter. You must grant access each time the page
+  <li><strong>Add</strong> a new mapping with the <strong>+&nbsp;Add
+      Mapping</strong> button.</li>
+  <li><strong>Edit</strong> any mapping via the pencil button to open the
+      edit modal.</li>
+  <li><strong>Remove</strong> a mapping with the delete button in the edit
+      modal.</li>
+  <li><strong>Enable / disable</strong> individual mappings with the
+      checkbox.</li>
+</ul>
+<p>
+  This allows you to key multiple transmitters or drive multiple output
+  pins simultaneously &mdash; for example, one mapping keying a
+  transmitter via DTR on one adapter, while another mapping drives a
+  relay via RTS on a second adapter. You can also target both DTR
+  <em>and</em> RTS on the same adapter with two separate mappings.
+</p>
+
+<h3>Per-Mapping Forward Selector</h3>
+<p>
+  Each mapping has its own <strong>Forward</strong> setting that controls
+  which signal sources drive it:
+</p>
+<ul>
+  <li><strong>TX only</strong> (default) &mdash; Keys only for transmitted
+      morse (encoder, keyer inputs tagged as TX).</li>
+  <li><strong>RX only</strong> &mdash; Keys only for received morse
+      (decoded audio inputs, Firebase RTDB).</li>
+  <li><strong>Both</strong> &mdash; Keys for all morse activity.</li>
+</ul>
+<p>
+  This per-mapping control lets you route RX and TX to different serial
+  adapters or pins independently.
+</p>
+
+<h3>Settings (per mapping)</h3>
+<ul>
+  <li><strong>Serial Port</strong> &mdash; Click &ldquo;Add Serial
+      Port&hellip;&rdquo; to grant access to a new adapter, or select a
+      previously granted port. You must grant access each time the page
       loads.</li>
-  <li><strong>Output Pin</strong> — DTR (Data Terminal Ready) or RTS (Request
+  <li><strong>Output Pin</strong> &mdash; DTR (Data Terminal Ready) or RTS (Request
       To Send). Either works; DTR is more common for CW keying.</li>
-  <li><strong>Invert Output</strong> — By default, the physical pin is held
+  <li><strong>Invert Output</strong> &mdash; By default, the physical pin is held
       <strong>LOW when idle</strong> and driven <strong>HIGH when keyed</strong>.
       The HIGH pulse activates external hardware (e.g. an optocoupler).
       When checked, the polarity is reversed (idle = HIGH, keyed = LOW).</li>
-  <li><strong>Forward</strong> — Controls which signals activate the serial
-      port output:
-    <ul>
-      <li><strong>TX only</strong> (default) — Keys only for transmitted
-          morse.</li>
-      <li><strong>RX only</strong> — Keys only for received morse.</li>
-      <li><strong>Both</strong> — Keys for all morse activity.</li>
-    </ul>
-  </li>
-  <li><strong>Test Output</strong> — Keys the output for 1 second.</li>
+  <li><strong>Forward</strong> &mdash; Which signal sources drive this
+      mapping: TX only, RX only, or Both.</li>
+  <li><strong>Test Output</strong> &mdash; Keys the output for 1 second to verify
+      wiring. Available when the mapping&rsquo;s port is connected.</li>
 </ul>
 
 <h3>FTDI / CH340 Pin Behaviour</h3>
@@ -180,18 +217,22 @@
 </p>
 
 <div class="example-box">
-  <div class="example-title">Example — FTDI adapter keying</div>
+  <div class="example-title">Example &mdash; FTDI adapter keying</div>
   <p>
-    Plug an FTDI FT232 USB adapter in. Click "Add Serial Port" and select it.
-    Set Output Pin to DTR. Wire DTR through a 1 k&Omega; resistor to the base of an
+    Plug an FTDI FT232 USB adapter in. Enable Serial Output and click the
+    pencil button on the default mapping. Click &ldquo;Add Serial
+    Port&hellip;&rdquo; and select the adapter. Set Output Pin to DTR.
+    Wire DTR through a 1&thinsp;k&Omega; resistor to the base of an
     NPN transistor (2N2222). Collector to radio key line, emitter to ground.
-    Enable serial output and click "Test Output".
+    Click &ldquo;Save&rdquo; and then &ldquo;Test Output&rdquo;.
   </p>
 </div>
 <h3>Echo Suppression (when sharing port with Serial Input)</h3>
 <p>
   When Serial Output and Serial Input (&sect;6.3) share the same adapter,
-  feedback is prevented at two levels:
+  feedback is prevented at two levels. The holdoff is tracked
+  <strong>per mapping</strong>, so mappings on different ports operate
+  independently.
 </p>
 <h4>Hardware-level: <code>isSending</code> muting</h4>
 <p>

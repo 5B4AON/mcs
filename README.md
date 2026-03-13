@@ -14,9 +14,9 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
 
-**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (DSR/CTS/DCD/RI via Web Serial API), computer keyboard (multiple mappings with per-mapping paddle mode), mouse, or touchscreen. MIDI and keyboard input mappings support optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
+**Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (multiple mappings with independent ports, pins, and polling — DSR/CTS/DCD/RI via Web Serial API), computer keyboard (multiple mappings with per-mapping paddle mode), mouse, or touchscreen. MIDI, serial, and keyboard input mappings support optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
-**Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (DTR/RTS via Web Serial API), or WinKeyer.
+**Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (multiple mappings with per-mapping DTR/RTS pin, invert, and forward selectors via Web Serial API), or WinKeyer.
 
 **Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM so the receiving station plays it back at the original rhythm. Channels use a name + secret pair for access control, with callsign-prefixed lines in the fullscreen conversation view.
 
@@ -40,8 +40,8 @@ The built-in keyboard, mouse, and touch keyers require no extra hardware — con
 
 A USB-serial adapter provides **both input and output** via the Web Serial API (Chrome/Edge only). Serial adapters are significantly cheaper than an Arduino MIDI interface (often under $2), but come with trade-offs. Like MIDI, **serial port access works when the browser is in the background**, making it suitable for on-air use.
 
-- **Output (DTR/RTS)** — keys your transmitter by toggling DTR or RTS. Reliable, sub-millisecond switching.
-- **Input (DSR/CTS/DCD/RI)** — reads straight key or paddle closures from the adapter's input status pins via polling. Configurable poll interval (5–50 ms) and per-signal debounce (2–10 ms). Supports all five keyer modes with an independent iambic keyer. Each pin is individually assignable.
+- **Output (DTR/RTS)** — keys your transmitter by toggling DTR or RTS. Multiple output mappings are supported, each with its own port, pin (DTR or RTS), invert setting, and forward selector (TX, RX, or both). Reliable, sub-millisecond switching.
+- **Input (DSR/CTS/DCD/RI)** — reads straight key or paddle closures from the adapter's input status pins via polling. Multiple input mappings are supported, each with its own port, pin assignments, poll interval, debounce, and decoder source. Supports all five keyer modes with an independent iambic keyer per mapping. Serial input mappings also support optional **Name** and **Colour** for multi-user conversation views.
 
 When input and output are configured on the same port, the input service piggybacks on the output's open connection — no second port handle needed. Automatic mute suppression and decoder output routing prevent feedback when both are active simultaneously.
 

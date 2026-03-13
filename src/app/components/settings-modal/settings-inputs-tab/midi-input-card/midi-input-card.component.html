@@ -50,6 +50,14 @@
             @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
               <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Paddles reversed">↔</span>
             }
+            <!-- Per-row connectivity icon -->
+            <span class="midi-mapping-connected-icon" [class.connected]="isMappingConnected(mapping)" [class.disconnected]="!isMappingConnected(mapping)" [title]="isMappingConnected(mapping) ? 'MIDI device connected' : 'MIDI device not connected'">
+              @if (isMappingConnected(mapping)) {
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+              } @else {
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+              }
+            </span>
             <span class="midi-mapping-spacer"></span>
             <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
@@ -63,14 +71,6 @@
         MIDI input works even when the app is in the background, another window
         is focused, or the screen is locked. Connect a MIDI pedal, keyboard, or
         controller and assign notes to straight key or paddles.
-      </div>
-
-      <div class="serial-port-row">
-        @if (midiInput.connected()) {
-          <span class="serial-status connected">&#x2714; Connected</span>
-        } @else if (settings.settings().midiInputEnabled) {
-          <span class="serial-status">&#x2716; Not connected</span>
-        }
       </div>
     </div>
   }
