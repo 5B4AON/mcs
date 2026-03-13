@@ -4,6 +4,67 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-03-13
+
+### Added
+
+- **Keyboard Keyer Multi-Mapping** — The keyboard keyer now supports multiple
+  independent mappings in a table-based interface, mirroring the MIDI input
+  pattern. Each mapping has its own mode (straight key or paddle), key
+  bindings, decoder source (RX/TX), reverse paddles toggle, paddle mode
+  (Iambic B/A, Ultimatic, Single Lever), and optional Name and Colour.
+  Add, edit, duplicate, reorder, or remove mappings freely. Default mappings:
+  Space as straight key (TX), `[`/`]` as Iambic B paddles (TX), and
+  Left Ctrl/Right Ctrl as Iambic B paddles (TX).
+- **Per-Mapping Paddle Mode (Keyboard)** — Each keyboard paddle mapping now
+  carries its own paddle mode, replacing the previous shared setting. This
+  allows different keyer behaviours per mapping (e.g. one mapping in Iambic B
+  and another in Ultimatic).
+- **Keyboard Keyer Name & Colour** — Each keyboard mapping can now have an
+  optional Name and Colour, enabling multi-user conversation views where each
+  operator's decoded text appears on separate colour-coded lines in the
+  fullscreen display — same as MIDI input.
+- **Per-Mapping Keyer Loops (Keyboard & MIDI)** — Each keyboard and MIDI
+  paddle mapping now runs its own independent iambic keyer engine with
+  separate state, timing, and decoder pipeline. Previously, all keyboard
+  paddle mappings shared a single decoder pipeline, which could cause
+  output ref-count leaks and stuck audio when two mappings overlapped.
+- **Modifier Key Combo Detection** — When a mapped modifier key (Ctrl, Alt,
+  Shift, Meta) is involved in a simultaneous multi-key press, the browser may
+  swallow `keyup` events for one of the keys. The keyer now detects these
+  stuck states by cross-checking keyboard event modifier flags on every
+  key release, and automatically releases any stranded paddle or straight-key
+  state — preventing the continuous-tone bug that occurred when pressing e.g.
+  `[` and Ctrl simultaneously.
+
+### Changed
+
+- **Keyboard Keyer Settings UI** — The single key-binding buttons have been
+  replaced by a mapping table with enable checkbox, name, mode, key summary,
+  source badge, reverse indicator, and paddle mode label. An edit modal
+  (matching MIDI input's pattern) provides the full configuration for each
+  mapping.
+- **Independent Decoder Pipelines** — Keyboard paddle mappings now use indexed
+  input paths (`keyboardPaddle:0`, `keyboardPaddle:1`, …) and MIDI mappings
+  use indexed paths (`midiPaddle:0`, `midiStraightKey:0`, …) so each mapping
+  gets its own independent decoder pipeline. This prevents ref-count leaks
+  in shared audio/serial/vibration/MIDI output when multiple mappings overlap.
+
+### Fixed
+
+- **Stuck Continuous Tone** — Fixed a bug where pressing keys from two
+  different keyboard paddle mappings simultaneously (e.g. `[` and Right Ctrl)
+  caused a permanent continuous tone that persisted even after all keys were
+  released. Root cause: all keyboard paddle mappings shared a single decoder
+  pipeline (`keyboardPaddle`), so overlapping `onKeyDown`/`onKeyUp` calls
+  leaked the audio output ref count. Now each mapping has its own pipeline.
+- **Modifier Key `keyup` Not Firing** — Added active detection of stuck
+  modifier keys via `KeyboardEvent` flag cross-checks and a `window.blur`
+  handler, so lost `keyup` events for Ctrl, Alt, Shift, and Meta no longer
+  leave paddle or straight-key state permanently stuck.
+
+---
+
 ## [1.1.0] - 2026-03-11
 
 ### Added — Application

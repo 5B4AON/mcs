@@ -1,6 +1,6 @@
 {
   "name": "morse-code-studio",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "A browser-based Morse code encoder, decoder and keyer built with Angular and the Web Audio API",
   "author": "5B4AON — Mike",
   "repository": {

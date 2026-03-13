@@ -4,9 +4,33 @@
 
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, InputPath } from './settings.service';
+import { SettingsService, PaddleMode, InputPath, KeyboardInputMapping } from './settings.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { timingsFromWpm } from '../morse-table';
+
+/**
+ * Per-mapping iambic keyer state.
+ *
+ * Each keyboard paddle mapping gets its own independent keyer instance
+ * so multiple paddle mappings can operate simultaneously without
+ * corrupting each other's state.
+ */
+interface PaddleKeyerState {
+  leftPaddleDown: boolean;
+  rightPaddleDown: boolean;
+  ditMemory: boolean;
+  dahMemory: boolean;
+  keyerTimeout: ReturnType<typeof setTimeout> | null;
+  currentElement: 'dit' | 'dah' | null;
+  lastElement: 'dit' | 'dah' | null;
+  elementPlaying: boolean;
+  keyerRunning: boolean;
+  source: 'rx' | 'tx';
+  name: string;
+  color: string;
+  paddleMode: PaddleMode;
+  path: InputPath;
+}
 
 /**
  * Keyer Service — keyboard-driven morse keyer with iambic support.
@@ -34,52 +58,20 @@ import { timingsFromWpm } from '../morse-table';
  *  that request so it plays on the next cycle. This is how experienced
  *  operators achieve fast, clean keying.
  *
- *  Decoder source routing:
- *  Each public input method accepts an optional `source` parameter ('rx' or 'tx')
- *  that determines which decoder calibration pool receives the timing samples.
- *  Mouse and touch keyers pass their own configured source; keyboard defaults
- *  to `keyboardStraightKeySource` or `keyboardPaddleSource` from settings.
- *  This allows the user to assign straight key and paddle to different
- *  RX or TX decoder pools.
+ *  Each keyboard mapping carries its own source (RX/TX), paddle mode,
+ *  name and colour. Paddle mappings each have an independent keyer loop.
  */
 @Injectable({ providedIn: 'root' })
 export class KeyerService implements OnDestroy {
   private keydownHandler: (e: KeyboardEvent) => void;
   private keyupHandler: (e: KeyboardEvent) => void;
+  private blurHandler: () => void;
 
-  // ---- Straight key state ----
-  /** Whether the straight key keyboard key is currently held down */
-  private straightKeyDown = false;
+  // ---- Per-mapping straight key held state (mapping index → boolean) ----
+  private straightKeyStates = new Map<number, boolean>();
 
-  // ---- Paddle state (physical keyboard keys held) ----
-  private leftPaddleDown = false;  // dit paddle
-  private rightPaddleDown = false; // dah paddle
-
-  // ---- Dit/dah memory ----
-  /** Latched: operator pressed dit paddle during a dah (or vice versa) */
-  private ditMemory = false;
-  private dahMemory = false;
-
-  // ---- Iambic keyer timing state ----
-  private keyerTimeout: ReturnType<typeof setTimeout> | null = null;
-  private currentElement: 'dit' | 'dah' | null = null;
-  private lastElement: 'dit' | 'dah' | null = null;
-  private elementPlaying = false;
-  private keyerRunning = false;
-
-  /**
-   * Decoder source for the current paddle session.
-   * Set when a paddle input is activated; used by runKeyerLoop to tag
-   * the generated elements with the correct RX/TX source.
-   */
-  private paddleSource: 'rx' | 'tx' = 'tx';
-
-  /**
-   * InputPath for the current paddle session.
-   * Set when a paddle input is activated; used by runKeyerLoop to
-   * route decoded elements through the correct pipeline.
-   */
-  private paddlePath: InputPath = 'keyboardPaddle';
+  // ---- Per-mapping paddle keyer state (mapping index → PaddleKeyerState) ----
+  private paddleKeyers = new Map<number, PaddleKeyerState>();
 
   /**
    * InputPath for the current straight key session.
@@ -110,31 +102,64 @@ export class KeyerService implements OnDestroy {
   ) {
     this.keydownHandler = (e: KeyboardEvent) => this.onKeyDown(e);
     this.keyupHandler = (e: KeyboardEvent) => this.onKeyUp(e);
+    this.blurHandler = () => this.releaseAll();
     window.addEventListener('keydown', this.keydownHandler);
     window.addEventListener('keyup', this.keyupHandler);
+    window.addEventListener('blur', this.blurHandler);
   }
 
   ngOnDestroy(): void {
     window.removeEventListener('keydown', this.keydownHandler);
     window.removeEventListener('keyup', this.keyupHandler);
-    this.stopKeyer();
+    window.removeEventListener('blur', this.blurHandler);
+    this.releaseAll();
   }
 
   /**
    * Enable or disable the keyer.
-   * When disabled, any active keying is stopped and the straight key is
+   * When disabled, any active keying is stopped and all held keys are
    * released. Used when focus enters text input fields.
    */
   setEnabled(enabled: boolean): void {
     this.enabled = enabled;
     if (!enabled) {
-      this.stopKeyer();
-      if (this.straightKeyDown) {
-        this.straightKeyDown = false;
-        this.decoder.onKeyUp(
-          this.straightKeyPath,
-          this.settings.settings().keyboardStraightKeySource,
-        );
+      this.releaseAll();
+    }
+  }
+
+  /**
+   * Release all held keys, stop all keyer loops, and reset all state.
+   * Called on blur (window loses focus), setEnabled(false), and destroy.
+   * Handles the case where keyup events are lost (common with modifier
+   * keys like Ctrl, Alt, Meta during key combinations).
+   */
+  private releaseAll(): void {
+    // Stop all paddle keyers and clear their paddle-down flags
+    for (const [, ks] of this.paddleKeyers) {
+      ks.leftPaddleDown = false;
+      ks.rightPaddleDown = false;
+      this.stopKeyer(ks);
+    }
+    // Release any held straight keys
+    for (const [idx, held] of this.straightKeyStates) {
+      if (held) {
+        this.straightKeyStates.set(idx, false);
+        if (idx === -1) {
+          // External caller straight key (mouse/touch)
+          this.straightKeyEvent$.next({ down: false, inputPath: this.straightKeyPath });
+          this.zone.run(() => {
+            this.decoder.onKeyUp(this.straightKeyPath, 'tx');
+          });
+        } else {
+          const mappings = this.settings.settings().keyboardInputMappings;
+          const m = mappings[idx];
+          if (m) {
+            this.straightKeyEvent$.next({ down: false, inputPath: 'keyboardStraightKey' });
+            this.zone.run(() => {
+              this.decoder.onKeyUp('keyboardStraightKey', m.source);
+            });
+          }
+        }
       }
     }
   }
@@ -149,29 +174,36 @@ export class KeyerService implements OnDestroy {
    * The source determines which calibration pool (RX or TX) receives samples.
    *
    * @param down       true = key pressed, false = key released
-   * @param source     decoder source override ('rx' or 'tx'); defaults to
-   *                   the keyboard keyer's configured source
+   * @param source     decoder source override ('rx' or 'tx'); defaults to 'tx'
    * @param force      when true, bypass the enabled check (used by MIDI input
    *                   so it works even when the keyboard keyer is disabled)
    * @param inputPath  pipeline identifier; defaults to 'keyboardStraightKey'
+   * @param opts       optional name/color metadata for decoder tagging
    */
-  straightKeyInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
+  straightKeyInput(
+    down: boolean, source?: 'rx' | 'tx', force = false,
+    inputPath?: InputPath, opts?: { name?: string; color?: string },
+  ): void {
     if (!this.enabled && !force) return;
-    const src = source ?? this.settings.settings().keyboardStraightKeySource;
+    const src = source ?? 'tx';
     const path = inputPath ?? 'keyboardStraightKey';
     const fromMidi = path === 'midiStraightKey' || path === 'midiPaddle';
-    if (down && !this.straightKeyDown) {
-      this.straightKeyDown = true;
+    const name = opts?.name;
+    const color = opts?.color;
+    // Track straight key state using a simple flag on the path
+    const wasDown = this.straightKeyPath === path && this.straightKeyStates.get(-1);
+    if (down && !wasDown) {
+      this.straightKeyStates.set(-1, true);
       this.straightKeyPath = path;
       this.straightKeyEvent$.next({ down: true, inputPath: path });
       this.zone.run(() => {
-        this.decoder.onKeyDown(path, src, { fromMidi });
+        this.decoder.onKeyDown(path, src, { fromMidi, name, color });
       });
-    } else if (!down && this.straightKeyDown) {
-      this.straightKeyDown = false;
+    } else if (!down && wasDown) {
+      this.straightKeyStates.set(-1, false);
       this.straightKeyEvent$.next({ down: false, inputPath: path });
       this.zone.run(() => {
-        this.decoder.onKeyUp(path, src, { fromMidi });
+        this.decoder.onKeyUp(path, src, { fromMidi, name, color });
       });
     }
   }
@@ -180,21 +212,29 @@ export class KeyerService implements OnDestroy {
    * Activate/deactivate the dit paddle directly (no reversal applied here).
    *
    * @param down       true = paddle pressed, false = paddle released
-   * @param source     decoder source override; defaults to keyboard keyer source
+   * @param source     decoder source override; defaults to 'tx'
    * @param force      when true, bypass the enabled check (used by MIDI input)
    * @param inputPath  pipeline identifier; defaults to 'keyboardPaddle'
+   * @param paddleMode paddle mode override; defaults to 'iambic-b'
+   * @param opts       optional name/color metadata
    */
-  ditPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
+  ditPaddleInput(
+    down: boolean, source?: 'rx' | 'tx', force = false,
+    inputPath?: InputPath, paddleMode?: PaddleMode,
+    opts?: { name?: string; color?: string },
+  ): void {
     if (!this.enabled && !force) return;
-    this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
-    this.paddlePath = inputPath ?? 'keyboardPaddle';
-    if (down && !this.leftPaddleDown) {
-      this.leftPaddleDown = true;
-      this.ditMemory = true;
-      this.startKeyer();
+    const src = source ?? 'tx';
+    const path = inputPath ?? 'keyboardPaddle';
+    const mode = paddleMode ?? this.settings.settings().paddleMode;
+    const ks = this.getOrCreatePaddleKeyer(-1, src, mode, path, opts?.name, opts?.color);
+    if (down && !ks.leftPaddleDown) {
+      ks.leftPaddleDown = true;
+      ks.ditMemory = true;
+      this.startKeyer(ks);
     } else if (!down) {
-      this.leftPaddleDown = false;
-      this.checkStopKeyer();
+      ks.leftPaddleDown = false;
+      this.checkStopKeyer(ks);
     }
   }
 
@@ -202,21 +242,29 @@ export class KeyerService implements OnDestroy {
    * Activate/deactivate the dah paddle directly (no reversal applied here).
    *
    * @param down       true = paddle pressed, false = paddle released
-   * @param source     decoder source override; defaults to keyboard keyer source
+   * @param source     decoder source override; defaults to 'tx'
    * @param force      when true, bypass the enabled check (used by MIDI input)
    * @param inputPath  pipeline identifier; defaults to 'keyboardPaddle'
+   * @param paddleMode paddle mode override; defaults to 'iambic-b'
+   * @param opts       optional name/color metadata
    */
-  dahPaddleInput(down: boolean, source?: 'rx' | 'tx', force = false, inputPath?: InputPath): void {
+  dahPaddleInput(
+    down: boolean, source?: 'rx' | 'tx', force = false,
+    inputPath?: InputPath, paddleMode?: PaddleMode,
+    opts?: { name?: string; color?: string },
+  ): void {
     if (!this.enabled && !force) return;
-    this.paddleSource = source ?? this.settings.settings().keyboardPaddleSource;
-    this.paddlePath = inputPath ?? 'keyboardPaddle';
-    if (down && !this.rightPaddleDown) {
-      this.rightPaddleDown = true;
-      this.dahMemory = true;
-      this.startKeyer();
+    const src = source ?? 'tx';
+    const path = inputPath ?? 'keyboardPaddle';
+    const mode = paddleMode ?? this.settings.settings().paddleMode;
+    const ks = this.getOrCreatePaddleKeyer(-1, src, mode, path, opts?.name, opts?.color);
+    if (down && !ks.rightPaddleDown) {
+      ks.rightPaddleDown = true;
+      ks.dahMemory = true;
+      this.startKeyer(ks);
     } else if (!down) {
-      this.rightPaddleDown = false;
-      this.checkStopKeyer();
+      ks.rightPaddleDown = false;
+      this.checkStopKeyer(ks);
     }
   }
 
@@ -230,21 +278,30 @@ export class KeyerService implements OnDestroy {
     const s = this.settings.settings();
     if (!s.keyboardKeyerEnabled) return;
 
-    if (e.code === s.straightKeyCode) {
-      e.preventDefault();
-      this.straightKeyInput(true);
-      return;
-    }
-
-    const reverse = s.keyboardReversePaddles;
-    if (e.code === s.leftPaddleKeyCode) {
-      e.preventDefault();
-      if (reverse) this.dahPaddleInput(true); else this.ditPaddleInput(true);
-    }
-
-    if (e.code === s.rightPaddleKeyCode) {
-      e.preventDefault();
-      if (reverse) this.ditPaddleInput(true); else this.dahPaddleInput(true);
+    const mappings = s.keyboardInputMappings;
+    for (let i = 0; i < mappings.length; i++) {
+      const m = mappings[i];
+      if (!m.enabled) continue;
+      if (m.mode === 'straightKey' && e.code === m.keyCode) {
+        e.preventDefault();
+        this.handleStraightKeyDown(i, m);
+        return;
+      }
+      if (m.mode === 'paddle') {
+        const reverse = m.reversePaddles;
+        if (e.code === m.keyCode) {
+          e.preventDefault();
+          if (reverse) this.handlePaddleDahDown(i, m);
+          else this.handlePaddleDitDown(i, m);
+          return;
+        }
+        if (e.code === m.dahKeyCode) {
+          e.preventDefault();
+          if (reverse) this.handlePaddleDitDown(i, m);
+          else this.handlePaddleDahDown(i, m);
+          return;
+        }
+      }
     }
   }
 
@@ -253,105 +310,308 @@ export class KeyerService implements OnDestroy {
     const s = this.settings.settings();
     if (!s.keyboardKeyerEnabled) return;
 
-    if (e.code === s.straightKeyCode) {
-      e.preventDefault();
-      this.straightKeyInput(false);
-      return;
+    const mappings = s.keyboardInputMappings;
+    let releasedIdx = -1;
+    for (let i = 0; i < mappings.length; i++) {
+      const m = mappings[i];
+      if (!m.enabled) continue;
+      if (m.mode === 'straightKey' && e.code === m.keyCode) {
+        e.preventDefault();
+        this.handleStraightKeyUp(i, m);
+        releasedIdx = i;
+        break;
+      }
+      if (m.mode === 'paddle') {
+        const reverse = m.reversePaddles;
+        if (e.code === m.keyCode) {
+          e.preventDefault();
+          if (reverse) this.handlePaddleDahUp(i, m);
+          else this.handlePaddleDitUp(i, m);
+          releasedIdx = i;
+          break;
+        }
+        if (e.code === m.dahKeyCode) {
+          e.preventDefault();
+          if (reverse) this.handlePaddleDitUp(i, m);
+          else this.handlePaddleDahUp(i, m);
+          releasedIdx = i;
+          break;
+        }
+      }
     }
+    // Release partner keys stuck by modifier combos (e.g. Ctrl+[)
+    this.releaseStuckModifierCombos(e, releasedIdx, mappings);
+  }
 
-    const reverse = s.keyboardReversePaddles;
-    if (e.code === s.leftPaddleKeyCode) {
-      if (reverse) this.dahPaddleInput(false); else this.ditPaddleInput(false);
-    }
+  /**
+   * After a keyup is processed, check whether keys held by OTHER
+   * mappings are stuck due to modifier key combinations.
+   *
+   * When a modifier key (Ctrl, Alt, Shift, Meta) is involved in a
+   * simultaneous multi-mapping press, the browser may swallow keyup
+   * events for one of the keys (e.g. Ctrl+[ interpreted as Escape).
+   *
+   * Strategy:
+   *  1. For held modifier-key mappings, check event flags (e.ctrlKey etc.)
+   *     to verify the modifier is still physically held. If not, release.
+   *  2. When a mapped modifier is released, release all other held
+   *     non-modifier mapping keys (their keyup may have been swallowed).
+   *     If still physically held, the next repeat keydown reactivates them.
+   */
+  private releaseStuckModifierCombos(
+    e: KeyboardEvent, releasedIdx: number, mappings: KeyboardInputMapping[],
+  ): void {
+    const releasedIsModifier = this.isModifierKeyCode(e.code);
 
-    if (e.code === s.rightPaddleKeyCode) {
-      if (reverse) this.ditPaddleInput(false); else this.dahPaddleInput(false);
+    for (let i = 0; i < mappings.length; i++) {
+      if (i === releasedIdx) continue;
+      const m = mappings[i];
+      if (!m.enabled) continue;
+
+      // --- Check paddle keyer state ---
+      const ks = this.paddleKeyers.get(i);
+      if (ks && (ks.leftPaddleDown || ks.rightPaddleDown)) {
+        let shouldRelease = false;
+
+        // Check 1: modifier keys in this mapping verified via event flags
+        const keyCodes = m.mode === 'paddle'
+          ? [m.keyCode, m.dahKeyCode].filter(Boolean) as string[]
+          : [m.keyCode];
+        for (const code of keyCodes) {
+          if (this.isModifierKeyCode(code) && !this.isModifierHeldByEvent(e, code)) {
+            shouldRelease = true;
+            break;
+          }
+        }
+        // Check 2: a mapped modifier was released — non-modifier partners
+        // may have had their keyup swallowed by the combo
+        if (releasedIsModifier && releasedIdx >= 0) {
+          shouldRelease = true;
+        }
+
+        if (shouldRelease) {
+          ks.leftPaddleDown = false;
+          ks.rightPaddleDown = false;
+          this.stopKeyer(ks);
+        }
+      }
+
+      // --- Check straight key state ---
+      if (this.straightKeyStates.get(i)) {
+        let shouldRelease = false;
+        if (this.isModifierKeyCode(m.keyCode) && !this.isModifierHeldByEvent(e, m.keyCode)) {
+          shouldRelease = true;
+        }
+        if (releasedIsModifier && releasedIdx >= 0) {
+          shouldRelease = true;
+        }
+        if (shouldRelease) {
+          this.handleStraightKeyUp(i, m);
+        }
+      }
     }
+  }
+
+  private isModifierKeyCode(code: string): boolean {
+    return code === 'ControlLeft' || code === 'ControlRight' ||
+           code === 'AltLeft' || code === 'AltRight' ||
+           code === 'ShiftLeft' || code === 'ShiftRight' ||
+           code === 'MetaLeft' || code === 'MetaRight';
+  }
+
+  private isModifierHeldByEvent(e: KeyboardEvent, code: string): boolean {
+    switch (code) {
+      case 'ControlLeft': case 'ControlRight': return e.ctrlKey;
+      case 'AltLeft': case 'AltRight': return e.altKey;
+      case 'ShiftLeft': case 'ShiftRight': return e.shiftKey;
+      case 'MetaLeft': case 'MetaRight': return e.metaKey;
+      default: return false;
+    }
+  }
+
+  // ---- Per-mapping straight key handlers ----
+
+  private handleStraightKeyDown(idx: number, m: KeyboardInputMapping): void {
+    if (this.straightKeyStates.get(idx)) return; // already held
+    this.straightKeyStates.set(idx, true);
+    this.straightKeyEvent$.next({ down: true, inputPath: 'keyboardStraightKey' });
+    this.zone.run(() => {
+      this.decoder.onKeyDown('keyboardStraightKey', m.source, {
+        name: m.name || undefined, color: m.color || undefined,
+      });
+    });
+  }
+
+  private handleStraightKeyUp(idx: number, m: KeyboardInputMapping): void {
+    if (!this.straightKeyStates.get(idx)) return; // not held
+    this.straightKeyStates.set(idx, false);
+    this.straightKeyEvent$.next({ down: false, inputPath: 'keyboardStraightKey' });
+    this.zone.run(() => {
+      this.decoder.onKeyUp('keyboardStraightKey', m.source, {
+        name: m.name || undefined, color: m.color || undefined,
+      });
+    });
+  }
+
+  // ---- Per-mapping paddle handlers ----
+
+  private handlePaddleDitDown(idx: number, m: KeyboardInputMapping): void {
+    const path: InputPath = `keyboardPaddle:${idx}`;
+    const ks = this.getOrCreatePaddleKeyer(idx, m.source, m.paddleMode, path, m.name, m.color);
+    if (ks.leftPaddleDown) return;
+    ks.leftPaddleDown = true;
+    ks.ditMemory = true;
+    this.startKeyer(ks);
+  }
+
+  private handlePaddleDitUp(idx: number, m: KeyboardInputMapping): void {
+    const ks = this.paddleKeyers.get(idx);
+    if (!ks) return;
+    ks.leftPaddleDown = false;
+    this.checkStopKeyer(ks);
+  }
+
+  private handlePaddleDahDown(idx: number, m: KeyboardInputMapping): void {
+    const path: InputPath = `keyboardPaddle:${idx}`;
+    const ks = this.getOrCreatePaddleKeyer(idx, m.source, m.paddleMode, path, m.name, m.color);
+    if (ks.rightPaddleDown) return;
+    ks.rightPaddleDown = true;
+    ks.dahMemory = true;
+    this.startKeyer(ks);
+  }
+
+  private handlePaddleDahUp(idx: number, m: KeyboardInputMapping): void {
+    const ks = this.paddleKeyers.get(idx);
+    if (!ks) return;
+    ks.rightPaddleDown = false;
+    this.checkStopKeyer(ks);
+  }
+
+  // ---- Paddle Keyer State Management ----
+
+  private getOrCreatePaddleKeyer(
+    idx: number, source: 'rx' | 'tx', paddleMode: PaddleMode,
+    path: InputPath,
+    name?: string, color?: string,
+  ): PaddleKeyerState {
+    let ks = this.paddleKeyers.get(idx);
+    if (!ks) {
+      ks = {
+        leftPaddleDown: false,
+        rightPaddleDown: false,
+        ditMemory: false,
+        dahMemory: false,
+        keyerTimeout: null,
+        currentElement: null,
+        lastElement: null,
+        elementPlaying: false,
+        keyerRunning: false,
+        source,
+        name: name || '',
+        color: color || '',
+        paddleMode,
+        path,
+      };
+      this.paddleKeyers.set(idx, ks);
+    }
+    ks.source = source;
+    ks.path = path;
+    ks.name = name || '';
+    ks.color = color || '';
+    ks.paddleMode = paddleMode;
+    return ks;
   }
 
   // ---- Iambic Keyer Logic ----
 
-  private startKeyer(): void {
-    if (this.keyerRunning) return;
-    this.keyerRunning = true;
-    this.runKeyerLoop();
+  private startKeyer(ks: PaddleKeyerState): void {
+    if (ks.keyerRunning) return;
+    ks.keyerRunning = true;
+    this.runKeyerLoop(ks);
   }
 
-  private stopKeyer(): void {
-    this.keyerRunning = false;
-    if (this.keyerTimeout) {
-      clearTimeout(this.keyerTimeout);
-      this.keyerTimeout = null;
+  private stopKeyer(ks: PaddleKeyerState): void {
+    ks.keyerRunning = false;
+    if (ks.keyerTimeout) {
+      clearTimeout(ks.keyerTimeout);
+      ks.keyerTimeout = null;
     }
-    if (this.elementPlaying) {
-      this.elementPlaying = false;
-      const fromMidi = this.paddlePath === 'midiPaddle';
+    if (ks.elementPlaying) {
+      ks.elementPlaying = false;
+      const fromMidi = ks.path.startsWith('midiPaddle');
       this.zone.run(() => {
-        this.decoder.onKeyUp(this.paddlePath, this.paddleSource, {
+        this.decoder.onKeyUp(ks.path, ks.source, {
           perfectTiming: true, fromMidi,
+          name: ks.name || undefined, color: ks.color || undefined,
         });
         this.keyOutput$.next(false);
       });
     }
-    this.currentElement = null;
-    this.lastElement = null;
-    this.ditMemory = false;
-    this.dahMemory = false;
+    ks.currentElement = null;
+    ks.lastElement = null;
+    ks.ditMemory = false;
+    ks.dahMemory = false;
   }
 
-  private checkStopKeyer(): void {
-    if (!this.leftPaddleDown && !this.rightPaddleDown &&
-        !this.ditMemory && !this.dahMemory && !this.elementPlaying) {
-      this.stopKeyer();
+  private stopAllKeyers(): void {
+    for (const [, ks] of this.paddleKeyers) {
+      this.stopKeyer(ks);
     }
   }
 
-  private runKeyerLoop(): void {
-    if (!this.keyerRunning) return;
+  private checkStopKeyer(ks: PaddleKeyerState): void {
+    if (!ks.leftPaddleDown && !ks.rightPaddleDown &&
+        !ks.ditMemory && !ks.dahMemory && !ks.elementPlaying) {
+      this.stopKeyer(ks);
+    }
+  }
 
-    const mode = this.settings.settings().paddleMode;
+  private runKeyerLoop(ks: PaddleKeyerState): void {
+    if (!ks.keyerRunning) return;
+
     const timings = timingsFromWpm(this.settings.settings().keyerWpm);
-
-    const nextElement = this.pickNextElement(mode);
+    const nextElement = this.pickNextElement(ks);
 
     if (!nextElement) {
-      this.stopKeyer();
+      this.stopKeyer(ks);
       return;
     }
 
-    this.currentElement = nextElement;
+    ks.currentElement = nextElement;
     const duration = nextElement === 'dit' ? timings.dit : timings.dah;
 
     // Key down — keyer produces perfect timing, so set perfectTiming = true
-    this.elementPlaying = true;
-    const fromMidi = this.paddlePath === 'midiPaddle';
+    ks.elementPlaying = true;
+    const fromMidi = ks.path.startsWith('midiPaddle');
     this.zone.run(() => {
-      this.decoder.onKeyDown(this.paddlePath, this.paddleSource, {
+      this.decoder.onKeyDown(ks.path, ks.source, {
         perfectTiming: true, fromMidi,
+        name: ks.name || undefined, color: ks.color || undefined,
       });
       this.keyOutput$.next(true);
     });
 
     // Schedule key up after element duration
-    this.keyerTimeout = setTimeout(() => {
-      this.elementPlaying = false;
+    ks.keyerTimeout = setTimeout(() => {
+      ks.elementPlaying = false;
       this.zone.run(() => {
-        this.decoder.onKeyUp(this.paddlePath, this.paddleSource, {
+        this.decoder.onKeyUp(ks.path, ks.source, {
           perfectTiming: true, fromMidi,
+          name: ks.name || undefined, color: ks.color || undefined,
         });
         this.keyOutput$.next(false);
       });
-      this.lastElement = this.currentElement;
-      this.currentElement = null;
+      ks.lastElement = ks.currentElement;
+      ks.currentElement = null;
 
       // Inter-element space (1 dit)
-      this.keyerTimeout = setTimeout(() => {
-        if (this.keyerRunning) {
-          if (this.leftPaddleDown || this.rightPaddleDown ||
-              this.ditMemory || this.dahMemory) {
-            this.runKeyerLoop();
+      ks.keyerTimeout = setTimeout(() => {
+        if (ks.keyerRunning) {
+          if (ks.leftPaddleDown || ks.rightPaddleDown ||
+              ks.ditMemory || ks.dahMemory) {
+            this.runKeyerLoop(ks);
           } else {
-            this.stopKeyer();
+            this.stopKeyer(ks);
           }
         }
       }, timings.intraChar);
@@ -365,10 +625,11 @@ export class KeyerService implements OnDestroy {
    * whether to play a dit, dah, or nothing. Each mode has different
    * rules for what happens when both paddles are active ("squeezed").
    */
-  private pickNextElement(mode: PaddleMode): 'dit' | 'dah' | null {
+  private pickNextElement(ks: PaddleKeyerState): 'dit' | 'dah' | null {
+    const mode = ks.paddleMode;
     // Merge physical paddle state with memory flags
-    const hasDit = this.leftPaddleDown || this.ditMemory;
-    const hasDah = this.rightPaddleDown || this.dahMemory;
+    const hasDit = ks.leftPaddleDown || ks.ditMemory;
+    const hasDah = ks.rightPaddleDown || ks.dahMemory;
 
     let picked: 'dit' | 'dah' | null = null;
 
@@ -377,20 +638,20 @@ export class KeyerService implements OnDestroy {
     if (mode === 'iambic-b' || mode === 'iambic-a') {
       if (bothActive) {
         // Alternate
-        if (this.lastElement === 'dit') picked = 'dah';
-        else if (this.lastElement === 'dah') picked = 'dit';
+        if (ks.lastElement === 'dit') picked = 'dah';
+        else if (ks.lastElement === 'dah') picked = 'dit';
         else picked = 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
         picked = 'dah';
-      } else if (mode === 'iambic-b' && this.lastElement) {
+      } else if (mode === 'iambic-b' && ks.lastElement) {
         // Iambic B: one extra alternate element after squeeze release
-        picked = this.lastElement === 'dit' ? 'dah' : 'dit';
+        picked = ks.lastElement === 'dit' ? 'dah' : 'dit';
       }
     } else if (mode === 'ultimatic') {
       if (bothActive) {
-        picked = this.lastElement || 'dit';
+        picked = ks.lastElement || 'dit';
       } else if (hasDit) {
         picked = 'dit';
       } else if (hasDah) {
@@ -404,9 +665,9 @@ export class KeyerService implements OnDestroy {
     // Only consume the memory for the element that was actually picked;
     // preserve the opposite memory so it plays on the next cycle.
     if (picked === 'dit') {
-      this.ditMemory = false;
+      ks.ditMemory = false;
     } else if (picked === 'dah') {
-      this.dahMemory = false;
+      ks.dahMemory = false;
     }
 
     return picked;

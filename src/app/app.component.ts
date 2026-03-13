@@ -202,7 +202,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           // driving paddle-mode mappings through the character path.
           if (!entry.fromMidi && !entry.fromSerial) {
             const isLocalKeyer = entry.inputPath &&
-              (entry.inputPath === 'keyboardStraightKey' || entry.inputPath === 'keyboardPaddle' ||
+              (entry.inputPath === 'keyboardStraightKey' || entry.inputPath.startsWith('keyboardPaddle') ||
                entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
                entry.inputPath === 'touchStraightKey' || entry.inputPath === 'touchPaddle');
             this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm, !!isLocalKeyer);

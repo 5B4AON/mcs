@@ -39,21 +39,10 @@
       </div>
 
       @if (settings.settings().touchKeyerMode === 'paddle') {
-        <label>Left Button:
-          <select [value]="settings.settings().touchLeftPaddle"
-                  (change)="onSettingChange('touchLeftPaddle', $event)">
-            <option value="dit">Dit</option>
-            <option value="dah">Dah</option>
-          </select>
-        </label>
-
-        <label>Right Button:
-          <select [value]="settings.settings().touchRightPaddle"
-                  (change)="onSettingChange('touchRightPaddle', $event)">
-            <option value="dit">Dit</option>
-            <option value="dah">Dah</option>
-          </select>
-        </label>
+        <div class="keyer-hint">
+          Left button sends dits, right button sends dahs.
+          Use <strong>Reverse Paddles</strong> to swap.
+        </div>
 
         <label>
           <input type="checkbox" [checked]="settings.settings().touchReversePaddles"

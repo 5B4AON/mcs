@@ -7,21 +7,35 @@
 
 <p>
   The keyboard keyer turns your computer keyboard into a Morse key. It is
-  always available — no hardware required.
+  always available — no hardware required. Multiple independent mappings can
+  be configured, each with its own mode, key bindings, and settings.
 </p>
+
+<h3>Mapping Table</h3>
+<p>
+  In <em>Settings &rarr; Inputs &rarr; Keyboard Keyer</em>, each mapping
+  appears as a row in a table with enable checkbox, name, mode, key summary,
+  source badge, and paddle mode label. Use the buttons to:
+</p>
+<ul>
+  <li><strong>Add Mapping</strong> — create a new mapping from scratch.</li>
+  <li><strong>Edit</strong> — open the edit modal for an existing mapping.</li>
+  <li><strong>Delete</strong> — remove a mapping from the list.</li>
+</ul>
 
 <h3>Straight Key</h3>
 <p>
-  A single assigned key acts as a manual Morse key. Press and hold to key
-  down; release to key up. You control all timing by hand, just like a
-  traditional straight key.
+  A mapping in <strong>straight key</strong> mode assigns a single keyboard
+  key that acts as a manual Morse key. Press and hold to key down; release to
+  key up. You control all timing by hand, just like a traditional straight key.
 </p>
 
-<h3>Paddle Modes</h3>
+<h3>Paddle Mode</h3>
 <p>
-  Two assigned keys act as dit and dah paddles. The keyer auto-generates
-  correctly timed elements at the configured <strong>Keyer WPM</strong>.
-  Four paddle modes are available:
+  A mapping in <strong>paddle</strong> mode assigns two keyboard keys as dit
+  and dah paddles. The keyer auto-generates correctly timed elements at the
+  configured <strong>Keyer WPM</strong>. Each paddle mapping carries its own
+  paddle mode:
 </p>
 <table>
   <tr><th>Mode</th><th>Behaviour</th></tr>
@@ -49,12 +63,29 @@
   </tr>
 </table>
 
-<h3>Key Bindings</h3>
+<h3>Per-Mapping Settings</h3>
 <p>
-  In the <em>Keyboard Keyer</em> section of Settings, click the button next to
-  "Straight Key", "Left Paddle" or "Right Paddle" and press the keyboard key
-  you want to assign. Common choices: <strong>Space</strong> for straight key,
-  <strong>[</strong> and <strong>]</strong> for paddles.
+  Each keyboard mapping has its own independent settings:
+</p>
+<ul>
+  <li><strong>Source (RX/TX)</strong> — which decoder calibration pool
+      receives timing samples from this mapping.</li>
+  <li><strong>Reverse Paddles</strong> — swap dit and dah for this mapping
+      only.</li>
+  <li><strong>Paddle Mode</strong> — Iambic B, Iambic A, Ultimatic or Single
+      Lever, independent of other mappings.</li>
+  <li><strong>Name</strong> — optional operator name or callsign. When set,
+      decoded text from this mapping appears on colour-coded lines in the
+      fullscreen conversation views, just like MIDI and Firebase relay.</li>
+  <li><strong>Colour</strong> — optional CSS colour for the conversation
+      display text.</li>
+</ul>
+
+<h3>Independent Keyer Engines</h3>
+<p>
+  Each paddle mapping runs its own independent iambic keyer engine with
+  separate state and decoder pipeline. Multiple paddle mappings can operate
+  simultaneously without interfering with each other.
 </p>
 
 <h3>Dit/Dah Memory</h3>
@@ -64,12 +95,21 @@
   faster, cleaner keying at high speeds.
 </p>
 
+<h3>Modifier Key Handling</h3>
+<p>
+  Modifier keys (Ctrl, Alt, Shift, Meta) can be used as keyer keys. When a
+  modifier key is part of a simultaneous multi-key press, browsers may
+  swallow the <code>keyup</code> event for one of the keys. The keyer
+  detects these stuck states automatically and releases any stranded keys.
+</p>
+
 <div class="example-box">
   <div class="example-title">Example — Iambic B keying</div>
   <p>
-    Assign [ = dit, ] = dah. Select Iambic B, 15 WPM. To send "C"
-    (dah-dit-dah-dit): press ], then while the dah sounds, squeeze [, then ],
-    then [. The keyer handles all element timing automatically.
+    Create a paddle mapping with [ = dit, ] = dah, Iambic B, 15 WPM. To
+    send "C" (dah-dit-dah-dit): press ], then while the dah sounds,
+    squeeze [, then ], then [. The keyer handles all element timing
+    automatically.
   </p>
 </div>
 
@@ -177,30 +217,32 @@
 <h2 id="s4-4">4.4 &nbsp;Shared Keyer Settings</h2>
 
 <p>
-  The following settings are shared across all three keyers (keyboard, mouse,
-  touch):
+  The following settings are shared across the mouse and touch keyers:
 </p>
 <ul>
   <li><strong>Paddle Mode</strong> — Iambic B, Iambic A, Ultimatic or Single
-      Lever. Applies to all paddle inputs regardless of source.</li>
+      Lever. Applies to mouse and touch paddle inputs. Keyboard paddle
+      mappings each carry their own paddle mode (configured per mapping).</li>
   <li><strong>Keyer WPM</strong> — The speed at which the iambic keyer generates
-      dits and dahs. Adjustable from the main screen via the Keyer WPM pill.</li>
+      dits and dahs. Adjustable from the main screen via the Keyer WPM pill.
+      Shared by all keyers including keyboard mappings.</li>
 </ul>
 
 <!-- 4.5 Reverse Paddles -->
 <h2 id="s4-5">4.5 &nbsp;Reverse Paddles</h2>
 
 <p>
-  Each keyer type has its own independent <strong>Reverse Paddles</strong>
-  toggle in Settings. When enabled, the dit and dah paddle assignments are
-  swapped for that keyer only.
+  The mouse and touch keyers each have their own independent
+  <strong>Reverse Paddles</strong> toggle in Settings. Keyboard paddle
+  mappings carry a per-mapping reverse paddles setting (configured in each
+  mapping's edit modal). When enabled, the dit and dah paddle assignments
+  are swapped for that keyer or mapping only.
 </p>
 
 <p>
   This is useful for left-handed operators or for matching the paddle
-  orientation of a physical key. Each keyer (keyboard, mouse, touch) can be
-  reversed independently — reversing the keyboard paddles does not affect the
-  mouse or touch paddles.
+  orientation of a physical key. Reversing one mapping does not affect
+  other mappings or keyer types.
 </p>
 <!-- 4.6 Straight-Key Sprite Button -->
 <h2 id="s4-6">4.6 &nbsp;Straight-Key Sprite Button</h2>
