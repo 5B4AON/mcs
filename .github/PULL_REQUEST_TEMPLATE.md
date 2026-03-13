@@ -18,7 +18,6 @@ Closes #<!-- issue number -->
 - [ ] I have read [CONTRIBUTING.md](../CONTRIBUTING.md)
 - [ ] My code follows the existing code style of the project
 - [ ] The app builds without errors (`ng build`)
-- [ ] I have run the tests (`ng test`) and they pass
 - [ ] I have tested my changes in Chrome or Edge
 - [ ] I have added/updated documentation as needed
 
