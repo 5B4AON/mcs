@@ -173,6 +173,19 @@ export interface SerialInputMapping {
   color: string;
 }
 
+/** Configuration for a single serial output mapping */
+export interface SerialOutputMapping {
+  enabled: boolean;
+  /** Serial port index (-1 = not assigned) */
+  portIndex: number;
+  /** Which output pin to drive (DTR or RTS) */
+  pin: SerialPin;
+  /** Invert the signal (active-high instead of default active-low) */
+  invert: boolean;
+  /** Output forwarding mode: which signal source drives this mapping */
+  forward: OutputForward;
+}
+
 /** Configuration for a single emoji replacement mapping */
 export interface EmojiMapping {
   enabled: boolean;
@@ -228,11 +241,9 @@ export interface AppSettings {
   optoForward: OutputForward;
 
   // --- 2b. Key Output via Serial Port (DTR/RTS) ---
-  serialPortIndex: number;
-  serialPin: SerialPin;
-  serialInvert: boolean;
   serialEnabled: boolean;
-  serialForward: OutputForward;
+  /** Ordered list of serial output mappings (one per port+pin combination) */
+  serialOutputMappings: SerialOutputMapping[];
 
   // --- Serial Input (read DSR/CTS/DCD/RI signals as keying source) ---
   serialInputEnabled: boolean;
@@ -412,11 +423,16 @@ const DEFAULT_SETTINGS: AppSettings = {
   optoEnabled: false,
   optoForward: 'tx',
 
-  serialPortIndex: -1,
-  serialPin: 'dtr',
-  serialInvert: false,
   serialEnabled: false,
-  serialForward: 'tx',
+  serialOutputMappings: [
+    {
+      enabled: true,
+      portIndex: -1,
+      pin: 'dtr',
+      invert: false,
+      forward: 'tx',
+    },
+  ],
 
   serialInputEnabled: false,
   serialInputMappings: [
@@ -818,6 +834,7 @@ export class SettingsService {
       this.backfillMidiOutputMappings();
       this.backfillKeyboardInputMappings();
       this.backfillSerialInputMappings();
+      this.backfillSerialOutputMappings();
       this.backfillIndependentPaddleModes();
       this.isDirty.set(false);
       this.needsValidation.set(false);
@@ -1033,6 +1050,52 @@ export class SettingsService {
     if (patched) {
       this.settings.set({ ...s, serialInputMappings: mappings });
     }
+  }
+
+  /**
+   * Migrate old scalar serial output settings (serialPortIndex, serialPin, etc.)
+   * to the new serialOutputMappings array. Also ensure the array exists.
+   */
+  private backfillSerialOutputMappings(): void {
+    const s = this.settings() as any;
+
+    if (Array.isArray(s.serialOutputMappings) && s.serialOutputMappings.length > 0) {
+      // Ensure every mapping has all expected fields
+      let patched = false;
+      const mappings = (s.serialOutputMappings as SerialOutputMapping[]).map(m => {
+        const updated = { ...m };
+        if (typeof updated.forward !== 'string') {
+          updated.forward = 'tx';
+          patched = true;
+        }
+        return updated;
+      });
+      if (patched) {
+        this.settings.set({ ...s, serialOutputMappings: mappings });
+      }
+      return;
+    }
+
+    // Migrate from scalar fields (pre-mapping era)
+    const portIndex = typeof s.serialPortIndex === 'number' ? s.serialPortIndex : -1;
+    const pin: SerialPin = s.serialPin === 'rts' ? 'rts' : 'dtr';
+    const invert = !!s.serialInvert;
+    const forward: OutputForward = ['rx', 'tx', 'both'].includes(s.serialForward) ? s.serialForward : 'tx';
+
+    const mappings: SerialOutputMapping[] = [{
+      enabled: true,
+      portIndex,
+      pin,
+      invert,
+      forward,
+    }];
+
+    const patch: any = { serialOutputMappings: mappings };
+    delete s.serialPortIndex;
+    delete s.serialPin;
+    delete s.serialInvert;
+    delete s.serialForward;
+    this.settings.set({ ...s, ...patch });
   }
 
   /**

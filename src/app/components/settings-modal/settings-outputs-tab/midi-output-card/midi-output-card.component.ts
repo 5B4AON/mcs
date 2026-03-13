@@ -166,4 +166,11 @@ export class MidiOutputCardComponent {
       this.midiOutput.enumerateDevices();
     }
   }
+
+  /** Check whether a mapping's MIDI device is currently connected */
+  isMappingConnected(m: MidiOutputMapping): boolean {
+    const devices = this.midiOutput.midiOutputs();
+    if (!m.deviceId) return devices.length > 0;
+    return devices.some(d => d.id === m.deviceId);
+  }
 }

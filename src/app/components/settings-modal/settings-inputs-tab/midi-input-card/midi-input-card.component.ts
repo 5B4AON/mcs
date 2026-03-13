@@ -190,4 +190,11 @@ export class MidiInputCardComponent {
     if (m.color) return m.color;
     return m.source === 'rx' ? '#8cf' : '#fc8';
   }
+
+  /** Check whether a mapping's MIDI device is currently connected */
+  isMappingConnected(m: MidiInputMapping): boolean {
+    const devices = this.midiInput.midiInputs();
+    if (!m.deviceId) return devices.length > 0;
+    return devices.some(d => d.id === m.deviceId);
+  }
 }

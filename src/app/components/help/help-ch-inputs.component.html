@@ -339,25 +339,82 @@
   the same adapter simultaneously.
 </p>
 
-<h3>Settings</h3>
+<h3>Multiple Mappings</h3>
+<p>
+  Serial Input supports <strong>multiple independent mappings</strong> in a
+  table-based interface (the same pattern as MIDI Input &sect;6.2). Each
+  mapping defines its own serial port, mode (straight key or paddle), pin
+  assignments, decoder source (RX/TX), invert and reverse-paddles toggles.
+  You can:
+</p>
+<ul>
+  <li><strong>Add</strong> a new mapping with the <strong>+&nbsp;Add
+      Mapping</strong> button.</li>
+  <li><strong>Edit</strong> any mapping via the pencil button to open the
+      edit modal.</li>
+  <li><strong>Remove</strong> a mapping with the delete button in the edit
+      modal.</li>
+  <li><strong>Enable / disable</strong> individual mappings with the
+      checkbox.</li>
+</ul>
+<p>
+  This allows you to connect several USB-serial adapters simultaneously
+  &mdash; for example, one operator on a straight key via one adapter and
+  another operator on paddles via a second adapter &mdash; each with
+  independent settings, decoder source routing, and an independent
+  iambic keyer.
+</p>
+
+<h3>Name &amp; Colour (Multi-User Conversations)</h3>
+<p>
+  Each mapping has optional <strong>Name</strong> and
+  <strong>Colour</strong> fields &mdash; identical to MIDI Input (&sect;6.2).
+  When a name is set (e.g. a callsign or operator name):
+</p>
+<ul>
+  <li>Decoded text from that mapping appears on a <strong>new line</strong>
+      in the fullscreen conversation views, prefixed with
+      <strong>[Name]</strong> &mdash; the same format used by Firebase RTDB
+      user names.</li>
+  <li>If a colour is set, the text is rendered in that colour instead of the
+      default RX or TX colour.</li>
+  <li>If no colour is set, the mapping uses the default RX colour (light
+      blue) or TX colour (light orange) based on the source assignment.</li>
+</ul>
+<p>
+  This feature enables <strong>multi-user conversation views</strong>: connect
+  two or more USB-serial adapters with keys or paddles attached, assign each
+  mapping a different name and colour, and the fullscreen decoder view
+  displays each operator&rsquo;s text on separate colour-coded lines &mdash;
+  ideal for live demonstrations, training sessions, or two-person practice
+  where both operators&rsquo; morse is decoded and displayed simultaneously
+  on a single screen.
+</p>
+
+<h3>Settings (per mapping)</h3>
 <ul>
   <li><strong>Serial Port</strong> &mdash; Select the USB-serial adapter.
       Click &ldquo;Add Serial Port&hellip;&rdquo; to grant access to a new
       port. Previously granted ports are remembered across page refreshes.</li>
+  <li><strong>Mode</strong> &mdash; Straight key or Paddle.</li>
   <li><strong>Poll Interval</strong> &mdash; How often the signal pins
       are read, in milliseconds (5&ndash;50&thinsp;ms). Lower = faster
       response but more CPU usage. Default: 10&thinsp;ms.</li>
   <li><strong>Debounce</strong> &mdash; Minimum time a signal must remain
       stable before a state change is accepted (2&ndash;10&thinsp;ms).
       Filters contact bounce. Default: 5&thinsp;ms.</li>
+  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX). See
+      <em>Chapter 5: Decoder Source Routing</em>.</li>
+  <li><strong>Name</strong> &mdash; Optional display name (e.g. callsign).
+      Triggers line breaks in fullscreen conversation views.</li>
+  <li><strong>Colour</strong> &mdash; Optional text colour for fullscreen
+      views. Overrides the default RX/TX colour.</li>
 </ul>
 
 <h4>Straight Key</h4>
 <ul>
   <li><strong>Signal Pin</strong> &mdash; Which input pin to use: DSR, CTS,
       DCD, or RI.</li>
-  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX). See
-      <em>Chapter 5: Decoder Source Routing</em>.</li>
   <li><strong>Invert</strong> &mdash; Swap active-high/active-low logic.
       Most adapters assert a signal when the pin is grounded, so the
       default (not inverted) treats grounded = key down. If your wiring
@@ -370,7 +427,6 @@
       (default: CTS).</li>
   <li><strong>Dah Paddle Pin</strong> &mdash; Input pin for the dah paddle
       (default: DCD).</li>
-  <li><strong>Used for</strong> &mdash; Decoder source (RX or TX).</li>
   <li><strong>Invert</strong> &mdash; Invert both paddle signals.</li>
   <li><strong>Reverse Paddles</strong> &mdash; Swap dit and dah.</li>
   <li><strong>Paddle Mode</strong> &mdash; Iambic A, Iambic B, Ultimatic,
@@ -402,9 +458,23 @@
   <div class="example-title">Simultaneous input and output</div>
   <p>
     A single USB-serial adapter can serve as both input and output at the
-    same time. Set Serial Output to key via DTR (or RTS), and Serial Input
-    to read paddles on CTS + DCD. Select the same port index in both cards.
-    The app shares the port automatically.
+    same time. Set a Serial Output mapping to key via DTR (or RTS), and
+    a Serial Input mapping to read paddles on CTS + DCD. Select the same
+    port in both mappings. The app shares the port automatically.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Multi-user conversation setup</div>
+  <p>
+    Connect two USB-serial adapters, each with a straight key or paddle
+    attached. Add two Serial Input mappings &mdash; one per adapter. Set
+    each mapping to a different serial port and assign a
+    <strong>Name</strong> (e.g. the operator&rsquo;s callsign) and a
+    <strong>Colour</strong> (e.g. cyan for one, orange for the other).
+    Open the fullscreen decoder view. Both operators can key
+    simultaneously, and each operator&rsquo;s decoded text appears on
+    separate colour-coded lines with their name prefix.
   </p>
 </div>
 

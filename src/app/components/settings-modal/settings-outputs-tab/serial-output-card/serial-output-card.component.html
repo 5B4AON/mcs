@@ -4,7 +4,9 @@
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Serial Output</span>
-      <span class="source-badge" [class.source-rx]="settings.settings().serialForward === 'rx'" [class.source-tx]="settings.settings().serialForward === 'tx'" [class.source-both]="settings.settings().serialForward === 'both'">{{ settings.settings().serialForward === 'rx' ? 'RX' : settings.settings().serialForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+      @for (fwd of forwardBadges(); track fwd) {
+        <span class="source-badge" [class.source-rx]="fwd === 'rx'" [class.source-tx]="fwd === 'tx'" [class.source-both]="fwd === 'both'">{{ forwardLabel(fwd) }}</span>
+      }
     </div>
     <span class="connectivity-badge" [class.connected]="serialOutput.connected()" [class.disconnected]="!serialOutput.connected()">
       @if (serialOutput.connected()) {
@@ -23,15 +25,6 @@
   </div>
   @if (expanded) {
     <div class="settings-card-body">
-      <label>Forward:
-        <select [value]="settings.settings().serialForward"
-                (change)="onSettingChange('serialForward', $event)">
-          <option value="tx" [selected]="settings.settings().serialForward === 'tx'">TX only &mdash; transmitted morse</option>
-          <option value="rx" [selected]="settings.settings().serialForward === 'rx'">RX only &mdash; received morse</option>
-          <option value="both" [selected]="settings.settings().serialForward === 'both'">Both RX and TX</option>
-        </select>
-      </label>
-
       @if (!webSerialSupported) {
         <div class="conflict-warning">
           Web Serial API is not supported in this browser. Serial port features require a
@@ -45,73 +38,59 @@
         </div>
       }
 
-      <div class="serial-port-row">
-        <button (click)="addPort()" class="test-btn">
-          Add Serial Port…
-        </button>
-        <button (click)="refreshAndAutoSelect()" class="test-btn">
-          Refresh
-        </button>
-      </div>
-
-      @if (serialOutput.ports().length === 0) {
-        <div class="cw-hint">
-          No serial ports available. Click "Add Serial Port…" to grant access to a COM port.
-          Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
-        </div>
-      }
-
-      @if (serialOutput.ports().length > 0) {
-        <label>Serial Port:
-          <select [value]="settings.settings().serialPortIndex"
-                  (change)="onSerialPortChange($event)">
-            <option [value]="-1">&mdash; Select &mdash;</option>
-            @for (port of serialOutput.ports(); track $index) {
-              <option [value]="$index" [selected]="$index === settings.settings().serialPortIndex">
-                {{ serialOutput.portLabel(port) }}
-              </option>
-            }
-          </select>
-        </label>
-      }
-
-      <label>Output Pin:
-        <select [value]="settings.settings().serialPin"
-                (change)="onSettingChange('serialPin', $event)">
-          <option value="dtr" [selected]="settings.settings().serialPin === 'dtr'">DTR (Data Terminal Ready)</option>
-          <option value="rts" [selected]="settings.settings().serialPin === 'rts'">RTS (Request To Send)</option>
-        </select>
-      </label>
-
-      <label>
-        <input type="checkbox" [checked]="settings.settings().serialInvert"
-               (change)="onBoolChange('serialInvert', $event)">
-        Invert Output
-      </label>
-
-      <div class="cw-hint">
-        Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
-        DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
-        By default, the pin is held <strong>LOW when idle</strong> and driven
-        <strong>HIGH when keyed</strong>.
-        Check &ldquo;Invert Output&rdquo; to reverse the polarity.
-      </div>
-
       @if (serialOutput.lastError()) {
         <div class="conflict-warning">{{ serialOutput.lastError() }}</div>
       }
 
-      <div class="serial-port-row">
-        <button [disabled]="!serialOutput.connected()"
-                (click)="serialOutput.test()" class="test-btn">
-          Test Output (1s)
-        </button>
-        @if (serialOutput.connected()) {
-          <span class="serial-status connected">&#x2714; Connected</span>
-        } @else {
-          <span class="serial-status">&#x2716; Disconnected</span>
+      <div class="midi-mapping-list">
+        @for (mapping of settings.settings().serialOutputMappings; track $index) {
+          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
+            <label class="midi-mapping-enable">
+              <input type="checkbox" [checked]="mapping.enabled"
+                     (change)="onMappingEnabledChange($index, $event)">
+            </label>
+            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.pin === 'dtr' ? 'DTR' : 'RTS' }}</span>
+            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.forward === 'rx'" [class.source-tx]="mapping.forward === 'tx'" [class.source-both]="mapping.forward === 'both'" (click)="startEdit($index)">{{ forwardLabel(mapping.forward) }}</span>
+            @if (mapping.invert) {
+              <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Output inverted">&#x21C5;</span>
+            }
+            <!-- Per-row connectivity icon -->
+            @if (mapping.portIndex >= 0) {
+              <span class="midi-mapping-connected-icon" [class.connected]="isMappingConnected(mapping)" [class.disconnected]="!isMappingConnected(mapping)" [title]="isMappingConnected(mapping) ? 'Port ' + mapping.portIndex + ' connected' : 'Port ' + mapping.portIndex + ' not connected'">
+                @if (isMappingConnected(mapping)) {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+                } @else {
+                  <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+                }
+              </span>
+            }
+            <span class="midi-mapping-spacer"></span>
+            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
+            </button>
+          </div>
         }
+      </div>
+      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
+
+      <div class="keyer-hint">
+        Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
+        DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
+        Each mapping specifies its own port, output pin, and forward direction.
       </div>
     </div>
   }
 </div>
+
+<!-- Serial output edit modal -->
+@if (showEditModal) {
+  <app-serial-output-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [allMappings]="settings.settings().serialOutputMappings"
+    [serialOutput]="serialOutput"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-serial-output-edit-modal>
+}

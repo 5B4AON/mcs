@@ -158,8 +158,8 @@ export class SerialKeyInputService implements OnDestroy {
       const s = this.settings.settings();
       const enabled = s.serialInputEnabled;
       const mappings = s.serialInputMappings;
-      // Watch the serial output's open port for piggyback changes
-      const outputPort = this.serialOutput.openPort();
+      // Watch the serial output's open ports for piggyback changes
+      const outputPorts = this.serialOutput.openPorts();
 
       // Schedule the async reconnect outside the effect context
       // to avoid writing signals during synchronous effect execution
@@ -316,8 +316,7 @@ export class SerialKeyInputService implements OnDestroy {
     if (portIndex < 0) return;
 
     const s = this.settings.settings();
-    const outputPortIdx = s.serialPortIndex;
-    const outputPort = this.serialOutput.openPort();
+    const outputPort = this.serialOutput.getOpenPort(portIndex);
 
     const ps: PortConnectionState = {
       port: null!,
@@ -332,7 +331,7 @@ export class SerialKeyInputService implements OnDestroy {
       lastError: null,
     };
 
-    if (outputPort && portIndex === outputPortIdx) {
+    if (outputPort) {
       // Piggyback on the serial output's open port
       ps.port = outputPort;
       ps.owned = false;
@@ -344,7 +343,9 @@ export class SerialKeyInputService implements OnDestroy {
     }
 
     // If serial output is enabled on the same port but hasn't connected yet, defer
-    if (s.serialEnabled && portIndex === outputPortIdx && !outputPort) {
+    const outputUsesThisPort = s.serialEnabled &&
+      s.serialOutputMappings.some(m => m.enabled && m.portIndex === portIndex);
+    if (outputUsesThisPort && !outputPort) {
       return;
     }
 
@@ -357,10 +358,9 @@ export class SerialKeyInputService implements OnDestroy {
     try {
       await port.open({ baudRate: 9600 });
 
-      const idle = !s.serialInvert;
       await port.setSignals({
-        dataTerminalReady: idle,
-        requestToSend: idle,
+        dataTerminalReady: true,
+        requestToSend: true,
       });
 
       ps.port = port;
@@ -381,15 +381,30 @@ export class SerialKeyInputService implements OnDestroy {
       this.startPolling(portIndex, ps);
     } catch (e: any) {
       if (e.message?.includes('already open')) {
-        if (outputPort && port === outputPort) {
-          ps.port = outputPort;
+        // Port is already open — typically because a previous close()
+        // hasn't settled yet, or serial output opened it in the interim.
+        // Silently adopt the open port instead of reporting an error.
+        const outputPortRetry = this.serialOutput.getOpenPort(portIndex);
+        if (outputPortRetry) {
+          ps.port = outputPortRetry;
           ps.owned = false;
           ps.sharing = true;
-          this.setPortState(portIndex, ps);
-          this.lastError.set(null);
-          this.startPolling(portIndex, ps);
-          return;
+        } else {
+          ps.port = port;
+          ps.owned = true;
+          ps.sharing = false;
+          ps.disconnectHandler = () => {
+            this.zone.run(() => {
+              this.closePort(portIndex);
+              this.refreshPorts();
+            });
+          };
+          port.addEventListener('disconnect', ps.disconnectHandler);
         }
+        this.setPortState(portIndex, ps);
+        this.lastError.set(null);
+        this.startPolling(portIndex, ps);
+        return;
       }
       this.lastError.set(e.message ?? 'Failed to open serial port.');
     }
@@ -519,15 +534,17 @@ export class SerialKeyInputService implements OnDestroy {
   /** Handle straight key press/release for a specific mapping */
   private handleStraightKey(mappingIndex: number, down: boolean, source: 'rx' | 'tx'): void {
     const ks = this.getKeyerState(mappingIndex);
+    const m = this.settings.settings().serialInputMappings[mappingIndex];
     const inputPath: InputPath = `serialStraightKey:${mappingIndex}`;
+    const opts = { fromSerial: true, name: m?.name, color: m?.color };
     if (down && !ks.straightKeyDown) {
       ks.straightKeyDown = true;
       this.straightKeyEvent$.next({ down: true, mappingIndex });
-      this.decoder.onKeyDown(inputPath, source, { fromSerial: true });
+      this.decoder.onKeyDown(inputPath, source, opts);
     } else if (!down && ks.straightKeyDown) {
       ks.straightKeyDown = false;
       this.straightKeyEvent$.next({ down: false, mappingIndex });
-      this.decoder.onKeyUp(inputPath, source, { fromSerial: true });
+      this.decoder.onKeyUp(inputPath, source, opts);
     }
   }
 
@@ -581,7 +598,9 @@ export class SerialKeyInputService implements OnDestroy {
         this.straightKeyEvent$.next({ down: false, mappingIndex: idx });
         const m = this.settings.settings().serialInputMappings[idx];
         if (m) {
-          this.decoder.onKeyUp(`serialStraightKey:${idx}`, m.source, { fromSerial: true });
+          this.decoder.onKeyUp(`serialStraightKey:${idx}`, m.source, {
+            fromSerial: true, name: m.name, color: m.color,
+          });
         }
       }
       this.stopMappingKeyer(idx);
@@ -665,9 +684,10 @@ export class SerialKeyInputService implements OnDestroy {
     if (ks.elementPlaying) {
       ks.elementPlaying = false;
       const inputPath: InputPath = `serialPaddle:${mappingIndex}`;
+      const m = this.settings.settings().serialInputMappings[mappingIndex];
       this.zone.run(() => {
         this.decoder.onKeyUp(inputPath, ks.source, {
-          perfectTiming: true, fromSerial: true,
+          perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
         });
       });
     }
@@ -699,10 +719,11 @@ export class SerialKeyInputService implements OnDestroy {
     const duration = nextElement === 'dit' ? timings.dit : timings.dah;
     const inputPath: InputPath = `serialPaddle:${mappingIndex}`;
 
+    const m = this.settings.settings().serialInputMappings[mappingIndex];
     ks.elementPlaying = true;
     this.zone.run(() => {
       this.decoder.onKeyDown(inputPath, ks.source, {
-        perfectTiming: true, fromSerial: true,
+        perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
       });
     });
 
@@ -710,7 +731,7 @@ export class SerialKeyInputService implements OnDestroy {
       ks.elementPlaying = false;
       this.zone.run(() => {
         this.decoder.onKeyUp(inputPath, ks.source, {
-          perfectTiming: true, fromSerial: true,
+          perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
         });
       });
       ks.lastElement = ks.currentElement;

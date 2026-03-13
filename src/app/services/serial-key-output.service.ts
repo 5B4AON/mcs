@@ -2,24 +2,19 @@
  * Morse Code Studio
  */
 
-import { effect, Injectable, NgZone, signal } from '@angular/core';
-import { SettingsService } from './settings.service';
-
-export type SerialPin = 'dtr' | 'rts';
+import { computed, effect, Injectable, NgZone, signal } from '@angular/core';
+import { SerialOutputMapping, SettingsService } from './settings.service';
 
 /**
- * Serial Key Output Service — keys a transmitter via a serial port DTR or RTS line.
+ * Serial Key Output Service — keys transmitters via serial port DTR/RTS lines.
  *
- * Uses the Web Serial API (navigator.serial) to toggle DTR or RTS.
- * setSignals() is typically < 1ms on modern OS serial drivers, easily
- * supporting 50+ WPM morse speeds (dit ≈ 24ms at 50 WPM).
+ * Supports multiple output mappings, each targeting a specific port + pin
+ * combination. keyDown/keyUp/schedulePulse broadcast to all enabled
+ * mappings whose forward filter matches the source.
  *
- * Flow:
- *  1. User clicks "Request Port" → browser shows a picker → port is granted.
- *  2. Granted ports are remembered across reloads via navigator.serial.getPorts().
- *  3. User selects a port and pin (DTR or RTS), then enables it.
- *  4. keyDown() / keyUp() toggle the selected pin.
- *  5. schedulePulse() handles timed keying for the encoder.
+ * Uses the Web Serial API to toggle DTR or RTS. setSignals() is typically
+ * < 1 ms on modern OS serial drivers, easily supporting 50+ WPM morse
+ * speeds (dit ≈ 24 ms at 50 WPM).
  */
 
 /**
@@ -38,55 +33,57 @@ const SERIAL_FILTERS: SerialPortFilter[] = [
   { usbVendorId: 0x2E8A },  // Raspberry Pi (Pico)
 ];
 
+/**
+ * Per-port connection state maintained by the service.
+ * Multiple mappings can share the same port (e.g. DTR + RTS on one adapter).
+ */
+interface PortState {
+  port: SerialPort;
+  disconnectHandler: (() => void) | null;
+}
+
+/**
+ * Per-mapping keying state.  Each mapping tracks its own key/pulse state
+ * independently so mappings on different ports don't interfere.
+ */
+interface MappingKeyState {
+  keyIsDown: boolean;
+  holdoffTimer: ReturnType<typeof setTimeout> | null;
+}
+
 @Injectable({ providedIn: 'root' })
 export class SerialKeyOutputService {
   /** Available serial ports (previously granted by the user) */
   readonly ports = signal<SerialPort[]>([]);
 
-  /** The currently opened port (null if not connected) */
-  private activePort: SerialPort | null = null;
+  /** Map of portIndex → open port state. Used for piggyback by serial input. */
+  readonly openPorts = signal<Map<number, PortState>>(new Map());
 
-  /** Public signal exposing the active port for other services (e.g. serial input) */
-  readonly openPort = signal<SerialPort | null>(null);
-
-  /** Whether the port is currently open */
-  readonly connected = signal(false);
+  /** Whether any output port is currently open */
+  readonly connected = computed(() => this.openPorts().size > 0);
 
   /** Last error message (for UI display) */
   readonly lastError = signal<string | null>(null);
 
-  /** True while serial output is actively keying (key held or holdoff pending) */
+  /** True while any serial output mapping is actively keying (key held or holdoff pending) */
   readonly isSending = signal(false);
 
   /**
-   * Holdoff timer — keeps isSending() true for a few ms after key-up.
-   * The physical serial bus has settling time: the DTR/RTS line
-   * de-asserts, cable capacitance decays, and the serial input polling
-   * circuit needs time to stop seeing the signal.  Without this holdoff,
-   * a fast key-up → loopback echo can sneak through the isSending()
-   * gate before the bus has fully settled.
+   * Holdoff duration in milliseconds.
    *
    * *** DO NOT REMOVE OR SHORTEN THIS HOLDOFF ***
    * It prevents feedback loops when serial input and output share the
-   * same physical port or when pins are cross-wired.
-   */
-  private isSendingHoldoff: ReturnType<typeof setTimeout> | null = null;
-
-  /**
-   * Holdoff duration in milliseconds.  Empirically tested: 30 ms
-   * covers typical USB-serial adapter settling plus polling round-trip
-   * jitter.  Matches MidiOutputService.SENDING_HOLDOFF_MS.
+   * same physical port or when pins are cross-wired. Empirically tested:
+   * 30 ms covers typical USB-serial adapter settling plus polling
+   * round-trip jitter.
    */
   private static readonly SENDING_HOLDOFF_MS = 30;
 
-  /** Track current key state for idempotency */
-  private keyIsDown = false;
+  /** Per-mapping key state (indexed by mapping array position) */
+  private keyStates = new Map<number, MappingKeyState>();
 
   /** Bound handler for navigator.serial connect events */
   private readonly onSerialConnect = () => this.handleSerialConnect();
-
-  /** Bound handler for port disconnect events (bound per-port in open()) */
-  private portDisconnectHandler: (() => void) | null = null;
 
   /** Whether auto-reconnect is in progress */
   private reconnecting = false;
@@ -99,23 +96,26 @@ export class SerialKeyOutputService {
     private zone: NgZone,
   ) {
     this.refreshPorts();
-    // Listen for newly connected serial devices for auto-reconnect
+
     if ('serial' in navigator) {
       navigator.serial.addEventListener('connect', this.onSerialConnect);
     }
 
     // Auto-open on page load if previously enabled.
     // Chrome remembers granted ports via getPorts(), so no user gesture
-    // is needed.  The one-shot guard prevents this from interfering
+    // is needed. The one-shot guard prevents this from interfering
     // with explicit connect/disconnect actions from the settings card.
     effect(() => {
       const s = this.settings.settings();
       const enabled = s.serialEnabled;
-      const portIdx = s.serialPortIndex;
+      const mappings = s.serialOutputMappings;
 
-      if (!this.autoConnectAttempted && enabled && portIdx >= 0) {
-        this.autoConnectAttempted = true;
-        this.autoConnect(portIdx);
+      if (!this.autoConnectAttempted && enabled) {
+        const portIndices = new Set(mappings.filter(m => m.enabled && m.portIndex >= 0).map(m => m.portIndex));
+        if (portIndices.size > 0) {
+          this.autoConnectAttempted = true;
+          queueMicrotask(() => this.autoConnectAll([...portIndices]));
+        }
       }
     });
   }
@@ -141,13 +141,11 @@ export class SerialKeyOutputService {
       return;
     }
     try {
-      // Try with filters first (required on some platforms like Android)
       await navigator.serial.requestPort({ filters: SERIAL_FILTERS });
       await this.refreshPorts();
       this.lastError.set(null);
     } catch (e: any) {
       if (e.name === 'NotFoundError') {
-        // No device matched filters — retry without filters (desktop fallback)
         try {
           await navigator.serial.requestPort();
           await this.refreshPorts();
@@ -165,191 +163,6 @@ export class SerialKeyOutputService {
     }
   }
 
-  /** Open the serial port at the given index in the ports list */
-  async open(portIndex: number): Promise<void> {
-    await this.close();
-
-    const ports = this.ports();
-    if (portIndex < 0 || portIndex >= ports.length) {
-      this.lastError.set('Invalid port index.');
-      return;
-    }
-
-    const port = ports[portIndex];
-    try {
-      // Open with a low baud rate; we only use control signals, not data
-      await port.open({ baudRate: 9600 });
-
-      // Force both pins to idle after open.
-      //
-      // FTDI/CH340 DTR# and RTS# are active-low at the hardware level:
-      //   setSignals({ dataTerminalReady: true  }) → physical pin LOW
-      //   setSignals({ dataTerminalReady: false }) → physical pin HIGH
-      //
-      // Default (serialInvert = false): idle = true → pin LOW (optocoupler off).
-      // Inverted (serialInvert = true):  idle = false → pin HIGH.
-      const s = this.settings.settings();
-      const idle = !s.serialInvert;
-      await port.setSignals({
-        dataTerminalReady: idle,
-        requestToSend: idle,
-      });
-
-      this.activePort = port;
-      this.openPort.set(port);
-      this.connected.set(true);
-      this.lastError.set(null);
-
-      // Listen for physical disconnection of this port
-      this.portDisconnectHandler = () => {
-        this.zone.run(() => {
-          this.activePort = null;
-          this.openPort.set(null);
-          this.connected.set(false);
-          this.keyIsDown = false;
-          this.portDisconnectHandler = null;
-          this.refreshPorts();
-        });
-      };
-      port.addEventListener('disconnect', this.portDisconnectHandler);
-    } catch (e: any) {
-      this.lastError.set(e.message ?? 'Failed to open serial port.');
-      this.activePort = null;
-      this.openPort.set(null);
-      this.connected.set(false);
-    }
-  }
-
-  /** Close the active serial port */
-  async close(): Promise<void> {
-    if (!this.activePort) return;
-    // Remove disconnect listener
-    if (this.portDisconnectHandler) {
-      this.activePort.removeEventListener('disconnect', this.portDisconnectHandler);
-      this.portDisconnectHandler = null;
-    }
-    try {
-      this.keyIsDown = false;
-      await this.activePort.close();
-    } catch { /* port may already be closed */ }
-    this.activePort = null;
-    this.openPort.set(null);
-    this.connected.set(false);
-    // Immediate clear — no holdoff needed when explicitly closing
-    if (this.isSendingHoldoff) {
-      clearTimeout(this.isSendingHoldoff);
-      this.isSendingHoldoff = null;
-    }
-    this.isSending.set(false);
-  }
-
-  /** Key down — drive pin HIGH (active-low: API false → physical HIGH) */
-  keyDown(source: 'rx' | 'tx' = 'tx'): void {
-    if (!this.activePort || this.keyIsDown) return;
-    const s = this.settings.settings();
-    if (!s.serialEnabled) return;
-    if (s.serialForward !== 'both' && s.serialForward !== source) return;
-    this.keyIsDown = true;
-
-    // Cancel any pending holdoff — we are actively sending again
-    if (this.isSendingHoldoff) {
-      clearTimeout(this.isSendingHoldoff);
-      this.isSendingHoldoff = null;
-    }
-    this.isSending.set(true);
-
-    const active = s.serialInvert;  // false → physical HIGH when normal, true → physical LOW when inverted
-    const signal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: active }
-      : { requestToSend: active };
-    this.activePort.setSignals(signal).catch(() => {});
-  }
-
-  /** Key up — drive pin back to idle (LOW when normal, HIGH when inverted) */
-  keyUp(): void {
-    if (!this.activePort || !this.keyIsDown) return;
-    this.keyIsDown = false;
-
-    const s = this.settings.settings();
-    const idle = !s.serialInvert;  // true → physical LOW when normal, false → physical HIGH when inverted
-    const signal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: idle }
-      : { requestToSend: idle };
-    this.activePort.setSignals(signal).catch(() => {});
-
-    // Don't clear isSending immediately — start a holdoff timer so
-    // the physical bus has time to settle before serial input is unmuted.
-    // If another keyDown arrives before the holdoff expires, the timer
-    // is cancelled in keyDown and isSending stays true throughout.
-    if (this.isSendingHoldoff) clearTimeout(this.isSendingHoldoff);
-    this.isSendingHoldoff = setTimeout(() => {
-      this.isSendingHoldoff = null;
-      // Only clear if key was not re-activated during the holdoff
-      if (!this.keyIsDown) {
-        this.isSending.set(false);
-      }
-    }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
-  }
-
-  /** Timed pulse for encoder — asserts pin for durationMs then de-asserts */
-  async schedulePulse(durationMs: number, source: 'rx' | 'tx' = 'tx'): Promise<void> {
-    if (!this.activePort) return;
-    const s = this.settings.settings();
-    if (!s.serialEnabled) return;
-    if (s.serialForward !== 'both' && s.serialForward !== source) return;
-
-    // Cancel any pending holdoff — we are actively sending
-    if (this.isSendingHoldoff) {
-      clearTimeout(this.isSendingHoldoff);
-      this.isSendingHoldoff = null;
-    }
-    this.isSending.set(true);
-
-    const active = s.serialInvert;
-    const idle = !s.serialInvert;
-    const onSignal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: active }
-      : { requestToSend: active };
-    const offSignal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: idle }
-      : { requestToSend: idle };
-
-    await this.activePort.setSignals(onSignal);
-    await new Promise(resolve => setTimeout(resolve, durationMs));
-    await this.activePort.setSignals(offSignal);
-
-    // Start holdoff timer after pulse completes
-    if (this.isSendingHoldoff) clearTimeout(this.isSendingHoldoff);
-    this.isSendingHoldoff = setTimeout(() => {
-      this.isSendingHoldoff = null;
-      if (!this.keyIsDown) {
-        this.isSending.set(false);
-      }
-    }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
-  }
-
-  /** Test: toggle the pin on for 1 second */
-  async test(): Promise<void> {
-    if (!this.activePort) return;
-    const s = this.settings.settings();
-    const active = s.serialInvert;
-    const idle = !s.serialInvert;
-    const onSignal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: active }
-      : { requestToSend: active };
-    const offSignal: SerialOutputSignals = s.serialPin === 'dtr'
-      ? { dataTerminalReady: idle }
-      : { requestToSend: idle };
-
-    try {
-      await this.activePort.setSignals(onSignal);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await this.activePort.setSignals(offSignal);
-    } catch (e: any) {
-      this.lastError.set(e.message ?? 'Test failed.');
-    }
-  }
-
   /** Get a human-readable label for a serial port */
   portLabel(port: SerialPort): string {
     const info = port.getInfo();
@@ -359,24 +172,340 @@ export class SerialKeyOutputService {
     return 'Serial Port';
   }
 
+  /** Whether a specific port index has an open connection */
+  isPortConnected(portIndex: number): boolean {
+    return this.openPorts().has(portIndex);
+  }
+
+  /**
+   * Get the open SerialPort object for a given port index, or null.
+   * Used by serial input service for piggyback.
+   */
+  getOpenPort(portIndex: number): SerialPort | null {
+    return this.openPorts().get(portIndex)?.port ?? null;
+  }
+
+  // ---- Keying API (called by decoder / encoder) ----
+
+  /**
+   * Key down — drive active signal on all matching mappings.
+   * @param source  The signal source ('rx' or 'tx')
+   */
+  keyDown(source: 'rx' | 'tx' = 'tx'): void {
+    const s = this.settings.settings();
+    if (!s.serialEnabled) return;
+
+    for (let i = 0; i < s.serialOutputMappings.length; i++) {
+      const m = s.serialOutputMappings[i];
+      if (!m.enabled || m.portIndex < 0) continue;
+      if (m.forward !== 'both' && m.forward !== source) continue;
+
+      const ps = this.openPorts().get(m.portIndex);
+      if (!ps) continue;
+
+      let ks = this.keyStates.get(i);
+      if (!ks) {
+        ks = { keyIsDown: false, holdoffTimer: null };
+        this.keyStates.set(i, ks);
+      }
+      if (ks.keyIsDown) continue;
+      ks.keyIsDown = true;
+
+      if (ks.holdoffTimer) {
+        clearTimeout(ks.holdoffTimer);
+        ks.holdoffTimer = null;
+      }
+      this.isSending.set(true);
+
+      const active = m.invert;
+      const sig: SerialOutputSignals = m.pin === 'dtr'
+        ? { dataTerminalReady: active }
+        : { requestToSend: active };
+      ps.port.setSignals(sig).catch(() => {});
+    }
+  }
+
+  /** Key up — return all keyed mappings to idle */
+  keyUp(): void {
+    const s = this.settings.settings();
+
+    for (let i = 0; i < s.serialOutputMappings.length; i++) {
+      const m = s.serialOutputMappings[i];
+      const ks = this.keyStates.get(i);
+      if (!ks?.keyIsDown) continue;
+      ks.keyIsDown = false;
+
+      const ps = this.openPorts().get(m.portIndex);
+      if (!ps) continue;
+
+      const idle = !m.invert;
+      const sig: SerialOutputSignals = m.pin === 'dtr'
+        ? { dataTerminalReady: idle }
+        : { requestToSend: idle };
+      ps.port.setSignals(sig).catch(() => {});
+
+      // Don't clear isSending immediately — start a holdoff timer so
+      // the physical bus has time to settle before serial input is unmuted.
+      if (ks.holdoffTimer) clearTimeout(ks.holdoffTimer);
+      ks.holdoffTimer = setTimeout(() => {
+        ks!.holdoffTimer = null;
+        if (!ks!.keyIsDown) {
+          this.updateSendingState();
+        }
+      }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
+    }
+  }
+
+  /**
+   * Timed pulse for encoder — asserts pin for durationMs then de-asserts
+   * on all matching mappings.
+   */
+  async schedulePulse(durationMs: number, source: 'rx' | 'tx' = 'tx'): Promise<void> {
+    const s = this.settings.settings();
+    if (!s.serialEnabled) return;
+
+    const targets: { mapping: SerialOutputMapping; ps: PortState; ks: MappingKeyState }[] = [];
+    for (let i = 0; i < s.serialOutputMappings.length; i++) {
+      const m = s.serialOutputMappings[i];
+      if (!m.enabled || m.portIndex < 0) continue;
+      if (m.forward !== 'both' && m.forward !== source) continue;
+      const ps = this.openPorts().get(m.portIndex);
+      if (!ps) continue;
+      let ks = this.keyStates.get(i);
+      if (!ks) {
+        ks = { keyIsDown: false, holdoffTimer: null };
+        this.keyStates.set(i, ks);
+      }
+      if (ks.holdoffTimer) {
+        clearTimeout(ks.holdoffTimer);
+        ks.holdoffTimer = null;
+      }
+      targets.push({ mapping: m, ps, ks });
+    }
+
+    if (targets.length === 0) return;
+    this.isSending.set(true);
+
+    // Assert all
+    for (const t of targets) {
+      const active = t.mapping.invert;
+      const sig: SerialOutputSignals = t.mapping.pin === 'dtr'
+        ? { dataTerminalReady: active }
+        : { requestToSend: active };
+      await t.ps.port.setSignals(sig);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, durationMs));
+
+    // De-assert all and start holdoff
+    for (const t of targets) {
+      const idle = !t.mapping.invert;
+      const sig: SerialOutputSignals = t.mapping.pin === 'dtr'
+        ? { dataTerminalReady: idle }
+        : { requestToSend: idle };
+      await t.ps.port.setSignals(sig);
+
+      if (t.ks.holdoffTimer) clearTimeout(t.ks.holdoffTimer);
+      t.ks.holdoffTimer = setTimeout(() => {
+        t.ks.holdoffTimer = null;
+        if (!t.ks.keyIsDown) {
+          this.updateSendingState();
+        }
+      }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
+    }
+  }
+
+  /** Test: toggle the pin on a specific mapping for 1 second */
+  async test(mappingIndex: number): Promise<void> {
+    const s = this.settings.settings();
+    const m = s.serialOutputMappings[mappingIndex];
+    if (!m) return;
+
+    const ps = this.openPorts().get(m.portIndex);
+    if (!ps) return;
+
+    const active = m.invert;
+    const idle = !m.invert;
+    const onSig: SerialOutputSignals = m.pin === 'dtr'
+      ? { dataTerminalReady: active }
+      : { requestToSend: active };
+    const offSig: SerialOutputSignals = m.pin === 'dtr'
+      ? { dataTerminalReady: idle }
+      : { requestToSend: idle };
+
+    try {
+      await ps.port.setSignals(onSig);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      await ps.port.setSignals(offSig);
+    } catch (e: any) {
+      this.lastError.set(e.message ?? 'Test failed.');
+    }
+  }
+
+  // ---- Port management ----
+
+  /** Open a specific port by index */
+  async open(portIndex: number): Promise<void> {
+    if (this.openPorts().has(portIndex)) return;
+
+    await this.refreshPorts();
+    const ports = this.ports();
+    if (portIndex < 0 || portIndex >= ports.length) {
+      this.lastError.set('Invalid port index.');
+      return;
+    }
+
+    const port = ports[portIndex];
+    try {
+      await port.open({ baudRate: 9600 });
+
+      // Force both pins to idle after open.
+      // Determine idle from the first mapping on this port, or default.
+      const s = this.settings.settings();
+      const firstMapping = s.serialOutputMappings.find(m => m.portIndex === portIndex);
+      const idle = firstMapping ? !firstMapping.invert : true;
+      await port.setSignals({
+        dataTerminalReady: idle,
+        requestToSend: idle,
+      });
+
+      const disconnectHandler = () => {
+        this.zone.run(() => {
+          this.removePort(portIndex);
+          this.refreshPorts();
+        });
+      };
+      port.addEventListener('disconnect', disconnectHandler);
+
+      const map = new Map(this.openPorts());
+      map.set(portIndex, { port, disconnectHandler });
+      this.openPorts.set(map);
+      this.lastError.set(null);
+    } catch (e: any) {
+      if (e.message?.includes('already open')) {
+        // Port is already open — typically because a previous close()
+        // hasn't settled yet. Silently adopt the open port.
+        const disconnectHandler = () => {
+          this.zone.run(() => {
+            this.removePort(portIndex);
+            this.refreshPorts();
+          });
+        };
+        port.addEventListener('disconnect', disconnectHandler);
+
+        const map = new Map(this.openPorts());
+        map.set(portIndex, { port, disconnectHandler });
+        this.openPorts.set(map);
+        this.lastError.set(null);
+        return;
+      }
+      this.lastError.set(e.message ?? 'Failed to open serial port.');
+    }
+  }
+
+  /** Close a specific port by index */
+  async close(portIndex: number): Promise<void> {
+    const map = new Map(this.openPorts());
+    const ps = map.get(portIndex);
+    if (!ps) return;
+
+    if (ps.disconnectHandler) {
+      ps.port.removeEventListener('disconnect', ps.disconnectHandler);
+    }
+    try {
+      await ps.port.close();
+    } catch { /* port may already be closed */ }
+
+    map.delete(portIndex);
+    this.openPorts.set(map);
+    this.clearKeyStatesForPort(portIndex);
+  }
+
+  /** Close all open ports */
+  async closeAll(): Promise<void> {
+    const portIndices = [...this.openPorts().keys()];
+    for (const idx of portIndices) {
+      await this.close(idx);
+    }
+  }
+
+  /**
+   * Connect all ports needed by the current set of enabled mappings.
+   */
+  async connectAllEnabled(): Promise<void> {
+    const s = this.settings.settings();
+    if (!s.serialEnabled) return;
+
+    const neededPorts = new Set<number>();
+    for (const m of s.serialOutputMappings) {
+      if (m.enabled && m.portIndex >= 0) {
+        neededPorts.add(m.portIndex);
+      }
+    }
+
+    for (const portIndex of neededPorts) {
+      if (!this.openPorts().has(portIndex)) {
+        await this.open(portIndex);
+      }
+    }
+  }
+
+  // ---- Private helpers ----
+
+  /** Remove a port from the open set (e.g. on disconnect) */
+  private removePort(portIndex: number): void {
+    const map = new Map(this.openPorts());
+    const ps = map.get(portIndex);
+    if (ps?.disconnectHandler) {
+      ps.port.removeEventListener('disconnect', ps.disconnectHandler);
+    }
+    map.delete(portIndex);
+    this.openPorts.set(map);
+    this.clearKeyStatesForPort(portIndex);
+  }
+
+  /** Clear key states for all mappings on a specific port */
+  private clearKeyStatesForPort(portIndex: number): void {
+    const s = this.settings.settings();
+    for (let i = 0; i < s.serialOutputMappings.length; i++) {
+      if (s.serialOutputMappings[i].portIndex === portIndex) {
+        const ks = this.keyStates.get(i);
+        if (ks) {
+          ks.keyIsDown = false;
+          if (ks.holdoffTimer) {
+            clearTimeout(ks.holdoffTimer);
+            ks.holdoffTimer = null;
+          }
+          this.keyStates.delete(i);
+        }
+      }
+    }
+    this.updateSendingState();
+  }
+
+  /** Recompute isSending from all mapping key states */
+  private updateSendingState(): void {
+    for (const ks of this.keyStates.values()) {
+      if (ks.keyIsDown || ks.holdoffTimer) {
+        this.isSending.set(true);
+        return;
+      }
+    }
+    this.isSending.set(false);
+  }
+
   /**
    * Handle a serial device being physically connected.
-   * If the service is enabled and currently disconnected, attempt to
-   * re-open the configured port after a short settling delay.
+   * Attempt to re-open any configured ports that are not yet connected.
    */
   private handleSerialConnect(): void {
     if (!this.settings.settings().serialEnabled) return;
-    if (this.connected()) return;
     if (this.reconnecting) return;
     this.reconnecting = true;
-    // Allow the port to settle before attempting to open
     setTimeout(async () => {
       try {
         await this.refreshPorts();
-        const idx = this.settings.settings().serialPortIndex;
-        if (idx >= 0 && idx < this.ports().length && !this.connected()) {
-          await this.open(idx);
-        }
+        await this.connectAllEnabled();
       } finally {
         this.reconnecting = false;
       }
@@ -384,23 +513,22 @@ export class SerialKeyOutputService {
   }
 
   /**
-   * Auto-connect to the configured serial port.
-   * Called by the constructor effect() on page load and whenever
-   * settings change.  Retries with increasing delays to handle
-   * late USB enumeration.
+   * Auto-connect to the configured ports on startup.
+   * Retries with increasing delays to handle late USB enumeration.
    */
-  private async autoConnect(portIndex: number): Promise<void> {
+  private async autoConnectAll(portIndices: number[]): Promise<void> {
     if (this.reconnecting) return;
     this.reconnecting = true;
     try {
       for (const delay of [0, 500, 1500, 3000]) {
         if (delay > 0) await new Promise(r => setTimeout(r, delay));
-        if (this.connected()) return;
         await this.refreshPorts();
-        if (portIndex < this.ports().length) {
-          await this.open(portIndex);
-          if (this.connected()) return;
+        for (const idx of portIndices) {
+          if (!this.openPorts().has(idx) && idx < this.ports().length) {
+            await this.open(idx);
+          }
         }
+        if (portIndices.every(idx => this.openPorts().has(idx))) return;
       }
     } finally {
       this.reconnecting = false;
