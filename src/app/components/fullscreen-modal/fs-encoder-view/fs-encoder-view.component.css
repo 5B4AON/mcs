@@ -38,10 +38,10 @@
 
 .vk-toggle-btn {
   position: absolute;
-  bottom: 16px;
-  right: 16px;
-  width: 52px;
-  height: 52px;
+  bottom: 12px;
+  right: 12px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(60, 60, 80, 0.85);
   border: 1px solid rgba(255, 255, 255, 0.2);
@@ -70,5 +70,5 @@
 
 /* Shift reveal button left of the VK toggle when touch input is present */
 .blur-reveal-beside-vk {
-  right: 76px;
+  right: 68px;
 }

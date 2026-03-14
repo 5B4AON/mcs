@@ -233,11 +233,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // (buf='', idx=0). Flush any remaining unpushed characters from
         // the old buffer so they reach the display (and prosign actions fire).
         if (buf === '' && this.lastSentBuf && this.lastSentIdx < this.lastSentBuf.length) {
-          const displayName = this.getDisplayName('tx');
+          const es = this.settings.settings();
+          const encSource = es.encoderSource;
+          const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+          const displayColor = es.encoderColor || undefined;
           let i = this.lastSentIdx;
           while (i < this.lastSentBuf.length) {
             const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
-            this.displayBuffers.pushSent(token, displayName);
+            this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
             i = endIdx;
           }
         }
@@ -255,13 +258,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // Enter again). Reset tracking so subsequent advances are picked up.
         this.lastSentIdx = idx;
       } else if (idx > this.lastSentIdx) {
-        const displayName = this.getDisplayName('tx');
+        const es = this.settings.settings();
+        const encSource = es.encoderSource;
+        const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+        const displayColor = es.encoderColor || undefined;
         // Walk through newly sent characters using token extraction so
         // prosign patterns (e.g. '<SK>') are pushed as whole strings.
         let i = this.lastSentIdx;
         while (i < idx) {
           const { token, endIdx } = this.encoder.extractToken(buf, i);
-          this.displayBuffers.pushSent(token, displayName);
+          this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
           i = endIdx;
         }
         this.lastSentIdx = idx;
@@ -274,8 +280,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       const count = this.encoder.wordGapCount();
       if (count > this.lastWordGapCount) {
-        const displayName = this.getDisplayName('tx');
-        this.displayBuffers.pushSent(' ', displayName);
+        const es = this.settings.settings();
+        const encSource = es.encoderSource;
+        const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+        const displayColor = es.encoderColor || undefined;
+        this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
       }
       this.lastWordGapCount = count;
     });
@@ -378,6 +387,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           (evt.inputPath === 'midiStraightKey' && s.spriteAnimateMidi) ||
           (evt.inputPath?.startsWith('serialStraightKey') && s.spriteAnimateSerial);
         if (animate) {
+          this.spriteKeyDown = evt.down;
+        }
+      })
+    );
+
+    // Sprite button animation — react to encoder element events
+    this.subs.push(
+      this.encoder.elementEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (s.spriteButtonEnabled && s.spriteAnimateEncoder) {
           this.spriteKeyDown = evt.down;
         }
       })
@@ -910,8 +929,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onSpriteTouch(down: boolean, event: TouchEvent): void {
     event.preventDefault();
     this.spriteKeyDown = down;
-    const source = this.settings.settings().touchKeyerSource;
-    this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
+    const s = this.settings.settings();
+    this.keyer.straightKeyInput(down, s.spriteSource, false, 'touchStraightKey',
+      { name: s.spriteName || undefined, color: s.spriteColor || undefined });
   }
 
   /** Handle mouse events on the sprite key button (desktop fallback) */
@@ -926,8 +946,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.spriteMouseActive = false;
     }
     this.spriteKeyDown = down;
-    const source = this.settings.settings().touchKeyerSource;
-    this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
+    const s = this.settings.settings();
+    this.keyer.straightKeyInput(down, s.spriteSource, false, 'touchStraightKey',
+      { name: s.spriteName || undefined, color: s.spriteColor || undefined });
   }
 
   // ---- Fullscreen modal ----

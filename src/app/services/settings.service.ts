@@ -299,6 +299,12 @@ export interface AppSettings {
   // --- Encoder ---
   encoderWpm: number;
   encoderMode: EncoderMode;
+  /** Encoder source: which pool encoder text is tagged with ('rx' or 'tx') */
+  encoderSource: DecoderSource;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  encoderName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  encoderColor: string;
 
   // --- Keyer ---
   /** Enable/disable keyboard keyer input */
@@ -365,16 +371,24 @@ export interface AppSettings {
   // --- Sprite Key Button ---
   /** Show the straight-key sprite button on the main screen */
   spriteButtonEnabled: boolean;
+  /** Decoder source: which pool sprite keying feeds ('rx' or 'tx') */
+  spriteSource: DecoderSource;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  spriteName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  spriteColor: string;
   /** Animate the sprite when keyboard straight key is pressed */
   spriteAnimateKeyboard: boolean;
+  /** Animate the sprite when keyboard encoder is sending elements */
+  spriteAnimateEncoder: boolean;
   /** Animate the sprite when mouse straight key is pressed */
   spriteAnimateMouse: boolean;
   /** Animate the sprite when MIDI straight key is pressed */
   spriteAnimateMidi: boolean;
-  /** Animate the sprite when straight key via mic is pressed */
-  spriteAnimateMic: boolean;
   /** Animate the sprite when serial straight key is pressed */
   spriteAnimateSerial: boolean;
+  /** Animate the sprite when straight key via mic is pressed */
+  spriteAnimateMic: boolean;
 
   // --- Text Blurring ---
   /** Blur decoded text for training purposes */
@@ -534,6 +548,9 @@ const DEFAULT_SETTINGS: AppSettings = {
 
   encoderWpm: 12,
   encoderMode: 'enter',
+  encoderSource: 'tx',
+  encoderName: '',
+  encoderColor: '',
 
   keyboardKeyerEnabled: true,
   keyboardInputMappings: [
@@ -654,11 +671,15 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbInputColor: '',
 
   spriteButtonEnabled: true,
+  spriteSource: 'tx',
+  spriteName: '',
+  spriteColor: '',
   spriteAnimateKeyboard: false,
+  spriteAnimateEncoder: false,
   spriteAnimateMouse: false,
   spriteAnimateMidi: false,
-  spriteAnimateMic: false,
   spriteAnimateSerial: false,
+  spriteAnimateMic: false,
 
   textBlurEnabled: false,
   textBlurAppliesTo: 'rx',

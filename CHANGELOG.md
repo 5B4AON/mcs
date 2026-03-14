@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-14
+
+### Added
+
+- **Keyboard Encoder Input Settings** — The keyboard encoder (typed text) is
+  now a configurable input source in Settings → Inputs. Assign it to RX or TX
+  (default: TX), and optionally tag it with a display name and colour for
+  conversation views and Firebase RTDB forwarding. The encoder source setting
+  controls which output forward filters (serial, opto, sidetone, vibration,
+  MIDI, WinKeyer, RTDB) carry the signal. Other services that use encoder
+  functionality (MIDI out, serial out, WinKeyer, RTDB input) remain
+  independent of encoder name/colour settings.
+- **Straight-Key Sprite as Input** — The straight-key sprite button has been
+  moved from Settings → Other to Settings → Inputs and now has its own
+  independent RX/TX source, display name, and colour settings — no longer
+  inheriting from the touch keyer. Positioned after Touch Keyer in the
+  inputs list.
+- **Sprite Encoder Animation Trigger** — New "Keyboard encoder" checkbox in
+  the sprite animation sources. When enabled, the sprite visually animates
+  (depresses) for each dit/dah the encoder plays back. Trigger list reordered
+  to: Keyboard key, Keyboard encoder, Mouse key, MIDI key, Serial key, Mic
+  key (touch keyer removed since sprite is not visible in fullscreen).
+
+### Changed
+
+- **Swipe Gesture Guard** — Tab-switching swipe gestures in the settings
+  modal are now disabled on non-touch devices, preventing accidental tab
+  changes from trackpad horizontal scrolling.
+- **RTDB Output Card** — Removed the note stating that the encoder has no
+  input-specific tagging, since the encoder now supports name and colour.
+- **Main Screen Reveal Button** — The blur-reveal eye button on the main
+  screen now matches the fullscreen modal's eye button in size (44×44px) and
+  icon dimensions (24×24 SVG) for consistent appearance on mobile.
+- **Fullscreen Encoder Keyboard Button** — The virtual keyboard toggle
+  button in the fullscreen encoder view has been resized from 52×52px to
+  44×44px to match the reveal button, ensuring consistent button sizing.
+- **Fullscreen Expand Button** — Replaced the Unicode ⛶ character (which
+  rendered as a dot on many mobile fonts) with a proper SVG maximize icon
+  for reliable cross-platform display.
+
 ## [1.5.0] - 2026-03-14
 
 ### Added

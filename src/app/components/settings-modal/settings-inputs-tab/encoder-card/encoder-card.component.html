@@ -1,0 +1,52 @@
+<!-- Keyboard Encoder -->
+<div class="settings-card">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Keyboard Encoder</span>
+      <span class="source-badge" [class.source-rx]="settings.settings().encoderSource === 'rx'" [class.source-tx]="settings.settings().encoderSource === 'tx'">{{ settings.settings().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
+    </div>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Text typed via the keyboard is encoded into Morse code and played
+        through all enabled outputs. Use the source selector below to tag
+        this text as received (RX) or transmitted (TX) — this controls
+        which outputs carry the signal and how it appears in conversation
+        views.
+      </div>
+
+      <label>Used for:
+        <select [value]="settings.settings().encoderSource" (change)="onSettingChange('encoderSource', $event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+
+      <div class="card-section-divider"></div>
+
+      <label>Name:
+        <input type="text" [value]="settings.settings().encoderName"
+               (input)="onSettingChange('encoderName', $event)"
+               placeholder="e.g. callsign (optional)"
+               maxlength="20">
+      </label>
+      <div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+      <label>Color:
+        <div class="card-color-row">
+          <input type="color" class="card-color-picker"
+                 [ngModel]="settings.settings().encoderColor || '#ffffff'"
+                 (ngModelChange)="settings.update({ encoderColor: $event })">
+          @if (settings.settings().encoderColor) {
+            <button type="button" class="card-color-clear"
+                    (click)="settings.update({ encoderColor: '' })" title="Clear color">&#10005;</button>
+          }
+          <span class="card-color-preview" [style.color]="settings.settings().encoderColor || 'inherit'">Sample</span>
+        </div>
+      </label>
+      <div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+    </div>
+  }
+</div>
