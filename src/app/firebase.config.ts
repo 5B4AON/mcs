@@ -1,7 +1,5 @@
 /**
  * Morse Code Studio — Firebase Configuration
- * Copyright (c) 2026 5B4AON — Mike
- * Licensed under the GNU General Public License v3.0. See LICENSE file for details.
  *
  * Replace the placeholder values below with your Firebase project's
  * configuration. You can find these in the Firebase Console under
