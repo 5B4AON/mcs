@@ -36,26 +36,53 @@
         </div>
       }
 
-      <label>Channel Name:
+      <label [class.field-invalid]="!settings.settings().rtdbOutputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
         <input type="text" [value]="settings.settings().rtdbOutputChannelName"
                (input)="onTextSettingChange('rtdbOutputChannelName', $event)"
                placeholder="e.g. cw-practice"
                maxlength="50">
       </label>
 
-      <label>Channel Secret:
+      <label [class.field-invalid]="!settings.settings().rtdbOutputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
         <input type="password" [value]="settings.settings().rtdbOutputChannelSecret"
                (input)="onTextSettingChange('rtdbOutputChannelSecret', $event)"
                placeholder="shared secret"
                maxlength="50">
       </label>
 
-      <label>Name:
+      <label [class.field-invalid]="!settings.settings().rtdbOutputName.trim()">Name<span class="required-mark">*</span>:
         <input type="text" [value]="settings.settings().rtdbOutputName"
                (input)="onTextSettingChange('rtdbOutputName', $event)"
                placeholder="e.g. callsign"
                maxlength="20">
       </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="settings.settings().rtdbOutputOverrideName"
+               (change)="onBoolChange('rtdbOutputOverrideName', $event)">
+        Always use this name (override input-specific names)
+      </label>
+      <div class="cw-hint">When unchecked, input-specific names (e.g. from Mouse Keyer or CW Detector) are sent if defined; otherwise this name is used as fallback.</div>
+
+      <label>Color:
+        <div class="card-color-row">
+          <input type="color" class="card-color-picker"
+                 [ngModel]="settings.settings().rtdbOutputColor || '#ffffff'"
+                 (ngModelChange)="settings.update({ rtdbOutputColor: $event })">
+          @if (settings.settings().rtdbOutputColor) {
+            <button type="button" class="card-color-clear"
+                    (click)="settings.update({ rtdbOutputColor: '' })" title="Clear color">&#10005;</button>
+          }
+          <span class="card-color-preview" [style.color]="settings.settings().rtdbOutputColor || 'inherit'">Sample</span>
+        </div>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="settings.settings().rtdbOutputOverrideColor"
+               (change)="onBoolChange('rtdbOutputOverrideColor', $event)">
+        Always use this color (override input-specific colors)
+      </label>
+      <div class="cw-hint">When unchecked, input-specific colors are sent if defined; otherwise this color is used as fallback.</div>
 
       <div class="cw-hint">
         Publishes decoded morse characters to a Firebase Realtime Database channel.
@@ -64,6 +91,9 @@
         <strong>User Name</strong> is attached to each posted letter (typically your
         callsign). Select which decoded text to forward: RX (received), TX
         (transmitted by the encoder/keyer), or both.<br><br>
+        When text is typed via the keyboard encoder, the <strong>Name</strong> and
+        <strong>Color</strong> defined here are always used (the encoder has no
+        input-specific tagging).<br><br>
         Only the <strong>last letter</strong> per channel is stored &mdash; no message
         history is retained. Channel limits and automatic expiry are configured
         externally via Firebase Security Rules and Cloud Functions.<br><br>

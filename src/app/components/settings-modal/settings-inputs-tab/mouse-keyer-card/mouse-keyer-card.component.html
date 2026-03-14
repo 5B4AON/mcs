@@ -74,6 +74,30 @@
         Mouse clicks are captured in the Morse Decoder area and the fullscreen decoder view.
         Right-click context menu is suppressed when mapped.
       </div>
+
+      <div class="card-section-divider"></div>
+
+      <label>Name:
+        <input type="text" [value]="settings.settings().mouseKeyerName"
+               (input)="onSettingChange('mouseKeyerName', $event)"
+               placeholder="e.g. callsign (optional)"
+               maxlength="20">
+      </label>
+      <div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+      <label>Color:
+        <div class="card-color-row">
+          <input type="color" class="card-color-picker"
+                 [ngModel]="settings.settings().mouseKeyerColor || '#ffffff'"
+                 (ngModelChange)="settings.update({ mouseKeyerColor: $event })">
+          @if (settings.settings().mouseKeyerColor) {
+            <button type="button" class="card-color-clear"
+                    (click)="settings.update({ mouseKeyerColor: '' })" title="Clear color">&#10005;</button>
+          }
+          <span class="card-color-preview" [style.color]="settings.settings().mouseKeyerColor || 'inherit'">Sample</span>
+        </div>
+      </label>
+      <div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
     </div>
   }
 </div>

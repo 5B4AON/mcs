@@ -34,14 +34,14 @@
         </select>
       </label>
 
-      <label>Channel Name:
+      <label [class.field-invalid]="!settings.settings().rtdbInputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
         <input type="text" [value]="settings.settings().rtdbInputChannelName"
                (input)="onTextSettingChange('rtdbInputChannelName', $event)"
                placeholder="e.g. cw-practice"
                maxlength="50">
       </label>
 
-      <label>Channel Secret:
+      <label [class.field-invalid]="!settings.settings().rtdbInputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
         <input type="password" [value]="settings.settings().rtdbInputChannelSecret"
                (input)="onTextSettingChange('rtdbInputChannelSecret', $event)"
                placeholder="shared secret"
@@ -69,6 +69,30 @@
         sender's original speed for realistic timing. Enable this option to
         ignore the remote WPM and use your local Encoder WPM instead.
       </div>
+
+      <div class="card-section-divider"></div>
+
+      <label>Override Name:
+        <input type="text" [value]="settings.settings().rtdbInputName"
+               (input)="onSettingChange('rtdbInputName', $event)"
+               placeholder="empty = keep sender's name"
+               maxlength="20">
+      </label>
+      <div class="cw-hint">If set, replaces the incoming sender name. Leave empty to preserve the remote name.</div>
+
+      <label>Override Color:
+        <div class="card-color-row">
+          <input type="color" class="card-color-picker"
+                 [ngModel]="settings.settings().rtdbInputColor || '#ffffff'"
+                 (ngModelChange)="settings.update({ rtdbInputColor: $event })">
+          @if (settings.settings().rtdbInputColor) {
+            <button type="button" class="card-color-clear"
+                    (click)="settings.update({ rtdbInputColor: '' })" title="Clear color">&#10005;</button>
+          }
+          <span class="card-color-preview" [style.color]="settings.settings().rtdbInputColor || 'inherit'">Sample</span>
+        </div>
+      </label>
+      <div class="cw-hint">If set, overrides the incoming colour. Leave cleared to use the sender's colour (or default RX/TX colour).</div>
 
       @if (rtdbService.lastError()) {
         <div class="conflict-warning">{{ rtdbService.lastError() }}</div>

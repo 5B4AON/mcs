@@ -4,6 +4,40 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0] - 2026-03-14
+
+### Added
+
+- **Input Name & Colour Tagging** — Mouse Keyer, Touch Keyer, CW Tone
+  Detector, and Straight Key via Mic now support optional **Name** and
+  **Colour** fields, matching the existing pattern in Keyboard, MIDI, and
+  Serial inputs. When a name is set, switching between inputs triggers a
+  line break in conversation views. Colour overrides the default RX/TX
+  colour in fullscreen views.
+- **Firebase RTDB Output Colour** — RTDB output can now optionally send a
+  colour (`col` parameter) alongside each character. Remote listeners
+  display this colour in their fullscreen views.
+- **RTDB Name & Colour Override Checkboxes** — Two new checkboxes on the
+  RTDB Output card control whether the RTDB output name and colour always
+  override input-specific tags, or serve as fallbacks when no input-specific
+  tag is defined.
+- **Firebase RTDB Input Name & Colour Override** — RTDB input now supports
+  optional override fields for both name and colour. When set, they replace
+  the incoming sender's tag; when empty, the remote sender's name/colour is
+  preserved.
+- **RTDB Echo Suppression for Input-Specific Names** — The echo filter now
+  tracks all names sent (including input-specific names), preventing echoes
+  when multiple named inputs are forwarded through the same RTDB channel.
+
+### Changed
+
+- **RTDB Mandatory Fields** — Channel Name, Channel Secret, and Name are now
+  mandatory for RTDB Output. Channel Name and Channel Secret are mandatory
+  for RTDB Input. Fields show a red asterisk and red label/border when
+  empty. Enabling the toggle is blocked with an error message until all
+  required fields are filled. Clearing a required field while enabled
+  auto-disables the service.
+
 ## [1.3.0] - 2026-03-14
 
 ### Added

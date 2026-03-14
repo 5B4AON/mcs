@@ -95,6 +95,30 @@
         Feed audio from your radio receiver, virtual audio cable, or any audio source carrying CW tones.
         The detector uses a narrow Goertzel filter at the configured frequency with automatic gain tracking.
       </div>
+
+      <div class="card-section-divider"></div>
+
+      <label>Name:
+        <input type="text" [value]="settings.settings().cwInputName"
+               (input)="onSettingChange('cwInputName', $event)"
+               placeholder="e.g. callsign (optional)"
+               maxlength="20">
+      </label>
+      <div class="cw-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+      <label>Color:
+        <div class="card-color-row">
+          <input type="color" class="card-color-picker"
+                 [ngModel]="settings.settings().cwInputColor || '#ffffff'"
+                 (ngModelChange)="settings.update({ cwInputColor: $event })">
+          @if (settings.settings().cwInputColor) {
+            <button type="button" class="card-color-clear"
+                    (click)="settings.update({ cwInputColor: '' })" title="Clear color">&#10005;</button>
+          }
+          <span class="card-color-preview" [style.color]="settings.settings().cwInputColor || 'inherit'">Sample</span>
+        </div>
+      </label>
+      <div class="cw-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
     </div>
   }
 </div>

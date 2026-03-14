@@ -208,6 +208,10 @@ export interface AppSettings {
   micInputEnabled: boolean;
   /** Decoder source: which calibration pool mic input feeds ('rx' or 'tx') */
   micInputSource: DecoderSource;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  micInputName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  micInputColor: string;
   inputDeviceId: string;
   inputThreshold: number;
   inputInvert: boolean;
@@ -230,6 +234,10 @@ export interface AppSettings {
   cwInputDebounceMs: number;
   cwInputAutoThreshold: boolean;
   cwInputThreshold: number;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  cwInputName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  cwInputColor: string;
 
   // --- 2. Key Output via Audio Channel (opto-coupler) ---
   optoOutputDeviceId: string;
@@ -262,6 +270,12 @@ export interface AppSettings {
   rtdbOutputChannelName: string;
   rtdbOutputChannelSecret: string;
   rtdbOutputName: string;
+  /** Optional text color (CSS color string) — sent as 'col' parameter to remote listeners */
+  rtdbOutputColor: string;
+  /** When true, always send rtdbOutputName — overriding any input-specific name */
+  rtdbOutputOverrideName: boolean;
+  /** When true, always send rtdbOutputColor — overriding any input-specific color */
+  rtdbOutputOverrideColor: boolean;
 
   // --- 3. Audio Output (sidetone / headphone / speaker) ---
   sidetoneOutputDeviceId: string;
@@ -305,6 +319,10 @@ export interface AppSettings {
   mouseRightAction: MouseButtonAction;
   mouseReversePaddles: boolean;
   mousePaddleMode: PaddleMode;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  mouseKeyerName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  mouseKeyerColor: string;
 
   // --- Touch Keyer ---
   touchKeyerEnabled: boolean;
@@ -315,6 +333,10 @@ export interface AppSettings {
   touchRightPaddle: PaddleElement;
   touchReversePaddles: boolean;
   touchPaddleMode: PaddleMode;
+  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
+  touchKeyerName: string;
+  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
+  touchKeyerColor: string;
 
   // --- MIDI Input ---
   midiInputEnabled: boolean;
@@ -335,6 +357,10 @@ export interface AppSettings {
   rtdbInputChannelSecret: string;
   /** When true, ignore remote WPM and use local encoder WPM for playback */
   rtdbInputOverrideWpm: boolean;
+  /** Optional override name — if non-empty, replaces the incoming sender name */
+  rtdbInputName: string;
+  /** Optional override color — if non-empty, replaces the incoming sender color */
+  rtdbInputColor: string;
 
   // --- Sprite Key Button ---
   /** Show the straight-key sprite button on the main screen */
@@ -395,6 +421,8 @@ const DEVICE_SETTINGS_KEYS: (keyof AppSettings)[] = [
 const DEFAULT_SETTINGS: AppSettings = {
   micInputEnabled: false,
   micInputSource: 'rx',
+  micInputName: '',
+  micInputColor: '',
   inputDeviceId: 'default',
   inputThreshold: 0.01,
   inputInvert: false,
@@ -414,6 +442,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   cwInputDebounceMs: 10,
   cwInputAutoThreshold: true,
   cwInputThreshold: 0.01,
+  cwInputName: '',
+  cwInputColor: '',
 
   optoOutputDeviceId: 'default',
   optoOutputChannel: 'right',
@@ -478,6 +508,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbOutputChannelName: '',
   rtdbOutputChannelSecret: '',
   rtdbOutputName: '',
+  rtdbOutputColor: '',
+  rtdbOutputOverrideName: false,
+  rtdbOutputOverrideColor: false,
 
   sidetoneOutputDeviceId: 'default',
   sidetoneOutputChannel: 'left',
@@ -542,6 +575,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   mouseRightAction: 'none',
   mouseReversePaddles: false,
   mousePaddleMode: 'iambic-b',
+  mouseKeyerName: '',
+  mouseKeyerColor: '',
 
   touchKeyerEnabled: isTouchDevice(),
   touchKeyerSource: 'tx',
@@ -550,6 +585,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   touchRightPaddle: 'dah',
   touchReversePaddles: false,
   touchPaddleMode: 'iambic-b',
+  touchKeyerName: '',
+  touchKeyerColor: '',
 
   midiInputEnabled: false,
   midiInputMappings: [
@@ -607,6 +644,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbInputChannelName: '',
   rtdbInputChannelSecret: '',
   rtdbInputOverrideWpm: false,
+  rtdbInputName: '',
+  rtdbInputColor: '',
 
   spriteButtonEnabled: true,
   spriteAnimateKeyboard: false,

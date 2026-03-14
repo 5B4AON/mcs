@@ -61,6 +61,14 @@ export class RtdbInputCardComponent implements OnDestroy {
       this.rtdbService.lastError.set('Cannot enable Firebase RTDB input — you are offline.');
       return;
     }
+    if (checked) {
+      const s = this.settings.settings();
+      if (!s.rtdbInputChannelName.trim() || !s.rtdbInputChannelSecret.trim()) {
+        (event.target as HTMLInputElement).checked = false;
+        this.rtdbService.lastError.set('Channel Name and Channel Secret are required to enable RTDB input.');
+        return;
+      }
+    }
     this.settings.update({ rtdbInputEnabled: checked });
     if (checked) {
       this.rtdbService.startInput();
@@ -74,8 +82,15 @@ export class RtdbInputCardComponent implements OnDestroy {
     const value = (event.target as HTMLInputElement).value;
     this.settings.update({ [key]: value } as Partial<AppSettings>);
 
-    const rtdbInputKeys: (keyof AppSettings)[] = ['rtdbInputChannelName', 'rtdbInputChannelSecret'];
-    if (rtdbInputKeys.includes(key) && this.settings.settings().rtdbInputEnabled) {
+    // Auto-disable RTDB input if a required field was cleared
+    const rtdbRequiredKeys: (keyof AppSettings)[] = ['rtdbInputChannelName', 'rtdbInputChannelSecret'];
+    if (rtdbRequiredKeys.includes(key) && this.settings.settings().rtdbInputEnabled && !value.trim()) {
+      this.settings.update({ rtdbInputEnabled: false });
+      this.rtdbService.stopInput();
+      return;
+    }
+
+    if (rtdbRequiredKeys.includes(key) && this.settings.settings().rtdbInputEnabled) {
       if (this.rtdbInputDebounce) clearTimeout(this.rtdbInputDebounce);
       this.rtdbInputDebounce = setTimeout(() => this.rtdbService.startInput(), 600);
     }

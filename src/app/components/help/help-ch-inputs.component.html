@@ -51,7 +51,16 @@
   <li><strong>Used for</strong> — Decoder source (RX or TX). See
       <em>Chapter 5: Decoder Source Routing</em>.</li>
 </ul>
-
+<h3>Name &amp; Colour</h3>
+<p>
+  The CW Tone Detector has optional <strong>Name</strong> and
+  <strong>Colour</strong> fields. When a name is set (e.g. a callsign
+  or station identifier), decoded text from this input appears on a new
+  line in the fullscreen conversation view, prefixed with the name in
+  square brackets. If a colour is set, the text uses that colour instead
+  of the default RX/TX colour. These tags also propagate to Firebase RTDB
+  output (unless overridden by the RTDB output settings).
+</p>
 <div class="example-box">
   <div class="example-title">Example — Decoding with a virtual audio cable</div>
   <p>
@@ -613,6 +622,14 @@
   <li><strong>Used for</strong> — Decoder source (RX or TX). See
       <em>Chapter 5: Decoder Source Routing</em>.</li>
 </ul>
+
+<h3>Name &amp; Colour</h3>
+<p>
+  Like the CW Tone Detector (&sect;6.1), the Straight Key via Mic input
+  has optional <strong>Name</strong> and <strong>Colour</strong> fields.
+  When set, decoded text appears on a colour-coded, named line in the
+  fullscreen conversation view.
+</p>
 
 <div class="example-box">
   <div class="example-title">Calibrating the threshold</div>

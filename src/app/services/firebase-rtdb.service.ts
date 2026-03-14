@@ -38,6 +38,8 @@ interface RtdbLetterEntry {
   ts: object | number;
   /** WPM speed used to generate this character (2-digit number) */
   wpm?: number;
+  /** Optional text color (CSS color string) for fullscreen display */
+  col?: string;
 }
 
 /**
@@ -81,7 +83,7 @@ export class FirebaseRtdbService implements OnDestroy {
   readonly connectionWarning = signal<string | null>(null);
 
   /** Emits received characters from the subscribed input channel */
-  readonly incomingChar$ = new Subject<{ char: string; source: 'rx' | 'tx'; name: string; wpm: number }>();
+  readonly incomingChar$ = new Subject<{ char: string; source: 'rx' | 'tx'; name: string; wpm: number; color?: string }>();
 
   /** Whether we are actively listening to an input channel */
   readonly inputListening = signal(false);
@@ -95,6 +97,9 @@ export class FirebaseRtdbService implements OnDestroy {
   private inputRef: DatabaseReference | null = null;
   private lastInputChar: string | null = null;
   private lastInputTs: number = 0;
+
+  /** Names we have sent via RTDB output — used for echo suppression */
+  private sentNames = new Set<string>();
 
   // ── Server-time synchronisation ──
   /**
@@ -341,10 +346,10 @@ export class FirebaseRtdbService implements OnDestroy {
           }
         }
 
-        // Skip our own echoes: if the incoming name matches our output
-        // name, this is a character we wrote — don't feed it back.
-        const ourName = this.settings.settings().rtdbOutputName.trim();
-        if (ourName && data.name === ourName) return;
+        // Skip our own echoes: if the incoming name matches any name
+        // we have sent (rtdbOutputName or any input-specific name),
+        // this is a character we wrote — don't feed it back.
+        if (data.name && this.sentNames.has(data.name)) return;
 
         this.lastInputChar = data.char;
         this.lastInputTs = ts;
@@ -354,7 +359,7 @@ export class FirebaseRtdbService implements OnDestroy {
         const wpm = (typeof data.wpm === 'number' && data.wpm >= 5 && data.wpm <= 60)
           ? data.wpm
           : this.settings.settings().encoderWpm;
-        this.incomingChar$.next({ char: data.char, source, name: data.name || '', wpm });
+        this.incomingChar$.next({ char: data.char, source, name: data.name || '', wpm, color: data.col || undefined });
       });
     }, (err) => {
       this.zone.run(() => {
@@ -420,6 +425,7 @@ export class FirebaseRtdbService implements OnDestroy {
     if (this.outputRetryTimer) { clearTimeout(this.outputRetryTimer); this.outputRetryTimer = null; }
     this.outputRetries = 0;
     this.outputActive.set(false);
+    this.sentNames.clear();
   }
 
   // ──────────────────────────────────────────────
@@ -528,7 +534,7 @@ export class FirebaseRtdbService implements OnDestroy {
    * @param source Whether this came from 'rx' or 'tx' decoder pool
    * @param wpm    WPM speed used to generate this character
    */
-  async forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number): Promise<void> {
+  async forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, inputName?: string, inputColor?: string): Promise<void> {
     if (!this.settings.settings().rtdbOutputEnabled) return;
     if (!this.outputActive()) return;
     if (!this.db) return;
@@ -540,7 +546,20 @@ export class FirebaseRtdbService implements OnDestroy {
 
     const channelName = s.rtdbOutputChannelName.trim();
     const channelSecret = s.rtdbOutputChannelSecret.trim();
-    const name = s.rtdbOutputName.trim();
+    const rtdbName = s.rtdbOutputName.trim();
+
+    // Determine effective name: override checkbox forces rtdbOutputName;
+    // otherwise prefer input-specific name, fall back to rtdbOutputName.
+    const effectiveName = s.rtdbOutputOverrideName
+      ? (rtdbName || 'Anonymous')
+      : (inputName?.trim() || rtdbName || 'Anonymous');
+
+    // Determine effective color: override checkbox forces rtdbOutputColor;
+    // otherwise prefer input-specific color, fall back to rtdbOutputColor.
+    const rtdbColor = s.rtdbOutputColor.trim();
+    const effectiveColor = s.rtdbOutputOverrideColor
+      ? rtdbColor
+      : (inputColor?.trim() || rtdbColor);
 
     if (!channelName || !channelSecret) return;
 
@@ -548,12 +567,16 @@ export class FirebaseRtdbService implements OnDestroy {
     const entryRef = ref(this.db, path);
 
     try {
-      await set(entryRef, {
+      const entry: Record<string, unknown> = {
         char,
-        name: name || 'Anonymous',
+        name: effectiveName,
         ts: serverTimestamp(),
         wpm: wpm ?? s.encoderWpm,
-      });
+      };
+      if (effectiveColor) entry['col'] = effectiveColor;
+      // Track the name before writing — onValue fires synchronously on local set()
+      this.sentNames.add(effectiveName);
+      await set(entryRef, entry);
     } catch (err: any) {
       // Don't spam errors for every character — just set once
       if (!this.lastError()) {
