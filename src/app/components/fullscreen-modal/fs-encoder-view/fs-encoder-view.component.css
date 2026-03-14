@@ -67,3 +67,8 @@
 .vk-toggle-btn svg {
   display: block;
 }
+
+/* Shift reveal button left of the VK toggle when touch input is present */
+.blur-reveal-beside-vk {
+  right: 76px;
+}

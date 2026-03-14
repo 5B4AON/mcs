@@ -173,6 +173,6 @@ export function formatLine(line: DisplayLine, settings: AppSettings, sanitizer: 
   if (line.name) {
     result += `<span class="rtdb-user-prefix">[${escapeHtml(line.name)}] </span>`;
   }
-  result += formatTextInternal(line.text, settings);
+  result += `<span class="line-text">${formatTextInternal(line.text, settings)}</span>`;
   return sanitizer.bypassSecurityTrustHtml(result);
 }

@@ -45,10 +45,14 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   @ViewChild('virtualKeyInput') virtualKeyInputRef?: ElementRef<HTMLInputElement>;
 
   /** Whether touch input is available (shows virtual keyboard toggle) */
+  /** Whether touch input is available (shows virtual keyboard toggle) */
   hasTouchInput = false;
 
   /** Whether the on-screen virtual keyboard is currently visible */
   virtualKeyboardVisible = false;
+
+  /** Whether text is currently being revealed (button held) */
+  revealing = false;
 
   /** Last known scrollHeight — used to detect content changes for auto-scroll */
   private lastScrollHeight = 0;
@@ -78,11 +82,31 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   ) {}
 
   /**
+   * Active blur mode derived from settings.
+   * Returns null when blur is disabled, otherwise the appliesTo value.
+   */
+  get blurMode(): 'rx' | 'tx' | 'both' | null {
+    const s = this.settings.settings();
+    return s.textBlurEnabled ? s.textBlurAppliesTo : null;
+  }
+
+  /**
    * Conversation lines from the fullscreen encoder display buffer.
    * Accumulates continuously in the root-provided DisplayBufferService.
    */
   get conversationLines(): DisplayLine[] {
     return this.displayBuffers.fullscreenEncoder.lines();
+  }
+
+  /** Start revealing blurred text (momentary hold) */
+  onRevealStart(event: Event): void {
+    event.preventDefault();
+    this.revealing = true;
+  }
+
+  /** Stop revealing blurred text */
+  onRevealEnd(): void {
+    this.revealing = false;
   }
 
   ngOnInit(): void {

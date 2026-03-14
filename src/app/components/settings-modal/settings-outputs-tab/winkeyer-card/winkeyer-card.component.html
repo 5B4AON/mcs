@@ -1,6 +1,6 @@
 <!-- WinKeyer Output -->
 <div class="settings-card" [class.disabled-card]="!settings.settings().winkeyerEnabled">
-  <div class="settings-card-header" (click)="expanded = !expanded">
+  <div class="settings-card-header" (click)="toggleExpand()">
     <div class="settings-card-title">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">WinKeyer Output</span>
@@ -44,35 +44,18 @@
           Chrome or Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
         </div>
       }
-      <div class="serial-port-row">
-        <button (click)="winkeyerOutput.requestPort()" class="test-btn">
-          Add Serial Port&hellip;
-        </button>
-        <button (click)="winkeyerOutput.refreshPorts()" class="test-btn">
-          Refresh
-        </button>
-      </div>
-
-      @if (winkeyerOutput.ports().length === 0) {
-        <div class="cw-hint">
-          No serial ports available. Click "Add Serial Port&hellip;" to grant access to the WinKeyer's COM port.
-          Requires a Chromium-based browser (Chrome, Edge) with Web Serial API support.
-        </div>
-      }
-
-      @if (winkeyerOutput.ports().length > 0) {
-        <label>WinKeyer Port:
-          <select [value]="settings.settings().winkeyerPortIndex"
-                  (change)="onWinkeyerPortChange($event)">
-            <option [value]="-1">&mdash; Select &mdash;</option>
-            @for (port of winkeyerOutput.ports(); track $index) {
-              <option [value]="$index" [selected]="$index === settings.settings().winkeyerPortIndex">
-                {{ winkeyerOutput.portLabel(port) }}
-              </option>
-            }
-          </select>
-        </label>
-      }
+      <label>WinKeyer Port:
+        <select [value]="settings.settings().winkeyerPortIndex"
+                (change)="onWinkeyerPortChange($event)">
+          <option [value]="-1">&mdash; Select &mdash;</option>
+          @for (port of winkeyerOutput.ports(); track $index) {
+            <option [value]="$index" [selected]="$index === settings.settings().winkeyerPortIndex">
+              {{ winkeyerOutput.portLabel(port) }}
+            </option>
+          }
+          <option value="-2">+ Add serial port&hellip;</option>
+        </select>
+      </label>
 
       <label>WPM Speed:
         <input type="number" min="5" max="99" [value]="settings.settings().winkeyerWpm"

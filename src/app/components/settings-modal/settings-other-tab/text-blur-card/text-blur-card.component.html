@@ -1,0 +1,33 @@
+<!-- Text Blurring -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().textBlurEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Text Blurring</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().textBlurEnabled"
+             (change)="onEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Blurs decoded text so you can practice reading Morse by ear
+        without accidentally seeing the answer. A momentary reveal
+        button appears in the text area — press and hold to peek at
+        the blurred text.
+      </div>
+      <label>
+        Applies to:
+        <select [value]="settings.settings().textBlurAppliesTo"
+                (change)="onAppliesToChange($event)">
+          <option value="rx">RX Only</option>
+          <option value="tx">TX Only</option>
+          <option value="both">Both RX and TX</option>
+        </select>
+      </label>
+    </div>
+  }
+</div>

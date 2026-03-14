@@ -161,7 +161,27 @@
     }
 
     <div class="decoded-parchment">
-      <div class="decoded-text" #decoderBox>{{ displayBuffers.mainOutput.text() }}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+      <div class="decoded-text" #decoderBox
+           [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
+           [class.blur-revealing]="mainRevealing">@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
+             [class.rx-line]="line.type === 'rx'"
+             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
+      @if (mainBlurMode) {
+        <button class="blur-reveal-btn-main" [class.revealing]="mainRevealing"
+                (mousedown)="onMainRevealStart($event)"
+                (mouseup)="onMainRevealEnd()"
+                (mouseleave)="onMainRevealEnd()"
+                (touchstart)="onMainRevealStart($event)"
+                (touchend)="onMainRevealEnd()"
+                (touchcancel)="onMainRevealEnd()"
+                title="Hold to reveal text">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+        </button>
+      }
     </div>
     @if (settings.settings().cwInputEnabled) {
       <div class="decoded-actions">

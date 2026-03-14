@@ -22,19 +22,16 @@
       <!-- Serial Port selection -->
       <div class="serial-edit-field">
         <label class="serial-edit-label" for="serialEditPort">Serial Port</label>
-        @if (serialInput.ports().length === 0) {
-          <span class="serial-edit-hint">No serial ports available. Connect a USB-serial adapter and re-open this dialog.</span>
-        } @else {
-          <select id="serialEditPort" class="serial-edit-select" [value]="editPortIndex"
-                  (change)="onPortChange($event)">
-            <option [value]="-1">&mdash; Select &mdash;</option>
-            @for (port of serialInput.ports(); track $index) {
-              <option [value]="$index" [selected]="$index === editPortIndex">
-                {{ serialInput.portLabel(port) }}
-              </option>
-            }
-          </select>
-        }
+        <select id="serialEditPort" class="serial-edit-select" [value]="editPortIndex"
+                (change)="onPortChange($event)">
+          <option [value]="-1">&mdash; Select &mdash;</option>
+          @for (port of serialInput.ports(); track $index) {
+            <option [value]="$index" [selected]="$index === editPortIndex">
+              {{ serialInput.portLabel(port) }}
+            </option>
+          }
+          <option value="-2">+ Add serial port&hellip;</option>
+        </select>
       </div>
 
       @if (isSharing) {

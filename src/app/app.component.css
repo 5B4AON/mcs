@@ -543,6 +543,60 @@
   opacity: .6;
   font-weight: 600;
 }
+
+/* ===== Text Blurring (training mode) ===== */
+.decoded-text .line-text {
+  transition: filter 250ms ease;
+}
+.decoded-text.blur-rx .rx-line .line-text,
+.decoded-text.blur-tx .tx-line .line-text,
+.decoded-text.blur-both .rx-line .line-text,
+.decoded-text.blur-both .tx-line .line-text {
+  filter: blur(5px);
+}
+.decoded-text.blur-revealing .rx-line .line-text,
+.decoded-text.blur-revealing .tx-line .line-text {
+  filter: blur(0) !important;
+}
+
+/* Reveal button — parchment-themed */
+.blur-reveal-btn-main {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(160, 140, 110, 0.7);
+  border: 1px solid rgba(120, 100, 70, 0.5);
+  color: rgba(60, 45, 30, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 5;
+  padding: 0;
+  min-height: unset;
+  box-shadow: 0 1px 4px rgba(80, 60, 40, 0.25);
+  transition: background 0.15s, color 0.15s;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.blur-reveal-btn-main:hover {
+  background: rgba(170, 150, 120, 0.85);
+  color: rgba(50, 35, 20, 0.9);
+}
+.blur-reveal-btn-main:active,
+.blur-reveal-btn-main.revealing {
+  background: rgba(140, 120, 90, 0.9);
+  color: #2a1e12;
+}
+.blur-reveal-btn-main svg {
+  display: block;
+  pointer-events: none;
+}
+
 .decoded-actions {
   display: flex;
   align-items: center;

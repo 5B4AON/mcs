@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, NgZone, signal } from '@angular/core';
+import { Injectable, NgZone, effect, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { PROSIGN_TO_PUNCTUATION } from '../morse-table';
 
@@ -95,6 +95,9 @@ export class WinkeyerOutputService {
   /** Background reader loop abort flag */
   private readLoopRunning = false;
 
+  /** VID/PID of the last successfully connected port, for reconnect matching */
+  private lastConnectedVidPid: { vid: number; pid: number } | null = null;
+
   /** Bound handler for navigator.serial connect events */
   private readonly onSerialConnect = () => this.handleSerialConnect();
 
@@ -103,6 +106,9 @@ export class WinkeyerOutputService {
 
   /** Whether auto-reconnect is in progress */
   private reconnecting = false;
+
+  /** Whether the initial auto-connect has been attempted (one-shot guard) */
+  private autoConnectAttempted = false;
 
   /** Latest status byte from WinKeyer */
   readonly status = signal(0);
@@ -119,6 +125,18 @@ export class WinkeyerOutputService {
     if ('serial' in navigator) {
       navigator.serial.addEventListener('connect', this.onSerialConnect);
     }
+
+    // Auto-open on page load if previously enabled.
+    // Chrome remembers granted ports via getPorts(), so no user gesture
+    // is needed. The one-shot guard prevents this from interfering
+    // with explicit connect/disconnect actions from the settings card.
+    effect(() => {
+      const s = this.settings.settings();
+      if (!this.autoConnectAttempted && s.winkeyerEnabled && s.winkeyerPortIndex >= 0) {
+        this.autoConnectAttempted = true;
+        queueMicrotask(() => this.autoConnectWithRetries());
+      }
+    });
   }
 
   // ---- Port Management ----
@@ -203,19 +221,22 @@ export class WinkeyerOutputService {
 
       // Listen for physical disconnection of this port
       this.portDisconnectHandler = () => {
-        this.zone.run(() => {
+        this.zone.run(async () => {
           this.readLoopRunning = false;
           try { this.reader?.cancel(); } catch { /* ignore */ }
           try { this.reader?.releaseLock(); } catch { /* ignore */ }
           this.reader = null;
           try { this.writer?.releaseLock(); } catch { /* ignore */ }
           this.writer = null;
+          const disconnectedPort = this.activePort;
           this.activePort = null;
           this.connected.set(false);
           this.firmwareVersion.set(0);
           this.status.set(0);
           this.busy.set(false);
           this.portDisconnectHandler = null;
+          // Try to close the port (may fail if already gone)
+          try { await disconnectedPort?.close(); } catch { /* ignore */ }
           this.refreshPorts();
         });
       };
@@ -242,6 +263,12 @@ export class WinkeyerOutputService {
       // Set speed from settings
       const wpm = this.settings.settings().winkeyerWpm;
       await this.writeBytes([WK_SET_SPEED, Math.max(5, Math.min(99, wpm))]);
+
+      // Remember the port's USB identity for reconnection matching
+      const info = port.getInfo();
+      if (info.usbVendorId !== undefined) {
+        this.lastConnectedVidPid = { vid: info.usbVendorId, pid: info.usbProductId ?? 0 };
+      }
 
       this.connected.set(true);
       this.lastError.set(null);
@@ -487,25 +514,66 @@ export class WinkeyerOutputService {
 
   /**
    * Handle a serial device being physically connected.
-   * If the service is enabled and currently disconnected, attempt to
-   * re-open the configured port after a short settling delay.
+   * If the service is enabled, attempt to close any stale connection
+   * and re-open the configured port with retries.
    */
   private handleSerialConnect(): void {
     if (!this.settings.settings().winkeyerEnabled) return;
-    if (this.connected()) return;
+    if (this.reconnecting) return;
+    // Close any stale connection first (handles race where disconnect
+    // event hasn't fired yet when the new connect event arrives)
+    if (this.connected()) {
+      this.close().then(() => this.autoConnectWithRetries());
+    } else {
+      this.autoConnectWithRetries();
+    }
+  }
+
+  /**
+   * Find a port by VID/PID match, returning its index or -1.
+   * Used as fallback when the stored port index is out of range
+   * (e.g. device reappeared at a different position after re-plug).
+   */
+  private findPortByVidPid(): number {
+    if (!this.lastConnectedVidPid) return -1;
+    const ports = this.ports();
+    for (let i = 0; i < ports.length; i++) {
+      const info = ports[i].getInfo();
+      if (info.usbVendorId === this.lastConnectedVidPid.vid &&
+          (info.usbProductId ?? 0) === this.lastConnectedVidPid.pid) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Auto-connect to the configured port with retries.
+   * Retries with increasing delays to handle late USB enumeration.
+   * Falls back to VID/PID matching if the stored index is stale.
+   */
+  private async autoConnectWithRetries(): Promise<void> {
     if (this.reconnecting) return;
     this.reconnecting = true;
-    // Allow the port to settle before attempting to open
-    setTimeout(async () => {
-      try {
+    try {
+      for (const delay of [0, 500, 1500, 3000]) {
+        if (delay > 0) await this.sleep(delay);
         await this.refreshPorts();
-        const idx = this.settings.settings().winkeyerPortIndex;
+        let idx = this.settings.settings().winkeyerPortIndex;
+        if (idx < 0 || idx >= this.ports().length) {
+          // Stored index is stale — try VID/PID match
+          idx = this.findPortByVidPid();
+          if (idx >= 0) {
+            this.settings.update({ winkeyerPortIndex: idx });
+          }
+        }
         if (idx >= 0 && idx < this.ports().length && !this.connected()) {
           await this.open(idx);
         }
-      } finally {
-        this.reconnecting = false;
+        if (this.connected()) return;
       }
-    }, 1000);
+    } finally {
+      this.reconnecting = false;
+    }
   }
 }

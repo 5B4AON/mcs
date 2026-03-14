@@ -1,9 +1,12 @@
 <!-- Decoder: live decoded text conversation area -->
-<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" #conversationArea>
+<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen"
+     [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
+     [class.blur-revealing]="revealing" #conversationArea>
   @for (line of conversationLines; track $index) {
     @if ($last) {
       <!-- Last line: show text inline, then same-source pattern cursor -->
       <span class="fs-line fs-line-inline"
+            [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
             [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
             [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
             [innerHTML]="formatLine(line)"></span><span class="cursor"
@@ -18,6 +21,7 @@
       }
     } @else {
       <div class="fs-line"
+           [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
            [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
            [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
            [innerHTML]="formatLine(line)"></div>
@@ -37,6 +41,25 @@
     }
   }
 </div>
+
+<!-- Blur reveal button (momentary hold to unblur) -->
+@if (blurMode) {
+  <button class="blur-reveal-btn" [class.revealing]="revealing"
+          [class.blur-reveal-above-touch]="settings.settings().touchKeyerEnabled"
+          (mousedown)="onRevealStart($event)"
+          (mouseup)="onRevealEnd()"
+          (mouseleave)="onRevealEnd()"
+          (touchstart)="onRevealStart($event)"
+          (touchend)="onRevealEnd()"
+          (touchcancel)="onRevealEnd()"
+          title="Hold to reveal text">
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+      <circle cx="12" cy="12" r="3"/>
+    </svg>
+  </button>
+}
 
 <!-- Touch keyer overlay (decoder mode only) -->
 @if (settings.settings().touchKeyerEnabled) {

@@ -85,12 +85,13 @@ export class SerialOutputEditModalComponent implements OnInit {
 
   /** Handle port selection change */
   onPortChange(event: Event): void {
-    this.editPortIndex = parseInt((event.target as HTMLSelectElement).value, 10);
-  }
-
-  /** Prompt user to add a serial port */
-  async addPort(): Promise<void> {
-    await this.serialOutput.requestPort();
+    const select = event.target as HTMLSelectElement;
+    if (select.value === '-2') {
+      select.value = String(this.editPortIndex);
+      this.serialOutput.requestPort();
+      return;
+    }
+    this.editPortIndex = parseInt(select.value, 10);
   }
 
   /** Save the edited mapping after validation */
