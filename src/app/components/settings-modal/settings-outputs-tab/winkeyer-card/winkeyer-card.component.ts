@@ -36,6 +36,34 @@ export class WinkeyerCardComponent {
     public winkeyerOutput: WinkeyerOutputService,
   ) {}
 
+  /** Toggle card expansion; refresh port list when opening */
+  toggleExpand(): void {
+    this.expanded = !this.expanded;
+    if (this.expanded) {
+      this.winkeyerOutput.refreshPorts();
+    }
+  }
+
+  /**
+   * Handle WinKeyer port selection.
+   * The special value "-2" triggers the browser's port-request dialog.
+   */
+  async onWinkeyerPortChange(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const raw = select.value;
+    if (raw === '-2') {
+      select.value = String(this.settings.settings().winkeyerPortIndex);
+      await this.winkeyerOutput.requestPort();
+      return;
+    }
+    const idx = parseInt(raw, 10);
+    this.settings.update({ winkeyerPortIndex: idx });
+    await this.winkeyerOutput.close();
+    if (idx >= 0) {
+      await this.winkeyerOutput.open(idx);
+    }
+  }
+
   /** Handle a string or numeric setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {
     const el = event.target as HTMLInputElement;
@@ -44,16 +72,6 @@ export class WinkeyerCardComponent {
       value = parseFloat(el.value);
     }
     this.settings.update({ [key]: value } as Partial<AppSettings>);
-  }
-
-  /** Handle WinKeyer port selection — closes current and opens selected */
-  async onWinkeyerPortChange(event: Event): Promise<void> {
-    const idx = parseInt((event.target as HTMLSelectElement).value, 10);
-    this.settings.update({ winkeyerPortIndex: idx });
-    await this.winkeyerOutput.close();
-    if (idx >= 0) {
-      await this.winkeyerOutput.open(idx);
-    }
   }
 
   /** Handle WinKeyer enabled toggle — opens/closes the WinKeyer connection */

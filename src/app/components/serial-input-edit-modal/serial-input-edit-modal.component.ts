@@ -184,7 +184,13 @@ export class SerialInputEditModalComponent implements OnInit, OnDestroy {
 
   /** Handle port selection change */
   onPortChange(event: Event): void {
-    this.editPortIndex = parseInt((event.target as HTMLSelectElement).value, 10);
+    const select = event.target as HTMLSelectElement;
+    if (select.value === '-2') {
+      select.value = String(this.editPortIndex);
+      this.serialInput.requestPort();
+      return;
+    }
+    this.editPortIndex = parseInt(select.value, 10);
     this.refreshSignals();
   }
 

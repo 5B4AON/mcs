@@ -22,21 +22,16 @@
       <!-- Serial Port selection -->
       <div class="serial-edit-field">
         <label class="serial-edit-label" for="serialOutEditPort">Serial Port</label>
-        @if (serialOutput.ports().length === 0) {
-          <span class="serial-edit-hint">No serial ports available. Connect a USB-serial adapter and re-open this dialog.</span>
-          <button type="button" class="action-btn" (click)="addPort()" style="margin-top: 0.4rem; align-self: flex-start;">Add Serial Port&hellip;</button>
-        } @else {
-          <select id="serialOutEditPort" class="serial-edit-select" [value]="editPortIndex"
-                  (change)="onPortChange($event)">
-            <option [value]="-1">&mdash; Select &mdash;</option>
-            @for (port of serialOutput.ports(); track $index) {
-              <option [value]="$index" [selected]="$index === editPortIndex">
-                {{ serialOutput.portLabel(port) }}
-              </option>
-            }
-          </select>
-          <button type="button" class="serial-edit-inline-btn" (click)="addPort()">Add Serial Port&hellip;</button>
-        }
+        <select id="serialOutEditPort" class="serial-edit-select" [value]="editPortIndex"
+                (change)="onPortChange($event)">
+          <option [value]="-1">&mdash; Select &mdash;</option>
+          @for (port of serialOutput.ports(); track $index) {
+            <option [value]="$index" [selected]="$index === editPortIndex">
+              {{ serialOutput.portLabel(port) }}
+            </option>
+          }
+          <option value="-2">+ Add serial port&hellip;</option>
+        </select>
       </div>
 
       <!-- Output Pin (DTR / RTS) -->

@@ -135,6 +135,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   midiInputNeedsReconnect = false;
   midiOutputNeedsReconnect = false;
+
+  /** Whether the main screen blurred text is being revealed (button held) */
+  mainRevealing = false;
+
   constructor(
     private hostRef: ElementRef,
     public settings: SettingsService,
@@ -158,7 +162,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ) {
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
-      this.displayBuffers.mainOutput.text();
+      this.displayBuffers.mainOutput.lines();
       const el = this.decoderBoxRef?.nativeElement;
       if (el) {
         requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
@@ -694,6 +698,48 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.encoder.clearBuffer();
+  }
+
+  // ---- Text blur ----
+
+  /**
+   * Active blur mode for the main screen.
+   * Returns null when blur is disabled, otherwise the appliesTo value.
+   */
+  get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
+    const s = this.settings.settings();
+    return s.textBlurEnabled ? s.textBlurAppliesTo : null;
+  }
+
+  /**
+   * Returns a newline prefix when the line at this index starts a new
+   * type/name segment — replicating the conversation-style line breaks
+   * that the flat text() signal normally provides.
+   */
+  mainLinePrefix(index: number): string {
+    if (index === 0) return '';
+    const lines = this.displayBuffers.mainOutput.lines();
+    const prev = lines[index - 1];
+    const curr = lines[index];
+    if (curr.type !== prev.type || curr.name !== prev.name) {
+      // Match the newline logic: only if the current line text doesn't
+      // already start with \n and the previous doesn't end with \n
+      if (!curr.text.startsWith('\n') && !prev.text.endsWith('\n')) {
+        return '\n';
+      }
+    }
+    return '';
+  }
+
+  /** Start revealing blurred text on main screen (momentary hold) */
+  onMainRevealStart(event: Event): void {
+    event.preventDefault();
+    this.mainRevealing = true;
+  }
+
+  /** Stop revealing blurred text on main screen */
+  onMainRevealEnd(): void {
+    this.mainRevealing = false;
   }
 
   toggleClearMenu(): void {

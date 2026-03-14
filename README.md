@@ -54,7 +54,7 @@ Common adapters (FTDI FT232R, CH340, CP2102, PL2303) are supported. Works with a
 
 ### WinKeyer
 
-For stations using a K1EL WinKeyer (WK2/WK3/WKUSB), the app can forward decoded or encoded text to the WinKeyer over its serial port. The WinKeyer generates hardware-precision CW keying independently — useful for relay, practice, or driving an external transmitter.
+For stations using a K1EL WinKeyer (WK2/WK3/WKUSB), the app can forward decoded or encoded text to the WinKeyer over its serial port. The WinKeyer generates hardware-precision CW keying independently — useful for relay, practice, or driving an external transmitter. The connection is established automatically on page load and the app attempts to reconnect when a USB device is unplugged and reconnected. Whether the browser remembers a previously granted port after re-plug depends on the device and browser — devices with a unique USB serial number (e.g. genuine FTDI adapters) are reliably matched, while some budget chipsets may require re-granting the port.
 
 ### Sound Card (Experimental)
 
@@ -66,6 +66,7 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 
 ## Additional Features
 
+- **Text Blurring** — Hides decoded and/or encoded text behind a blur filter for copy-receiving practice. Configurable for RX only, TX only, or both. Press and hold the eye button to momentarily reveal the answer.
 - **Haptic Vibration** — The device vibrates in sync with the sidetone while the key is down. Configurable for TX only, RX only, or both. Enhanced haptic timing compensates for Android motor spin-up latency. Android only (Chrome, Firefox, Edge).
 - **Screen Wake Lock** — Prevents the screen from locking during operation. Important on mobile where screen lock suspends network connectivity, interrupting Firebase relay. Uses the Screen Wake Lock API (Chrome 84+, Edge 84+, Safari 16.4+).
 - **Progressive Web App** — Installable as a standalone app on desktop (Chrome, Edge) and mobile (Android Chrome, iOS Safari). The Angular service worker caches the app shell and assets for offline access.

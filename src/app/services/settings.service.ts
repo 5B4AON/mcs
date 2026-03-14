@@ -376,6 +376,12 @@ export interface AppSettings {
   /** Animate the sprite when serial straight key is pressed */
   spriteAnimateSerial: boolean;
 
+  // --- Text Blurring ---
+  /** Blur decoded text for training purposes */
+  textBlurEnabled: boolean;
+  /** Which text directions to blur: rx, tx, or both */
+  textBlurAppliesTo: 'rx' | 'tx' | 'both';
+
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
@@ -653,6 +659,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   spriteAnimateMidi: false,
   spriteAnimateMic: false,
   spriteAnimateSerial: false,
+
+  textBlurEnabled: false,
+  textBlurAppliesTo: 'rx',
 
   wakeLockEnabled: false,
 

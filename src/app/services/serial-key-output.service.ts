@@ -91,6 +91,9 @@ export class SerialKeyOutputService {
   /** Whether the initial auto-connect has been attempted (one-shot guard) */
   private autoConnectAttempted = false;
 
+  /** VID/PID of ports that were previously connected, keyed by port index */
+  private portVidPids = new Map<number, { vid: number; pid: number }>();
+
   constructor(
     private settings: SettingsService,
     private zone: NgZone,
@@ -380,6 +383,13 @@ export class SerialKeyOutputService {
       const map = new Map(this.openPorts());
       map.set(portIndex, { port, disconnectHandler });
       this.openPorts.set(map);
+
+      // Remember VID/PID for reconnection matching
+      const info = port.getInfo();
+      if (info.usbVendorId !== undefined) {
+        this.portVidPids.set(portIndex, { vid: info.usbVendorId, pid: info.usbProductId ?? 0 });
+      }
+
       this.lastError.set(null);
     } catch (e: any) {
       if (e.message?.includes('already open')) {
@@ -396,6 +406,13 @@ export class SerialKeyOutputService {
         const map = new Map(this.openPorts());
         map.set(portIndex, { port, disconnectHandler });
         this.openPorts.set(map);
+
+        // Remember VID/PID for reconnection matching
+        const info = port.getInfo();
+        if (info.usbVendorId !== undefined) {
+          this.portVidPids.set(portIndex, { vid: info.usbVendorId, pid: info.usbProductId ?? 0 });
+        }
+
         this.lastError.set(null);
         return;
       }
@@ -497,6 +514,7 @@ export class SerialKeyOutputService {
   /**
    * Handle a serial device being physically connected.
    * Attempt to re-open any configured ports that are not yet connected.
+   * Falls back to VID/PID matching if stored port indices are stale.
    */
   private handleSerialConnect(): void {
     if (!this.settings.settings().serialEnabled) return;
@@ -505,6 +523,7 @@ export class SerialKeyOutputService {
     setTimeout(async () => {
       try {
         await this.refreshPorts();
+        this.remapStalePortIndices();
         await this.connectAllEnabled();
       } finally {
         this.reconnecting = false;
@@ -515,6 +534,7 @@ export class SerialKeyOutputService {
   /**
    * Auto-connect to the configured ports on startup.
    * Retries with increasing delays to handle late USB enumeration.
+   * Falls back to VID/PID matching if stored port indices are stale.
    */
   private async autoConnectAll(portIndices: number[]): Promise<void> {
     if (this.reconnecting) return;
@@ -523,15 +543,53 @@ export class SerialKeyOutputService {
       for (const delay of [0, 500, 1500, 3000]) {
         if (delay > 0) await new Promise(r => setTimeout(r, delay));
         await this.refreshPorts();
-        for (const idx of portIndices) {
+        this.remapStalePortIndices();
+        // Re-read indices after potential remap
+        const s = this.settings.settings();
+        const currentIndices = new Set(
+          s.serialOutputMappings.filter(m => m.enabled && m.portIndex >= 0).map(m => m.portIndex)
+        );
+        for (const idx of currentIndices) {
           if (!this.openPorts().has(idx) && idx < this.ports().length) {
             await this.open(idx);
           }
         }
-        if (portIndices.every(idx => this.openPorts().has(idx))) return;
+        if ([...currentIndices].every(idx => this.openPorts().has(idx))) return;
       }
     } finally {
       this.reconnecting = false;
+    }
+  }
+
+  /**
+   * Remap stale port indices in serialOutputMappings.
+   * If a mapping references a port index that is out of range but we
+   * have a stored VID/PID for it, scan current ports for a match
+   * and update the mapping to the new index.
+   */
+  private remapStalePortIndices(): void {
+    const ports = this.ports();
+    const s = this.settings.settings();
+    let updated = false;
+    const updatedMappings = s.serialOutputMappings.map(m => {
+      if (m.portIndex < 0 || m.portIndex < ports.length) return m;
+      // Port index is out of range — try VID/PID match
+      const vidPid = this.portVidPids.get(m.portIndex);
+      if (!vidPid) return m;
+      for (let i = 0; i < ports.length; i++) {
+        const info = ports[i].getInfo();
+        if (info.usbVendorId === vidPid.vid &&
+            (info.usbProductId ?? 0) === vidPid.pid) {
+          updated = true;
+          this.portVidPids.delete(m.portIndex);
+          this.portVidPids.set(i, vidPid);
+          return { ...m, portIndex: i };
+        }
+      }
+      return m;
+    });
+    if (updated) {
+      this.settings.update({ serialOutputMappings: updatedMappings });
     }
   }
 }

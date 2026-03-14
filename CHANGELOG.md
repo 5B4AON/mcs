@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2026-03-14
+
+### Added
+
+- **Text Blurring (Training Mode)** — New setting under Settings → Other that
+  blurs decoded text so you can practice reading Morse by ear without
+  accidentally seeing the answer. Configurable to blur RX only, TX only, or
+  both directions. A floating eye button in the text area acts as a momentary
+  reveal switch — press and hold to unblur with a 250 ms animated transition.
+  Works in both the main screen parchment view and fullscreen decoder/encoder
+  views. Name tags remain visible; only the text content is blurred. Text
+  colour is preserved through the blur effect.
+- **Inline Port Granting** — All serial port dropdowns (WinKeyer, Serial Input
+  edit modal, Serial Output edit modal) now include a `+ Add serial port…`
+  option directly in the select box. Selecting it opens the browser's port
+  permission dialog without needing to navigate to a different service's
+  settings first.
+
+### Changed
+
+- **WinKeyer Port Selection** — Removed the separate "Add Serial Port" and
+  "Refresh" buttons. Port list auto-refreshes when the card is expanded.
+  Port granting is now inline via the dropdown's `+ Add serial port…` option.
+- **WinKeyer Auto-Connect** — WinKeyer now auto-connects on page load when
+  previously enabled (matching the serial output service's behaviour) and
+  retries with increasing delays (0, 500, 1500, 3000 ms) to handle late
+  USB enumeration.
+- **WinKeyer Reconnect on Replug** — Fixed reconnection when unplugging and
+  replugging the USB cable. The service now properly closes stale connections
+  before reconnecting and uses the same retry-with-backoff strategy as the
+  serial output service.
+- **Serial Reconnect VID/PID Matching** — WinKeyer and serial output
+  services now remember each port's USB VID/PID on connection. When a port
+  reappears at a different index after re-plug, the app finds it by VID/PID
+  and updates the stored index automatically. Note: whether the browser
+  remembers a previously granted port after disconnect depends on the
+  device's USB descriptor; some budget USB-serial chipsets without unique
+  serial numbers may require re-granting the port via the
+  `+ Add serial port…` dropdown option.
+
 ## [1.4.0] - 2026-03-14
 
 ### Added

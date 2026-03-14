@@ -265,6 +265,26 @@
   This dual-layer approach (same as MIDI Output &sect;7.5) eliminates
   both hardware cross-talk loops and software routing loops.
 </p>
+<h3>Reconnection</h3>
+<p>
+  Serial Output connections are restored automatically on page load when
+  previously enabled. If a USB adapter is unplugged and replugged, the app
+  detects the new device and attempts to reconnect. When the port reappears
+  at a different index in the browser&rsquo;s port list, the app uses the
+  stored USB Vendor/Product ID to relocate it.
+</p>
+<p>
+  <strong>Browser limitation:</strong> Whether the browser remembers a
+  previously granted port after disconnect depends on the device&rsquo;s
+  USB descriptor. Adapters with a <strong>unique USB serial number</strong>
+  (e.g.&nbsp;genuine FTDI chips) are reliably matched. Some budget chipsets
+  (e.g.&nbsp;CH340 clones without a programmed serial number) may not be
+  recognised by the browser after re-plug, in which case you need to
+  re-grant the port via the <em>+ Add serial port&hellip;</em> dropdown
+  option. This is an inherent Web Serial API / Chromium limitation, not
+  an application issue.
+</p>
+
 <!-- 7.3 WinKeyer -->
 <h2 id="s7-3">7.3 &nbsp;WinKeyer Output (K1EL WinKeyer)</h2>
 
@@ -383,6 +403,23 @@
     audio keying.
   </p>
 </div>
+
+<h3>Reconnection</h3>
+<p>
+  WinKeyer auto-connects on page load when previously enabled, and attempts
+  to reconnect when the USB cable is unplugged and replugged. Retries are
+  sent at increasing intervals (0, 500, 1500, 3000&thinsp;ms) to handle
+  slow USB enumeration. If the port reappears at a different index, the app
+  uses the stored USB Vendor/Product ID to find it.
+</p>
+<p>
+  <strong>Browser limitation:</strong> Whether the browser remembers a
+  previously granted port after disconnect depends on the device&rsquo;s
+  USB descriptor. WKUSB uses an FTDI chip with a unique serial number and
+  is reliably matched in most cases. If the browser does not restore the
+  grant (e.g.&nbsp;after clearing site data), re-grant the port using the
+  <em>+ Add serial port&hellip;</em> dropdown option.
+</p>
 
 <!-- 7.4 MIDI Output -->
 <h2 id="s7-4">7.4 &nbsp;MIDI Output (Key via MIDI)</h2>
