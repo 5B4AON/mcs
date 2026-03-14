@@ -1,10 +1,10 @@
 /**
  * Morse Code Studio
-  */
+ */
 
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService } from '../../../../services/settings.service';
+import { SettingsService, AppSettings } from '../../../../services/settings.service';
 
 /**
  * Settings card — Straight-Key Sprite Button.
@@ -13,7 +13,7 @@ import { SettingsService } from '../../../../services/settings.service';
  * the bottom of the main view when screen space is available. The
  * button can be tapped/clicked to key Morse and can optionally
  * animate in response to straight-key presses from other input
- * sources (keyboard, mouse, MIDI, mic).
+ * sources (keyboard, encoder, mouse, MIDI, serial, mic).
  */
 @Component({
   selector: 'app-sprite-key-card',
@@ -34,8 +34,14 @@ export class SpriteKeyCardComponent {
     this.settings.update({ spriteButtonEnabled: checked });
   }
 
+  /** Handle a string setting change */
+  onSettingChange(key: keyof AppSettings, event: Event): void {
+    const el = event.target as HTMLInputElement;
+    this.settings.update({ [key]: el.value } as Partial<AppSettings>);
+  }
+
   /** Toggle a sprite animation association */
-  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateMic' | 'spriteAnimateSerial', event: Event): void {
+  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateEncoder' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateSerial' | 'spriteAnimateMic', event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.settings.update({ [key]: checked });
   }

@@ -3,6 +3,7 @@
  */
 
 import { Injectable, signal } from '@angular/core';
+import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
 import { MORSE_TABLE, timingsFromWpm } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
@@ -51,6 +52,12 @@ export class MorseEncoderService {
    * watches this signal and pushes a space to the display buffers.
    */
   readonly wordGapCount = signal(0);
+
+  /**
+   * Emits key-down/key-up events for each morse element the encoder plays.
+   * Used by the app component to animate the sprite when the encoder trigger is enabled.
+   */
+  readonly elementEvent$ = new Subject<{ down: boolean }>();
 
   /** Currently sending (internal lock) */
   private sending = false;
@@ -188,14 +195,17 @@ export class MorseEncoderService {
         const idx = this.sentIndex();
         const { token, endIdx } = this.extractToken(this.buffer(), idx);
 
-        // Forward to WinKeyer (as TX source) — WinKeyer handles its own timing
-        this.winkeyerOutput.forwardDecodedChar(token, 'tx');
+        const source = this.settings.settings().encoderSource;
 
-        // Forward to MIDI output (as TX source) — plays elements at encoder WPM
-        this.midiOutput.forwardDecodedChar(token, 'tx');
+        // Forward to WinKeyer (as encoder source) — WinKeyer handles its own timing
+        this.winkeyerOutput.forwardDecodedChar(token, source);
 
-        // Forward to Firebase RTDB output (as TX source)
-        this.rtdbOutput.forwardEncoderChar(token, this.settings.settings().encoderWpm);
+        // Forward to MIDI output (as encoder source) — plays elements at encoder WPM
+        this.midiOutput.forwardDecodedChar(token, source);
+
+        // Forward to Firebase RTDB output (as encoder source)
+        const es = this.settings.settings();
+        this.rtdbOutput.forwardEncoderChar(token, es.encoderWpm, es.encoderSource, es.encoderName, es.encoderColor);
 
         await this.sendCharacter(token, signal);
         this.sentIndex.set(endIdx);
@@ -225,6 +235,7 @@ export class MorseEncoderService {
 
   private async sendCharacter(char: string, signal: AbortSignal): Promise<void> {
     const timings = timingsFromWpm(this.settings.settings().encoderWpm);
+    const source = this.settings.settings().encoderSource;
 
     if (char === ' ') {
       // Word space = 7 dit units total; 3 already elapsed as inter-char
@@ -241,12 +252,18 @@ export class MorseEncoderService {
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
 
+      // Emit element-start for sprite animation
+      this.elementEvent$.next({ down: true });
+
       // Play tone, pulse serial, and vibrate for the element duration
       await Promise.all([
-        this.audioOutput.scheduleTone(duration, 'tx'),
-        this.serialOutput.schedulePulse(duration, 'tx'),
-        this.vibrationOutput.schedulePulse(duration, 'tx'),
+        this.audioOutput.scheduleTone(duration, source),
+        this.serialOutput.schedulePulse(duration, source),
+        this.vibrationOutput.schedulePulse(duration, source),
       ]);
+
+      // Emit element-end for sprite animation
+      this.elementEvent$.next({ down: false });
 
       if (signal.aborted) return;
 

@@ -3,7 +3,6 @@
  */
 
 import { Component } from '@angular/core';
-import { SpriteKeyCardComponent } from './sprite-key-card/sprite-key-card.component';
 import { WakeLockCardComponent } from './wake-lock-card/wake-lock-card.component';
 import { TextBlurCardComponent } from './text-blur-card/text-blur-card.component';
 import { ShowProsignsCardComponent } from './show-prosigns-card/show-prosigns-card.component';
@@ -13,7 +12,7 @@ import { EmojisCardComponent } from './emojis-card/emojis-card.component';
 /**
  * Settings — Other tab.
  *
- * Thin shell that renders the six miscellaneous settings cards as
+ * Thin shell that renders the five miscellaneous settings cards as
  * independent child components. Each card encapsulates its own
  * expand/collapse state, service injections, and event handlers.
  */
@@ -21,7 +20,6 @@ import { EmojisCardComponent } from './emojis-card/emojis-card.component';
   selector: 'app-settings-other-tab',
   standalone: true,
   imports: [
-    SpriteKeyCardComponent,
     WakeLockCardComponent,
     TextBlurCardComponent,
     ShowProsignsCardComponent,

@@ -248,7 +248,7 @@ export class DisplayBufferService {
    * If the character is a prosign with an enabled action, the action
    * is applied to all buffers instead of the raw text.
    */
-  pushSent(char: string, name?: string): void {
+  pushSent(type: 'rx' | 'tx', char: string, name?: string, color?: string): void {
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
@@ -259,15 +259,15 @@ export class DisplayBufferService {
     const resolved = this.resolveProsignAction(char);
     if (resolved) {
       const label = resolved.prosignKey;
-      this.mainOutput.applyProsignAction(resolved.action, 'tx', name, label);
-      this.fullscreenDecoder.applyProsignAction(resolved.action, 'tx', name, label);
-      this.fullscreenEncoder.applyProsignAction(resolved.action, 'tx', name, label);
+      this.mainOutput.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenDecoder.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenEncoder.applyProsignAction(resolved.action, type, name, label, color);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainOutput.push('tx', char, name);
-      this.fullscreenDecoder.push('tx', char, name);
-      this.fullscreenEncoder.push('tx', char, name);
+      this.mainOutput.push(type, char, name, color);
+      this.fullscreenDecoder.push(type, char, name, color);
+      this.fullscreenEncoder.push(type, char, name, color);
     }
   }
 

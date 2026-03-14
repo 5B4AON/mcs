@@ -589,10 +589,11 @@ export class FirebaseRtdbService implements OnDestroy {
   }
 
   /**
-   * Forward a character from the encoder (TX source).
+   * Forward a character from the encoder.
    * Convenience wrapper matching the encoder's forwardDecodedChar pattern.
+   * Passes encoder source, name, and color for input-specific tagging.
    */
-  async forwardEncoderChar(char: string, wpm?: number): Promise<void> {
-    await this.forwardDecodedChar(char, 'tx', wpm);
+  async forwardEncoderChar(char: string, wpm?: number, source?: 'rx' | 'tx', name?: string, color?: string): Promise<void> {
+    await this.forwardDecodedChar(char, source ?? 'tx', wpm, name, color);
   }
 }

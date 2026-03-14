@@ -4,7 +4,7 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService } from '../../services/settings.service';
+import { SettingsService, isTouchDevice } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
@@ -71,6 +71,7 @@ export class SettingsModalComponent {
   // ---- Swipe gesture state ----
   private touchStartX = 0;
   private touchStartY = 0;
+  private readonly isTouchDevice = isTouchDevice();
 
   constructor(
     public settings: SettingsService,
@@ -107,6 +108,7 @@ export class SettingsModalComponent {
 
   /** Record the starting touch position */
   onTabContentTouchStart(event: TouchEvent): void {
+    if (!this.isTouchDevice) return;
     const touch = event.touches[0];
     this.touchStartX = touch.clientX;
     this.touchStartY = touch.clientY;
@@ -118,6 +120,7 @@ export class SettingsModalComponent {
    * be more horizontal than vertical to avoid triggering on scrolls.
    */
   onTabContentTouchEnd(event: TouchEvent): void {
+    if (!this.isTouchDevice) return;
     const touch = event.changedTouches[0];
     const dx = touch.clientX - this.touchStartX;
     const dy = touch.clientY - this.touchStartY;

@@ -175,7 +175,7 @@
                 (touchend)="onMainRevealEnd()"
                 (touchcancel)="onMainRevealEnd()"
                 title="Hold to reveal text">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor"
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
             <circle cx="12" cy="12" r="3"/>
@@ -227,7 +227,9 @@
         }
       </div>
       <div class="clear-menu-wrapper" (click)="$event.stopPropagation()">
-        <button class="expand-btn" (click)="toggleFullscreenMenu()" title="Fullscreen">&#x26F6;</button>
+        <button class="expand-btn" (click)="toggleFullscreenMenu()" title="Fullscreen">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
         @if (fullscreenMenuOpen) {
           <div class="clear-menu">
             <button class="clear-menu-btn clear-decoder" (click)="openModal('decoder'); closeFullscreenMenu()">Fullscreen Decoder View</button>

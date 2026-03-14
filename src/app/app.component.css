@@ -564,8 +564,8 @@
   position: absolute;
   bottom: 10px;
   right: 10px;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: rgba(160, 140, 110, 0.7);
   border: 1px solid rgba(120, 100, 70, 0.5);
@@ -577,7 +577,7 @@
   z-index: 5;
   padding: 0;
   min-height: unset;
-  box-shadow: 0 1px 4px rgba(80, 60, 40, 0.25);
+  box-shadow: 0 2px 8px rgba(80, 60, 40, 0.25);
   transition: background 0.15s, color 0.15s;
   touch-action: manipulation;
   -webkit-user-select: none;
@@ -1158,6 +1158,9 @@ select { max-width: 300px; }
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);
+}
+.expand-btn svg {
+  display: block;
 }
 
 /* ============================================================
