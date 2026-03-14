@@ -18,7 +18,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (multiple mappings with per-mapping DTR/RTS pin, invert, and forward selectors via Web Serial API), or WinKeyer.
 
-**Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM so the receiving station plays it back at the original rhythm. Channels use a name + secret pair for access control, with callsign-prefixed lines in the fullscreen conversation view.
+**Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. Channels use a name + secret pair for access control, with callsign-prefixed lines in the fullscreen conversation view. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
 
 ## Connecting Your Key and Radio
 
@@ -34,7 +34,7 @@ Multiple MIDI devices can be used simultaneously — each MIDI Input and MIDI Ou
 
 ### Keyboard, Mouse and Touch
 
-The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The keyboard keyer supports **multiple independent mappings**, each with its own mode (straight key or paddle), key bindings, paddle mode, decoder source (RX/TX), reverse paddles toggle, and optional **Name** and **Colour** for multi-user conversation views. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
+The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The keyboard keyer supports **multiple independent mappings**, each with its own mode (straight key or paddle), key bindings, paddle mode, decoder source (RX/TX), reverse paddles toggle, and optional **Name** and **Colour** for multi-user conversation views. The mouse and touch keyers also support optional **Name** and **Colour**. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
 
 ### Serial Port (Web Serial API)
 
@@ -58,7 +58,7 @@ For stations using a K1EL WinKeyer (WK2/WK3/WKUSB), the app can forward decoded 
 
 ### Sound Card (Experimental)
 
-The sound card can serve double duty: an **optocoupler output** (DC or AC mode) keys the transmitter via the headphone jack, while **microphone input** with ultrasonic pilot-tone detection reads a physical key's closures. CW tone decoding of received audio works well and is the primary decode path for most setups. The keying input side (pilot-tone detection) is experimental and sensitive to audio hardware latency, so MIDI remains the more robust choice for key input.
+The sound card can serve double duty: an **optocoupler output** (DC or AC mode) keys the transmitter via the headphone jack, while **microphone input** with ultrasonic pilot-tone detection reads a physical key's closures. CW tone decoding of received audio works well and is the primary decode path for most setups; both the CW tone detector and the pilot-tone key input support optional **Name** and **Colour** for multi-user conversation views. The keying input side (pilot-tone detection) is experimental and sensitive to audio hardware latency, so MIDI remains the more robust choice for key input.
 
 ## Signal Routing
 

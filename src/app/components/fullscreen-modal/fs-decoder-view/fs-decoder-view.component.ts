@@ -160,17 +160,18 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   private dispatchTouchButton(button: 'straight' | 'left' | 'right', down: boolean): void {
     const s = this.settings.settings();
     const source = s.touchKeyerSource;
+    const opts = { name: s.touchKeyerName || undefined, color: s.touchKeyerColor || undefined };
     if (button === 'straight') {
-      this.keyer.straightKeyInput(down, source, false, 'touchStraightKey');
+      this.keyer.straightKeyInput(down, source, false, 'touchStraightKey', opts);
       return;
     }
     const reverse = s.touchReversePaddles;
     const element = button === 'left' ? 'dit' : 'dah';
     const effective = reverse ? (element === 'dit' ? 'dah' : 'dit') : element;
     if (effective === 'dit') {
-      this.keyer.ditPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode);
+      this.keyer.ditPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode, opts);
     } else {
-      this.keyer.dahPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode);
+      this.keyer.dahPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode, opts);
     }
   }
 

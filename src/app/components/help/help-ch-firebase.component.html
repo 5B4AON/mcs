@@ -96,6 +96,16 @@
         Encoder WPM instead of the sender&rsquo;s original speed.
         Default: off (remote WPM is respected for realistic timing).</td>
   </tr>
+  <tr>
+    <td><strong>Override Name</strong></td>
+    <td>If set, replaces the incoming sender name with this value.
+        Leave empty to preserve the remote sender&rsquo;s name.</td>
+  </tr>
+  <tr>
+    <td><strong>Override Colour</strong></td>
+    <td>If set, overrides the incoming colour. Leave cleared to use
+        the sender&rsquo;s colour (or the default RX/TX colour).</td>
+  </tr>
 </table>
 
 <p>
@@ -147,10 +157,32 @@
   </tr>
   <tr>
     <td><strong>User Name</strong></td>
-    <td>Your callsign or name. This is shown as a prefix
+    <td>Your callsign or name (mandatory). This is shown as a prefix
         (e.g. <strong>[CALLSIGN]</strong>) on each line in the remote
         station's fullscreen conversation view, so they know who is
-        sending.</td>
+        sending. When text is typed via the keyboard encoder, this
+        name is always used.</td>
+  </tr>
+  <tr>
+    <td><strong>Override input name</strong></td>
+    <td>When checked, the User Name above is always sent, overriding
+        any input-specific name (e.g. from Mouse Keyer or CW Detector).
+        When unchecked (default), input-specific names are sent if
+        defined; otherwise the User Name is used as fallback.</td>
+  </tr>
+  <tr>
+    <td><strong>Colour</strong></td>
+    <td>Optional CSS colour sent alongside each character. Remote
+        listeners display this colour in their fullscreen views.
+        When text is typed via the keyboard encoder, this colour is
+        always used.</td>
+  </tr>
+  <tr>
+    <td><strong>Override input colour</strong></td>
+    <td>When checked, the Colour above is always sent, overriding
+        any input-specific colour. When unchecked (default),
+        input-specific colours are sent if defined; otherwise this
+        colour is used as fallback.</td>
   </tr>
   <tr>
     <td><strong>Forward</strong></td>

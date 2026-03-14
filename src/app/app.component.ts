@@ -210,7 +210,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
           // Forward to RTDB output only for non-RTDB chars (prevent echo)
           if (!entry.fromRtdb) {
-            this.rtdbService.forwardDecodedChar(entry.char, entry.type, entry.wpm);
+            this.rtdbService.forwardDecodedChar(entry.char, entry.type, entry.wpm, entry.name, entry.color);
           }
         }
       }
@@ -296,11 +296,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.audioInput.keyEvent$.subscribe(evt => {
         this.micKeyDown = evt.down;
-        const source = this.settings.settings().micInputSource;
+        const s = this.settings.settings();
+        const source = s.micInputSource;
+        const opts = { name: s.micInputName || undefined, color: s.micInputColor || undefined };
         if (evt.down) {
-          this.decoder.onKeyDown('mic', source);
+          this.decoder.onKeyDown('mic', source, opts);
         } else {
-          this.decoder.onKeyUp('mic', source);
+          this.decoder.onKeyUp('mic', source, opts);
         }
       })
     );
@@ -319,11 +321,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
         this.cwKeyDown = evt.down;
-        const source = this.settings.settings().cwInputSource;
+        const s = this.settings.settings();
+        const source = s.cwInputSource;
+        const opts = { name: s.cwInputName || undefined, color: s.cwInputColor || undefined };
         if (evt.down) {
-          this.decoder.onKeyDown('cwAudio', source);
+          this.decoder.onKeyDown('cwAudio', source, opts);
         } else {
-          this.decoder.onKeyUp('cwAudio', source);
+          this.decoder.onKeyUp('cwAudio', source, opts);
         }
       })
     );
@@ -341,10 +345,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     // Firebase RTDB incoming characters → decoder display + sidetone only
     this.subs.push(
-      this.rtdbService.incomingChar$.subscribe(({ char, source, name, wpm }) => {
+      this.rtdbService.incomingChar$.subscribe(({ char, source, name, wpm, color }) => {
         // Add to decoder tagged output so it appears in conversation / fullscreen
         // Mark fromRtdb so the forwarding effect doesn't echo it back to RTDB
-        this.decoder.taggedOutput.update(arr => [...arr, { type: source, char, name, fromRtdb: true, wpm }]);
+        // Apply input name/color overrides (non-empty = override, empty = preserve incoming)
+        const s = this.settings.settings();
+        const effectiveName = s.rtdbInputName.trim() || name;
+        const effectiveColor = s.rtdbInputColor.trim() || color;
+        this.decoder.taggedOutput.update(arr => [...arr, { type: source, char, name: effectiveName, color: effectiveColor, fromRtdb: true, wpm }]);
         this.decoder.decodedText.update(t => t + char);
         // Play through all outputs whose forward mode matches the source
         // Use remote WPM unless the user has chosen to override with local encoder WPM

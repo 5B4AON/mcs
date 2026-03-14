@@ -118,15 +118,16 @@ export class MouseKeyerService implements OnDestroy {
     const s = this.settings.settings();
     const reverse = s.mouseReversePaddles;
     const source = s.mouseKeyerSource;
+    const opts = { name: s.mouseKeyerName || undefined, color: s.mouseKeyerColor || undefined };
     switch (action) {
       case 'straightKey':
-        this.keyer.straightKeyInput(down, source, false, 'mouseStraightKey');
+        this.keyer.straightKeyInput(down, source, false, 'mouseStraightKey', opts);
         break;
       case 'dit':
-        if (reverse) this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode); else this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode);
+        if (reverse) this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode, opts); else this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode, opts);
         break;
       case 'dah':
-        if (reverse) this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode); else this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode);
+        if (reverse) this.keyer.ditPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode, opts); else this.keyer.dahPaddleInput(down, source, false, 'mousePaddle', s.mousePaddleMode, opts);
         break;
     }
   }
