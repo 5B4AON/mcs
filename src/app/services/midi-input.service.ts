@@ -244,13 +244,21 @@ export class MidiInputService implements OnDestroy {
    * via the callback instead of being processed as a keyer input.
    * Used by the settings UI for the "capture" / auto-detect buttons.
    */
-  startLearn(callback: (result: MidiLearnResult) => void): void {
+  async startLearn(callback: (result: MidiLearnResult) => void): Promise<void> {
     this.learnCallback = callback;
+    // Ensure MIDI access is available even when the card is disabled,
+    // so the detect/capture button always works.
+    if (!this.started) {
+      await this.start();
+    }
+    this.attachListeners();
   }
 
   /** Cancel learn mode without capturing. */
   cancelLearn(): void {
     this.learnCallback = null;
+    // Re-attach to restore mapping-based filtering
+    if (this.started) this.attachListeners();
   }
 
   /** Whether we're currently in learn/capture mode */
@@ -349,7 +357,7 @@ export class MidiInputService implements OnDestroy {
   private attachListeners(): void {
     if (!this.midiAccess) return;
     const mappings = this.settings.settings().midiInputMappings.filter(m => m.enabled);
-    const listenAll = mappings.some(m => !m.deviceId);
+    const listenAll = mappings.some(m => !m.deviceId) || this.learnCallback !== null;
     const deviceIds = new Set(mappings.map(m => m.deviceId).filter(Boolean));
 
     for (const input of this.midiAccess.inputs.values()) {
@@ -359,11 +367,13 @@ export class MidiInputService implements OnDestroy {
         continue;
       }
 
-      // Explicitly open the port, then attach the message handler.
-      // If the port is already open this resolves immediately.
-      input.open().then(() => {
-        input.onmidimessage = (msg: MIDIMessageEvent) => this.onMessage(msg);
-      }).catch(() => {
+      // Assign handler synchronously so messages are captured immediately,
+      // then explicitly open the port. Per spec, setting onmidimessage should
+      // auto-open the port, but this is unreliable in practice. The explicit
+      // open() ensures the port is ready; the synchronous handler prevents the
+      // first message from being lost during the async open window.
+      input.onmidimessage = (msg: MIDIMessageEvent) => this.onMessage(msg);
+      input.open().catch(() => {
         // Port failed to open — keep-alive will retry in 5 seconds
         input.onmidimessage = null;
       });
@@ -401,6 +411,8 @@ export class MidiInputService implements OnDestroy {
         deviceId: target?.id || '',
         deviceName: target?.name || 'Unknown',
       };
+      // Restore mapping-based filtering now that learn mode is done
+      this.attachListeners();
       this.zone.run(() => {
         cb(result);
         this.learnedNote$.next(result);
@@ -466,7 +478,7 @@ export class MidiInputService implements OnDestroy {
 
       // Per-mapping isSending check: block physical bus echoes unless
       // this input is a relay source for at least one output mapping.
-      if (sending && !outputMappings.some(om => om.enabled && om.relayInputIndices.includes(mi))) return;
+      if (sending && !outputMappings.some(om => om.enabled && om.relayInputIndices?.includes(mi))) continue;
 
       if (mapping.mode === 'straightKey' && note === mapping.value) {
         this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi });

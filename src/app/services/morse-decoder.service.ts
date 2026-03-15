@@ -696,7 +696,7 @@ export class MorseDecoderService {
     return mappings.some(m =>
       m.enabled
       && (m.forward === 'both' || m.forward === source)
-      && m.relayInputIndices.includes(inputIndex),
+      && m.relayInputIndices?.includes(inputIndex),
     );
   }
 }

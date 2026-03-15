@@ -156,7 +156,7 @@ export class MidiInputCardComponent {
       // and decrement any index greater than the deleted one.
       const outputMappings = this.settings.settings().midiOutputMappings.map(om => ({
         ...om,
-        relayInputIndices: om.relayInputIndices
+        relayInputIndices: (om.relayInputIndices || [])
           .filter(idx => idx !== this.editIndex)
           .map(idx => idx > this.editIndex ? idx - 1 : idx),
       }));

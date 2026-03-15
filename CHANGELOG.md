@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.3] - 2026-03-15
+
+### Fixed
+
+- **MIDI Detect When Disabled** — The "Detect" button now acquires MIDI
+  access automatically, so it works even when the MIDI Input card is off.
+- **MIDI First Note Lost** — Fixed the first MIDI note being silently dropped
+  after adding a new mapping, caused by a race between async port opening and
+  handler attachment.
+- **MIDI Detect With No Mappings** — Detection now works when no MIDI input
+  mappings exist yet. Previously all port listeners were removed when the
+  mapping list was empty.
+- **MIDI Echo Suppression Too Broad** — The per-mapping echo gate exited the
+  entire handler instead of skipping to the next mapping, blocking all
+  mappings when the first one was muted.
+- **Old Profiles Crash on Relay Fields** — Profiles saved before relay
+  support could crash on missing `relayInputIndices`. Added migration
+  backfill and defensive checks.
+
 ## [1.6.2] - 2026-03-15
 
 ### Fixed

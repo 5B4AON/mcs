@@ -489,7 +489,7 @@ export class SerialKeyInputService implements OnDestroy {
     const sending = this.serialOutput.isSending();
     const isRelaySrc = sending
       ? this.settings.settings().serialOutputMappings.some(
-          om => om.enabled && om.relayInputIndices.includes(mappingIndex),
+          om => om.enabled && om.relayInputIndices?.includes(mappingIndex),
         )
       : false;
 

@@ -994,11 +994,16 @@ export class SettingsService {
     const s = this.settings();
     let patched = false;
     const mappings = s.midiOutputMappings.map(m => {
+      let updated = m;
       if (!m.forward) {
         patched = true;
-        return { ...m, forward: ((s as any).midiOutputForward || 'tx') as OutputForward };
+        updated = { ...updated, forward: ((s as any).midiOutputForward || 'tx') as OutputForward };
       }
-      return m;
+      if (!Array.isArray(m.relayInputIndices)) {
+        patched = true;
+        updated = { ...updated, relayInputIndices: [], relaySuppressOtherInputs: false };
+      }
+      return updated;
     });
     if (patched) {
       this.settings.set({ ...s, midiOutputMappings: mappings });
@@ -1155,6 +1160,11 @@ export class SettingsService {
         const updated = { ...m };
         if (typeof updated.forward !== 'string') {
           updated.forward = 'tx';
+          patched = true;
+        }
+        if (!Array.isArray(updated.relayInputIndices)) {
+          (updated as any).relayInputIndices = [];
+          (updated as any).relaySuppressOtherInputs = false;
           patched = true;
         }
         return updated;
