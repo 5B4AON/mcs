@@ -133,7 +133,7 @@ export class MidiOutputService implements OnDestroy {
   private activeNotes = new Map<string, { note: number; channel: number; output: MIDIOutput }>();
 
   /** Character playback queue */
-  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean }[] = [];
+  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean; isFromRelay?: boolean }[] = [];
   private playing = false;
   private abortPlayback = false;
 
@@ -323,11 +323,11 @@ export class MidiOutputService implements OnDestroy {
    *                   mappings are skipped (they are already keyed in real-time
    *                   via the keyDown/keyUp path for local keyer inputs).
    */
-  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false): void {
+  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false): void {
     if (!this.isActive()) return;
     // During break-in the remote party has priority — drop outgoing chars.
     if (this.breakInActive) return;
-    this.charQueue.push({ char, source, wpm, paddleOnly });
+    this.charQueue.push({ char, source, wpm, paddleOnly, isFromRelay });
     // If we're sleeping through a word gap and a real character arrives,
     // cut the sleep short so the new character plays immediately.
     if (char !== ' ' && this.spaceSleepResolve) {
@@ -346,7 +346,7 @@ export class MidiOutputService implements OnDestroy {
     try {
       while (this.charQueue.length > 0 && !this.abortPlayback) {
         const entry = this.charQueue.shift()!;
-        await this.playCharElements(entry.char, entry.source, entry.wpm, entry.paddleOnly);
+        await this.playCharElements(entry.char, entry.source, entry.wpm, entry.paddleOnly, entry.isFromRelay);
       }
     } finally {
       this.playing = false;
@@ -360,7 +360,7 @@ export class MidiOutputService implements OnDestroy {
    * Uses the provided remote WPM if available and the override setting is off;
    * otherwise falls back to the local encoder WPM.
    */
-  private async playCharElements(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false): Promise<void> {
+  private async playCharElements(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false): Promise<void> {
     const s0 = this.settings.settings();
     const effectiveWpm = (wpm && !s0.midiOutputOverrideWpm) ? wpm : s0.encoderWpm;
     const timings = timingsFromWpm(effectiveWpm);
@@ -378,9 +378,11 @@ export class MidiOutputService implements OnDestroy {
     // Collect enabled mappings whose forward filter matches the source.
     // When paddleOnly is set, skip straight-key mappings (they are already
     // keyed in real-time via keyDown/keyUp for local keyer inputs).
+    // When not from a relay source, skip mappings with relaySuppressOtherInputs.
     const enabledMappings = s.midiOutputMappings.filter(m =>
       m.enabled && (m.forward === 'both' || m.forward === source)
       && (!paddleOnly || m.mode === 'paddle')
+      && (isFromRelay || !m.relaySuppressOtherInputs)
     );
 
     for (let i = 0; i < morse.length; i++) {
@@ -462,14 +464,23 @@ export class MidiOutputService implements OnDestroy {
    * radio keying that matches the sidetone timing exactly, unlike the
    * character-based forwarding path which introduces decode delay.
    *
-   * Not called for MIDI-originated inputs (fromMidi) to prevent echo loops.
+   * Not called for MIDI-originated inputs (fromMidi) to prevent echo loops,
+   * unless relay is enabled for the specific input-output pair.
+   *
+   * @param source            Signal source ('rx' or 'tx')
+   * @param relayInputIndex   When provided, only fire output mappings whose
+   *                          relayInputIndices includes this index.
    */
-  keyDown(source: 'rx' | 'tx' = 'tx'): void {
+  keyDown(source: 'rx' | 'tx' = 'tx', relayInputIndex?: number): void {
     if (!this.isActive()) return;
     const s = this.settings.settings();
     const velocity = 127;
     for (const mapping of s.midiOutputMappings) {
-      if (!mapping.enabled || mapping.mode !== 'straightKey') continue;      if (mapping.forward !== 'both' && mapping.forward !== source) continue;      const output = this.getOutputForDevice(mapping.deviceId);
+      if (!mapping.enabled || mapping.mode !== 'straightKey') continue;
+      if (mapping.forward !== 'both' && mapping.forward !== source) continue;
+      if (relayInputIndex !== undefined && !mapping.relayInputIndices.includes(relayInputIndex)) continue;
+      if (relayInputIndex === undefined && mapping.relaySuppressOtherInputs) continue;
+      const output = this.getOutputForDevice(mapping.deviceId);
       if (!output || mapping.value < 0) continue;
       this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
     }

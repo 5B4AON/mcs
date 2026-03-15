@@ -4,7 +4,7 @@
 
 import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MidiOutputMapping, MidiOutputMode, OutputForward } from '../../services/settings.service';
+import { MidiOutputMapping, MidiOutputMode, MidiInputMapping, OutputForward } from '../../services/settings.service';
 import { MidiOutputService, midiOutputNoteName } from '../../services/midi-output.service';
 
 /**
@@ -17,6 +17,8 @@ export interface MidiOutputEditSaveEvent {
   mode: MidiOutputMode;
   value: number;
   dahValue: number;
+  relayInputIndices: number[];
+  relaySuppressOtherInputs: boolean;
 }
 
 /**
@@ -40,7 +42,8 @@ export class MidiOutputEditModalComponent implements OnInit {
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: MidiOutputMapping = {
     enabled: true, deviceId: '', channel: 1,
-    forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1,
+    forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1, relayInputIndices: [],
+    relaySuppressOtherInputs: false,
   };
 
   /** Index of the mapping being edited (-1 for new) */
@@ -51,6 +54,9 @@ export class MidiOutputEditModalComponent implements OnInit {
 
   /** All existing mappings — used for duplicate detection */
   @Input() allMappings: MidiOutputMapping[] = [];
+
+  /** All MIDI input mappings — used for relay source selection */
+  @Input() midiInputMappings: MidiInputMapping[] = [];
 
   /** Emitted when the user saves the mapping */
   @Output() saved = new EventEmitter<MidiOutputEditSaveEvent>();
@@ -73,6 +79,12 @@ export class MidiOutputEditModalComponent implements OnInit {
   editValueRaw = '80';
   editDahValueRaw = '84';
 
+  /** Relay: indices of MIDI input mappings to relay through this output */
+  editRelayInputIndices: number[] = [];
+
+  /** When true, only relay sources drive this output */
+  editRelaySuppressOtherInputs = false;
+
   /** Tracked note-name index and octave for dropdowns */
   editValueNote = 0;
   editValueOctave = 4;
@@ -81,6 +93,9 @@ export class MidiOutputEditModalComponent implements OnInit {
 
   /** Validation error message */
   error = '';
+
+  /** Non-blocking warning (e.g. duplicate note) */
+  warning = '';
 
   /** Note names for dropdown */
   readonly noteNames = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
@@ -106,7 +121,11 @@ export class MidiOutputEditModalComponent implements OnInit {
     this.editValueOctave = this.getOctave(this.editValue);
     this.editDahNote = this.getNoteIndex(this.editDahValue);
     this.editDahOctave = this.getOctave(this.editDahValue);
+    this.editRelayInputIndices = [...(this.mapping.relayInputIndices || [])];
+    this.editRelaySuppressOtherInputs = this.mapping.relaySuppressOtherInputs ?? false;
     this.error = '';
+    this.warning = '';
+    this.updateWarning();
   }
 
   /** Get the note name component (0-11) from a MIDI note number */
@@ -134,12 +153,14 @@ export class MidiOutputEditModalComponent implements OnInit {
   onValueNoteChange(): void {
     this.editValue = this.clampMidi(this.toMidiNote(this.editValueNote, this.editValueOctave));
     this.editValueRaw = String(this.editValue);
+    this.updateWarning();
   }
 
   /** Handle octave dropdown change for value field */
   onValueOctaveChange(): void {
     this.editValue = this.clampMidi(this.toMidiNote(this.editValueNote, this.editValueOctave));
     this.editValueRaw = String(this.editValue);
+    this.updateWarning();
   }
 
   /** Handle raw MIDI value input for value field */
@@ -150,18 +171,21 @@ export class MidiOutputEditModalComponent implements OnInit {
       this.editValueNote = this.getNoteIndex(v);
       this.editValueOctave = this.getOctave(v);
     }
+    this.updateWarning();
   }
 
   /** Handle note name dropdown change for dah value field */
   onDahNoteChange(): void {
     this.editDahValue = this.clampMidi(this.toMidiNote(this.editDahNote, this.editDahOctave));
     this.editDahValueRaw = String(this.editDahValue);
+    this.updateWarning();
   }
 
   /** Handle octave dropdown change for dah value field */
   onDahOctaveChange(): void {
     this.editDahValue = this.clampMidi(this.toMidiNote(this.editDahNote, this.editDahOctave));
     this.editDahValueRaw = String(this.editDahValue);
+    this.updateWarning();
   }
 
   /** Handle raw MIDI value input for dah value field */
@@ -172,6 +196,7 @@ export class MidiOutputEditModalComponent implements OnInit {
       this.editDahNote = this.getNoteIndex(v);
       this.editDahOctave = this.getOctave(v);
     }
+    this.updateWarning();
   }
 
   /** Test this mapping — sends a 1-second pulse on the configured note(s) */
@@ -203,13 +228,6 @@ export class MidiOutputEditModalComponent implements OnInit {
       return;
     }
 
-    // Duplicate detection: device + channel + note must be unique
-    const dupError = this.checkDuplicates(value, dahValue);
-    if (dupError) {
-      this.error = dupError;
-      return;
-    }
-
     this.saved.emit({
       deviceId: this.editDeviceId,
       channel: this.editChannel,
@@ -217,6 +235,8 @@ export class MidiOutputEditModalComponent implements OnInit {
       mode: this.editMode,
       value,
       dahValue,
+      relayInputIndices: this.editRelayInputIndices,
+      relaySuppressOtherInputs: this.editRelaySuppressOtherInputs,
     });
   }
 
@@ -227,7 +247,7 @@ export class MidiOutputEditModalComponent implements OnInit {
    *
    * Two notes conflict when they share the same MIDI note number AND their
    * device/channel filters overlap (both 'any', or same specific device; both
-   * same channel).
+   * same channel). Returns a warning message or empty string.
    */
   private checkDuplicates(value: number, dahValue: number): string {
     const myNotes = [value];
@@ -252,7 +272,7 @@ export class MidiOutputEditModalComponent implements OnInit {
 
       for (const n of myNotes) {
         if (otherNotes.includes(n)) {
-          return `Note ${midiOutputNoteName(n)} (${n}) conflicts with mapping #${i + 1}. Use a different device, channel, or note.`;
+          return `Note ${midiOutputNoteName(n)} (${n}) overlaps with mapping #${i + 1} on the same device and channel. This is allowed but may cause unexpected behaviour if both mappings fire simultaneously.`;
         }
       }
     }
@@ -272,5 +292,34 @@ export class MidiOutputEditModalComponent implements OnInit {
   /** Clamp a MIDI note to valid range */
   private clampMidi(n: number): number {
     return Math.max(0, Math.min(127, n));
+  }
+
+  /** Recompute the non-blocking duplicate warning */
+  updateWarning(): void {
+    const dahValue = this.editMode === 'paddle' ? this.editDahValue : -1;
+    this.warning = this.checkDuplicates(this.editValue, dahValue);
+  }
+
+  /** Whether a MIDI input mapping's source is compatible with the output forward setting */
+  isInputCompatible(input: MidiInputMapping): boolean {
+    return this.editForward === 'both' || input.source === this.editForward;
+  }
+
+  /** Toggle a MIDI input mapping index in the relay list */
+  toggleRelayInput(index: number): void {
+    const pos = this.editRelayInputIndices.indexOf(index);
+    if (pos >= 0) {
+      this.editRelayInputIndices.splice(pos, 1);
+    } else {
+      this.editRelayInputIndices.push(index);
+    }
+  }
+
+  /** Short label for a MIDI input mapping */
+  inputMappingLabel(m: MidiInputMapping, index: number): string {
+    const mode = m.mode === 'straightKey' ? 'Straight' : 'Paddle';
+    const note = m.value >= 0 ? midiOutputNoteName(m.value) : '—';
+    const src = m.source.toUpperCase();
+    return `#${index + 1} ${mode} ${note} [${src}]`;
   }
 }

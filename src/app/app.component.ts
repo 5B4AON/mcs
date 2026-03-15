@@ -182,8 +182,32 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           const displayName = this.getDisplayName(entry.type, entry.name);
           this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
 
-          // Record input for loop detection (non-RTDB chars are from local inputs)
-          if (!entry.fromRtdb) {
+          // Compute whether this entry is from a relay-allowed input path.
+          // Used both for loop detection exclusion and for output forwarding.
+          const s = this.settings.settings();
+          let isRelayEntry = false;
+          let midiRelayIndex: number | undefined;
+          if (entry.fromMidi && entry.inputPath) {
+            const m = entry.inputPath.match(/^midi(?:StraightKey|Paddle):(\d+)/);
+            if (m) {
+              midiRelayIndex = parseInt(m[1], 10);
+              isRelayEntry = s.midiOutputMappings.some(
+                om => om.enabled && om.relayInputIndices.includes(midiRelayIndex!),
+              );
+            }
+          } else if (entry.fromSerial && entry.inputPath) {
+            const m = entry.inputPath.match(/^serial(?:StraightKey|Paddle):(\d+)/);
+            if (m) {
+              const serialRelayIndex = parseInt(m[1], 10);
+              isRelayEntry = s.serialOutputMappings.some(
+                om => om.enabled && om.relayInputIndices.includes(serialRelayIndex),
+              );
+            }
+          }
+
+          // Record input for loop detection (skip RTDB chars and relay-allowed
+          // entries — relay traffic is intentional, not a hardware loop)
+          if (!entry.fromRtdb && !isRelayEntry) {
             this.loopDetection.recordInput(entry.char);
           }
 
@@ -199,22 +223,50 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.winkeyerOutput.forwardDecodedChar(entry.char, entry.type);
 
           // Forward to MIDI output — skip chars that originated from MIDI input
-          // or serial input (prevents echo loops). Local keyer pipelines
-          // (keyboard, mouse, touch) already fire straight-key notes in
-          // real-time via keyDown/keyUp, so pass paddleOnly=true for those
-          // to avoid double-firing straight-key mappings while still
-          // driving paddle-mode mappings through the character path.
-          if (!entry.fromMidi && !entry.fromSerial) {
-            const isLocalKeyer = entry.inputPath &&
-              (entry.inputPath === 'keyboardStraightKey' || entry.inputPath.startsWith('keyboardPaddle') ||
-               entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
-               entry.inputPath === 'touchStraightKey' || entry.inputPath === 'touchPaddle');
-            this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm, !!isLocalKeyer);
+          // or serial input (prevents echo loops), unless the specific input
+          // mapping is configured as a relay source in at least one output
+          // mapping's relayInputIndices.
+          // Local keyer pipelines (keyboard, mouse, touch) already fire
+          // straight-key notes in real-time via keyDown/keyUp, so pass
+          // paddleOnly=true for those (and for MIDI relay entries whose
+          // straight-key notes are already fired via the decoder) to avoid
+          // double-firing straight-key mappings while still driving
+          // paddle-mode mappings through the character path.
+          {
+            const midiAllowed = !entry.fromMidi || isRelayEntry;
+            const serialAllowed = !entry.fromSerial;
+            if (midiAllowed && serialAllowed) {
+              const isLocalKeyer = entry.inputPath &&
+                (entry.inputPath === 'keyboardStraightKey' || entry.inputPath.startsWith('keyboardPaddle') ||
+                 entry.inputPath === 'mouseStraightKey' || entry.inputPath === 'mousePaddle' ||
+                 entry.inputPath === 'touchStraightKey' || entry.inputPath === 'touchPaddle');
+              // MIDI relay entries already have real-time keyDown/keyUp for straight-key notes
+              const paddleOnly = !!isLocalKeyer || !!entry.fromMidi;
+              this.midiOutput.forwardDecodedChar(entry.char, entry.type, entry.wpm, paddleOnly, isRelayEntry);
+            }
           }
 
-          // Forward to RTDB output only for non-RTDB chars (prevent echo)
-          if (!entry.fromRtdb) {
-            this.rtdbService.forwardDecodedChar(entry.char, entry.type, entry.wpm, entry.name, entry.color);
+          // Forward to RTDB output only for non-RTDB chars (prevent echo),
+          // unless the user has enabled relay AND input/output use different
+          // channel+secret combinations.
+          // When rtdbRelaySuppressOtherInputs is on, only RTDB relay chars
+          // are forwarded — all other input sources are suppressed.
+          {
+            const inCh = s.rtdbInputChannelName.trim();
+            const inSec = s.rtdbInputChannelSecret.trim();
+            const outCh = s.rtdbOutputChannelName.trim();
+            const outSec = s.rtdbOutputChannelSecret.trim();
+            const sameChannel = !!(inCh && outCh && inCh === outCh && inSec === outSec);
+            const rtdbRelayAllowed = s.rtdbAllowInputRelay && !sameChannel;
+            const rtdbSuppressOther = s.rtdbRelaySuppressOtherInputs && rtdbRelayAllowed;
+            if (rtdbSuppressOther) {
+              // Only forward chars that come from RTDB relay
+              if (entry.fromRtdb) {
+                this.rtdbService.forwardDecodedChar(entry.char, entry.type, entry.wpm, entry.name, entry.color, true);
+              }
+            } else if (!entry.fromRtdb || rtdbRelayAllowed) {
+              this.rtdbService.forwardDecodedChar(entry.char, entry.type, entry.wpm, entry.name, entry.color, !!entry.fromRtdb);
+            }
           }
         }
       }

@@ -88,6 +88,7 @@
     [mapping]="editMapping"
     [editIndex]="editIndex"
     [allMappings]="settings.settings().serialOutputMappings"
+    [serialInputMappings]="settings.settings().serialInputMappings"
     [serialOutput]="serialOutput"
     (saved)="onEditSaved($event)"
     (cancelled)="onEditCancelled()"

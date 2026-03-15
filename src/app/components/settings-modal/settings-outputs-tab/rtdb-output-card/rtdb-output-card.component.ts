@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Component, OnDestroy } from '@angular/core';
+import { Component, OnDestroy, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AppSettings } from '../../../../services/settings.service';
 import { FirebaseRtdbService } from '../../../../services/firebase-rtdb.service';
@@ -27,6 +27,18 @@ export class RtdbOutputCardComponent implements OnDestroy {
 
   /** Debounce timer for RTDB output restart on text field changes */
   private rtdbOutputDebounce: ReturnType<typeof setTimeout> | null = null;
+
+  /**
+   * True when the RTDB input and output share the same non-empty channel
+   * name and secret — relay must be disabled to prevent a feedback loop.
+   */
+  readonly isSameChannel = computed(() => {
+    const s = this.settings.settings();
+    const inCh = s.rtdbInputChannelName.trim();
+    const outCh = s.rtdbOutputChannelName.trim();
+    return !!(inCh && outCh && inCh === outCh
+      && s.rtdbInputChannelSecret.trim() === s.rtdbOutputChannelSecret.trim());
+  });
 
   constructor(
     public settings: SettingsService,

@@ -192,9 +192,11 @@ export class SerialKeyOutputService {
 
   /**
    * Key down — drive active signal on all matching mappings.
-   * @param source  The signal source ('rx' or 'tx')
+   * @param source            The signal source ('rx' or 'tx')
+   * @param relayInputIndex   When provided, only fire output mappings whose
+   *                          relayInputIndices includes this index.
    */
-  keyDown(source: 'rx' | 'tx' = 'tx'): void {
+  keyDown(source: 'rx' | 'tx' = 'tx', relayInputIndex?: number): void {
     const s = this.settings.settings();
     if (!s.serialEnabled) return;
 
@@ -202,6 +204,8 @@ export class SerialKeyOutputService {
       const m = s.serialOutputMappings[i];
       if (!m.enabled || m.portIndex < 0) continue;
       if (m.forward !== 'both' && m.forward !== source) continue;
+      if (relayInputIndex !== undefined && !m.relayInputIndices.includes(relayInputIndex)) continue;
+      if (relayInputIndex === undefined && m.relaySuppressOtherInputs) continue;
 
       const ps = this.openPorts().get(m.portIndex);
       if (!ps) continue;

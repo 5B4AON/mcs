@@ -253,6 +253,13 @@
     bus or source routing (RX/TX). The same pattern applies to Serial
     Input (&sect;6.3).
   </p>
+  <p>
+    When input and output use <em>separate</em> hardware, you can
+    selectively bypass these protections per output mapping using the
+    <strong>Relay from&hellip;</strong> setting in the output mapping&rsquo;s
+    edit modal (&sect;7.4 for MIDI, &sect;7.2 for Serial). This allows
+    deliberate relay without opening the door to accidental loops.
+  </p>
 </div>
 
 <div class="example-box">
@@ -534,6 +541,13 @@
     with Serial Output and MIDI Output &mdash; even when using the same
     adapter and the same source routing (RX/TX). The same pattern applies
     to MIDI Input (&sect;6.2).
+  </p>
+  <p>
+    When input and output use <em>separate</em> adapters, you can
+    selectively bypass these protections per output mapping using the
+    <strong>Relay from&hellip;</strong> setting in the output mapping&rsquo;s
+    edit modal (&sect;7.2 for Serial, &sect;7.4 for MIDI). This allows
+    deliberate relay without opening the door to accidental loops.
   </p>
 </div>
 

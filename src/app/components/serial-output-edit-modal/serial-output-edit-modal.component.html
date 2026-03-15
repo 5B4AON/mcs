@@ -37,7 +37,7 @@
       <!-- Output Pin (DTR / RTS) -->
       <div class="serial-edit-field">
         <label class="serial-edit-label" for="serialOutEditPin">Output Pin</label>
-        <select id="serialOutEditPin" class="serial-edit-select" [(ngModel)]="editPin">
+        <select id="serialOutEditPin" class="serial-edit-select" [(ngModel)]="editPin" (ngModelChange)="updateWarning()">
           @for (p of pins; track p.value) {
             <option [value]="p.value">{{ p.label }}</option>
           }
@@ -70,6 +70,42 @@
       <!-- Error -->
       @if (error) {
         <div class="serial-edit-error">{{ error }}</div>
+      }
+      @if (warning && !error) {
+        <div class="serial-edit-warning">{{ warning }}</div>
+      }
+
+      <!-- Relay from Serial Input -->
+      @if (serialInputMappings.length > 0) {
+        <div class="serial-edit-field">
+          <label class="serial-edit-label">Relay from Serial Input</label>
+          <span class="serial-edit-hint" style="margin-bottom: 6px">
+            Select serial input mappings to relay through this output. Only inputs
+            whose source matches the forward direction are shown.
+            Enable when input and output use separate adapters or ports with no electrical connection.
+          </span>
+          @for (input of serialInputMappings; track $index) {
+            @if (isInputCompatible(input)) {
+              <label class="serial-edit-checkbox-row" [class.midi-mapping-row-disabled]="!input.enabled">
+                <input type="checkbox"
+                       [checked]="editRelayInputIndices.includes($index)"
+                       (change)="toggleRelayInput($index)">
+                {{ inputMappingLabel(input, $index) }}
+              </label>
+            }
+          }
+          @if (editRelayInputIndices.length > 0) {
+            <label class="serial-edit-checkbox-row" style="margin-top: 6px">
+              <input type="checkbox" [(ngModel)]="editRelaySuppressOtherInputs">
+              Suppress other inputs
+            </label>
+            <span class="serial-edit-hint">
+              When enabled, this output will only forward signals from the
+              explicitly selected relay sources above. All other input paths
+              are suppressed.
+            </span>
+          }
+        </div>
       }
 
       <!-- Test (only for existing mappings with connected port) -->

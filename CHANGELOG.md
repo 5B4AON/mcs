@@ -4,6 +4,50 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1] - 2026-03-15
+
+### Added
+
+- **Per-Mapping Input Relay** — MIDI and Serial output mappings now have a
+  "Relay from…" multi-select in their edit modal, letting you choose exactly
+  which input mappings are forwarded through each output. Only input mappings
+  whose source matches the output's forward direction (RX/TX) are shown,
+  giving fine-grained control to prevent feedback loops while still allowing
+  deliberate relay between separate hardware paths.
+- **RTDB Input Relay** — New "Allow input relay" checkbox on the RTDB Output
+  card. When enabled, characters received from the RTDB channel are relayed
+  back out (useful for multi-site bridging). Automatically disabled when the
+  RTDB input and output share the same channel and secret to prevent echo.
+- **Suppress Other Inputs** — New per-mapping checkbox (MIDI Output, Serial
+  Output, and RTDB Output) that appears when relay sources are selected.
+  When enabled, the output only forwards signals from the explicitly chosen
+  relay sources — all other input paths are suppressed.
+
+### Fixed
+
+- **MIDI/Serial Feedback Loop Prevention** — The three anti-echo layers
+  (input-service muting, decoder output gating, and forwarding-effect
+  filtering) now operate per-mapping instead of globally. This fixes feedback
+  loops that occurred when relay was enabled globally but multiple mappings
+  shared the same physical bus.
+- **Relay Index Cleanup** — Deleting a MIDI or Serial input mapping now
+  correctly removes and re-indexes relay references in the corresponding
+  output mappings, preventing stale or shifted indices.
+- **Loop Detection False Positives on Relay** — Characters from
+  relay-allowed input paths (MIDI or Serial inputs configured in an output
+  mapping's "Relay from…" list) are now excluded from the loop-detection
+  input buffer, preventing false-positive loop suppression when the
+  repeated sequence is intentional relay traffic.
+
+### Changed
+
+- **Mapping Conflict Detection Downgraded to Warning** — MIDI Output and
+  Serial Output edit modals no longer block saving when two mappings share
+  the same note/device/channel (MIDI) or port/pin (Serial). The check is now
+  a non-blocking yellow warning, since overlapping mappings are valid when
+  they fire under different conditions (e.g. different forward directions or
+  relay sources with "Suppress other inputs" enabled).
+
 ## [1.6.0] - 2026-03-14
 
 ### Added

@@ -33,7 +33,8 @@ export class MidiOutputCardComponent {
   /** Scratch copy of the mapping passed to the edit modal */
   editMapping: MidiOutputMapping = {
     enabled: true, deviceId: '', channel: 1,
-    forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1,
+    forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1, relayInputIndices: [],
+    relaySuppressOtherInputs: false,
   };
 
   /** Whether the edit modal is visible */
@@ -89,7 +90,8 @@ export class MidiOutputCardComponent {
     this.editIndex = -1;
     this.editMapping = {
       enabled: true, deviceId: '', channel: 1,
-      forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1,
+      forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1, relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     };
     this.showEditModal = true;
     this.ensureDevicesEnumerated();
@@ -107,6 +109,8 @@ export class MidiOutputCardComponent {
         mode: event.mode,
         value: event.value,
         dahValue: event.dahValue,
+        relayInputIndices: event.relayInputIndices,
+        relaySuppressOtherInputs: event.relaySuppressOtherInputs,
       };
     } else {
       mappings.push({
@@ -117,6 +121,8 @@ export class MidiOutputCardComponent {
         mode: event.mode,
         value: event.value,
         dahValue: event.dahValue,
+        relayInputIndices: event.relayInputIndices,
+        relaySuppressOtherInputs: event.relaySuppressOtherInputs,
       });
     }
     this.settings.update({ midiOutputMappings: mappings });

@@ -178,6 +178,12 @@
   padding: 0.2rem 0;
 }
 
+.midi-edit-warning {
+  color: #da0;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+}
+
 /* Test mapping button */
 .test-mapping-btn {
   background: #1e3a4e;

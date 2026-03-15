@@ -31,7 +31,8 @@ export class SerialOutputCardComponent {
 
   /** Scratch copy of the mapping passed to the edit modal */
   editMapping: SerialOutputMapping = {
-    enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx',
+    enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx', relayInputIndices: [],
+    relaySuppressOtherInputs: false,
   };
 
   /** Whether the edit modal is visible */
@@ -103,7 +104,8 @@ export class SerialOutputCardComponent {
   addMapping(): void {
     this.editIndex = -1;
     this.editMapping = {
-      enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx',
+      enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx', relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     };
     this.showEditModal = true;
     this.serialOutput.refreshPorts();
@@ -119,6 +121,8 @@ export class SerialOutputCardComponent {
         pin: event.pin,
         invert: event.invert,
         forward: event.forward,
+        relayInputIndices: event.relayInputIndices,
+        relaySuppressOtherInputs: event.relaySuppressOtherInputs,
       };
     } else {
       mappings.push({
@@ -127,6 +131,8 @@ export class SerialOutputCardComponent {
         pin: event.pin,
         invert: event.invert,
         forward: event.forward,
+        relayInputIndices: event.relayInputIndices,
+        relaySuppressOtherInputs: event.relaySuppressOtherInputs,
       });
     }
     this.settings.update({ serialOutputMappings: mappings });
