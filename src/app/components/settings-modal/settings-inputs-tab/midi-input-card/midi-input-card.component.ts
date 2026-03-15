@@ -193,10 +193,11 @@ export class MidiInputCardComponent {
     return m.channel === 0 ? 'Omni' : `Ch ${m.channel}`;
   }
 
-  /** Get the display color for a mapping's name label */
+  /** Get the display colour for a mapping's name label */
   nameColor(m: MidiInputMapping): string {
     if (m.color) return m.color;
-    return m.source === 'rx' ? '#8cf' : '#fc8';
+    const md = this.settings.modalDisplay();
+    return m.source === 'rx' ? md.rxForeground : md.txForeground;
   }
 
   /** Check whether a mapping's MIDI device is currently connected */

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.2] - 2026-03-15
+
+### Fixed
+
+- **Text Blur Scales with Font Size** — The fullscreen text-blur training
+  mode now uses a font-relative blur radius (`0.2em`) instead of a fixed
+  `5px`, so blurred text remains illegible even at the maximum 184 px font
+  size. A `brightness(1.5)` filter is also applied so the blurred text glows
+  rather than dissolving into the dark background.
+- **Input Card Name Colour** — Serial Input and MIDI Input card headers now
+  show the mapping name in the correct RX/TX foreground colour from the
+  fullscreen modal display settings (green for RX, amber for TX by default).
+  A per-mapping custom colour still takes priority when set.
+- **Fullscreen Auto-Scroll** — The fullscreen decoder and encoder views now
+  always scroll to the bottom when new characters arrive, fixing an issue
+  where auto-scroll would stop permanently after smooth-scroll animation lag
+  caused the distance-from-bottom threshold to be exceeded.
+- **MIDI Auto-Detect Channel** — The "Detect" button in the MIDI Input edit
+  modal now always updates the channel dropdown to the detected MIDI channel,
+  even when a specific channel was already selected. The note hint text below
+  each note field now includes the channel as a prefix (e.g. "Ch 3 / C4 (60)").
+
 ## [1.6.1] - 2026-03-15
 
 ### Added

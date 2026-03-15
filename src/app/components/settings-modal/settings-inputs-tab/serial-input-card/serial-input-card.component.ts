@@ -187,6 +187,13 @@ export class SerialInputCardComponent {
     return PIN_LABELS[pin] || pin;
   }
 
+  /** Get the display colour for a mapping's name label */
+  nameColor(m: SerialInputMapping): string {
+    if (m.color) return m.color;
+    const md = this.settings.modalDisplay();
+    return m.source === 'rx' ? md.rxForeground : md.txForeground;
+  }
+
   /** Whether a specific mapping's port is connected */
   isMappingConnected(mapping: SerialInputMapping): boolean {
     return mapping.portIndex >= 0 && this.serialInput.isPortConnected(mapping.portIndex);

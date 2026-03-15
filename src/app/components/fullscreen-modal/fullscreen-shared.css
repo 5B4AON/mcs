@@ -100,12 +100,14 @@
   transition: filter 250ms ease;
 }
 
-/* RX/TX line type markers (classes set on containing element) */
+/* RX/TX line type markers (classes set on containing element)
+   0.2em scales with font-size (≈5px at 24px, ≈37px at 184px);
+   brightness keeps blurred text visible against dark backgrounds */
 :host ::ng-deep .blur-rx .rx-line .line-text,
 :host ::ng-deep .blur-tx .tx-line .line-text,
 :host ::ng-deep .blur-both .rx-line .line-text,
 :host ::ng-deep .blur-both .tx-line .line-text {
-  filter: blur(5px);
+  filter: blur(0.2em) brightness(1.5);
 }
 
 /* Momentary reveal — overrides blur when held */
@@ -117,7 +119,7 @@
 /* Encoder pending chars blur */
 .fs-conversation.blur-tx .fs-encoder-inline,
 .fs-conversation.blur-both .fs-encoder-inline {
-  filter: blur(5px);
+  filter: blur(0.2em) brightness(1.5);
   transition: filter 250ms ease;
 }
 .fs-conversation.blur-revealing .fs-encoder-inline {
