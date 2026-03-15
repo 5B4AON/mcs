@@ -143,10 +143,11 @@ export class MidiInputEditModalComponent implements OnInit, OnDestroy {
     return (octave + 1) * 12 + noteIndex;
   }
 
-  /** Display a MIDI note as human-readable name */
+  /** Display a MIDI note as human-readable name with channel prefix */
   noteDisplay(note: number): string {
     if (note < 0) return '(none)';
-    return `${midiNoteName(note)} (${note})`;
+    const ch = this.editChannel > 0 ? `Ch ${this.editChannel} / ` : '';
+    return `${ch}${midiNoteName(note)} (${note})`;
   }
 
   /** Handle note name dropdown change for value field */
@@ -213,11 +214,11 @@ export class MidiInputEditModalComponent implements OnInit, OnDestroy {
         this.editDahNote = this.getNoteIndex(result.note);
         this.editDahOctave = this.getOctave(result.note);
       }
-      // Auto-fill device and channel if not yet set
+      // Auto-fill device if not yet set; always update channel
       if (!this.editDeviceId && result.deviceId) {
         this.editDeviceId = result.deviceId;
       }
-      if (this.editChannel === 0 && result.channel > 0) {
+      if (result.channel > 0) {
         this.editChannel = result.channel;
       }
       this.capturing = null;

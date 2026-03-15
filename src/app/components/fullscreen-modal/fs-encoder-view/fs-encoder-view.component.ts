@@ -136,15 +136,11 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
       }
     }
 
-    // Auto-scroll to bottom when near bottom or keyboard is open
+    // Auto-scroll to bottom on every content change
     if (this.needsScroll && this.conversationAreaRef) {
       const el = this.conversationAreaRef.nativeElement;
-      const nearBottom = this.viewportKeyboardOpen ||
-                         (el.scrollHeight - el.scrollTop - el.clientHeight < 120);
-      if (nearBottom) {
-        const behavior = this.viewportKeyboardOpen ? 'instant' as ScrollBehavior : 'smooth' as ScrollBehavior;
-        el.scrollTo({ top: el.scrollHeight, behavior });
-      }
+      const behavior = this.viewportKeyboardOpen ? 'instant' as ScrollBehavior : 'smooth' as ScrollBehavior;
+      el.scrollTo({ top: el.scrollHeight, behavior });
       this.needsScroll = false;
     }
 

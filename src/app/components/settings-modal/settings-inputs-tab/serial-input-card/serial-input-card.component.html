@@ -50,7 +50,7 @@
                      (change)="onMappingEnabledChange($index, $event)">
             </label>
             @if (mapping.name) {
-              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="mapping.color || null">{{ mapping.name }}</span>
+              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
             }
             <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
             <span class="midi-mapping-value" (click)="startEdit($index)">
