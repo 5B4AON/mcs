@@ -15,7 +15,7 @@
       <!-- MIDI Device -->
       <div class="midi-edit-field">
         <label class="midi-edit-label" for="midiOutEditDevice">MIDI Device</label>
-        <select id="midiOutEditDevice" class="midi-edit-select" [(ngModel)]="editDeviceId">
+        <select id="midiOutEditDevice" class="midi-edit-select" [(ngModel)]="editDeviceId" (ngModelChange)="updateWarning()">
           <option value="">Any (first available)</option>
           @for (dev of midiDevices; track dev.id) {
             <option [value]="dev.id">{{ dev.name }}</option>
@@ -26,7 +26,7 @@
       <!-- MIDI Channel -->
       <div class="midi-edit-field">
         <label class="midi-edit-label" for="midiOutEditChannel">MIDI Channel</label>
-        <select id="midiOutEditChannel" class="midi-edit-select" [(ngModel)]="editChannel">
+        <select id="midiOutEditChannel" class="midi-edit-select" [(ngModel)]="editChannel" (ngModelChange)="updateWarning()">
           @for (ch of midiChannels; track ch) {
             <option [ngValue]="ch">Channel {{ ch }}</option>
           }
@@ -46,7 +46,7 @@
       <!-- Mode (Straight Key / Paddle) -->
       <div class="midi-edit-field">
         <label class="midi-edit-label" for="midiOutEditMode">Mode</label>
-        <select id="midiOutEditMode" class="midi-edit-select" [(ngModel)]="editMode">
+        <select id="midiOutEditMode" class="midi-edit-select" [(ngModel)]="editMode" (ngModelChange)="updateWarning()">
           <option value="straightKey">Straight Key</option>
           <option value="paddle">Paddle</option>
         </select>
@@ -101,6 +101,42 @@
       <!-- Error -->
       @if (error) {
         <div class="midi-edit-error">{{ error }}</div>
+      }
+      @if (warning && !error) {
+        <div class="midi-edit-warning">{{ warning }}</div>
+      }
+
+      <!-- Relay from MIDI Input -->
+      @if (midiInputMappings.length > 0) {
+        <div class="midi-edit-field">
+          <label class="midi-edit-label">Relay from MIDI Input</label>
+          <div class="midi-edit-hint" style="margin-bottom: 6px">
+            Select MIDI input mappings to relay through this output. Only inputs
+            whose source matches the forward direction are shown.
+            Enable when input and output use separate hardware with no shared bus.
+          </div>
+          @for (input of midiInputMappings; track $index) {
+            @if (isInputCompatible(input)) {
+              <label class="midi-edit-checkbox-row" [class.midi-mapping-row-disabled]="!input.enabled">
+                <input type="checkbox"
+                       [checked]="editRelayInputIndices.includes($index)"
+                       (change)="toggleRelayInput($index)">
+                {{ inputMappingLabel(input, $index) }}
+              </label>
+            }
+          }
+          @if (editRelayInputIndices.length > 0) {
+            <label class="midi-edit-checkbox-row" style="margin-top: 6px">
+              <input type="checkbox" [(ngModel)]="editRelaySuppressOtherInputs">
+              Suppress other inputs
+            </label>
+            <div class="midi-edit-hint">
+              When enabled, this output will only forward signals from the
+              explicitly selected relay sources above. All other input paths
+              are suppressed.
+            </div>
+          }
+        </div>
       }
 
       <!-- Test button -->

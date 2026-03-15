@@ -173,6 +173,19 @@
       When checked, the polarity is reversed (idle = HIGH, keyed = LOW).</li>
   <li><strong>Forward</strong> &mdash; Which signal sources drive this
       mapping: TX only, RX only, or Both.</li>
+  <li><strong>Relay from Serial Input</strong> &mdash; Multi-select list of
+      Serial Input mappings whose forward direction matches this output
+      mapping&rsquo;s forward direction. Selected inputs are allowed to
+      relay through this output, bypassing the normal echo-prevention
+      layers. Use this when input and output are on <em>separate</em>
+      adapters and you want decoded serial input characters to be
+      re-keyed on serial output. Only compatible input mappings (matching
+      RX/TX/Both) are shown.</li>
+  <li><strong>Suppress other inputs</strong> &mdash; Appears when at least
+      one relay source is selected. When checked, this output mapping
+      <em>only</em> forwards signals from the selected relay sources;
+      all other input paths (keyer, encoder, audio decoder, etc.) are
+      suppressed for this mapping.</li>
   <li><strong>Test Output</strong> &mdash; Keys the output for 1 second to verify
       wiring. Available when the mapping&rsquo;s port is connected.</li>
 </ul>
@@ -264,6 +277,17 @@
 <p>
   This dual-layer approach (same as MIDI Output &sect;7.5) eliminates
   both hardware cross-talk loops and software routing loops.
+</p>
+<h4>Per-mapping relay override</h4>
+<p>
+  When input and output use <em>separate</em> adapters with no shared bus,
+  you can selectively bypass the echo prevention for specific input
+  mappings using the <strong>Relay from Serial Input</strong> multi-select
+  in the output mapping&rsquo;s edit modal. Only the selected input
+  mappings are allowed to activate that output; all other inputs remain
+  blocked by the normal echo-prevention layers. This per-mapping
+  granularity prevents accidental loops while allowing deliberate relay
+  between physically separate hardware paths.
 </p>
 <h3>Reconnection</h3>
 <p>
@@ -571,6 +595,19 @@
       WPM speed. By default MIDI output uses that remote speed so the
       playback matches the sender&rsquo;s timing. Enable this option to
       ignore the remote WPM and use your local Encoder WPM instead.</li>
+  <li><strong>Relay from MIDI Input</strong> &mdash; Multi-select list of
+      MIDI Input mappings whose forward direction matches this output
+      mapping&rsquo;s forward direction. Selected inputs are allowed to
+      relay through this output, bypassing the normal echo-prevention
+      layers. Use this when input and output are on <em>separate</em>
+      hardware paths and you want decoded MIDI input characters to be
+      replayed on MIDI output. Only compatible input mappings (matching
+      RX/TX/Both) are shown.</li>
+  <li><strong>Suppress other inputs</strong> &mdash; Appears when at least
+      one relay source is selected. When checked, this output mapping
+      <em>only</em> forwards signals from the selected relay sources;
+      all other input paths (keyer, encoder, audio decoder, etc.) are
+      suppressed for this mapping.</li>
   <li><strong>Test</strong> &mdash; Sends a 1-second note-on/off on
       the mapping&rsquo;s note to verify the connection.</li>
 </ul>
@@ -615,6 +652,17 @@
   path to MIDI output. This dual-layer design (same as Serial Output
   &sect;7.2) eliminates both hardware bus echoes and software routing
   loops.
+</p>
+<h4>Per-mapping relay override</h4>
+<p>
+  When input and output use <em>separate</em> MIDI devices with no shared
+  bus, you can selectively bypass the echo prevention for specific input
+  mappings using the <strong>Relay from MIDI Input</strong> multi-select
+  in the output mapping&rsquo;s edit modal. Only the selected input
+  mappings are allowed to activate that output; all other inputs remain
+  blocked by the normal echo-prevention layers. This per-mapping
+  granularity prevents accidental loops while allowing deliberate relay
+  between physically separate hardware.
 </p>
 
 <div class="example-box">
@@ -756,6 +804,18 @@
   appears at the top of the page with a brief explanation. You can dismiss
   the banner manually by clicking the &times; button, which also clears
   the suppression immediately.
+</p>
+
+<h3>Relay Exclusion</h3>
+<p>
+  Characters arriving from a <strong>relay-allowed</strong> input path are
+  excluded from loop detection. An input path is relay-allowed when the
+  input mapping appears in at least one output mapping&rsquo;s
+  <strong>Relay from&hellip;</strong> list (&sect;7.2 for Serial, &sect;7.5
+  for MIDI). This means deliberately relayed traffic &mdash; e.g. a MIDI
+  input on one device being replayed on a MIDI output on a different
+  device &mdash; will not trigger the loop detector, even if the same
+  callsign or character sequence is sent repeatedly.
 </p>
 
 <h3>Avoiding Loops</h3>

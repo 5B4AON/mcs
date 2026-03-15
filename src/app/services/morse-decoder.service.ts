@@ -3,7 +3,7 @@
  */
 
 import { Injectable, signal } from '@angular/core';
-import { SettingsService, InputPath } from './settings.service';
+import { SettingsService, InputPath, OutputForward } from './settings.service';
 import { MORSE_REVERSE, timingsFromWpm } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
@@ -302,18 +302,38 @@ export class MorseDecoderService {
       // Serial output: local keyer pipelines only.
       // Receive pipelines must not key the radio — the received signal
       // may BE from that radio, so keying it would create a loop.
+      // Exception: when the user has enabled per-mapping relay from a
+      // specific serial input to specific serial output(s).
       if (!isReceive) {
         pipeline.activatedOutputs.add('serial');
         this.serialOutputRefCount++;
         this.serialOutput.keyDown(source);
+      } else if (pipeline.fromSerial) {
+        const idx = this.extractInputIndex(path, 'serial');
+        const outMappings = this.settings.settings().serialOutputMappings;
+        if (idx !== undefined && this.hasRelayOutput(outMappings, idx, source)) {
+          pipeline.activatedOutputs.add('serial');
+          this.serialOutputRefCount++;
+          this.serialOutput.keyDown(source, idx);
+        }
       }
 
       // MIDI output: local keyer pipelines only.
       // Receive pipelines must not echo onto the MIDI bus or radio chain.
+      // Exception: when the user has enabled per-mapping relay from a
+      // specific MIDI input to specific MIDI output(s).
       if (!isReceive) {
         pipeline.activatedOutputs.add('midi');
         this.midiOutputRefCount++;
         this.midiOutput.keyDown(source);
+      } else if (pipeline.fromMidi) {
+        const idx = this.extractInputIndex(path, 'midi');
+        const outMappings = this.settings.settings().midiOutputMappings;
+        if (idx !== undefined && this.hasRelayOutput(outMappings, idx, source)) {
+          pipeline.activatedOutputs.add('midi');
+          this.midiOutputRefCount++;
+          this.midiOutput.keyDown(source, idx);
+        }
       }
     }
   }
@@ -657,5 +677,26 @@ export class MorseDecoderService {
 
     const wpm = Math.round(1200 / medianDitMs);
     this.estimatedWpmSignalForSource(source).set(Math.max(1, Math.min(60, wpm)));
+  }
+
+  /** Extract the input mapping index from an InputPath string, e.g. 'midiStraightKey:2' → 2 */
+  private extractInputIndex(path: InputPath, prefix: 'midi' | 'serial'): number | undefined {
+    const m = path.match(prefix === 'midi'
+      ? /^midi(?:StraightKey|Paddle):(\d+)/
+      : /^serial(?:StraightKey|Paddle):(\d+)/);
+    return m ? parseInt(m[1], 10) : undefined;
+  }
+
+  /** Check whether any enabled output mapping relays from the given input index */
+  private hasRelayOutput(
+    mappings: readonly { enabled: boolean; forward: OutputForward; relayInputIndices: number[] }[],
+    inputIndex: number,
+    source: 'rx' | 'tx',
+  ): boolean {
+    return mappings.some(m =>
+      m.enabled
+      && (m.forward === 'both' || m.forward === source)
+      && m.relayInputIndices.includes(inputIndex),
+    );
   }
 }

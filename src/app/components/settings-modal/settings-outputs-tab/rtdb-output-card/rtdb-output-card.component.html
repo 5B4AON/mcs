@@ -84,6 +84,38 @@
       </label>
       <div class="cw-hint">When unchecked, input-specific colors are sent if defined; otherwise this color is used as fallback.</div>
 
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="settings.settings().rtdbAllowInputRelay && !isSameChannel()"
+               [disabled]="isSameChannel()"
+               (change)="onBoolChange('rtdbAllowInputRelay', $event)">
+        Allow relay from RTDB input to RTDB output
+      </label>
+      @if (isSameChannel()) {
+        <div class="cw-hint">
+          Relay is not available when input and output use the same channel and
+          secret, as this would create a feedback loop.
+        </div>
+      } @else {
+        <div class="cw-hint">
+          Enable when RTDB input and output use different channel/secret
+          combinations. Characters received on the input channel will be
+          relayed to the output channel.
+        </div>
+      }
+
+      @if (settings.settings().rtdbAllowInputRelay && !isSameChannel()) {
+        <label class="checkbox-label">
+          <input type="checkbox" [checked]="settings.settings().rtdbRelaySuppressOtherInputs"
+                 (change)="onBoolChange('rtdbRelaySuppressOtherInputs', $event)">
+          Suppress other inputs
+        </label>
+        <div class="cw-hint">
+          When enabled, only characters received from the RTDB input channel
+          are forwarded to RTDB output. All other local input paths are
+          suppressed.
+        </div>
+      }
+
       <div class="cw-hint">
         Publishes decoded morse characters to a Firebase Realtime Database channel.
         Remote stations subscribed to the same channel and secret will receive

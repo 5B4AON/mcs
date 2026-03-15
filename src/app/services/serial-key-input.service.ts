@@ -471,15 +471,7 @@ export class SerialKeyInputService implements OnDestroy {
     const s = this.settings.settings();
     if (!s.serialInputEnabled) return;
 
-    // ======================================================================
-    // *** DO NOT CHANGE THIS CHECK TO PER-PIN OR ANY OTHER VARIATION ***
-    //
-    // Blanket isSending() suppression is REQUIRED because serial output
-    // and serial input may share the SAME PHYSICAL PORT and adapter.
-    // When the serial output asserts DTR/RTS, some adapters (especially
-    // FTDI and CH340) can cross-talk between output pins and input pins
-    // due to shared ground references, cable coupling, or user wiring.
-    // ======================================================================
+    // ======================================================================\n    // Blanket isSending() suppression prevents cross-talk: serial output\n    // and serial input may share the SAME PHYSICAL PORT and adapter.\n    //\n    // The check is applied per-mapping: input mappings that are\n    // explicitly configured as relay sources (referenced by at least one\n    // output mapping's relayInputIndices) bypass the isSending gate.\n    // ======================================================================
 
     s.serialInputMappings.forEach((m, idx) => {
       if (!m.enabled || m.portIndex !== portIndex) return;
@@ -492,12 +484,21 @@ export class SerialKeyInputService implements OnDestroy {
     m: SerialInputMapping, mappingIndex: number,
     pin: SerialInputPin, value: boolean, oldValue: boolean,
   ): void {
+    // Per-mapping isSending check: block physical bus echoes unless
+    // this input mapping is a relay source for at least one output mapping.
+    const sending = this.serialOutput.isSending();
+    const isRelaySrc = sending
+      ? this.settings.settings().serialOutputMappings.some(
+          om => om.enabled && om.relayInputIndices.includes(mappingIndex),
+        )
+      : false;
+
     if (m.mode === 'straightKey') {
       if (pin === m.pin) {
         const effective = m.invert ? !value : value;
         const wasEffective = m.invert ? !oldValue : oldValue;
         if (effective !== wasEffective) {
-          if (effective && this.serialOutput.isSending()) return;
+          if (effective && sending && !isRelaySrc) return;
           this.handleStraightKey(mappingIndex, effective, m.source);
         }
       }
@@ -508,7 +509,7 @@ export class SerialKeyInputService implements OnDestroy {
         const effective = m.invert ? !value : value;
         const wasEffective = m.invert ? !oldValue : oldValue;
         if (effective !== wasEffective) {
-          if (effective && this.serialOutput.isSending()) return;
+          if (effective && sending && !isRelaySrc) return;
           if (reverse) {
             this.dahPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
           } else {
@@ -520,7 +521,7 @@ export class SerialKeyInputService implements OnDestroy {
         const effective = m.invert ? !value : value;
         const wasEffective = m.invert ? !oldValue : oldValue;
         if (effective !== wasEffective) {
-          if (effective && this.serialOutput.isSending()) return;
+          if (effective && sending && !isRelaySrc) return;
           if (reverse) {
             this.ditPaddleInput(mappingIndex, effective, m.source, m.paddleMode);
           } else {

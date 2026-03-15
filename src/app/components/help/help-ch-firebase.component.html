@@ -125,9 +125,13 @@
   vibration outputs are set to "Both", so you will hear the incoming morse
   and feel a haptic pulse. If you also set the optocoupler, serial port or
   WinKeyer output to "RX" or "Both", the received characters will key those
-  outputs as well — useful for relaying an RTDB-received signal to a
-  transmitter. Characters received from RTDB are <em>never</em> echoed back
-  to the RTDB output, preventing network loops.
+  outputs as well &mdash; useful for relaying an RTDB-received signal to a
+  transmitter. By default, characters received from RTDB are
+  <em>not</em> echoed back to the RTDB output. To enable RTDB-to-RTDB
+  relay (e.g. for multi-site bridging), check <strong>Allow input
+  relay</strong> on the RTDB Output card. This checkbox is automatically
+  disabled when the RTDB input and output share the same channel and
+  secret, preventing network loops.
 </p>
 
 <!-- 10.4 Output (Transmit) -->
@@ -190,6 +194,21 @@
         <li><strong>Both</strong> — all decoded characters</li>
       </ul>
     </td>
+  </tr>
+  <tr>
+    <td><strong>Allow input relay</strong></td>
+    <td>When checked, characters received from the RTDB input channel
+        are relayed back to the RTDB output &mdash; useful for multi-site
+        bridging. Automatically disabled (greyed out) when the input
+        and output share the same channel and secret, to prevent
+        network loops.</td>
+  </tr>
+  <tr>
+    <td><strong>Suppress other inputs</strong></td>
+    <td>Appears when &ldquo;Allow input relay&rdquo; is enabled. When
+        checked, only characters received from the RTDB input channel
+        are forwarded to RTDB output; all other local input paths
+        (keyer, encoder, audio decoder, etc.) are suppressed.</td>
   </tr>
 </table>
 <p>

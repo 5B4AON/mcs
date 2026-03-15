@@ -86,6 +86,7 @@
     [editIndex]="editIndex"
     [midiDevices]="midiOutput.midiOutputs()"
     [allMappings]="settings.settings().midiOutputMappings"
+    [midiInputMappings]="settings.settings().midiInputMappings"
     (saved)="onEditSaved($event)"
     (cancelled)="onEditCancelled()"
     (deleted)="onEditDeleted()">

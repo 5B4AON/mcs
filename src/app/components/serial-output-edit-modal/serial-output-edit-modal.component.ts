@@ -4,7 +4,7 @@
 
 import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SerialOutputMapping, SerialPin, OutputForward } from '../../services/settings.service';
+import { SerialOutputMapping, SerialInputMapping, SerialPin, OutputForward } from '../../services/settings.service';
 import { SerialKeyOutputService } from '../../services/serial-key-output.service';
 
 /**
@@ -15,6 +15,8 @@ export interface SerialOutputEditSaveEvent {
   pin: SerialPin;
   invert: boolean;
   forward: OutputForward;
+  relayInputIndices: number[];
+  relaySuppressOtherInputs: boolean;
 }
 
 /**
@@ -34,7 +36,8 @@ export interface SerialOutputEditSaveEvent {
 export class SerialOutputEditModalComponent implements OnInit {
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: SerialOutputMapping = {
-    enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx',
+    enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx', relayInputIndices: [],
+    relaySuppressOtherInputs: false,
   };
 
   /** Index of the mapping being edited (-1 for new) */
@@ -42,6 +45,9 @@ export class SerialOutputEditModalComponent implements OnInit {
 
   /** All existing mappings — used for duplicate detection */
   @Input() allMappings: SerialOutputMapping[] = [];
+
+  /** All serial input mappings — used for relay source selection */
+  @Input() serialInputMappings: SerialInputMapping[] = [];
 
   /** Reference to the serial output service (for ports, connected state) */
   @Input() serialOutput!: SerialKeyOutputService;
@@ -61,8 +67,17 @@ export class SerialOutputEditModalComponent implements OnInit {
   editInvert = false;
   editForward: OutputForward = 'tx';
 
+  /** Relay: indices of serial input mappings to relay through this output */
+  editRelayInputIndices: number[] = [];
+
+  /** When true, only relay sources drive this output */
+  editRelaySuppressOtherInputs = false;
+
   /** Validation error message */
   error = '';
+
+  /** Non-blocking warning (e.g. duplicate port+pin) */
+  warning = '';
 
   /** Available output pins */
   readonly pins: { value: SerialPin; label: string }[] = [
@@ -75,7 +90,11 @@ export class SerialOutputEditModalComponent implements OnInit {
     this.editPin = this.mapping.pin;
     this.editInvert = this.mapping.invert;
     this.editForward = this.mapping.forward;
+    this.editRelayInputIndices = [...(this.mapping.relayInputIndices || [])];
+    this.editRelaySuppressOtherInputs = this.mapping.relaySuppressOtherInputs ?? false;
     this.error = '';
+    this.warning = '';
+    this.updateWarning();
   }
 
   /** Whether the selected port is currently connected */
@@ -92,22 +111,18 @@ export class SerialOutputEditModalComponent implements OnInit {
       return;
     }
     this.editPortIndex = parseInt(select.value, 10);
+    this.updateWarning();
   }
 
   /** Save the edited mapping after validation */
   save(): void {
-    // Duplicate detection: same port + same pin on another mapping
-    const dupError = this.checkDuplicates();
-    if (dupError) {
-      this.error = dupError;
-      return;
-    }
-
     this.saved.emit({
       portIndex: this.editPortIndex,
       pin: this.editPin,
       invert: this.editInvert,
       forward: this.editForward,
+      relayInputIndices: this.editRelayInputIndices,
+      relaySuppressOtherInputs: this.editRelaySuppressOtherInputs,
     });
   }
 
@@ -121,14 +136,14 @@ export class SerialOutputEditModalComponent implements OnInit {
     this.deleted.emit();
   }
 
-  /** Check for duplicate port+pin combinations */
+  /** Check for duplicate port+pin combinations (non-blocking warning) */
   private checkDuplicates(): string | null {
     if (this.editPortIndex < 0) return null;
     for (let i = 0; i < this.allMappings.length; i++) {
       if (i === this.editIndex) continue;
       const m = this.allMappings[i];
       if (m.portIndex === this.editPortIndex && m.pin === this.editPin) {
-        return `Another mapping already uses ${this.editPin.toUpperCase()} on this port.`;
+        return `Another mapping (#${i + 1}) also uses ${this.editPin.toUpperCase()} on this port. This is allowed but may cause unexpected behaviour if both mappings fire simultaneously.`;
       }
     }
     return null;
@@ -138,5 +153,34 @@ export class SerialOutputEditModalComponent implements OnInit {
   async testOutput(): Promise<void> {
     if (this.editIndex < 0 || !this.isConnected) return;
     await this.serialOutput.test(this.editIndex);
+  }
+
+  /** Recompute the non-blocking duplicate warning */
+  updateWarning(): void {
+    this.warning = this.checkDuplicates() ?? '';
+  }
+
+  /** Whether a serial input mapping's source is compatible with the output forward setting */
+  isInputCompatible(input: SerialInputMapping): boolean {
+    return this.editForward === 'both' || input.source === this.editForward;
+  }
+
+  /** Toggle a serial input mapping index in the relay list */
+  toggleRelayInput(index: number): void {
+    const pos = this.editRelayInputIndices.indexOf(index);
+    if (pos >= 0) {
+      this.editRelayInputIndices.splice(pos, 1);
+    } else {
+      this.editRelayInputIndices.push(index);
+    }
+  }
+
+  /** Short label for a serial input mapping */
+  inputMappingLabel(m: SerialInputMapping, index: number): string {
+    const mode = m.mode === 'straightKey' ? 'Straight' : 'Paddle';
+    const pin = m.pin.toUpperCase();
+    const src = m.source.toUpperCase();
+    const name = m.name ? ` (${m.name})` : '';
+    return `#${index + 1} ${mode} ${pin} [${src}]${name}`;
   }
 }

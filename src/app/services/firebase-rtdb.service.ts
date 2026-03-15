@@ -534,7 +534,7 @@ export class FirebaseRtdbService implements OnDestroy {
    * @param source Whether this came from 'rx' or 'tx' decoder pool
    * @param wpm    WPM speed used to generate this character
    */
-  async forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, inputName?: string, inputColor?: string): Promise<void> {
+  async forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, inputName?: string, inputColor?: string, isRelay = false): Promise<void> {
     if (!this.settings.settings().rtdbOutputEnabled) return;
     if (!this.outputActive()) return;
     if (!this.db) return;
@@ -574,8 +574,13 @@ export class FirebaseRtdbService implements OnDestroy {
         wpm: wpm ?? s.encoderWpm,
       };
       if (effectiveColor) entry['col'] = effectiveColor;
-      // Track the name before writing — onValue fires synchronously on local set()
-      this.sentNames.add(effectiveName);
+      // Track the name before writing — onValue fires synchronously on local set().
+      // Skip for relay: the sender name belongs to a remote party on the input
+      // channel. Adding it to sentNames would suppress the next message from the
+      // same sender, breaking relay of consecutive characters.
+      if (!isRelay) {
+        this.sentNames.add(effectiveName);
+      }
       await set(entryRef, entry);
     } catch (err: any) {
       // Don't spam errors for every character — just set once

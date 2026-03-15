@@ -142,6 +142,10 @@ export interface MidiOutputMapping {
   value: number;
   /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
   dahValue: number;
+  /** Indices into midiInputMappings that are allowed to relay through this output mapping */
+  relayInputIndices: number[];
+  /** When true, only relay sources (and encoder) drive this output — all other inputs are suppressed */
+  relaySuppressOtherInputs: boolean;
 }
 
 /** Configuration for a single serial input mapping */
@@ -184,6 +188,10 @@ export interface SerialOutputMapping {
   invert: boolean;
   /** Output forwarding mode: which signal source drives this mapping */
   forward: OutputForward;
+  /** Indices into serialInputMappings that are allowed to relay through this output mapping */
+  relayInputIndices: number[];
+  /** When true, only relay sources (and encoder) drive this output — all other inputs are suppressed */
+  relaySuppressOtherInputs: boolean;
 }
 
 /** Configuration for a single emoji replacement mapping */
@@ -276,6 +284,10 @@ export interface AppSettings {
   rtdbOutputOverrideName: boolean;
   /** When true, always send rtdbOutputColor — overriding any input-specific color */
   rtdbOutputOverrideColor: boolean;
+  /** When true, allow RTDB input characters to be relayed to RTDB output (disables echo suppression) */
+  rtdbAllowInputRelay: boolean;
+  /** When true, RTDB output only forwards chars from RTDB input relay — all other inputs are suppressed */
+  rtdbRelaySuppressOtherInputs: boolean;
 
   // --- 3. Audio Output (sidetone / headphone / speaker) ---
   sidetoneOutputDeviceId: string;
@@ -481,6 +493,8 @@ const DEFAULT_SETTINGS: AppSettings = {
       pin: 'dtr',
       invert: false,
       forward: 'tx',
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     },
   ],
 
@@ -531,6 +545,8 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbOutputColor: '',
   rtdbOutputOverrideName: false,
   rtdbOutputOverrideColor: false,
+  rtdbAllowInputRelay: false,
+  rtdbRelaySuppressOtherInputs: false,
 
   sidetoneOutputDeviceId: 'default',
   sidetoneOutputChannel: 'left',
@@ -649,6 +665,8 @@ const DEFAULT_SETTINGS: AppSettings = {
       mode: 'straightKey',
       value: 80,
       dahValue: -1,
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     },
     {
       enabled: true,
@@ -658,6 +676,8 @@ const DEFAULT_SETTINGS: AppSettings = {
       mode: 'paddle',
       value: 82,
       dahValue: 84,
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     },
   ],
   midiOutputOverrideWpm: false,
@@ -1157,6 +1177,8 @@ export class SettingsService {
       pin,
       invert,
       forward,
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
     }];
 
     const patch: any = { serialOutputMappings: mappings };

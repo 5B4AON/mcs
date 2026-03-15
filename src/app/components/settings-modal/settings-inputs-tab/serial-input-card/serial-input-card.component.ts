@@ -164,7 +164,15 @@ export class SerialInputCardComponent {
   onEditDeleted(): void {
     if (this.editIndex >= 0) {
       const mappings = this.settings.settings().serialInputMappings.filter((_, i) => i !== this.editIndex);
-      this.settings.update({ serialInputMappings: mappings });
+      // Clean up relay references in output mappings: remove the deleted index
+      // and decrement any index greater than the deleted one.
+      const outputMappings = this.settings.settings().serialOutputMappings.map(om => ({
+        ...om,
+        relayInputIndices: om.relayInputIndices
+          .filter(idx => idx !== this.editIndex)
+          .map(idx => idx > this.editIndex ? idx - 1 : idx),
+      }));
+      this.settings.update({ serialInputMappings: mappings, serialOutputMappings: outputMappings });
     }
     this.showEditModal = false;
   }

@@ -412,28 +412,19 @@ export class MidiInputService implements OnDestroy {
     if (!this.settings.settings().midiInputEnabled) return;
 
     // ======================================================================
-    // *** DO NOT CHANGE THIS CHECK TO PER-NOTE OR ANY OTHER VARIATION ***
+    // Blanket isSending() suppression prevents physical bus echoes: when
+    // the MIDI output sends ANY note, the common bus is energised and
+    // hardware simultaneously mirrors the signal on the input.
     //
-    // Blanket isSending() suppression is REQUIRED because MIDI notes are
-    // converted to electrical signals on a COMMON PHYSICAL BUS where both
-    // sending and receiving happen on the same wire.  When the MIDI output
-    // sends ANY note, the bus is energised and the MIDI input hardware
-    // simultaneously samples the same bus, generating a mirror note-on.
-    // The note numbers are LOST in the electrical domain — only "bus
-    // active / bus idle" matters.  Therefore we must mute ALL MIDI input
-    // while ANY MIDI output note is held, regardless of note number.
+    // The check is moved INTO the per-mapping loop so that input mappings
+    // that are explicitly configured as relay sources (referenced by at
+    // least one output mapping's relayInputIndices) bypass the isSending
+    // gate — the user has asserted those inputs are on separate hardware.
     //
-    // True parallel operation (e.g. receiving MIDI while the keyboard
-    // keyer is active) is achieved by:
-    //  1. Real-time MIDI output keying in the decoder (keyDown/keyUp),
-    //     which keeps isSending() true only during actual key-down —
-    //     not during the decoder's word-gap silence timers.
-    //  2. Not forwarding local-keyer decoded characters to MIDI output
-    //     via forwardDecodedChar (they are already keyed in real-time).
-    //  3. This service bypassing KeyerService entirely (own iambic keyer
-    //     + direct decoder calls), so no shared state with keyboard.
+    // Non-relay input mappings are still blanket-muted while ANY output
+    // note is held, regardless of note number.
     // ======================================================================
-    if (isNoteOn && this.midiOutput.isSending()) return;
+    const sending = isNoteOn && this.midiOutput.isSending();
 
     // Note-off: use stored action state
     if (isNoteOff) {
@@ -463,6 +454,7 @@ export class MidiInputService implements OnDestroy {
     // Note-on: find matching mapping
     const deviceId = (msg.target as MIDIInput | null)?.id || '';
     const mappings = this.settings.settings().midiInputMappings;
+    const outputMappings = this.settings.settings().midiOutputMappings;
 
     for (let mi = 0; mi < mappings.length; mi++) {
       const mapping = mappings[mi];
@@ -471,6 +463,10 @@ export class MidiInputService implements OnDestroy {
       if (mapping.deviceId && mapping.deviceId !== deviceId) continue;
       // Channel filter
       if (mapping.channel > 0 && mapping.channel !== channel) continue;
+
+      // Per-mapping isSending check: block physical bus echoes unless
+      // this input is a relay source for at least one output mapping.
+      if (sending && !outputMappings.some(om => om.enabled && om.relayInputIndices.includes(mi))) return;
 
       if (mapping.mode === 'straightKey' && note === mapping.value) {
         this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi });
