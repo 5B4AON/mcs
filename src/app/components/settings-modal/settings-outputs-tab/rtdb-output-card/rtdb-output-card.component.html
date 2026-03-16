@@ -44,7 +44,8 @@
       </label>
 
       <label [class.field-invalid]="!settings.settings().rtdbOutputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
-        <input type="password" [value]="settings.settings().rtdbOutputChannelSecret"
+        <!-- Naming the field to channelSecret to avoid Chrome warnings on data breach -->
+        <input type="password" name="channelSecret" [value]="settings.settings().rtdbOutputChannelSecret"
                (input)="onTextSettingChange('rtdbOutputChannelSecret', $event)"
                placeholder="shared secret"
                maxlength="50">
