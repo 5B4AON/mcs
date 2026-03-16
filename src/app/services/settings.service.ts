@@ -422,6 +422,20 @@ export interface AppSettings {
   /** Per-prosign action mappings */
   prosignActions: Record<string, ProsignActionEntry>;
 
+  // --- Farnsworth / Wordsworth Timing ---
+  /** Master toggle for Farnsworth gap stretching */
+  farnsworthEnabled: boolean;
+  /** How the user specifies gap stretching: effective WPM or direct multiplier */
+  farnsworthInputMode: 'wpm' | 'multiplier';
+  /** Target effective WPM when inputMode is 'wpm' (range: 5 to encoderWpm) */
+  farnsworthEffectiveWpm: number;
+  /** Direct gap multiplier when inputMode is 'multiplier' (range: 1.00 to 10.00) */
+  farnsworthMultiplier: number;
+  /** Wordsworth mode: stretch only word gaps (not inter-character gaps) */
+  farnsworthWordsworth: boolean;
+  /** Which direction Farnsworth timing applies to: tx, rx, or both */
+  farnsworthAppliesTo: 'tx' | 'rx' | 'both';
+
   // --- Emoji Replacements ---
   /** Master toggle for emoji display in fullscreen modals */
   emojisEnabled: boolean;
@@ -703,6 +717,13 @@ const DEFAULT_SETTINGS: AppSettings = {
 
   textBlurEnabled: false,
   textBlurAppliesTo: 'rx',
+
+  farnsworthEnabled: false,
+  farnsworthInputMode: 'wpm',
+  farnsworthEffectiveWpm: 10,
+  farnsworthMultiplier: 2,
+  farnsworthWordsworth: false,
+  farnsworthAppliesTo: 'tx',
 
   wakeLockEnabled: false,
 

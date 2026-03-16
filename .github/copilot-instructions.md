@@ -80,8 +80,10 @@ src/app/
     │   │   ├── midi-output-card/
     │   │   ├── sidetone-card/
     │   │   └── vibration-card/
-    │   └── settings-other-tab/          — thin shell hosting 4 card components
+    │   └── settings-other-tab/          — thin shell hosting 6 card components
     │       ├── wake-lock-card/
+    │       ├── text-blur-card/
+    │       ├── farnsworth-card/
     │       ├── show-prosigns-card/
     │       ├── prosign-actions-card/
     │       └── emojis-card/
@@ -133,6 +135,7 @@ AppComponent
 - **`AppSettings` interface + `DEFAULT_SETTINGS`** (both in `settings.service.ts`): when adding a new setting, update the interface, add a default, and add the UI control in the appropriate settings card component.
 - **Prosign actions pipeline**: prosign keys are defined in `prosign-actions-card.component.ts` (`prosignKeys` array), their defaults in `DEFAULT_SETTINGS.prosignActions` (settings.service.ts), and they are consumed at runtime by `DisplayBufferService.handleProsignAction()`. All three must stay in sync.
 - **Emoji mappings pipeline**: emoji defaults in `DEFAULT_SETTINGS.emojiMappings`, UI in `emojis-card` + `EmojiEditModalComponent`, runtime processing in `DisplayBufferService`.
+- **Farnsworth / Wordsworth timing pipeline**: settings (`farnsworthEnabled`, etc.) in `AppSettings` + `DEFAULT_SETTINGS`, UI in `farnsworth-card`, timing math in `adjustGapTimings()` (morse-table.ts). Applied at runtime in `MorseEncoderService.sendCharacter()`, `startWordGapTimer()`, `playRxChar()` and `MidiOutputService.playCharElements()`. WinKeyer is excluded (hardware-timed).
 - **Keyboard input mappings pipeline**: `KeyboardInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.keyboardInputMappings`, UI in `keyboard-keyer-card` + `KeyboardInputEditModalComponent`, runtime in `KeyerService` (per-mapping straight key state + independent paddle keyer per mapping).
 - **MIDI input mappings pipeline**: `MidiInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.midiInputMappings`, UI in `midi-input-card` + `MidiInputEditModalComponent`, runtime in `MidiInputService` (per-mapping independent iambic keyer).
 - **MIDI output mappings pipeline**: `MidiOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.midiOutputMappings`, UI in `midi-output-card` + `MidiOutputEditModalComponent`, runtime in `MidiOutputService`.

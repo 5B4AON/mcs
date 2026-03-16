@@ -140,3 +140,75 @@ export function timingsFromWpm(wpm: number) {
     interWord: ditMs * 7,   // space between words
   };
 }
+
+/** Farnsworth/Wordsworth settings subset needed by adjustGapTimings(). */
+export interface FarnsworthSettings {
+  farnsworthEnabled: boolean;
+  farnsworthInputMode: 'wpm' | 'multiplier';
+  farnsworthEffectiveWpm: number;
+  farnsworthMultiplier: number;
+  farnsworthWordsworth: boolean;
+  farnsworthAppliesTo: 'tx' | 'rx' | 'both';
+}
+
+/**
+ * Adjust inter-character and inter-word gap durations for Farnsworth or
+ * Wordsworth timing.
+ *
+ * Farnsworth timing keeps element durations (dit, dah, intra-char) at the
+ * character speed while stretching the gaps between characters and words
+ * proportionally. Named after Donald R. "Russ" Farnsworth (W6TTB).
+ *
+ * Wordsworth mode stretches only the inter-word gaps, leaving
+ * inter-character gaps at the normal character speed.
+ *
+ * @param timings  Base timing object from timingsFromWpm(charWpm)
+ * @param charWpm  Character speed (the WPM used to produce `timings`)
+ * @param source   Current output direction ('rx' or 'tx')
+ * @param fs       Farnsworth settings from AppSettings
+ * @returns A new timings object with adjusted interChar and interWord
+ */
+export function adjustGapTimings(
+  timings: ReturnType<typeof timingsFromWpm>,
+  charWpm: number,
+  source: 'rx' | 'tx',
+  fs: FarnsworthSettings,
+): ReturnType<typeof timingsFromWpm> {
+  if (!fs.farnsworthEnabled) return timings;
+  if (fs.farnsworthAppliesTo !== 'both' && fs.farnsworthAppliesTo !== source) return timings;
+
+  if (fs.farnsworthInputMode === 'multiplier') {
+    const m = Math.max(1, fs.farnsworthMultiplier);
+    if (m <= 1) return timings;
+    return {
+      ...timings,
+      interChar: fs.farnsworthWordsworth ? timings.interChar : timings.interChar * m,
+      interWord: timings.interWord * m,
+    };
+  }
+
+  // WPM mode
+  const effectiveWpm = Math.max(5, Math.min(fs.farnsworthEffectiveWpm, charWpm));
+  if (effectiveWpm >= charWpm) return timings;
+
+  const c = charWpm;
+  const s = effectiveWpm;
+
+  if (fs.farnsworthWordsworth) {
+    // Wordsworth: interChar unchanged, only interWord stretches.
+    // Total character content at speed c = (31 intra-element units + 12
+    // inter-char units for 4 gaps in PARIS) × ditMs. With standard
+    // PARIS: 43 element-units inside words = 51600/c ms. Remaining
+    // time in one minute at s WPM goes to the one inter-word gap per word.
+    const adjustedInterWord = Math.max(timings.interWord, 60000 / s - 51600 / c);
+    return { ...timings, interWord: adjustedInterWord };
+  }
+
+  // Farnsworth: both gaps stretch proportionally (3:7 ratio preserved).
+  // PARIS at charWpm takes 31 element-units of keying = 37200/c ms.
+  // The remaining time per word is distributed across the 19 gap-units.
+  const gapUnit = (60000 / s - 37200 / c) / 19;
+  const adjustedInterChar = Math.max(timings.interChar, 3 * gapUnit);
+  const adjustedInterWord = Math.max(timings.interWord, 7 * gapUnit);
+  return { ...timings, interChar: adjustedInterChar, interWord: adjustedInterWord };
+}

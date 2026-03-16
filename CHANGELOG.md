@@ -4,6 +4,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0] - 2026-03-16
+
+### Added
+
+- **Farnsworth Timing** — New setting under Settings → Other that stretches
+  the gaps between characters and words while keeping element durations
+  (dit/dah) at full speed. Named after Donald R. "Russ" Farnsworth (W6TTB),
+  this proven learning technique lowers the effective WPM without slowing
+  individual characters.
+- **Wordsworth Mode** — Optional variation that stretches only the gaps
+  between words, keeping inter-character spacing at the normal character
+  speed. Useful for operators who recognise characters instantly but need
+  extra time to process whole words.
+- **Two Input Modes** — Choose between *Effective WPM* (set a target overall
+  speed from 5 WPM up to the encoder WPM) or *Gap Multiplier* (multiply gap
+  durations by 1.00× to 10.00×).
+- **Applies To** selector — TX Only, RX Only, or Both. TX affects the
+  encoder and all keyed outputs (sidetone, serial, MIDI, vibration). RX
+  affects local playback of received characters (e.g. from Firebase RTDB).
+- **Affected Outputs** — Sidetone, optocoupler, serial DTR/RTS, MIDI note
+  output, and vibration. WinKeyer is excluded (hardware-timed).
+
+### Documentation
+
+- **Help §8.5 — Farnsworth / Wordsworth Timing** — New section explaining
+  both timing techniques, all controls, affected outputs, and a beginner
+  practice example. Subsequent sections renumbered (§8.5–8.7 → §8.6–8.8).
+
 ## [1.6.4] - 2026-03-16
 
 ### Changed

@@ -188,8 +188,60 @@
   even when the text is blurred, so you always know who is transmitting.
 </p>
 
-<!-- 8.5 Show Prosigns -->
-<h2 id="s8-5">8.5 &nbsp;Show Prosigns</h2>
+<!-- 8.5 Farnsworth / Wordsworth Timing -->
+<h2 id="s8-5">8.5 &nbsp;Farnsworth / Wordsworth Timing</h2>
+
+<p>
+  Found in <strong>Settings &rarr; Other</strong>. Farnsworth timing is a
+  learning technique that sends individual characters at full speed (your
+  normal Encoder WPM) but inserts exaggerated pauses between characters and
+  words, lowering the <em>effective</em> speed. Named after Donald&nbsp;R.
+  &ldquo;Russ&rdquo; Farnsworth (W6TTB), it helps you recognise characters at
+  real operating speed while giving you extra time to process what you hear.
+</p>
+
+<p>
+  <strong>Wordsworth mode</strong> is a variation that keeps whole characters
+  <em>and</em> inter-character spacing at full speed and only stretches the gaps
+  between words. This is useful for operators who have achieved instant character
+  recognition but need a little more time to recognise each word.
+</p>
+
+<h3>Controls</h3>
+<ul>
+  <li><strong>Applies to</strong> &mdash; choose TX Only, RX Only, or Both. TX
+      affects the encoder and keyed outputs (sidetone, serial, MIDI, vibration).
+      RX affects playback of received characters (e.g.&nbsp;from Firebase RTDB).</li>
+  <li><strong>Mode: Effective WPM</strong> &mdash; set a target overall WPM
+      (5 to your encoder WPM). The app calculates the correct gap durations so
+      the average word throughput matches your target.</li>
+  <li><strong>Mode: Gap Multiplier</strong> &mdash; directly multiply gap
+      durations by a factor between 1.00&times; and 10.00&times;. Element durations
+      (dit, dah) are never changed.</li>
+  <li><strong>Wordsworth mode</strong> checkbox &mdash; when ticked, only the
+      word gaps are stretched; inter-character gaps remain at normal speed.</li>
+</ul>
+
+<p>
+  Farnsworth timing applies to every output that synthesises element timing:
+  sidetone, vibration, MIDI, serial, Firebase RTDB, and audio key.
+  WinKeyer output is <strong>not affected</strong> because the WinKeyer
+  hardware generates its own timing.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Beginner Practice</div>
+  <p>
+    Set Encoder WPM to 20, enable Farnsworth Timing with Effective WPM
+    at&nbsp;10. Characters arrive at 20&thinsp;WPM speed &mdash; fast enough to
+    sound natural &mdash; but the gaps between them are long enough that the
+    overall throughput is only 10&thinsp;WPM, giving you time to write each
+    letter down.
+  </p>
+</div>
+
+<!-- 8.6 Show Prosigns -->
+<h2 id="s8-6">8.6 &nbsp;Show Prosigns</h2>
 
 <p>
   Found in <strong>Settings &rarr; Other</strong>. When enabled, punctuation
@@ -208,8 +260,8 @@
   regardless of this setting.
 </p>
 
-<!-- 8.6 Prosign Actions -->
-<h2 id="s8-6">8.6 &nbsp;Prosign Actions</h2>
+<!-- 8.7 Prosign Actions -->
+<h2 id="s8-7">8.7 &nbsp;Prosign Actions</h2>
 
 <p>
   Found in <strong>Settings &rarr; Other</strong>. When the master toggle is
@@ -285,8 +337,8 @@
   new lines start without a leading space.
 </p>
 
-<!-- 8.7 Emoji Replacements -->
-<h2 id="s8-7">8.7 &nbsp;Emoji Replacements</h2>
+<!-- 8.8 Emoji Replacements -->
+<h2 id="s8-8">8.8 &nbsp;Emoji Replacements</h2>
 
 <p>
   When enabled, emoji replacements substitute common morse abbreviations,
