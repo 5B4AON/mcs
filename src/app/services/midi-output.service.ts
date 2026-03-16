@@ -4,7 +4,7 @@
 
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
-import { MORSE_TABLE, timingsFromWpm } from '../morse-table';
+import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
 
 /**
  * MIDI note name lookup (scientific pitch notation).
@@ -371,7 +371,8 @@ export class MidiOutputService implements OnDestroy {
   private async playCharElements(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false): Promise<void> {
     const s0 = this.settings.settings();
     const effectiveWpm = (wpm && !s0.midiOutputOverrideWpm) ? wpm : s0.encoderWpm;
-    const timings = timingsFromWpm(effectiveWpm);
+    const baseTimings = timingsFromWpm(effectiveWpm);
+    const timings = adjustGapTimings(baseTimings, effectiveWpm, source, s0);
     const s = this.settings.settings();
     const velocity = 127;
 

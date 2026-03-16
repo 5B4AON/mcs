@@ -1,0 +1,90 @@
+<!-- Farnsworth / Wordsworth Timing -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().farnsworthEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Farnsworth Timing</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().farnsworthEnabled"
+             (change)="onEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Farnsworth timing sends individual characters at full speed but
+        stretches the gaps between characters and words, lowering the
+        effective overall speed. This is a proven learning technique
+        named after Donald R. &ldquo;Russ&rdquo; Farnsworth (W6TTB)
+        that helps you recognise characters at real speed while giving
+        you extra thinking time.
+      </div>
+
+      <label>
+        Applies to:
+        <select [value]="settings.settings().farnsworthAppliesTo"
+                (change)="onAppliesToChange($event)">
+          <option value="tx">TX Only</option>
+          <option value="rx">RX Only</option>
+          <option value="both">Both RX and TX</option>
+        </select>
+      </label>
+
+      <label>
+        Mode:
+        <select [value]="settings.settings().farnsworthInputMode"
+                (change)="onInputModeChange($event)">
+          <option value="wpm">Effective WPM</option>
+          <option value="multiplier">Gap Multiplier</option>
+        </select>
+      </label>
+
+      @if (settings.settings().farnsworthInputMode === 'wpm') {
+        <label>
+          Effective WPM: {{ settings.settings().farnsworthEffectiveWpm }}
+          <input type="range" min="5" [max]="settings.settings().encoderWpm"
+                 step="1"
+                 [value]="settings.settings().farnsworthEffectiveWpm"
+                 (input)="onEffectiveWpmChange($event)">
+        </label>
+        <div class="cw-hint">
+          Characters are sent at {{ settings.settings().encoderWpm }}&thinsp;WPM
+          but the overall effective speed is
+          {{ settings.settings().farnsworthEffectiveWpm }}&thinsp;WPM.
+          The lower the effective WPM, the longer the gaps.
+        </div>
+      }
+
+      @if (settings.settings().farnsworthInputMode === 'multiplier') {
+        <label>
+          Gap multiplier: {{ settings.settings().farnsworthMultiplier.toFixed(2) }}&times;
+          <input type="range" min="1" max="10"
+                 step="0.01"
+                 [value]="settings.settings().farnsworthMultiplier"
+                 (input)="onMultiplierChange($event)">
+        </label>
+        <div class="cw-hint">
+          Gaps between characters and words are multiplied by
+          {{ settings.settings().farnsworthMultiplier.toFixed(2) }}.
+          Element durations (dit, dah) remain unchanged.
+        </div>
+      }
+
+      <label class="checkbox-label">
+        <input type="checkbox"
+               [checked]="settings.settings().farnsworthWordsworth"
+               (change)="onWordsworthChange($event)">
+        Wordsworth mode
+      </label>
+      <div class="cw-hint">
+        When enabled, only the gaps between <em>words</em> are stretched
+        &mdash; the gaps between characters remain at the normal character
+        speed. Wordsworth timing is useful for operators who have achieved
+        instant character recognition but need extra time to recognise and
+        process each word.
+      </div>
+    </div>
+  }
+</div>

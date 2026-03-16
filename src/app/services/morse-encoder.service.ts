@@ -5,7 +5,7 @@
 import { Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
-import { MORSE_TABLE, timingsFromWpm } from '../morse-table';
+import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { VibrationOutputService } from './vibration-output.service';
@@ -234,8 +234,10 @@ export class MorseEncoderService {
   }
 
   private async sendCharacter(char: string, signal: AbortSignal): Promise<void> {
-    const timings = timingsFromWpm(this.settings.settings().encoderWpm);
-    const source = this.settings.settings().encoderSource;
+    const s = this.settings.settings();
+    const baseTimings = timingsFromWpm(s.encoderWpm);
+    const timings = adjustGapTimings(baseTimings, s.encoderWpm, s.encoderSource, s);
+    const source = s.encoderSource;
 
     if (char === ' ') {
       // Word space = 7 dit units total; 3 already elapsed as inter-char
@@ -295,7 +297,9 @@ export class MorseEncoderService {
    */
   private startWordGapTimer(): void {
     this.cancelWordGapTimer();
-    const timings = timingsFromWpm(this.settings.settings().encoderWpm);
+    const s = this.settings.settings();
+    const baseTimings = timingsFromWpm(s.encoderWpm);
+    const timings = adjustGapTimings(baseTimings, s.encoderWpm, s.encoderSource, s);
     const delay = timings.interWord - timings.interChar;
     this.wordGapTimer = setTimeout(() => {
       this.wordGapTimer = null;
@@ -354,7 +358,9 @@ export class MorseEncoderService {
   private async playRxChar(char: string, source: 'rx' | 'tx', wpm?: number): Promise<void> {
     // Skip output if loop is suppressed
     if (this.loopDetection.isSuppressed) return;
-    const timings = timingsFromWpm(wpm ?? this.settings.settings().encoderWpm);
+    const charWpm = wpm ?? this.settings.settings().encoderWpm;
+    const baseTimings = timingsFromWpm(charWpm);
+    const timings = adjustGapTimings(baseTimings, charWpm, source, this.settings.settings());
 
     if (char === ' ') {
       await this.sleepMs(timings.interWord - timings.interChar);
