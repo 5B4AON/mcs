@@ -590,11 +590,12 @@
       paddle. Use the note/octave picker or raw 0&ndash;127 entry.</li>
   <li><strong>Dah Note</strong> &mdash; (Paddle mode only) The MIDI note for
       the dah paddle.</li>
-  <li><strong>Override remote WPM with local encoder WPM</strong> &mdash;
+  <li><strong>Override input WPM with local encoder WPM</strong> &mdash;
       Characters received via Firebase RTDB carry the sender&rsquo;s original
-      WPM speed. By default MIDI output uses that remote speed so the
+      WPM speed. By default MIDI output uses that input speed so the
       playback matches the sender&rsquo;s timing. Enable this option to
-      ignore the remote WPM and use your local Encoder WPM instead.</li>
+      ignore the input WPM and use your local Encoder WPM instead. Also
+      applies to Straight Key inputs</li>
   <li><strong>Relay from MIDI Input</strong> &mdash; Multi-select list of
       MIDI Input mappings whose forward direction matches this output
       mapping&rsquo;s forward direction. Selected inputs are allowed to
@@ -709,6 +710,56 @@
     dahs at the configured Encoder WPM speed &mdash; effectively
     &ldquo;cleaning up&rdquo; the timing before it reaches the keying
     hardware.
+  </p>
+</div>
+
+<h3>Speed Re-Encoding (WPM Override)</h3>
+<p>
+  MIDI output can <strong>re-encode incoming signals at a different
+  speed</strong>. Any input source &mdash; paddle, straight key, audio,
+  MIDI, or Firebase RTDB &mdash; is decoded into characters, then played
+  back on a MIDI output mapping at the <strong>Encoder WPM</strong>
+  speed instead of the original input speed. This lets you slow down
+  (or speed up) the morse before it reaches external hardware.
+</p>
+<p>
+  To set this up, create a <strong>Paddle mode</strong> MIDI output
+  mapping. Set the dit and dah notes according to the keying style you
+  need on the receiving end:
+</p>
+<ul>
+  <li><strong>Different notes for dit and dah</strong> &mdash; emulates a
+      paddle output. The Arduino (or other receiver) can distinguish
+      individual elements and drive separate paddle jacks.</li>
+  <li><strong>Same note for dit and dah</strong> &mdash; emulates a
+      straight-key output. The receiver sees a simple key-down / key-up
+      signal, just like a straight-key mapping, but the character-based
+      queue ensures proper inter-element and inter-character gaps at the
+      target speed.</li>
+</ul>
+<p>
+  Then enable <strong>Override input WPM with local encoder WPM</strong>
+  in the MIDI output settings. Set the <strong>Encoder WPM</strong> to
+  the desired output speed. Incoming characters &mdash; regardless of how
+  fast they were keyed &mdash; are re-played at the encoder speed.
+</p>
+<p>
+  When the input is faster than the output, characters are queued and
+  played back one after another with correct inter-element and
+  inter-character timing. The output runs behind the input, but every
+  character is properly formed at the target speed.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Slowing down for a listener</div>
+  <p>
+    An experienced operator keys at 25&thinsp;WPM with paddles, but the
+    receiving station copies at 12&thinsp;WPM. Create a Paddle-mode MIDI
+    output mapping with the same note for dit and dah (emulating straight
+    key), enable &ldquo;Override input WPM with local encoder WPM&rdquo;,
+    and set Encoder WPM to 12. The operator keys normally at full speed;
+    the MIDI output re-encodes each decoded character at 12&thinsp;WPM
+    and drives the keying hardware at the slower pace.
   </p>
 </div>
 

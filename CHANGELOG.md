@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.4] - 2026-03-16
+
+### Changed
+
+- **MIDI Output Same-Note Warning** — The MIDI Output edit modal no longer
+  blocks saving when dit and dah paddle notes are set to the same value. The
+  hard error has been replaced with a non-blocking warning. This allows
+  paddle mode with identical notes to emulate a straight-key output through
+  the character-based queue — useful for speed re-encoding via the WPM
+  override option.
+
+### Fixed
+
+- **MIDI Output Queue Interruption** — Fixed character playback at a slower
+  WPM being cut short when the real-time `keyUp()` path released notes held
+  by the character queue. The real-time straight-key path (keyDown/keyUp) and
+  the character-based queue now track their active notes independently, so
+  releasing a physical key no longer aborts a queue element mid-playback.
+
+### Documentation
+
+- **Help §7.4 — Speed Re-Encoding** — New "Speed Re-Encoding (WPM Override)"
+  section in the MIDI Output chapter. Describes using paddle mode with same
+  or different notes combined with "Override input WPM with local encoder
+  WPM" to re-encode incoming morse at a different speed — e.g. keying at
+  25 WPM while the MIDI output replays at 12 WPM for slower listeners.
+
 ## [1.6.3] - 2026-03-15
 
 ### Fixed

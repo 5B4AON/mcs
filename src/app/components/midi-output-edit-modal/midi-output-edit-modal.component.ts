@@ -223,10 +223,7 @@ export class MidiOutputEditModalComponent implements OnInit {
       this.error = 'Dah paddle MIDI note value must be 0–127.';
       return;
     }
-    if (this.editMode === 'paddle' && value === dahValue) {
-      this.error = 'Dit and dah paddle notes must be different.';
-      return;
-    }
+
 
     this.saved.emit({
       deviceId: this.editDeviceId,
@@ -297,6 +294,10 @@ export class MidiOutputEditModalComponent implements OnInit {
   /** Recompute the non-blocking duplicate warning */
   updateWarning(): void {
     const dahValue = this.editMode === 'paddle' ? this.editDahValue : -1;
+    if (this.editMode === 'paddle' && this.editValue === this.editDahValue) {
+      this.warning = 'Dit and dah paddle notes are the same. This is allowed but both elements will be indistinguishable on the MIDI bus.';
+      return;
+    }
     this.warning = this.checkDuplicates(this.editValue, dahValue);
   }
 

@@ -69,11 +69,10 @@
       <label class="checkbox-label">
         <input type="checkbox" [checked]="settings.settings().midiOutputOverrideWpm"
                (change)="onBoolChange('midiOutputOverrideWpm', $event)">
-        Override remote WPM with local encoder WPM
+        Override input WPM with local encoder WPM
       </label>
       <div class="cw-hint">
-        Firebase RTDB characters carry the sender's WPM. Enable to use your
-        local Encoder WPM instead.
+        Enable to use your local Encoder WPM instead of the input WPM.
       </div>
     </div>
   }

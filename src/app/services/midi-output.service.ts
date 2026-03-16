@@ -132,6 +132,14 @@ export class MidiOutputService implements OnDestroy {
    */
   private activeNotes = new Map<string, { note: number; channel: number; output: MIDIOutput }>();
 
+  /**
+   * Track note keys activated by keyDown() (real-time straight-key path).
+   * keyUp() only releases these — not notes from the character playback queue.
+   * Without this separation, keyUp() would prematurely cut short paddle notes
+   * being played by the queue at a different (slower) WPM.
+   */
+  private realTimeNoteKeys = new Set<string>();
+
   /** Character playback queue */
   private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean; isFromRelay?: boolean }[] = [];
   private playing = false;
@@ -483,6 +491,7 @@ export class MidiOutputService implements OnDestroy {
       const output = this.getOutputForDevice(mapping.deviceId);
       if (!output || mapping.value < 0) continue;
       this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
+      this.realTimeNoteKeys.add(`${mapping.value}:${mapping.channel}`);
     }
   }
 
@@ -493,10 +502,16 @@ export class MidiOutputService implements OnDestroy {
    * the method checks activeNotes before sending.
    */
   keyUp(): void {
-    // Release all active straight-key notes
-    for (const [key, info] of this.activeNotes) {
-      this.sendNoteOff(info.note, info.channel, info.output);
+    // Release only notes activated by keyDown() (real-time straight-key path).
+    // Notes from the character playback queue are managed by playCharElements()
+    // and must not be released here — they run at a potentially different WPM.
+    for (const key of this.realTimeNoteKeys) {
+      const info = this.activeNotes.get(key);
+      if (info) {
+        this.sendNoteOff(info.note, info.channel, info.output);
+      }
     }
+    this.realTimeNoteKeys.clear();
   }
 
   /**
