@@ -19,6 +19,7 @@ import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { WakeLockService } from './services/wake-lock.service';
+import { PracticeService } from './services/practice.service';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
@@ -159,6 +160,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public displayBuffers: DisplayBufferService,
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
+    public practice: PracticeService,
   ) {
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
@@ -277,6 +279,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       const buf = this.encoder.buffer();
       const idx = this.encoder.sentIndex();
+      const isPractice = this.settings.settings().encoderMode === 'practice';
       if (buf !== this.lastSentBuf) {
         // Buffer was replaced or cleared.
         // When processSend finishes, sentIndex.set(endIdx), buffer.set(''),
@@ -285,22 +288,36 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // (buf='', idx=0). Flush any remaining unpushed characters from
         // the old buffer so they reach the display (and prosign actions fire).
         if (buf === '' && this.lastSentBuf && this.lastSentIdx < this.lastSentBuf.length) {
-          const es = this.settings.settings();
-          const encSource = es.encoderSource;
-          const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
-          const displayColor = es.encoderColor || undefined;
-          let i = this.lastSentIdx;
-          while (i < this.lastSentBuf.length) {
-            const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
-            this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
-            i = endIdx;
+          if (isPractice) {
+            // Only flush remaining chars if practice is still playing
+            // (not if we aborted — state would be 'idle')
+            if (this.practice.state() !== 'idle') {
+              let i = this.lastSentIdx;
+              while (i < this.lastSentBuf.length) {
+                const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
+                this.practice.pushPracticeChar(token);
+                i = endIdx;
+              }
+            }
+          } else {
+            const es = this.settings.settings();
+            const encSource = es.encoderSource;
+            const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+            const displayColor = es.encoderColor || undefined;
+            let i = this.lastSentIdx;
+            while (i < this.lastSentBuf.length) {
+              const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
+              this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
+              i = endIdx;
+            }
           }
         }
         this.lastSentBuf = buf;
         this.lastSentIdx = idx;
         // Sync the main-screen textarea when the encoder clears its buffer
         // (e.g. after live-mode send completes) so stale text can't be re-fed
-        if (buf === '' && this.encoderInputRef) {
+        // (skip in practice mode — textarea is user input)
+        if (buf === '' && this.encoderInputRef && !isPractice) {
           this.encoderInputRef.nativeElement.value = '';
           this.encoderInputHasText = false;
         }
@@ -310,16 +327,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         // Enter again). Reset tracking so subsequent advances are picked up.
         this.lastSentIdx = idx;
       } else if (idx > this.lastSentIdx) {
-        const es = this.settings.settings();
-        const encSource = es.encoderSource;
-        const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
-        const displayColor = es.encoderColor || undefined;
         // Walk through newly sent characters using token extraction so
         // prosign patterns (e.g. '<SK>') are pushed as whole strings.
         let i = this.lastSentIdx;
         while (i < idx) {
           const { token, endIdx } = this.encoder.extractToken(buf, i);
-          this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
+          if (isPractice) {
+            this.practice.pushPracticeChar(token);
+          } else {
+            const es = this.settings.settings();
+            const encSource = es.encoderSource;
+            const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+            const displayColor = es.encoderColor || undefined;
+            this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
+          }
           i = endIdx;
         }
         this.lastSentIdx = idx;
@@ -332,13 +353,38 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       const count = this.encoder.wordGapCount();
       if (count > this.lastWordGapCount) {
-        const es = this.settings.settings();
-        const encSource = es.encoderSource;
-        const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
-        const displayColor = es.encoderColor || undefined;
-        this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
+        const isPractice = this.settings.settings().encoderMode === 'practice';
+        if (isPractice) {
+          this.practice.pushPracticeChar(' ');
+        } else {
+          const es = this.settings.settings();
+          const encSource = es.encoderSource;
+          const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
+          const displayColor = es.encoderColor || undefined;
+          this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
+        }
       }
       this.lastWordGapCount = count;
+    });
+
+    // Watch for practice mode: detect when encoder finishes sending
+    effect(() => {
+      const sending = this.encoder.isSending();
+      const practiceState = this.practice.state();
+      if (!sending && practiceState === 'playing') {
+        this.practice.onEncoderFinished();
+      }
+    });
+
+    // Sync practice userInput signal to main-screen textarea
+    // (handles clear from fullscreen toolbar or abort resetting the input)
+    effect(() => {
+      const input = this.practice.userInput();
+      if (input === '' && this.encoderInputRef
+          && this.settings.settings().encoderMode === 'practice') {
+        this.encoderInputRef.nativeElement.value = '';
+        this.encoderInputHasText = false;
+      }
     });
 
     // Recheck sprite space when settings that affect panel height change
@@ -716,6 +762,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Encoder handlers ----
 
   onEncoderKeydown(event: KeyboardEvent, textarea: HTMLTextAreaElement): void {
+    // In practice type-along, Enter maps to start/pause/resume/validate
+    if (this.settings.settings().encoderMode === 'practice'
+        && this.settings.settings().practiceFeedbackMode === 'typealong'
+        && event.key === 'Enter') {
+      event.preventDefault();
+      const state = this.practice.state();
+      if (state === 'idle' || state === 'finished') {
+        this.practiceStartOrNext(textarea);
+      } else if (state === 'playing') {
+        this.practice.pause();
+      } else if (state === 'paused') {
+        this.practice.resume();
+      }
+      return;
+    }
     if (this.settings.settings().encoderMode === 'enter' && event.key === 'Enter') {
       event.preventDefault();
       this.encoder.submitText(textarea.value);
@@ -725,8 +786,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onEncoderInput(textarea: HTMLTextAreaElement): void {
+    const pos = textarea.selectionStart;
+    textarea.value = textarea.value.toUpperCase();
+    textarea.selectionStart = textarea.selectionEnd = pos;
     this.encoderInputHasText = textarea.value.trim().length > 0;
-    if (this.settings.settings().encoderMode === 'live') {
+    if (this.settings.settings().encoderMode === 'practice') {
+      this.practice.userInput.set(textarea.value);
+    } else if (this.settings.settings().encoderMode === 'live') {
       this.encoder.setBuffer(textarea.value);
     }
   }
@@ -754,21 +820,67 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Clear only the encoder textarea input (not the buffer or log) */
   clearEncoderTextarea(textarea: HTMLTextAreaElement): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.userInput.set('');
+    }
     textarea.value = '';
     this.encoderInputHasText = false;
   }
 
   /** Clear the main output display buffer and reset operational state */
   clearMainOutput(): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      if (this.practice.state() !== 'idle') this.practice.abort();
+      if (this.encoderInputRef) {
+        this.encoderInputRef.nativeElement.value = '';
+        this.encoderInputHasText = false;
+      }
+    }
     this.displayBuffers.mainOutput.clear();
     this.decoder.clearOutput();
   }
 
   /** Clear all three display buffers plus encoder operational state */
   clearAllBuffers(): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      if (this.practice.state() !== 'idle') this.practice.abort();
+      if (this.encoderInputRef) {
+        this.encoderInputRef.nativeElement.value = '';
+        this.encoderInputHasText = false;
+      }
+    }
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.encoder.clearBuffer();
+  }
+
+  // ---- Practice mode ----
+
+  /** Start practice or advance to next sequence */
+  practiceStartOrNext(textarea: HTMLTextAreaElement): void {
+    // If finishing type-along, compute feedback first before advancing
+    if (this.practice.state() === 'finished'
+        && this.settings.settings().practiceFeedbackMode === 'typealong'
+        && this.practice.feedback().length === 0) {
+      this.practice.computeFeedback(this.practice.userInput());
+      return;
+    }
+    if (this.practice.state() === 'finished') {
+      this.practice.next();
+    } else {
+      this.practice.start();
+    }
+  }
+
+  /** Pause practice playback */
+  practicePause(): void {
+    this.practice.pause();
+  }
+
+  /** Resume practice playback */
+  practiceResume(): void {
+    this.practice.resume();
   }
 
   // ---- Text blur ----
@@ -779,6 +891,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    // Practice mode blur/typealong: blur the practice source direction
+    if (s.encoderMode === 'practice' && (s.practiceFeedbackMode === 'blur' || s.practiceFeedbackMode === 'typealong')) {
+      // If practice finished and feedback computed, unblur to show highlights
+      if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
+        return null;
+      }
+      return s.practiceSource;
+    }
     return s.textBlurEnabled ? s.textBlurAppliesTo : null;
   }
 
@@ -902,6 +1022,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     let value: string | number = el.value;
     if (el.type === 'number' || el.type === 'range') {
       value = parseFloat(el.value);
+    }
+    // When switching away from practice mode, reset practice state
+    if (key === 'encoderMode' && this.settings.settings().encoderMode === 'practice' && value !== 'practice') {
+      this.practice.reset();
     }
     this.settings.update({ [key]: value } as Partial<AppSettings>);
   }

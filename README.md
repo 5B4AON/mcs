@@ -12,7 +12,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Decode** — Decodes incoming Morse code in real time from a radio receiver's audio via CW tone detection. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
 
-**Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send) and "Live" (send as you type) modes.
+**Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send), "Live" (send as you type), and "Copy Practice" (self-study CW trainer) modes.
 
 **Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (multiple mappings with independent ports, pins, and polling — DSR/CTS/DCD/RI via Web Serial API), computer keyboard (multiple mappings with per-mapping paddle mode), mouse, or touchscreen. MIDI, serial, and keyboard input mappings support optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 
@@ -67,6 +67,7 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 ## Additional Features
 
 - **Text Blurring** — Hides decoded and/or encoded text behind a blur filter for copy-receiving practice. Configurable for RX only, TX only, or both. Press and hold the eye button to momentarily reveal the answer.
+- **Copy Practice** — Built-in CW copy trainer. The app plays random Morse sequences (characters, words, or callsigns) and scores your typed input with per-character colour-coded feedback and accuracy percentage. Three feedback modes (listen only, blurred reveal, type-along) and a local/full pipeline selector for solo or on-air practice.
 - **Haptic Vibration** — The device vibrates in sync with the sidetone while the key is down. Configurable for TX only, RX only, or both. Enhanced haptic timing compensates for Android motor spin-up latency. Android only (Chrome, Firefox, Edge).
 - **Screen Wake Lock** — Prevents the screen from locking during operation. Important on mobile where screen lock suspends network connectivity, interrupting Firebase relay. Uses the Screen Wake Lock API (Chrome 84+, Edge 84+, Safari 16.4+).
 - **Progressive Web App** — Installable as a standalone app on desktop (Chrome, Edge) and mobile (Android Chrome, iOS Safari). The Angular service worker caches the app shell and assets for offline access.

@@ -18,8 +18,14 @@ export function isTouchDevice(): boolean {
 
 /** Iambic keyer paddle mode */
 export type PaddleMode = 'iambic-b' | 'iambic-a' | 'ultimatic' | 'single-lever';
-/** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type */
-export type EncoderMode = 'enter' | 'live';
+/** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type, 'practice' for copy practice */
+export type EncoderMode = 'enter' | 'live' | 'practice';
+/** Copy practice content mode */
+export type PracticeContentMode = 'characters' | 'words' | 'callsigns';
+/** Copy practice feedback mode */
+export type PracticeFeedbackMode = 'listen' | 'blur' | 'typealong';
+/** Copy practice pipeline mode */
+export type PracticePipeline = 'local' | 'full';
 /** Mouse button action mapping */
 export type MouseButtonAction = 'straightKey' | 'dit' | 'dah' | 'none';
 /** Touch keyer operating mode */
@@ -436,6 +442,34 @@ export interface AppSettings {
   /** Which direction Farnsworth timing applies to: tx, rx, or both */
   farnsworthAppliesTo: 'tx' | 'rx' | 'both';
 
+  // --- Copy Practice ---
+  /** Master toggle — shows 'Practice' in encoder mode dropdown when enabled */
+  practiceEnabled: boolean;
+  /** Content mode: random characters, words, or callsigns */
+  practiceContentMode: PracticeContentMode;
+  /** Number of groups/words/callsigns per round (1–10) */
+  practiceGroupCount: number;
+  /** Group size for random characters mode (1–5) */
+  practiceCharGroupSize: number;
+  /** Character pool: include letters */
+  practiceIncludeLetters: boolean;
+  /** Character pool: include digits */
+  practiceIncludeNumbers: boolean;
+  /** Character pool: include punctuation */
+  practiceIncludePunctuation: boolean;
+  /** Word length filter (any combination of 3, 4, 5) */
+  practiceWordLengths: number[];
+  /** Feedback mode: listen-only, blurred reveal, or type-along */
+  practiceFeedbackMode: PracticeFeedbackMode;
+  /** Pipeline: local audio only or full (serial, MIDI, RTDB, etc.) */
+  practicePipeline: PracticePipeline;
+  /** Input direction: characters appear as RX or TX */
+  practiceSource: DecoderSource;
+  /** Optional display name for practice input */
+  practiceName: string;
+  /** Optional text color for practice input */
+  practiceColor: string;
+
   // --- Emoji Replacements ---
   /** Master toggle for emoji display in fullscreen modals */
   emojisEnabled: boolean;
@@ -724,6 +758,20 @@ const DEFAULT_SETTINGS: AppSettings = {
   farnsworthMultiplier: 2,
   farnsworthWordsworth: false,
   farnsworthAppliesTo: 'tx',
+
+  practiceEnabled: false,
+  practiceContentMode: 'characters',
+  practiceGroupCount: 5,
+  practiceCharGroupSize: 1,
+  practiceIncludeLetters: true,
+  practiceIncludeNumbers: false,
+  practiceIncludePunctuation: false,
+  practiceWordLengths: [3, 4, 5],
+  practiceFeedbackMode: 'listen',
+  practicePipeline: 'local',
+  practiceSource: 'rx',
+  practiceName: '',
+  practiceColor: '',
 
   wakeLockEnabled: false,
 

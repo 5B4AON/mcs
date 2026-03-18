@@ -42,8 +42,8 @@
   }
 </div>
 
-<!-- Blur reveal button (momentary hold to unblur) -->
-@if (blurMode) {
+<!-- Blur reveal button (standalone — only when NOT in practice listen/blur mode) -->
+@if (blurMode && !(settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong')) {
   <button class="blur-reveal-btn" [class.revealing]="revealing"
           [class.blur-reveal-above-touch]="settings.settings().touchKeyerEnabled"
           (mousedown)="onRevealStart($event)"
@@ -59,6 +59,47 @@
       <circle cx="12" cy="12" r="3"/>
     </svg>
   </button>
+}
+
+<!-- Practice floating button stack (listen/blur modes in decoder view) -->
+@if (settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong') {
+  <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="settings.settings().touchKeyerEnabled">
+    @if (practice.state() === 'idle') {
+      <button class="fs-float-btn fs-float-play" (click)="practice.start()" title="Start practice">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    } @else if (practice.state() === 'finished') {
+      <button class="fs-float-btn fs-float-play" (click)="practice.next()" title="Next sequence">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    } @else if (practice.state() === 'playing') {
+      <button class="fs-float-btn fs-float-pause" (click)="practice.pause()" title="Pause">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+    } @else if (practice.state() === 'paused') {
+      <button class="fs-float-btn fs-float-play" (click)="practice.resume()" title="Resume">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    }
+
+    <!-- Reveal button inside stack -->
+    @if (blurMode) {
+      <button class="fs-float-btn" [class.revealing]="revealing"
+              (mousedown)="onRevealStart($event)"
+              (mouseup)="onRevealEnd()"
+              (mouseleave)="onRevealEnd()"
+              (touchstart)="onRevealStart($event)"
+              (touchend)="onRevealEnd()"
+              (touchcancel)="onRevealEnd()"
+              title="Hold to reveal text">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </button>
+    }
+  </div>
 }
 
 <!-- Touch keyer overlay (decoder mode only) -->

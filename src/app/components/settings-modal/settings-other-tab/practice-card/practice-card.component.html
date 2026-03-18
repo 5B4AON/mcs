@@ -1,0 +1,167 @@
+<!-- Copy Practice -->
+<div class="settings-card" [class.disabled-card]="!settings.settings().practiceEnabled">
+  <div class="settings-card-header" (click)="expanded = !expanded">
+    <div class="settings-card-title">
+      <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+      <span class="settings-card-name">Copy Practice</span>
+    </div>
+    <label class="toggle-switch" (click)="$event.stopPropagation()">
+      <input type="checkbox" [checked]="settings.settings().practiceEnabled"
+             (change)="onEnabledChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  @if (expanded) {
+    <div class="settings-card-body">
+      <div class="cw-hint">
+        Copy practice plays random Morse sequences for you to decode
+        by ear. When enabled, a &ldquo;Practice&rdquo; option appears
+        in the encoder mode dropdown. Select it and press Start to begin
+        a round.
+      </div>
+
+      <!-- Content mode -->
+      <label>
+        Content:
+        <select (change)="onContentModeChange($event)">
+          <option value="characters" [selected]="settings.settings().practiceContentMode === 'characters'">Random Characters</option>
+          <option value="words" [selected]="settings.settings().practiceContentMode === 'words'">Random Words</option>
+          <option value="callsigns" [selected]="settings.settings().practiceContentMode === 'callsigns'">Random Callsigns</option>
+        </select>
+      </label>
+
+      <!-- Group count (all modes) -->
+      <label>
+        Count:
+        <select (change)="onGroupCountChange($event)">
+          @for (n of [1,2,3,4,5,6,7,8,9,10]; track n) {
+            <option [value]="n" [selected]="settings.settings().practiceGroupCount === n">{{ n }}</option>
+          }
+        </select>
+      </label>
+
+      <!-- Random characters options -->
+      @if (settings.settings().practiceContentMode === 'characters') {
+        <label>
+          Group size:
+          <select (change)="onCharGroupSizeChange($event)">
+            @for (n of [1,2,3,4,5]; track n) {
+              <option [value]="n" [selected]="settings.settings().practiceCharGroupSize === n">{{ n }}</option>
+            }
+          </select>
+        </label>
+
+        <div class="cw-hint">Character pool:</div>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceIncludeLetters"
+                 (change)="onPoolToggle('practiceIncludeLetters', $event)">
+          Letters (A–Z)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceIncludeNumbers"
+                 (change)="onPoolToggle('practiceIncludeNumbers', $event)">
+          Numbers (0–9)
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceIncludePunctuation"
+                 (change)="onPoolToggle('practiceIncludePunctuation', $event)">
+          Punctuation
+        </label>
+      }
+
+      <!-- Random words options -->
+      @if (settings.settings().practiceContentMode === 'words') {
+        <div class="cw-hint">Word lengths:</div>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceWordLengths.includes(3)"
+                 (change)="onWordLengthToggle(3, $event)">
+          3 letters
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceWordLengths.includes(4)"
+                 (change)="onWordLengthToggle(4, $event)">
+          4 letters
+        </label>
+        <label class="checkbox-label">
+          <input type="checkbox"
+                 [checked]="settings.settings().practiceWordLengths.includes(5)"
+                 (change)="onWordLengthToggle(5, $event)">
+          5 letters
+        </label>
+      }
+
+      <!-- Feedback mode -->
+      <label>
+        Feedback:
+        <select (change)="onFeedbackModeChange($event)">
+          <option value="listen" [selected]="settings.settings().practiceFeedbackMode === 'listen'">Listen only</option>
+          <option value="blur" [selected]="settings.settings().practiceFeedbackMode === 'blur'">Blurred (reveal button)</option>
+          <option value="typealong" [selected]="settings.settings().practiceFeedbackMode === 'typealong'">Type-along</option>
+        </select>
+      </label>
+      <div class="cw-hint">
+        @if (settings.settings().practiceFeedbackMode === 'listen') {
+          Audio plays and decoded text appears in the output area.
+        } @else if (settings.settings().practiceFeedbackMode === 'blur') {
+          Audio plays and decoded text appears blurred. Use the reveal button to peek.
+        } @else {
+          Audio plays with text blurred. Type what you hear in the input
+          box. At the end of the sequence, characters are highlighted as
+          correct or missed.
+        }
+      </div>
+
+      <!-- Pipeline -->
+      <label>
+        Pipeline:
+        <select (change)="onPipelineChange($event)">
+          <option value="local" [selected]="settings.settings().practicePipeline === 'local'">Local audio only</option>
+          <option value="full" [selected]="settings.settings().practicePipeline === 'full'">Full pipeline</option>
+        </select>
+      </label>
+      <div class="cw-hint">
+        @if (settings.settings().practicePipeline === 'local') {
+          Practice audio is played locally only &mdash; serial, MIDI, and
+          RTDB outputs are not driven.
+        } @else {
+          Practice audio is sent through the full output pipeline
+          including serial, MIDI, and RTDB outputs.
+        }
+      </div>
+
+      <!-- Direction (RX/TX) -->
+      <label>
+        Direction:
+        <select (change)="onSourceChange($event)">
+          <option value="rx" [selected]="settings.settings().practiceSource === 'rx'">RX</option>
+          <option value="tx" [selected]="settings.settings().practiceSource === 'tx'">TX</option>
+        </select>
+      </label>
+
+      <!-- Name and color -->
+      <label>
+        Name:
+        <input type="text" maxlength="20"
+               [value]="settings.settings().practiceName"
+               (input)="onNameChange($event)"
+               placeholder="Optional display name">
+      </label>
+      <label>
+        Color:
+        <span class="color-input-group">
+          <input type="color"
+                 [value]="settings.settings().practiceColor || '#ffffff'"
+                 (input)="onColorChange($event)">
+          @if (settings.settings().practiceColor) {
+            <button class="color-clear-btn" (click)="clearColor()" title="Use default color">&times;</button>
+          }
+        </span>
+      </label>
+    </div>
+  }
+</div>

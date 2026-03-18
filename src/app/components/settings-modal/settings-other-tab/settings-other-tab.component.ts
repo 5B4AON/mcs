@@ -6,6 +6,7 @@ import { Component } from '@angular/core';
 import { WakeLockCardComponent } from './wake-lock-card/wake-lock-card.component';
 import { TextBlurCardComponent } from './text-blur-card/text-blur-card.component';
 import { FarnsworthCardComponent } from './farnsworth-card/farnsworth-card.component';
+import { PracticeCardComponent } from './practice-card/practice-card.component';
 import { ShowProsignsCardComponent } from './show-prosigns-card/show-prosigns-card.component';
 import { ProsignActionsCardComponent } from './prosign-actions-card/prosign-actions-card.component';
 import { EmojisCardComponent } from './emojis-card/emojis-card.component';
@@ -24,6 +25,7 @@ import { EmojisCardComponent } from './emojis-card/emojis-card.component';
     WakeLockCardComponent,
     TextBlurCardComponent,
     FarnsworthCardComponent,
+    PracticeCardComponent,
     ShowProsignsCardComponent,
     ProsignActionsCardComponent,
     EmojisCardComponent,

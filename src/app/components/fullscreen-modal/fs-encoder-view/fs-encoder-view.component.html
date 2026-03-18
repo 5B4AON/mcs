@@ -3,6 +3,13 @@
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
      [class.blur-revealing]="revealing" #conversationArea
      tabindex="0" (keydown)="onEncoderModalKeydown($event)">
+  @if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {
+    <span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+      [class.fb-correct]="fb.result === 'correct'"
+      [class.fb-incorrect]="fb.result === 'incorrect'"
+      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span>
+    <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
+  } @else {
   @for (line of conversationLines; track $index) {
     @if ($last && line.type === 'rx') {
       <!-- RX last line: RX pattern inline, encoder buffer on new line -->
@@ -72,26 +79,83 @@
       </span>
     }
   }
+  }
 </div>
 
-<!-- Blur reveal button (momentary hold to unblur) -->
-@if (blurMode) {
-  <button class="blur-reveal-btn" [class.revealing]="revealing"
-          [class.blur-reveal-beside-vk]="hasTouchInput"
-          (mousedown)="onRevealStart($event)"
-          (mouseup)="onRevealEnd()"
-          (mouseleave)="onRevealEnd()"
-          (touchstart)="onRevealStart($event)"
-          (touchend)="onRevealEnd()"
-          (touchcancel)="onRevealEnd()"
-          title="Hold to reveal text">
-    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
-         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-      <circle cx="12" cy="12" r="3"/>
-    </svg>
-  </button>
+<!-- Practice type-along: show what user has typed -->
+@if (settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode === 'typealong' && practice.userInput().length > 0) {
+  <div class="fs-typed-text"
+       [style.font-size]="settings.modalDisplay().fontSize + 'px'">{{ practice.userInput() }}</div>
 }
+
+<!-- Floating button stack: TX/Practice, Reveal, Keyboard -->
+<div class="fs-btn-stack">
+  <!-- Start/Stop TX or Play/Pause practice -->
+  @if (settings.settings().encoderMode === 'practice') {
+    @if (practice.state() === 'idle') {
+      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()" title="Start practice">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0) {
+      <button class="fs-float-btn fs-float-results" (click)="practiceStartOrNext()" title="Validate">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </button>
+    } @else if (practice.state() === 'finished') {
+      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()" title="Next sequence">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    } @else if (practice.state() === 'playing') {
+      <button class="fs-float-btn fs-float-pause" (click)="practice.pause()" title="Pause">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      </button>
+    } @else if (practice.state() === 'paused') {
+      <button class="fs-float-btn fs-float-play" (click)="practice.resume()" title="Resume">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      </button>
+    }
+  } @else {
+    <button class="fs-float-btn" [class.fs-float-tx-active]="encoder.isSending()"
+            [class.fs-float-tx-ready]="!encoder.isSending() && encoderPendingChars().length > 0"
+            (click)="toggleTx()" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/>
+        <circle cx="12" cy="12" r="2"/>
+        <path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/>
+      </svg>
+    </button>
+  }
+
+  <!-- Blur reveal button (momentary hold to unblur) -->
+  @if (blurMode) {
+    <button class="fs-float-btn" [class.revealing]="revealing"
+            (mousedown)="onRevealStart($event)"
+            (mouseup)="onRevealEnd()"
+            (mouseleave)="onRevealEnd()"
+            (touchstart)="onRevealStart($event)"
+            (touchend)="onRevealEnd()"
+            (touchcancel)="onRevealEnd()"
+            title="Hold to reveal text">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  }
+
+  <!-- Virtual keyboard toggle (touch devices) -->
+  @if (hasTouchInput) {
+    <button class="fs-float-btn" [class.vk-active]="virtualKeyboardVisible"
+            (mousedown)="$event.preventDefault()"
+            (click)="toggleVirtualKeyboard()"
+            title="Toggle virtual keyboard">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+        <path d="M20 5H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm-9 3h2v2h-2V8zm0 3h2v2h-2v-2zM8 8h2v2H8V8zm0 3h2v2H8v-2zm-1 2H5v-2h2v2zm0-3H5V8h2v2zm9 7H8v-2h8v2zm0-4h-2v-2h2v2zm0-3h-2V8h2v2zm3 3h-2v-2h2v2zm0-3h-2V8h2v2z"/>
+      </svg>
+    </button>
+  }
+</div>
 
 <!-- Virtual keyboard support for touch/mobile devices -->
 @if (hasTouchInput) {
@@ -109,6 +173,7 @@
          (blur)="virtualKeyboardVisible = false">
   <button class="vk-toggle-btn"
           [class.vk-active]="virtualKeyboardVisible"
+          style="display: none"
           (mousedown)="$event.preventDefault()"
           (click)="toggleVirtualKeyboard()"
           title="Toggle virtual keyboard">

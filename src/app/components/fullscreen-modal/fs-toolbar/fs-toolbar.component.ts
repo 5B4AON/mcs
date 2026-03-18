@@ -15,6 +15,7 @@ import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService } from '../../../services/display-buffer.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
+import { PracticeService } from '../../../services/practice.service';
 
 /**
  * Fullscreen modal toolbar component.
@@ -70,6 +71,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private devices: AudioDeviceService,
     private cwInput: CwInputService,
     private displayBuffers: DisplayBufferService,
+    private practice: PracticeService,
   ) {}
 
   ngOnInit(): void {
@@ -127,6 +129,10 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     if (el.type === 'number' || el.type === 'range') {
       value = parseFloat(el.value);
     }
+    // When switching away from practice mode, reset practice state
+    if (key === 'encoderMode' && this.settings.settings().encoderMode === 'practice' && value !== 'practice') {
+      this.practice.reset();
+    }
     this.settings.update({ [key]: value } as Partial<AppSettings>);
     this.saveSettings();
   }
@@ -151,6 +157,9 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Clear the current mode's conversation buffer */
   clearConversation(): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      if (this.practice.state() !== 'idle') this.practice.abort();
+    }
     const buf = this.mode === 'decoder'
       ? this.displayBuffers.fullscreenDecoder
       : this.displayBuffers.fullscreenEncoder;
@@ -159,6 +168,9 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Clear all four display buffers plus encoder operational state */
   clearAllBuffers(): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      if (this.practice.state() !== 'idle') this.practice.abort();
+    }
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.encoder.clearBuffer();
