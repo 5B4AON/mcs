@@ -39,6 +39,9 @@ src/app/
 ├── morse-table.ts           — MORSE_TABLE, MORSE_REVERSE, timingsFromWpm()
 ├── version.ts               — app version constant (keep in sync with package.json)
 ├── web-serial.d.ts          — Web Serial API type declarations
+├── data/                    — static data files
+│   ├── practice-words.ts    — common English word list for copy practice
+│   └── callsign-prefixes.ts — international callsign prefix database
 ├── services/                — singleton services (providedIn: 'root')
 │   ├── settings.service.ts  — central settings signal + localStorage persistence
 │   ├── audio-device.service.ts — audio device enumeration & fingerprinting
@@ -58,7 +61,8 @@ src/app/
 │   ├── mouse-keyer.service.ts  — mouse-based keyer input
 │   ├── loop-detection.service.ts — prevents audio feedback loops
 │   ├── wake-lock.service.ts    — Screen Wake Lock API
-│   └── vibration-output.service.ts — Vibration API output
+│   ├── vibration-output.service.ts — Vibration API output
+│   └── practice.service.ts     — copy practice sequence generation + scoring
 └── components/
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
@@ -115,7 +119,7 @@ AppComponent
 ├── SettingsModalComponent
 │   ├── SettingsInputsTabComponent → 8 *-card components
 │   ├── SettingsOutputsTabComponent → 7 *-card components
-│   ├── SettingsOtherTabComponent → 4 *-card components
+│   ├── SettingsOtherTabComponent → 7 *-card components
 │   └── ConfirmDialogComponent (reset confirmation)
 ├── FullscreenModalComponent
 │   ├── FsToolbarComponent
@@ -142,12 +146,13 @@ AppComponent
 - **Serial input mappings pipeline**: `SerialInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialInputMappings`, UI in `serial-input-card` + `SerialInputEditModalComponent`, runtime in `SerialKeyInputService` (per-mapping independent iambic keyer, similar to MIDI input). Each mapping has optional `name`/`color` for multi-user fullscreen conversation views.
 - **Serial output mappings pipeline**: `SerialOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialOutputMappings`, UI in `serial-output-card` + `SerialOutputEditModalComponent`, runtime in `SerialKeyOutputService`. Each mapping specifies `portIndex`, `pin` (DTR/RTS), `invert`, and `forward` (OutputForward). Multiple mappings can target different ports or different pins on the same port.
 - **Settings card CSS** (`settings-shared.css`, `settings-outputs-tab.component.css`, `settings-other-tab.component.css`) is loaded **globally** via `angular.json` `styles` array — not via component `styleUrls`. Card components use `styles: [':host { display: contents; }']` only. Do NOT add these CSS files back into component `styleUrls` or the bundle will bloat.
-- **Fullscreen modal CSS** (`fullscreen-shared.css`) is similarly shared. Child components (`fs-toolbar`, `fs-decoder-view`, `fs-encoder-view`) import it via `styleUrls` (only 3 consumers, so duplication is acceptable here — unlike the 18 settings cards).
+- **Fullscreen modal CSS** (`fullscreen-shared.css`) is similarly shared. Child components (`fs-toolbar`, `fs-decoder-view`, `fs-encoder-view`) import it via `styleUrls` (only 3 consumers, so duplication is acceptable here — unlike the 19 settings cards).
 - **Morse table** (`morse-table.ts`): `MORSE_TABLE` maps characters/prosigns to dot-dash strings; `MORSE_REVERSE` is the inverse. Changes to the table can affect encoding, decoding, and the symbols reference panel.
 - **`DisplayBufferService`** bridges decoded/encoded text with prosign actions and emoji replacements — changes to prosign or emoji logic converge here.
 - **Audio chain**: `AudioDeviceService` → `AudioInputService` → `CwInputService` (detection) → `MorseDecoderService` (decode). Output: `MorseEncoderService` → `AudioOutputService` + optional `SerialKeyOutputService` / `WinkeyerOutputService` / `MidiOutputService` / `FirebaseRtdbService`.
 - **Serial input/output muting**: `SerialKeyOutputService.isSending` signal (with 30 ms holdoff per mapping) prevents `SerialKeyInputService` from processing key-down events while output is active — same pattern as `MidiOutputService.isSending` / `MidiInputService`. `SerialKeyInputService` has its own independent iambic keyer per mapping (like `MidiInputService`), bypassing `KeyerService` entirely.
 - **Serial port sharing**: when serial input and output mappings use the same port index, `SerialKeyInputService` piggybacks on `SerialKeyOutputService.getOpenPort(portIndex)` instead of opening a second connection. The output service exposes an `openPorts` signal (Map<number, PortState>) and a `getOpenPort(portIndex)` method for this purpose.
+- **Copy practice pipeline**: settings (`practiceEnabled`, `practiceContentMode`, `practiceFeedbackMode`, `practicePipeline`, etc.) in `AppSettings` + `DEFAULT_SETTINGS`, UI in `practice-card`, sequence generation + scoring in `PracticeService`, playback via `MorseEncoderService.submitText()`. Practice characters are routed through `PracticeService.pushPracticeChar()` instead of `DisplayBufferService.pushSent()`. When `practicePipeline` is `'local'`, external outputs (serial, MIDI, RTDB, vibration) are skipped in `MorseEncoderService`.
 - **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone-card).
 
 ## Build and Test

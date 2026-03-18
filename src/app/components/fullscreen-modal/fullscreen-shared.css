@@ -14,6 +14,7 @@
   padding: .5rem;
   padding-bottom: 2.5em;
   scroll-behavior: smooth;
+  text-shadow: 0 0 6px currentColor, 0 1px 3px rgba(0, 0, 0, 0.4);
 }
 .fs-conversation.vk-open {
   padding-bottom: 0;

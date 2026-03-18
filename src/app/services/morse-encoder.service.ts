@@ -195,17 +195,21 @@ export class MorseEncoderService {
         const idx = this.sentIndex();
         const { token, endIdx } = this.extractToken(this.buffer(), idx);
 
-        const source = this.settings.settings().encoderSource;
-
-        // Forward to WinKeyer (as encoder source) — WinKeyer handles its own timing
-        this.winkeyerOutput.forwardDecodedChar(token, source);
-
-        // Forward to MIDI output (as encoder source) — plays elements at encoder WPM
-        this.midiOutput.forwardDecodedChar(token, source);
-
-        // Forward to Firebase RTDB output (as encoder source)
         const es = this.settings.settings();
-        this.rtdbOutput.forwardEncoderChar(token, es.encoderWpm, es.encoderSource, es.encoderName, es.encoderColor);
+        const source = es.encoderSource;
+        const isPracticeLocal = es.encoderMode === 'practice' && es.practicePipeline === 'local';
+
+        // Skip external outputs when practice mode uses local audio only
+        if (!isPracticeLocal) {
+          // Forward to WinKeyer (as encoder source) — WinKeyer handles its own timing
+          this.winkeyerOutput.forwardDecodedChar(token, source);
+
+          // Forward to MIDI output (as encoder source) — plays elements at encoder WPM
+          this.midiOutput.forwardDecodedChar(token, source);
+
+          // Forward to Firebase RTDB output (as encoder source)
+          this.rtdbOutput.forwardEncoderChar(token, es.encoderWpm, es.encoderSource, es.encoderName, es.encoderColor);
+        }
 
         await this.sendCharacter(token, signal);
         this.sentIndex.set(endIdx);
@@ -236,7 +240,8 @@ export class MorseEncoderService {
   private async sendCharacter(char: string, signal: AbortSignal): Promise<void> {
     const s = this.settings.settings();
     const baseTimings = timingsFromWpm(s.encoderWpm);
-    const timings = adjustGapTimings(baseTimings, s.encoderWpm, s.encoderSource, s);
+    const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
+    const timings = adjustGapTimings(baseTimings, s.encoderWpm, fwSource, s);
     const source = s.encoderSource;
 
     if (char === ' ') {
@@ -258,11 +263,16 @@ export class MorseEncoderService {
       this.elementEvent$.next({ down: true });
 
       // Play tone, pulse serial, and vibrate for the element duration
-      await Promise.all([
-        this.audioOutput.scheduleTone(duration, source),
-        this.serialOutput.schedulePulse(duration, source),
-        this.vibrationOutput.schedulePulse(duration, source),
-      ]);
+      const isPracticeLocal = s.encoderMode === 'practice' && s.practicePipeline === 'local';
+      if (isPracticeLocal) {
+        await this.audioOutput.scheduleTone(duration, source);
+      } else {
+        await Promise.all([
+          this.audioOutput.scheduleTone(duration, source),
+          this.serialOutput.schedulePulse(duration, source),
+          this.vibrationOutput.schedulePulse(duration, source),
+        ]);
+      }
 
       // Emit element-end for sprite animation
       this.elementEvent$.next({ down: false });
@@ -299,7 +309,8 @@ export class MorseEncoderService {
     this.cancelWordGapTimer();
     const s = this.settings.settings();
     const baseTimings = timingsFromWpm(s.encoderWpm);
-    const timings = adjustGapTimings(baseTimings, s.encoderWpm, s.encoderSource, s);
+    const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
+    const timings = adjustGapTimings(baseTimings, s.encoderWpm, fwSource, s);
     const delay = timings.interWord - timings.interChar;
     this.wordGapTimer = setTimeout(() => {
       this.wordGapTimer = null;

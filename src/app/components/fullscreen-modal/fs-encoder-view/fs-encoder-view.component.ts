@@ -11,6 +11,7 @@ import { SettingsService } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
+import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatTextNoEmoji, formatLine } from '../fullscreen-format.utils';
 
 /**
@@ -70,6 +71,8 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   readonly encoderPendingChars = computed(() => {
     const buf = this.encoder.buffer();
     const idx = this.encoder.sentIndex();
+    // Hide pending chars in practice mode — they appear as sent text via display buffers
+    if (this.settings.settings().encoderMode === 'practice') return [];
     return buf.slice(idx).split('');
   });
 
@@ -77,6 +80,7 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
     public settings: SettingsService,
     public decoder: MorseDecoderService,
     public encoder: MorseEncoderService,
+    public practice: PracticeService,
     private displayBuffers: DisplayBufferService,
     private sanitizer: DomSanitizer,
   ) {}
@@ -84,9 +88,16 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   /**
    * Active blur mode derived from settings.
    * Returns null when blur is disabled, otherwise the appliesTo value.
+   * In practice mode with blur/typealong feedback, blurs the practice source.
    */
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    if (s.encoderMode === 'practice' && (s.practiceFeedbackMode === 'blur' || s.practiceFeedbackMode === 'typealong')) {
+      if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
+        return null;
+      }
+      return s.practiceSource;
+    }
     return s.textBlurEnabled ? s.textBlurAppliesTo : null;
   }
 
@@ -107,6 +118,39 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   /** Stop revealing blurred text */
   onRevealEnd(): void {
     this.revealing = false;
+  }
+
+  /** Toggle encoder transmission */
+  toggleTx(): void {
+    this.encoder.toggleTx();
+  }
+
+  /** Start a new practice round or advance to next sequence */
+  practiceStartOrNext(): void {
+    // In type-along mode, first press after finish computes feedback
+    if (this.practice.state() === 'finished'
+        && this.settings.settings().practiceFeedbackMode === 'typealong'
+        && this.practice.feedback().length === 0) {
+      this.practice.computeFeedback(this.practice.userInput());
+      return;
+    }
+    if (this.practice.state() === 'finished') {
+      this.practice.next();
+    } else {
+      this.practice.start();
+    }
+  }
+
+  /** Handle Enter key in practice mode — maps to the same action as the button */
+  private handlePracticeAction(): void {
+    const state = this.practice.state();
+    if (state === 'idle' || state === 'finished') {
+      this.practiceStartOrNext();
+    } else if (state === 'playing') {
+      this.practice.pause();
+    } else if (state === 'paused') {
+      this.practice.resume();
+    }
   }
 
   ngOnInit(): void {
@@ -176,6 +220,31 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
    */
   onEncoderModalKeydown(event: KeyboardEvent): void {
     if (event.ctrlKey || event.altKey || event.metaKey) return;
+    const isPractice = this.settings.settings().encoderMode === 'practice';
+    const isTypeAlong = isPractice && this.settings.settings().practiceFeedbackMode === 'typealong';
+
+    // In practice mode, Enter acts as the practice button
+    if (event.key === 'Enter' && isPractice) {
+      event.preventDefault();
+      this.handlePracticeAction();
+      return;
+    }
+
+    // In practice type-along, accumulate typed text instead of encoder buffer
+    if (isTypeAlong && (this.practice.state() === 'playing' || this.practice.state() === 'finished')) {
+      if (event.key === 'Backspace') {
+        event.preventDefault();
+        const t = this.practice.userInput();
+        if (t.length > 0) this.practice.userInput.set(t.slice(0, -1));
+        return;
+      }
+      if (event.key.length === 1) {
+        event.preventDefault();
+        this.practice.userInput.set(this.practice.userInput() + event.key.toUpperCase());
+        return;
+      }
+      return;
+    }
 
     if (event.key === 'Backspace') {
       event.preventDefault();
@@ -235,6 +304,23 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   onVirtualKeyInput(event: Event): void {
     const input = event.target as HTMLInputElement;
     const ie = event as InputEvent;
+    const isPractice = this.settings.settings().encoderMode === 'practice';
+    const isTypeAlong = isPractice && this.settings.settings().practiceFeedbackMode === 'typealong';
+
+    // Practice type-along: accumulate typed text
+    if (isTypeAlong && (this.practice.state() === 'playing' || this.practice.state() === 'finished')) {
+      if (ie.inputType === 'deleteContentBackward' || ie.inputType === 'deleteContentForward') {
+        const t = this.practice.userInput();
+        if (t.length > 0) this.practice.userInput.set(t.slice(0, -1));
+      } else if (ie.inputType === 'insertLineBreak') {
+        this.handlePracticeAction();
+      } else if (ie.data) {
+        this.practice.userInput.set(this.practice.userInput() + ie.data.toUpperCase());
+      }
+      input.value = ' ';
+      input.setSelectionRange(1, 1);
+      return;
+    }
 
     if (ie.inputType === 'deleteContentBackward' || ie.inputType === 'deleteContentForward') {
       const buf = this.encoder.buffer();
@@ -262,7 +348,9 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   onVirtualKeyKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       event.preventDefault();
-      if (this.settings.settings().encoderMode === 'enter') {
+      if (this.settings.settings().encoderMode === 'practice') {
+        this.handlePracticeAction();
+      } else if (this.settings.settings().encoderMode === 'enter') {
         this.encoder.startTx();
       }
     } else if (event.key === 'Escape') {

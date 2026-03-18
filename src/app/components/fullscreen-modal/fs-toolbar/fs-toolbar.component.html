@@ -106,6 +106,9 @@
             <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
               <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
               <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
+              @if (settings.settings().practiceEnabled) {
+                <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Copy Practice</option>
+              }
             </select>
           </label>
         }

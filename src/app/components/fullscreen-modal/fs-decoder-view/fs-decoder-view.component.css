@@ -60,3 +60,60 @@
 .blur-reveal-above-touch {
   bottom: 106px;
 }
+
+/* ---- Practice floating button ---- */
+.fs-btn-stack {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 25;
+}
+.fs-btn-stack-above-touch {
+  bottom: 106px;
+}
+.fs-float-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(60, 60, 80, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  min-height: unset;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.fs-float-btn:hover {
+  background: rgba(80, 80, 110, 0.9);
+  color: rgba(255, 255, 255, 0.85);
+}
+.fs-float-btn svg {
+  display: block;
+  pointer-events: none;
+}
+.fs-float-play {
+  background: rgba(30, 140, 70, 0.85);
+  color: #fff;
+  border-color: rgba(50, 180, 90, 0.5);
+}
+.fs-float-play:hover {
+  background: rgba(40, 160, 80, 0.9);
+}
+.fs-float-pause {
+  background: rgba(160, 120, 30, 0.85);
+  color: #fff;
+  border-color: rgba(140, 100, 20, 0.5);
+}
+.fs-float-pause:hover {
+  background: rgba(180, 140, 40, 0.9);
+}

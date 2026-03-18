@@ -12,6 +12,7 @@ import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
+import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
 
 /**
@@ -58,15 +59,23 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
     private displayBuffers: DisplayBufferService,
     private keyer: KeyerService,
     private mouseKeyer: MouseKeyerService,
+    public practice: PracticeService,
     private sanitizer: DomSanitizer,
   ) {}
 
   /**
    * Active blur mode derived from settings.
    * Returns null when blur is disabled, otherwise the appliesTo value.
+   * In practice mode with blur/typealong feedback, blurs the practice source.
    */
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    if (s.encoderMode === 'practice' && (s.practiceFeedbackMode === 'blur' || s.practiceFeedbackMode === 'typealong')) {
+      if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
+        return null;
+      }
+      return s.practiceSource;
+    }
     return s.textBlurEnabled ? s.textBlurAppliesTo : null;
   }
 

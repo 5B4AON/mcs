@@ -23,7 +23,21 @@
     <td>Each character is sent immediately as you type it.</td>
     <td>Casual QSOs, real-time ragchew</td>
   </tr>
+  <tr>
+    <td><strong>Copy Practice</strong></td>
+    <td>The app generates a random sequence, plays it as Morse, and you
+        type what you hear. After the round, per-character feedback shows
+        your accuracy.</td>
+    <td>CW copy training, building head-copy speed</td>
+  </tr>
 </table>
+
+<p>
+  Copy Practice mode appears in the encoder mode dropdown when the
+  <strong>Copy Practice</strong> card is enabled in Settings &rarr; Other.
+  See <a href="#" class="help-link" data-section="s3-5">&sect;&nbsp;3.5</a>
+  for full details.
+</p>
 
 <p>
   <strong>Transmit control:</strong> Click the transmit button (radio-wave
@@ -122,3 +136,149 @@
   only supports ASCII characters. Non-clashing prosigns (&lt;SK&gt;,
   &lt;SOS&gt;, &lt;BK&gt;, &lt;HH&gt;) are skipped in WinKeyer output.
 </p>
+
+<!-- 3.5 Copy Practice -->
+<h2 id="s3-5">3.5 &nbsp;Copy Practice</h2>
+
+<p>
+  Copy Practice turns Morse Code Studio into a self-study CW trainer.
+  Enable the feature in <strong>Settings &rarr; Other &rarr; Copy
+  Practice</strong>, then select <strong>Copy Practice</strong> from the
+  encoder mode dropdown on the main screen or in the fullscreen encoder
+  toolbar.
+</p>
+
+<h3>How It Works</h3>
+<ol>
+  <li>The app generates a random sequence (characters, words, or callsigns)
+      and feeds it through the encoder so you hear it as Morse audio.</li>
+  <li>Depending on the feedback mode, the decoded text may be hidden,
+      blurred, or visible while you type what you hear.</li>
+  <li>After the sequence finishes, the app compares your typed input to the
+      reference using a Longest Common Subsequence (LCS) alignment and
+      highlights each character as <span style="color:#4caf50">correct</span>,
+      <span style="color:#f44336">incorrect</span>, or
+      <span style="color:#888">missed</span>, with an overall accuracy
+      percentage.</li>
+</ol>
+
+<h3>Content Modes</h3>
+<table>
+  <tr><th>Mode</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Random Characters</strong></td>
+    <td>Groups of random characters drawn from a configurable pool of
+        letters (A&ndash;Z), digits (0&ndash;9), and/or punctuation.
+        Group size is adjustable from 1 to 5 characters.</td>
+  </tr>
+  <tr>
+    <td><strong>Random Words</strong></td>
+    <td>Common English words, filterable by length (3, 4, and/or 5 letters).
+        Words are drawn with a frequency bias toward more common words and
+        avoid repeats within a session.</td>
+  </tr>
+  <tr>
+    <td><strong>Random Callsigns</strong></td>
+    <td>Realistic amateur radio callsigns generated from an international
+        prefix database with random suffixes &mdash; great for contest
+        practice.</td>
+  </tr>
+</table>
+
+<p>
+  The <strong>Count</strong> setting (1&ndash;10) controls how many groups,
+  words, or callsigns are generated per round.
+</p>
+
+<h3>Feedback Modes</h3>
+<table>
+  <tr><th>Mode</th><th>Description</th></tr>
+  <tr>
+    <td><strong>Listen Only</strong></td>
+    <td>Audio plays and decoded characters appear in the output area. After
+        the sequence finishes, type what you heard and submit for scoring.</td>
+  </tr>
+  <tr>
+    <td><strong>Blurred</strong></td>
+    <td>Decoded characters appear blurred. Use the reveal button to peek.
+        After the sequence finishes, type and submit for scoring.</td>
+  </tr>
+  <tr>
+    <td><strong>Type-Along</strong></td>
+    <td>Decoded characters are blurred while you type in real time as the
+        Morse plays. When the sequence finishes, press the validate button
+        (checkmark) to see per-character feedback.</td>
+  </tr>
+</table>
+
+<h3>Pipeline</h3>
+<p>
+  The <strong>Pipeline</strong> selector controls which outputs carry the
+  practice audio:
+</p>
+<ul>
+  <li><strong>Local audio only</strong> &mdash; plays through the sidetone
+      speaker only. Serial, MIDI, RTDB, and vibration outputs are not
+      driven. Best for solo practice without keying a transmitter.</li>
+  <li><strong>Full pipeline</strong> &mdash; sends characters through the
+      complete output chain, including serial, MIDI, RTDB, and vibration.
+      Useful when practising with external keying hardware or sharing
+      practice sessions over Firebase RTDB.</li>
+</ul>
+
+<h3>Additional Settings</h3>
+<ul>
+  <li><strong>Direction</strong> &mdash; controls whether practice characters
+      appear as RX or TX in the conversation view and colour tagging.</li>
+  <li><strong>Name / Colour</strong> &mdash; optional display name and colour
+      for practice characters in the fullscreen conversation view.</li>
+</ul>
+
+<h3>Fullscreen Practice UI</h3>
+<p>
+  In the fullscreen encoder view, practice mode replaces the normal
+  transmit button with playback controls:
+</p>
+<ul>
+  <li><strong>Play</strong> (&#9654;) &mdash; starts a new round.</li>
+  <li><strong>Pause</strong> (&#9646;&#9646;) &mdash; pauses playback
+      mid-sequence (finishes the current character).</li>
+  <li><strong>Resume</strong> (&#9654;) &mdash; continues from where you
+      paused.</li>
+  <li><strong>Next</strong> (&#9654;) &mdash; when a round is finished,
+      generates and starts a new sequence.</li>
+  <li><strong>Validate</strong> (&#10003;) &mdash; in type-along mode,
+      compares your typed input to the reference and shows
+      per-character feedback.</li>
+</ul>
+<p>
+  After scoring, the reference text is displayed with each character
+  colour-coded &mdash; <span style="color:#4caf50">green</span> for
+  correct, <span style="color:#f44336">red</span> for incorrect, and
+  <span style="color:#888">grey</span> for missed &mdash; followed by an
+  accuracy percentage.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Beginner Copy Practice</div>
+  <p>
+    Enable Copy Practice in Settings &rarr; Other. Set Content to
+    <em>Random Characters</em>, Count to 5, Group size to 1, Feedback to
+    <em>Listen Only</em>, and Encoder WPM to 15. Open the fullscreen
+    encoder, select <em>Copy Practice</em> mode from the kebab menu, and
+    press Play. You will hear five individual characters. After playback
+    finishes, type the letters you heard and press Enter to see your
+    accuracy. Increase Count, Group size, or WPM as you improve.
+  </p>
+</div>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Contest Callsign Practice</div>
+  <p>
+    Set Content to <em>Random Callsigns</em>, Count to 3, Feedback to
+    <em>Type-Along</em>, and Encoder WPM to 25. Open the fullscreen
+    encoder and press Play. Type each callsign as you hear it. When the
+    sequence finishes, press the validate button to see which characters
+    you got right.
+  </p>
+</div>

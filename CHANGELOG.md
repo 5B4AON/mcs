@@ -4,6 +4,46 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0] - 2026-03-18
+
+### Added
+
+- **Copy Practice Mode** — new encoder mode (`Copy Practice`) for self-study. The
+  encoder generates a random sequence, plays it as Morse audio, and the user
+  types what they hear. After the round, an LCS-based fuzzy alignment scores
+  each character as correct, incorrect, or missed and displays per-character
+  colour-coded feedback with an accuracy percentage.
+- **Three Content Modes** — random characters (configurable pool of letters,
+  digits, and/or punctuation), common words (filterable by length: 3, 4, 5
+  letters), and realistic callsigns (built from an international prefix
+  database).
+- **Three Feedback Modes** — Listen Only (hear first, then type), Blurred
+  Reveal (reference text is shown blurred until the round finishes), and
+  Type-Along (type in real time as the Morse plays).
+- **Pipeline Selector** — Local (audio-only playback, skipping serial, MIDI,
+  RTDB, and vibration outputs) or Full (characters flow through all enabled
+  outputs just like normal encoder mode).
+- **Practice Settings Card** — new card under Settings → Other with controls
+  for content mode, group count (1–10), character group size (1–5), character
+  pool toggles, word length filter, feedback mode, pipeline, source
+  assignment, and optional display name/colour.
+- **Fullscreen Practice UI** — the fullscreen encoder view renders a dedicated
+  practice panel with reference text, user input field, Start / Pause /
+  Resume / Next Round controls, and colour-coded per-character feedback.
+- **Practice Service** (`practice.service.ts`) — singleton service managing
+  sequence generation, playback state machine, character push from encoder,
+  and user-input scoring.
+- **Practice Data Files** — `data/practice-words.ts` (common English words)
+  and `data/callsign-prefixes.ts` (international callsign prefix database)
+  provide content for the words and callsigns practice modes.
+
+### Documentation
+
+- **Help §3.5 — Copy Practice** — New section in the Encoder chapter
+  explaining all content modes, feedback modes, pipeline options, settings,
+  and fullscreen UI controls with beginner and contest practice examples.
+- **README** — Updated feature list to mention Copy Practice mode.
+
 ## [1.7.0] - 2026-03-16
 
 ### Added
