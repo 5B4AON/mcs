@@ -120,14 +120,14 @@
       <label>
         Pipeline:
         <select (change)="onPipelineChange($event)">
-          <option value="local" [selected]="settings.settings().practicePipeline === 'local'">Local audio only</option>
+          <option value="local" [selected]="settings.settings().practicePipeline === 'local'">Local audio and vibration</option>
           <option value="full" [selected]="settings.settings().practicePipeline === 'full'">Full pipeline</option>
         </select>
       </label>
       <div class="cw-hint">
         @if (settings.settings().practicePipeline === 'local') {
-          Practice audio is played locally only &mdash; serial, MIDI, and
-          RTDB outputs are not driven.
+          Practice audio and vibration are played locally only &mdash;
+          serial, MIDI, and RTDB outputs are not driven.
         } @else {
           Practice audio is sent through the full output pipeline
           including serial, MIDI, and RTDB outputs.

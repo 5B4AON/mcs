@@ -866,6 +866,14 @@
   border-color: #68a;
   outline: none;
 }
+.encoder-input-row textarea:disabled {
+  background: transparent;
+  border: 1px solid transparent;
+  box-shadow: none;
+  cursor: default;
+  resize: none;
+  opacity: .7;
+}
 .encoder-input-row textarea::placeholder {
   text-transform: none;
 }

@@ -152,14 +152,17 @@
 <ol>
   <li>The app generates a random sequence (characters, words, or callsigns)
       and feeds it through the encoder so you hear it as Morse audio.</li>
-  <li>Depending on the feedback mode, the decoded text may be hidden,
-      blurred, or visible while you type what you hear.</li>
-  <li>After the sequence finishes, the app compares your typed input to the
-      reference using a Longest Common Subsequence (LCS) alignment and
-      highlights each character as <span style="color:#4caf50">correct</span>,
+  <li>Depending on the feedback mode, the decoded text appears fully
+      visible (Listen Only), blurred (Blurred and Type-Along), or blurred
+      while you type what you hear in real time (Type-Along).</li>
+  <li>In Type-Along mode, after the sequence finishes you press the
+      validate button. The app compares your typed input to the reference
+      using a Longest Common Subsequence (LCS) alignment and highlights
+      each character as <span style="color:#4caf50">correct</span>,
       <span style="color:#f44336">incorrect</span>, or
       <span style="color:#888">missed</span>, with an overall accuracy
-      percentage.</li>
+      percentage. In Listen Only and Blurred modes there is no typed
+      input or scoring &mdash; you practise copying by ear.</li>
 </ol>
 
 <h3>Content Modes</h3>
@@ -195,19 +198,24 @@
   <tr><th>Mode</th><th>Description</th></tr>
   <tr>
     <td><strong>Listen Only</strong></td>
-    <td>Audio plays and decoded characters appear in the output area. After
-        the sequence finishes, type what you heard and submit for scoring.</td>
+    <td>Audio plays and decoded characters appear fully visible in the
+        output area. Copy what you hear on paper or in your head. After
+        the sequence finishes, press Next to start another round. No
+        typed input or scoring is provided.</td>
   </tr>
   <tr>
     <td><strong>Blurred</strong></td>
-    <td>Decoded characters appear blurred. Use the reveal button to peek.
-        After the sequence finishes, type and submit for scoring.</td>
+    <td>Audio plays and decoded characters appear blurred. Hold the
+        reveal button to peek. After the sequence finishes the text
+        unblurs so you can check your copy. Press Next to start
+        another round. No typed input or scoring is provided.</td>
   </tr>
   <tr>
     <td><strong>Type-Along</strong></td>
-    <td>Decoded characters are blurred while you type in real time as the
-        Morse plays. When the sequence finishes, press the validate button
-        (checkmark) to see per-character feedback.</td>
+    <td>Decoded characters are blurred while you type what you hear in
+        real time. When the sequence finishes, press the validate button
+        (&#10003;) to see per-character feedback with an accuracy
+        percentage.</td>
   </tr>
 </table>
 
@@ -217,9 +225,10 @@
   practice audio:
 </p>
 <ul>
-  <li><strong>Local audio only</strong> &mdash; plays through the sidetone
-      speaker only. Serial, MIDI, RTDB, and vibration outputs are not
-      driven. Best for solo practice without keying a transmitter.</li>
+  <li><strong>Local audio and vibration</strong> &mdash; plays through the
+      sidetone speaker and vibration output only. Serial, MIDI, and RTDB
+      outputs are not driven. Best for solo practice without keying a
+      transmitter.</li>
   <li><strong>Full pipeline</strong> &mdash; sends characters through the
       complete output chain, including serial, MIDI, RTDB, and vibration.
       Useful when practising with external keying hardware or sharing
@@ -246,15 +255,16 @@
   <li><strong>Resume</strong> (&#9654;) &mdash; continues from where you
       paused.</li>
   <li><strong>Next</strong> (&#9654;) &mdash; when a round is finished,
-      generates and starts a new sequence.</li>
-  <li><strong>Validate</strong> (&#10003;) &mdash; in type-along mode,
-      compares your typed input to the reference and shows
-      per-character feedback.</li>
+      generates and starts a new sequence (all modes).</li>
+  <li><strong>Validate</strong> (&#10003;) &mdash; appears only in
+      Type-Along mode. Compares your typed input to the reference and
+      shows per-character feedback.</li>
 </ul>
 <p>
-  After scoring, the reference text is displayed with each character
-  colour-coded &mdash; <span style="color:#4caf50">green</span> for
-  correct, <span style="color:#f44336">red</span> for incorrect, and
+  After validation in Type-Along mode, the reference text is displayed
+  with each character colour-coded &mdash;
+  <span style="color:#4caf50">green</span> for correct,
+  <span style="color:#f44336">red</span> for incorrect, and
   <span style="color:#888">grey</span> for missed &mdash; followed by an
   accuracy percentage.
 </p>
@@ -266,9 +276,10 @@
     <em>Random Characters</em>, Count to 5, Group size to 1, Feedback to
     <em>Listen Only</em>, and Encoder WPM to 15. Open the fullscreen
     encoder, select <em>Copy Practice</em> mode from the kebab menu, and
-    press Play. You will hear five individual characters. After playback
-    finishes, type the letters you heard and press Enter to see your
-    accuracy. Increase Count, Group size, or WPM as you improve.
+    press Play. You will hear five individual characters while the
+    decoded text appears on screen. Copy them on paper or in your head,
+    then press Next to start a new round. Increase Count, Group size, or
+    WPM as you improve.
   </p>
 </div>
 

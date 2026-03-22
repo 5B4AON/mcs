@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.2] - 2026-03-22
+
+### Changed
+
+- **Copy Practice — Local Pipeline Includes Vibration** — The local practice
+  pipeline now drives vibration output alongside audio. The pipeline option
+  label is renamed from "Local audio only" to "Local audio and vibration".
+  Serial, MIDI, and RTDB outputs remain excluded in local mode.
+- **Copy Practice — Disabled Textarea Styling** — In Listen Only and Blurred
+  feedback modes the encoder input area on the main screen now appears as a
+  flat label (no border, box-shadow, or background) instead of a text area,
+  discouraging users from trying to click and type in it.
+- **Copy Practice — Help Documentation Revised** — Rewrote section 3.5 to
+  accurately describe each feedback mode: Listen Only and Blurred provide no
+  typed input or scoring (copy by ear only); Type-Along is the only mode with
+  real-time typing and per-character LCS scoring via the validate button.
+  Fixed incorrect references to "hidden" text (now correctly described as
+  blurred), removed false claims about typing and scoring in Listen Only and
+  Blurred modes, and updated examples to match actual behaviour.
+
 ## [1.8.1] - 2026-03-22
 
 ### Fixed

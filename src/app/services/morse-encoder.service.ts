@@ -265,7 +265,10 @@ export class MorseEncoderService {
       // Play tone, pulse serial, and vibrate for the element duration
       const isPracticeLocal = s.encoderMode === 'practice' && s.practicePipeline === 'local';
       if (isPracticeLocal) {
-        await this.audioOutput.scheduleTone(duration, source);
+        await Promise.all([
+          this.audioOutput.scheduleTone(duration, source),
+          this.vibrationOutput.schedulePulse(duration, source),
+        ]);
       } else {
         await Promise.all([
           this.audioOutput.scheduleTone(duration, source),
