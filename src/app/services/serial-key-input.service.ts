@@ -728,28 +728,32 @@ export class SerialKeyInputService implements OnDestroy {
       });
     });
 
-    ks.keyerTimeout = setTimeout(() => {
-      ks.elementPlaying = false;
-      this.zone.run(() => {
-        this.decoder.onKeyUp(inputPath, ks.source, {
-          perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
-        });
-      });
-      ks.lastElement = ks.currentElement;
-      ks.currentElement = null;
-
-      // Inter-element space (1 dit)
+    // Schedule element timing outside Angular zone to avoid triggering
+    // change detection on every setTimeout callback.
+    this.zone.runOutsideAngular(() => {
       ks.keyerTimeout = setTimeout(() => {
-        if (ks.keyerRunning) {
-          if (ks.leftPaddleDown || ks.rightPaddleDown ||
-              ks.ditMemory || ks.dahMemory) {
-            this.runMappingKeyerLoop(mappingIndex, paddleMode);
-          } else {
-            this.stopMappingKeyer(mappingIndex);
+        ks.elementPlaying = false;
+        this.zone.run(() => {
+          this.decoder.onKeyUp(inputPath, ks.source, {
+            perfectTiming: true, fromSerial: true, name: m?.name, color: m?.color,
+          });
+        });
+        ks.lastElement = ks.currentElement;
+        ks.currentElement = null;
+
+        // Inter-element space (1 dit)
+        ks.keyerTimeout = setTimeout(() => {
+          if (ks.keyerRunning) {
+            if (ks.leftPaddleDown || ks.rightPaddleDown ||
+                ks.ditMemory || ks.dahMemory) {
+              this.runMappingKeyerLoop(mappingIndex, paddleMode);
+            } else {
+              this.stopMappingKeyer(mappingIndex);
+            }
           }
-        }
-      }, timings.intraChar);
-    }, duration);
+        }, timings.intraChar);
+      }, duration);
+    });
   }
 
   /** Pick the next element to play based on the current paddle mode */

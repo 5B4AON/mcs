@@ -591,31 +591,35 @@ export class KeyerService implements OnDestroy {
       this.keyOutput$.next(true);
     });
 
-    // Schedule key up after element duration
-    ks.keyerTimeout = setTimeout(() => {
-      ks.elementPlaying = false;
-      this.zone.run(() => {
-        this.decoder.onKeyUp(ks.path, ks.source, {
-          perfectTiming: true, fromMidi,
-          name: ks.name || undefined, color: ks.color || undefined,
-        });
-        this.keyOutput$.next(false);
-      });
-      ks.lastElement = ks.currentElement;
-      ks.currentElement = null;
-
-      // Inter-element space (1 dit)
+    // Schedule key up after element duration outside Angular zone to avoid
+    // triggering change detection on every setTimeout callback. The decoder
+    // calls inside still use zone.run() for UI updates.
+    this.zone.runOutsideAngular(() => {
       ks.keyerTimeout = setTimeout(() => {
-        if (ks.keyerRunning) {
-          if (ks.leftPaddleDown || ks.rightPaddleDown ||
-              ks.ditMemory || ks.dahMemory) {
-            this.runKeyerLoop(ks);
-          } else {
-            this.stopKeyer(ks);
+        ks.elementPlaying = false;
+        this.zone.run(() => {
+          this.decoder.onKeyUp(ks.path, ks.source, {
+            perfectTiming: true, fromMidi,
+            name: ks.name || undefined, color: ks.color || undefined,
+          });
+          this.keyOutput$.next(false);
+        });
+        ks.lastElement = ks.currentElement;
+        ks.currentElement = null;
+
+        // Inter-element space (1 dit)
+        ks.keyerTimeout = setTimeout(() => {
+          if (ks.keyerRunning) {
+            if (ks.leftPaddleDown || ks.rightPaddleDown ||
+                ks.ditMemory || ks.dahMemory) {
+              this.runKeyerLoop(ks);
+            } else {
+              this.stopKeyer(ks);
+            }
           }
-        }
-      }, timings.intraChar);
-    }, duration);
+        }, timings.intraChar);
+      }, duration);
+    });
   }
 
   /**

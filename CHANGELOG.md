@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.1] - 2026-03-22
+
+### Fixed
+
+- **MIDI Keyer Stuck Keys on Mobile** — Fixed the iambic keyer getting stuck
+  in a repeating dit or dah (or continuous tone) when using MIDI paddle input
+  at speeds above ~20 WPM on slower hardware such as mobile phones. Five
+  contributing issues were identified and fixed:
+  - **Keyer loops run outside Angular zone** — `setTimeout` scheduling in all
+    three keyer services (MIDI, keyboard, serial) now runs outside Angular's
+    zone via `runOutsideAngular()`, eliminating two full change-detection
+    cycles per element. On mobile, this reclaims 20–30 ms of timer budget
+    per dit/dah that was previously consumed by change detection.
+  - **MIDI stuck-key watchdog** — A watchdog now force-releases any MIDI
+    paddle held for more than 5 seconds (physically impossible during normal
+    keying). The existing keep-alive timer also scans for stale straight-key
+    `activeNotes` entries. This recovers from lost MIDI note-off messages
+    caused by USB-OTG flakiness or browser throttling.
+  - **Keep-alive handler race guard** — The MIDI keep-alive timer's
+    `attachListeners()` call now uses a generation counter so that a stale
+    `open().catch()` rejection from a previous cycle cannot null-out a
+    freshly attached message handler.
+  - **`isSending` note-on/note-off asymmetry** — When a MIDI note-on is
+    suppressed by the `isSending` echo gate, the note is now still tracked
+    in `activeNotes` (with a `suppressed` flag) so the matching note-off
+    correctly cleans up without leaving paddle state stuck.
+  - **Per-mapping paddle mode for MIDI keyer** — The MIDI iambic keyer now
+    reads the paddle mode from the per-mapping state instead of the global
+    setting, matching the keyboard and serial keyer behaviour.
+
 ## [1.8.0] - 2026-03-18
 
 ### Added
