@@ -40,7 +40,7 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 **Evidence:** `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:610-670`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:733-776`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:824-825`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:1018-1044`.
 
-**Recommendation:** Offer editable, previewable recipes for at least:
+**Recommendation:** Offer editable, previewable scenario recipes for at least:
 
 | Starting point | Default focus | Important guard rail |
 |---|---|---|
@@ -50,7 +50,9 @@ This is a static, code-grounded review, not a usability study or a penetration t
 | **New radio amateur** | Receive/decode first, then a guided local keyer or sidetone test, followed by an optional hardware setup. | Never silently enable a transmitter keying output; require explicit review of the selected hardware route. |
 | **Experienced operator** | Direct access to independent RX/TX calibration, keyers, MIDI/serial/WinKeyer, relay, and routing controls. | Preserve custom routing and provide a clear path back to the complete settings model. |
 
-The wizard should ask what the user wants to do, identify available browser/device capabilities, guide input and output selection, run only relevant tests, and show a reviewable summary before saving. Presets should be starting points, not locked modes: let users inspect and edit them, retain custom settings, and distinguish user-goal profiles from the existing device-specific audio profiles.
+Make setup a navigable wizard rather than a one-way questionnaire. A useful flow is: choose the goal and audience; see relevant input/output options based on browser support and connected devices; configure the selected options; run applicable checks; then review the complete proposed setup before applying it. Every stage should have clear **Back** and **Next** actions, with optional steps skippable and earlier choices retained when users revisit them. Keep changes in a draft until the user confirms the final summary, and offer a route to full settings at any point.
+
+Keep three concepts clear and distinct: built-in scenario recipes are editable starting points; named user presets are configurations the user explicitly saves and can recall, rename, duplicate, or delete; existing device profiles continue to auto-load settings for a particular audio-device fingerprint. Let users save a named preset from the current setup or the wizard’s final review, and preview what recalling it will change before applying it. Apply it to the current hardware without silently discarding unrelated custom settings; identify unavailable devices and let the user remap them. Since saved settings can include RTDB channel secrets, explain where presets are stored and whether a saved preset includes those credentials.
 
 ### P1 — Improve accessibility and reduce reliance on hidden controls
 
@@ -104,7 +106,7 @@ The wizard should ask what the user wants to do, identify available browser/devi
 ## Suggested implementation sequence
 
 1. Make the basic first-success path obvious: visible audio control, sample encode/practice action, clear running/error states, and an explicit “Try Morse” choice.
-2. Add the intent-first wizard and editable audience recipes, with conservative defaults and a review step before applying hardware-related settings.
+2. Add the intent-first, back-and-forth wizard and editable audience recipes, with capability-aware options, a retained draft, and a review step before applying hardware-related settings. Add named user presets that can be saved from current settings or wizard review, previewed, recalled, and managed independently of device-specific auto-loaded profiles.
 3. Introduce persistent workspaces and clearer RX/TX/combined-view language while preserving shared streams, buffers, and advanced routing.
 4. Improve accessibility, inline explanations, setup readiness, and recovery messages as part of each touched workflow.
 5. Review relay rule examples, local-secret disclosure, and security guidance; add regression tests for the journeys and radio-output guard rails.
@@ -112,6 +114,7 @@ The wizard should ask what the user wants to do, identify available browser/devi
 ## Product-level success criteria
 
 - A first-time visitor can reach a satisfying local Morse encode-and-hear or practice experience without deciphering the settings taxonomy.
+- Users can move backward and forward through a scenario setup without losing choices, review changes before applying them, and later recall a clearly named saved configuration.
 - Starting audio, microphone permission, and device failures are visibly explained with a next action; users can tell which capabilities are active.
 - A learner, educator, new operator, and experienced amateur can choose a relevant starting point, understand what it changes, and edit or leave it.
 - Decoder, encoder, and combined conversation views have distinct, persistent labels while retaining shared RX/TX activity, independent buffers, and full routing flexibility.
