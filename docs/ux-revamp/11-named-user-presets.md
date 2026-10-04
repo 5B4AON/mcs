@@ -31,7 +31,7 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 5. Exclude `rtdbInputChannelSecret` and `rtdbOutputChannelSecret` from snapshots by default. Do not blank the current secrets when applying. Do not log or reveal them.
 6. Present a categorized before/after summary before Apply. Include all changed settings, and prominently list any external keying/relay destination that would be enabled or disabled. Reuse package 10's output-change classifier rather than duplicating route classification.
 7. Apply only after confirmation. Require a target-specific acknowledgement before newly enabling a transmitter/keying path. If a required device target is unresolved or a browser chooser is needed, route to explicit resolution/connection and do not silently fall back.
-8. Support non-empty trimmed names with a documented max length; compare names case-insensitively and reject duplicates with a useful inline message. Define and test behavior when localStorage is unavailable, malformed, or full.
+8. Support non-empty trimmed names with a documented max length; compare names case-insensitively and reject duplicates with a useful inline message. Define and handle behavior when localStorage is unavailable, malformed, or full; the owner manually verifies any resulting UI message.
 
 ## Device-reference rules
 
