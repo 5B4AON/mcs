@@ -100,7 +100,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 - The separation into focused services, standalone components, and settings cards is a sound basis for incremental UX work. The main component nevertheless imports and orchestrates many services and owns much of the main-screen behavior; adding guided flows there without further boundaries could make future changes harder to reason about. Keep new onboarding/workspace state localized and testable.
 - Audio startup errors are caught in the auto-start path, but the user-initiated `toggleAudio()` path only has a `finally` block. Provide visible error state and recovery for both paths, and keep their behavior consistent.
-- The repository has an `npm test` script, but no `*.spec.ts` files were present in this checkout. Add focused automated coverage for first-run setup, audio permission failure, preset application/rollback, view switching with ongoing RX/TX, and the rule that a setup preset cannot silently enable external radio keying.
+- The repository has an `npm test` script, but no `*.spec.ts` files were present in this checkout. Add focused automated coverage for first-run setup, audio permission failure, preset preview/apply/cancel, view switching with ongoing RX/TX, and the rule that a setup preset cannot silently enable external radio keying.
 - No exploitable issue was confirmed from this static review. The Firebase rule example and client-side secret persistence above are concrete risks to address or clearly communicate; any deployment-specific exposure depends on the actual database rules and hosting configuration.
 
 ## Suggested implementation sequence
