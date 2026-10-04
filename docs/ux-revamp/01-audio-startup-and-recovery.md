@@ -8,6 +8,8 @@
 
 **Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the screenshot-tested font, button, touch-target, and spacing scale; preserve the icon's current header footprint and use a fitting in-flow hint or existing modal/menu instead of shrinking controls or adding a persistent label.
 
+**Early shared-guidance deliverable:** After the owner approves Work Package 01, but before changing application UI code, update `.github/copilot-instructions.md` with the confirmed numeric UI constraints from the roadmap's **Numeric UI constraint framework** (breakpoints, viewport-width measurement caveat, role-specific type/control/touch sizes, contrast/focus thresholds, and manual viewport matrix). Have the owner capture the Galaxy S21 CSS viewport metrics on-device; if unavailable, pause and ask rather than inventing them. Make this a docs-only first commit and ask the owner to review/accept the instructions diff before proceeding to the audio UI/lifecycle change. Do not copy screenshot raster dimensions as CSS dimensions or edit these instructions during planning.
+
 ## Goal
 
 Make it clear when audio is stopped, starting, running, or unavailable, and make a failed start leave no partially running audio pipeline behind. Keep Start Audio under an explicit user action and preserve browser permission behavior.
@@ -38,10 +40,10 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 ## Implementation instructions
 
 1. Before editing, trace `AudioInputService`, `CwInputService`, and `AudioOutputService` `start()`/`stop()` behavior. Check when their internal `started` flags become true and whether `stop()` is safe after a partially completed `start()`.
-2. Introduce only the state needed for a stable audio status/error in `AppComponent`; clear stale failure text on a new attempt or successful start.
+2. After the owner accepts the documentation-only `.github/copilot-instructions.md` update above, introduce only the state needed for a stable audio status/error in `AppComponent`; clear stale failure text on a new attempt or successful start.
 3. Implement one best-effort rollback helper for audio services. Attempt cleanup independently, in reverse startup order where safe, so one rejected `stop()` does not prevent other resources from being released. Do not report a successful start until all configured audio starts complete.
 4. Apply the same result rules to auto-start. A failed auto-start must be visible to the user and recoverable with the same explicit Start action; do not silently reattempt in a loop.
-5. In the template, use a native button with a state-dependent programmatic accessible name and the existing icon/state treatment. Do not add a persistent visible label that increases header width.
+5. In the template, use a native button with a state-dependent programmatic accessible name and the existing icon/state treatment. Do not add a persistent visible label that increases header width. Follow numeric role sizes in the shared constraint table.
 6. Do not create or run automated UI/component/browser tests. The owner manually verifies every listed startup, recovery, and stop path using the checkpoint below.
 
 ## Acceptance criteria
