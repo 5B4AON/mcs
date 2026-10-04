@@ -24,8 +24,8 @@ These documents are proposals, not implementation authorization. **No package is
 | 8 | Add a scenario setup wizard | High strategic value, but the highest regression risk because it touches settings and external outputs. | Start with safe core workflows and a draft/review/apply flow; require owner-approved exact fields/copy before coding. |
 | 9 | Add educator/group demonstration path | High value for a named audience, using existing fullscreen views and settings. | Add an educator recipe as a separately reviewable and manually verifiable extension to the accepted wizard; do not invent classroom accounts or analytics. |
 | 10 | Add hardware/radio/relay setup path | High value for experienced operators, with elevated transmitter and privacy risk. | Add capability-aware routes into current cards; use a target-specific review before any newly enabled external output. |
-| 11 | Save named presets | High value, independent of the wizard. Current per-device profiles solve a different problem. | Add named, user-managed presets in separate storage; keep RTDB secrets out by default, preview before apply, and resolve devices conservatively. |
-| 12 | Connect presets to the wizard | Useful after both features work separately. Not required for either standalone feature. | Seed a wizard draft from a preset and optionally save an approved draft using package 11's existing preset service/policy. |
+| 11 | Save and transfer named presets | High value, independent of the wizard. Current per-device profiles solve a different problem. | Add named, user-managed presets in separate storage; support versioned file export/import, keep RTDB secrets out by default, preview before apply, and resolve devices conservatively. |
+| 12 | Connect presets to the wizard | Useful after both features work separately. Not required for either standalone feature. | Seed a wizard draft from a preset and optionally save an approved draft using package 11's existing preset service/policy; do not duplicate its file-transfer flow in the wizard. |
 | 13 | Clarify operating workspaces | Valuable but a larger information-architecture change with risk to the combined conversation model. | Prototype and obtain explicit approval before implementing; make workspace changes presentational, not feature switches. Keep this last. |
 
 ### Ideas intentionally deferred or rejected
@@ -99,8 +99,8 @@ For every UI-changing package, manually inspect: actual Galaxy S21 portrait at d
 9. **Scenario wizard core** — navigable draft/review/apply for safe local, practice, and decode workflows.
 10. **Educator scenario** — guide group demos to existing fullscreen views and settings.
 11. **Hardware/relay scenarios** — add carefully reviewed physical-key, transmitter-keying, and relay paths.
-12. **Named user presets** — independently save, preview, recall, rename, duplicate, and delete configurations.
-13. **Wizard/preset integration** — reuse accepted preset operations from the accepted wizard.
+12. **Named user presets** — independently save, preview, recall, rename, duplicate, export, import, and delete configurations. Preset import only adds a saved preset; it never applies settings automatically.
+13. **Wizard/preset integration** — reuse accepted preset operations from the accepted wizard; do not duplicate preset file-transfer flows in the wizard.
 14. **Intent-based operating workspaces** — approved view model over existing activities and buffers.
 
 ## Proposed release roadmap
@@ -114,11 +114,11 @@ For every UI-changing package, manually inspect: actual Galaxy S21 portrait at d
 | **R3 — Practice and findability** | 06, 07 | Learners understand practice controls; goal-labelled shortcuts lead into the complete existing settings. | Improves current workflows without requiring a new wizard. |
 | **R4 — Guided setup foundation** | 08 | A user can configure an approved safe core scenario through a reversible, reviewable wizard. | Wizard is independently useful before it handles specialist hardware or saved presets. |
 | **R5 — Audience and station setup paths** | 09, 10 | Educators reach current demo views; operators receive guided input/output/relay choices with hardware safety review. | Both packages extend the accepted wizard; retain separate commits, owner approvals, and manual checks. Package 10 may ship later if its safety gates need more review. |
-| **R6 — Recallable named configurations** | 11 | Users can manage named presets from Settings and apply one safely. | Presets are independently useful without wizard integration. |
+| **R6 — Recallable named configurations** | 11 | Users can manage, export, and import named preset files from Settings and apply a preset safely. | Presets are independently useful without wizard integration; portable files do not transfer RTDB secrets or automatically apply a setup. |
 | **R7 — Seamless saved-setup journeys** | 12 | Users can start from or save to named presets in the wizard without duplicating preset logic. | Integration follows the separately owner-accepted wizard and preset implementations. |
 | **R8 — Clear operating workspaces** | 13 | Users can select a clearly named activity view while existing RX/TX functions continue. | Intentionally last because it changes navigation and needs a human-approved interaction prototype. |
 
-Package 14 is a new early addition; the existing package numbers remain unchanged so issue links and approval references stay stable. It follows package 03's live-versus-saved contract and is listed in R1, but it is independently reviewed and manually accepted. Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages. R5's educator and hardware paths can also ship as separate increments, each with its own approval and manual test gate; package 11 remains after package 10 because it reuses package 10's tested external-output change classifier.
+Package 14 is a new early addition; the existing package numbers remain unchanged so issue links and approval references stay stable. It follows package 03's live-versus-saved contract and is listed in R1, but it is independently reviewed and manually accepted. Package 11 supports file transfer of named presets in R6; this is separate from WP14's device-profile transfer in R1, and WP12 must reuse rather than duplicate the preset manager's transfer flow. Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages. R5's educator and hardware paths can also ship as separate increments, each with its own approval and manual test gate; package 11 remains after package 10 because it reuses package 10's tested external-output change classifier.
 
 ## Required implementation guardrails for every package
 

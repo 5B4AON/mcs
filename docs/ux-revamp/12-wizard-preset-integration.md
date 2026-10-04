@@ -23,7 +23,7 @@ Allow users to start a wizard draft from an accepted named preset and optionally
 
 ## Out of scope
 
-- Duplicate preset storage models, a second secret policy, automatic preset selection, cross-device sync, or import/export.
+- Duplicate preset storage models, a second secret policy, automatic preset selection, or cross-device sync. Named-preset file transfer is implemented in the Work Package 11 preset manager; the wizard may link to that manager but must not duplicate its import/export flow.
 - Changing wizard scenarios or preset behavior beyond the points required for integration.
 - Automatically saving/applying when a user selects a preset.
 
