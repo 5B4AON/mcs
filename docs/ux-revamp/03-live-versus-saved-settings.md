@@ -6,7 +6,7 @@
 
 **Dependencies:** None
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep save/status messaging within existing modal space or a focused dialog; do not widen the persistent header/footer or shrink current controls to make room.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Keep save/status messaging within existing modal space or a focused dialog; do not widen persistent chrome or shrink current controls to make room.
 
 ## Goal
 
@@ -52,7 +52,7 @@ Explain the real contract of Settings: edits update the running app immediately,
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm the new status fits without crowding or obscuring controls. Then edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
+Ask the owner to compare the changed Settings surface with the supplied screenshots on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm the screenshot-relative font/control scale is preserved and the new status fits without crowding or obscuring controls. Then edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
 
 ## Approval gate
 

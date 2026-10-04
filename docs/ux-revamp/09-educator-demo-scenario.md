@@ -6,7 +6,7 @@
 
 **Dependencies:** Work Package 08 accepted
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Do not add a permanent toolbar label or force a wide demo setup screen on the Galaxy S21 portrait; reuse the wizard and existing fullscreen/modal surfaces.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Do not add a permanent toolbar label, shrink controls, or force a wide demo setup screen on the Galaxy S21 portrait; reuse the wizard and existing fullscreen/modal surfaces.
 
 ## Goal
 
@@ -47,7 +47,7 @@ Add a clear **Teach or demonstrate Morse** path that helps an educator reach the
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to run the educator path on a Samsung Galaxy S21 in portrait and at presentation-size on desktop, then resize desktop from narrow through typical to wide. Confirm the setup remains legible without crowding, top-bar controls remain available, and fullscreen/modal entry/exit still works. Send/receive test text, switch/close/reopen fullscreen, use browser Back, and verify settings links do not enable devices. Confirm any modified display preference and its persistence with the owner.
+Ask the owner to compare the educator path with the supplied screenshots on a Samsung Galaxy S21 in portrait and at presentation-size on desktop, then resize desktop from narrow through typical to wide. Confirm screenshot-relative text/control scale remains intact, the setup is legible without crowding, top-bar controls remain available, and fullscreen/modal entry/exit still works. Send/receive test text, switch/close/reopen fullscreen, use browser Back, and verify settings links do not enable devices. Confirm any modified display preference and its persistence with the owner.
 
 ## Approval gate
 

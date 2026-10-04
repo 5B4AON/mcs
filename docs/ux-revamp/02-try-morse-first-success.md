@@ -6,7 +6,7 @@
 
 **Dependencies:** Work Package 01 for accurate audio-state/error messaging
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Do not add a permanent banner/action that crowds the Galaxy S21 portrait view; use a compact entry point with focused modal or in-flow details if needed.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the screenshot-tested font, button, touch-target, and spacing scale. Do not add a permanent banner/action that crowds the Galaxy S21 portrait view or shrink controls to make room; use a compact entry point with focused modal or in-flow details if needed.
 
 ## Goal
 
@@ -53,7 +53,7 @@ Give a new user a short, non-blocking route to load a sample, understand the enc
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm there is no clipping, overlap, horizontal scrolling, hidden top-bar action, or awkward stretching. Also verify:
+Ask the owner to compare the affected screens with the supplied screenshots on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm the current relative font/button/touch-target scale remains intact and there is no clipping, overlap, horizontal scrolling, hidden top-bar action, or awkward stretching. Also verify:
 
 1. The user sees an understandable first action and can dismiss and reopen it.
 2. Loading an example is not the same as sending it; audio and outputs remain idle until the user's explicit action.

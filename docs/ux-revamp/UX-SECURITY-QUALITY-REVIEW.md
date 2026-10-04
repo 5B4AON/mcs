@@ -8,6 +8,10 @@ The main product risk is that the interface presents this capability in the same
 
 This is a static, code-grounded review, not a usability study or a penetration test. Priorities below describe product risk, not implementation estimates. The prioritized work packages and proposed release sequence are in [the UX revamp roadmap](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md).
 
+## Owner-provided mobile reference
+
+The owner added seven unordered Samsung Galaxy S21 portrait screenshots in [`existing-screenshots/`](./existing-screenshots/). They are all 738 × 1599 image pixels, but that raster size must not be mistaken for the app's CSS viewport. The screenshots show the practical space constraints plus current relative font, button/icon, and touch-control sizing that the owner reports as human-tested. Treat them as a visual regression baseline: UI redesign may rearrange or restyle, but must not shrink that tested scale to fit more; solve crowding with re-engineered layout, progressive disclosure, vertical flow, and established menus/modals. Manual owner comparison on the actual phone is required. Desktop responsiveness is additional behavior, not a reason to trade away mobile fit or hide existing top-bar icons.
+
 ## What is already working
 
 - The app supports local practice as well as a wide range of audio, keyboard, touch, MIDI, serial, WinKeyer, and relay setups. Keeping those capabilities available is a core product strength.

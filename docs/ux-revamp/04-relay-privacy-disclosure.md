@@ -8,7 +8,7 @@
 
 **UI test prohibition:** Do not create or run framework-based UI tests for this package. The owner performs all UI validation manually; follow the viewport checks in the shared roadmap.
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep short notice copy within the existing settings-card flow; put detailed explanation in Help or an existing/focused modal rather than widening cards or crowding the header.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, control, and spacing scale. Keep short notice copy within the existing settings-card flow; put detailed explanation in Help or an existing/focused modal rather than shrinking text, widening cards, or crowding the header.
 
 ## Goal
 
@@ -55,7 +55,7 @@ Explain the existing Firebase RTDB relay model accurately at the point of config
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and confirm that the disclosure is noticeable without crowding on a Samsung Galaxy S21 in portrait. Also resize desktop from narrow through typical to wide widths to check balanced layout and visible/discoverable top-bar actions. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
+Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and compare the changed settings cards with the supplied screenshots on a Samsung Galaxy S21 in portrait. Confirm the notice is noticeable without reducing screenshot-tested text/control sizing or crowding. Also resize desktop from narrow through typical to wide widths to check balanced layout and visible/discoverable top-bar actions. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
 
 ## Approval gate
 

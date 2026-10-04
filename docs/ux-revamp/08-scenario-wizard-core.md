@@ -6,7 +6,7 @@
 
 **Dependencies:** Packages 01, 03, and 05 accepted; package 07 task shortcuts may link to this wizard
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). The wizard must fit Galaxy S21 portrait without a crowded persistent stepper or toolbar; keep Back/Next/Cancel/Review discoverable using a compact or stacked modal layout and preserve all actions at desktop width limits.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. The wizard must fit Galaxy S21 portrait without a crowded persistent stepper or toolbar; keep Back/Next/Cancel/Review discoverable using a compact or stacked modal layout, vertical flow/scroll, or owner-approved re-engineering—not by shrinking controls—and preserve all actions at desktop width limits.
 
 ## Goal
 
@@ -65,7 +65,7 @@ The owner must approve this flow, the labels, and the selected fields/defaults b
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to walk all three scenarios on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm all steps and actions fit/remain discoverable without clipping, overlap, horizontal scrolling, or hidden top-bar actions. Also test browser Back, Cancel, Back/Next answer retention, current dirty settings, an unsupported/missing device, and a setup with external outputs already enabled. Verify that Apply changes only the summary-listed fields and that audio/permission prompts occur only at the disclosed explicit action.
+Ask the owner to compare the wizard with the supplied screenshots while walking all three scenarios on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm screenshot-relative font/control sizing is preserved and all steps/actions fit or remain discoverable without clipping, overlap, horizontal scrolling, or hidden top-bar actions. Also test browser Back, Cancel, Back/Next answer retention, current dirty settings, an unsupported/missing device, and a setup with external outputs already enabled. Verify that Apply changes only the summary-listed fields and that audio/permission prompts occur only at the disclosed explicit action.
 
 ## Approval gate
 

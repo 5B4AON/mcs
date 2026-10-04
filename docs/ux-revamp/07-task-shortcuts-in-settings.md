@@ -6,7 +6,7 @@
 
 **Dependencies:** None; this is complementary to (not a replacement for) the wizard in package 08
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). The goal shortcuts must not consume persistent horizontal space in the Settings header or replace existing tab controls; use the existing modal flow or compact in-flow layout.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, tab, button, touch-target, and spacing scale. Goal shortcuts must not consume persistent horizontal space in the Settings header, shrink controls, or replace existing tab controls; use the existing modal flow or compact in-flow layout.
 
 ## Goal
 
@@ -55,7 +55,7 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify the shortcut-to-card mapping and labels first on a Samsung Galaxy S21 in portrait, then resize desktop from narrow through typical to wide and check that shortcuts and existing tab controls stay accessible without crowding or clipping. Test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
+Ask the owner to compare the Settings surface to the supplied screenshots and verify the shortcut-to-card mapping and labels on a Samsung Galaxy S21 in portrait, then resize desktop from narrow through typical to wide and check that shortcuts and existing tab controls stay accessible without crowding or clipping. Confirm existing font/button scale is retained. Test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
 
 ## Approval gate
 

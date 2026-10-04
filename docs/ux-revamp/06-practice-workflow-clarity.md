@@ -6,7 +6,7 @@
 
 **Dependencies:** Work Package 05 for accessible modal/button conventions
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep Practice discoverable without adding a permanent toolbar row; use an existing menu/modal or a compact in-flow entry that preserves the Galaxy S21 portrait fit.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Keep Practice discoverable without adding a permanent toolbar row or shrinking controls; use an existing menu/modal or a compact in-flow entry that preserves the Galaxy S21 portrait fit.
 
 ## Goal
 
@@ -52,7 +52,7 @@ Make Copy Practice easy to find, start, pause, type into when appropriate, and u
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to test on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm Practice discovery and state fit without obscuring existing controls. Then test all three feedback modes, all content modes, each practice state, main and fullscreen displays, keyboard entry, and the local pipeline with serial/MIDI/RTDB outputs configured but not intended for practice transmission. Verify the UI explains why an input is disabled and does not leak practice through an external output.
+Ask the owner to compare the changed screen with the supplied screenshots on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm Practice discovery fits while preserving font/button scale and without obscuring existing controls. Then test all three feedback modes, all content modes, each practice state, main and fullscreen displays, keyboard entry, and the local pipeline with serial/MIDI/RTDB outputs configured but not intended for practice transmission. Verify the UI explains why an input is disabled and does not leak practice through an external output.
 
 ## Approval gate
 

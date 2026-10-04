@@ -6,7 +6,7 @@
 
 **Dependencies:** Packages 08, 09, 10, and 11 accepted; do not build a second preset implementation
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Integrate preset choices into existing wizard steps/review; do not add a persistent toolbar row or squeeze wizard controls on the Galaxy S21 portrait.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Integrate preset choices into existing wizard steps/review; do not add a persistent toolbar row or squeeze/shrink wizard controls on the Galaxy S21 portrait.
 
 ## Goal
 
@@ -46,7 +46,7 @@ Allow users to start a wizard draft from an accepted named preset and optionally
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to select a saved preset on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide widths while resizing. Confirm the integrated controls fit and remain discoverable, without horizontal scrolling or losing top-bar actions. Alter values, navigate back and forth, cancel, re-open the preset manager, then repeat and apply. Verify the preset remains unchanged until an explicit save, and that hardware routes, relay credentials, unresolved devices, and device-profile Save behave exactly like the standalone screens.
+Ask the owner to compare the integrated flow with the supplied screenshots while selecting a saved preset on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide widths while resizing. Confirm screenshot-relative font/control scale is retained; integrated controls fit and remain discoverable without horizontal scrolling or loss of top-bar actions. Alter values, navigate back and forth, cancel, re-open the preset manager, then repeat and apply. Verify the preset remains unchanged until an explicit save, and that hardware routes, relay credentials, unresolved devices, and device-profile Save behave exactly like the standalone screens.
 
 ## Approval gate
 

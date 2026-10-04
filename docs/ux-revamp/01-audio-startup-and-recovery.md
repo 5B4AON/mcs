@@ -6,7 +6,7 @@
 
 **Dependencies:** None
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the icon's current header footprint; use a fitting in-flow hint or existing modal/menu for explanation, not a persistent text label that crowds the Galaxy S21 portrait layout.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the screenshot-tested font, button, touch-target, and spacing scale; preserve the icon's current header footprint and use a fitting in-flow hint or existing modal/menu instead of shrinking controls or adding a persistent label.
 
 ## Goal
 
@@ -56,7 +56,7 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to check in their target browser(s). As required by the shared UI contract, include the Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide window sizes while resizing:
+Ask the owner to check in their target browser(s), comparing the affected view directly with the supplied screenshots. As required by the shared UI contract, include the Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide window sizes while resizing:
 
 1. Confirm the header/icon fits without horizontal scrolling, clipping, overlap, or reduced existing touch targets; verify its accessible name and in-flow/menu/modal explanation are discoverable.
 2. Resize desktop widths and verify top-bar actions remain visible or discoverable and spacing stays balanced.
