@@ -6,7 +6,7 @@ Morse Code Studio has unusually broad and useful capabilities: text encoding, li
 
 The main product risk is that the interface presents this capability in the same terms the implementation uses—inputs, outputs, RX/TX, WPM pools, and device settings—before helping a person decide what they want to accomplish. New users can encounter a configuration task before they have experienced a clear first success. The opportunity is not to remove flexibility, but to put an inviting, intent-first path in front of it and let advanced users reach the full routing model when they need it.
 
-This is a static, code-grounded review, not a usability study or a penetration test. Priorities below describe product risk, not implementation estimates. The prioritized work packages and proposed release sequence are in `/home/runner/work/mcs/mcs/docs/ux-revamp/00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md`.
+This is a static, code-grounded review, not a usability study or a penetration test. Priorities below describe product risk, not implementation estimates. The prioritized work packages and proposed release sequence are in [the UX revamp roadmap](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md).
 
 ## What is already working
 
@@ -22,7 +22,7 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 **Observation:** The main screen opens directly into a combined text panel and encoder field, while configuration is divided into “Inputs,” “Outputs,” and “Other.” Several user goals do not fit those categories cleanly: the encoder is listed under Inputs, and Copy Practice is under Other. The interface does not first ask whether the person wants to learn, decode, send, or connect a station.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/app.component.html:110-215`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-modal.component.html:32-63`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.html:1-13`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-other-tab/settings-other-tab.component.html:1-10`.
+**Evidence:** `src/app/app.component.html:110-215`; `src/app/components/settings-modal/settings-modal.component.html:32-63`; `src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.html:1-13`; `src/app/components/settings-modal/settings-other-tab/settings-other-tab.component.html:1-10`.
 
 **Recommendation:** Add a first-run “What would you like to do?” entry point with a few plain-language choices, such as **Try Morse**, **Practice receiving**, **Decode live CW**, **Send Morse**, and **Connect a key or radio**. Each choice should set up only the relevant minimum and offer a clear route to advanced settings. Keep the existing settings available; reorganize their discovery around tasks rather than making users infer a task from the input/output taxonomy.
 
@@ -30,7 +30,7 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 **Observation:** Starting audio is a prerequisite for hearing output and using audio input, but the header control is a small icon-only button. Its “Start Audio” explanation is available only as a `title` tooltip. A first-time user may not know that this control exists, what it enables, or whether microphone permission is needed for their chosen task. If startup rejects, the `finally` block clears the spinner but does not provide an in-app explanation or recovery step.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/app.component.html:1-18`; `/home/runner/work/mcs/mcs/src/app/app.component.ts:665-690`; `/home/runner/work/mcs/mcs/README.md:75-81`.
+**Evidence:** `src/app/app.component.html:1-18`; `src/app/app.component.ts:665-690`; `README.md:75-81`.
 
 **Recommendation:** Give the control a visible **Start audio** label in the initial/idle state, and explain its effect at the point of use. Show clear states for starting, active, and failed—with actionable recovery for permission denial, missing devices, and unavailable audio. Explain separately when a selected workflow actually needs microphone access; do not make users grant it just to explore typed encoding or local practice.
 
@@ -38,7 +38,7 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 **Observation:** Defaults are technical, global starting values rather than named journeys. For example, copy practice is disabled by default, and the existing profile key is based on connected audio-device fingerprints—not the user’s goal or experience level.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:610-670`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:733-776`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:824-825`; `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:1018-1044`.
+**Evidence:** `src/app/services/settings.service.ts:610-670`; `src/app/services/settings.service.ts:733-776`; `src/app/services/settings.service.ts:824-825`; `src/app/services/settings.service.ts:1018-1044`.
 
 **Recommendation:** Offer editable, previewable scenario recipes for at least:
 
@@ -58,7 +58,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Observation:** Several important controls are icon-only and depend on `title` text. The settings overlay has no dialog semantics in its outer wrapper; its tab buttons are not exposed as a tablist, and card expansion is attached to clickable `div` elements. The touch keyer uses clickable `div` elements rather than native buttons. These patterns make discovery, keyboard operation, and assistive-technology use less dependable.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/app.component.html:9-27`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-modal.component.html:1-2,32-46`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-inputs-tab/cw-detector-card/cw-detector-card.component.html:3-15`; `/home/runner/work/mcs/mcs/src/app/components/fullscreen-modal/fs-decoder-view/fs-decoder-view.component.html:105-144`.
+**Evidence:** `src/app/app.component.html:9-27`; `src/app/components/settings-modal/settings-modal.component.html:1-2,32-46`; `src/app/components/settings-modal/settings-inputs-tab/cw-detector-card/cw-detector-card.component.html:3-15`; `src/app/components/fullscreen-modal/fs-decoder-view/fs-decoder-view.component.html:105-144`.
 
 **Recommendation:** Use visible labels for primary actions and programmatic accessible names for icon-only controls. Give dialogs and tab navigation appropriate semantics and keyboard behavior; manage focus on open/close; make expandable card headers keyboard-operable; and make touch keyer controls accessible as buttons with clear dit/dah or straight-key names. Verify contrast, target sizes, zoom, and screen-reader announcements across mobile and desktop.
 
@@ -66,7 +66,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Observation:** The main display intentionally combines RX and TX text, and the fullscreen UI conditionally presents either a decoder or encoder view. That is powerful for conversation use, but the mode choice is reached through a fullscreen menu rather than a persistent, understandable workspace choice. The combined display marks RX/TX lines by style without an adjacent plain-language legend. A user can reasonably assume that changing views changes what the app can receive or send.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/app.component.html:163-171,270-279`; `/home/runner/work/mcs/mcs/src/app/components/fullscreen-modal/fullscreen-modal.component.html:12-24`; `/home/runner/work/mcs/mcs/src/app/components/help/help-ch-config.component.html:85-109`.
+**Evidence:** `src/app/app.component.html:163-171,270-279`; `src/app/components/fullscreen-modal/fullscreen-modal.component.html:12-24`; `src/app/components/help/help-ch-config.component.html:85-109`.
 
 **Recommendation:** Provide persistent **Practice**, **Listen/Decode**, **Compose/Send**, and **Operate** workspace choices with a concise explanation of what each emphasizes. Keep a clearly named **Combined conversation** view for users who want both directions together. These should be views over the same independent RX/TX streams and existing buffers—not mutually exclusive feature modes. Make the current workspace visible and make switching views preserve ongoing activity and history.
 
@@ -74,7 +74,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Observation:** Help is comprehensive, but it is reached from the header’s overflow menu and contains eleven chapters. The current quick-start guide still directs people to start audio, inspect settings, choose inputs and outputs, and save settings before describing success. Hidden WPM controls and technical labels add to the initial learning burden.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/app.component.html:22-65`; `/home/runner/work/mcs/mcs/src/app/components/help/help.component.html:19-127`; `/home/runner/work/mcs/mcs/src/app/components/help/help-ch-intro.component.html:67-99`.
+**Evidence:** `src/app/app.component.html:22-65`; `src/app/components/help/help.component.html:19-127`; `src/app/components/help/help-ch-intro.component.html:67-99`.
 
 **Recommendation:** Keep the detailed manual as the reference layer, but surface brief “what this does / when to use it” hints beside unfamiliar controls. Add a visible setup checklist with current readiness, meaningful device/permission errors, and a contextual next action (for example, “Audio is off—start audio to hear this test”). Explain RX, TX, keyer, and encoder speed at first use rather than relying on abbreviations or tooltips. In practice mode, explain why the text field changes or becomes unavailable for some feedback styles and make the active exercise/feedback mode obvious. Keep specialist hardware wiring guidance available, but let beginners defer the lengthy technical details until they choose that setup.
 
@@ -84,7 +84,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Observation:** Firebase configuration is correctly presented as client configuration, not a server-held secret. However, the example Realtime Database rules grant `.read: true` and `.write: true` at the channel/secret path, and the code uses the secret as a path segment. The documentation also notes that limits and expiry are external configuration. A deployment that copies these rules permits anonymous reads and writes for anyone who can access the relevant path; the path secret is not equivalent to authenticated authorization.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/firebase.config.ts:11-17,19-41,65-76`; `/home/runner/work/mcs/mcs/src/app/services/firebase-rtdb.service.ts:27-30,59-65,304-319,564-585`.
+**Evidence:** `src/app/firebase.config.ts:11-17,19-41,65-76`; `src/app/services/firebase-rtdb.service.ts:27-30,59-65,304-319,564-585`.
 
 **Recommendation:** Clearly label relay as a shared-channel feature with a public-client threat model. Explain that channel secrets are capability tokens, advise unique high-entropy values and non-sensitive traffic, and make restrictive database rules, validation, quotas/rate limits, and expiry part of the setup guidance. If the intended use requires private or authenticated messaging, the current unauthenticated relay model needs a separate design rather than stronger wording around a path secret. This review does not establish the rules of any deployed Firebase project.
 
@@ -92,7 +92,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Observation:** Settings profiles are serialized to `localStorage`, including the RTDB channel secret fields. The settings inputs use `type="password"`, which masks the value on screen but does not protect the saved value from other same-origin script or someone with access to the browser profile.
 
-**Evidence:** `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:824-825,1022-1044`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-inputs-tab/rtdb-input-card/rtdb-input-card.component.html:44-49`; `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-outputs-tab/rtdb-output-card/rtdb-output-card.component.html:46-50`.
+**Evidence:** `src/app/services/settings.service.ts:824-825,1022-1044`; `src/app/components/settings-modal/settings-inputs-tab/rtdb-input-card/rtdb-input-card.component.html:44-49`; `src/app/components/settings-modal/settings-outputs-tab/rtdb-output-card/rtdb-output-card.component.html:46-50`.
 
 **Recommendation:** Tell users where relay settings are saved and advise against reusing sensitive credentials, especially on shared devices. Consider an explicit “remember this secret” choice and a way to clear relay credentials independently of all settings. Do not imply that password masking encrypts locally stored settings.
 
@@ -105,11 +105,14 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 ## Suggested implementation sequence
 
-1. Make the basic first-success path obvious: visible audio control, sample encode/practice action, clear running/error states, and an explicit “Try Morse” choice.
-2. Add the intent-first, back-and-forth wizard and editable audience recipes, with capability-aware options, a retained draft, and a review step before applying hardware-related settings. Add named user presets that can be saved from current settings or wizard review, previewed, recalled, and managed independently of device-specific auto-loaded profiles.
-3. Introduce persistent workspaces and clearer RX/TX/combined-view language while preserving shared streams, buffers, and advanced routing.
-4. Improve accessibility, inline explanations, setup readiness, and recovery messages as part of each touched workflow.
-5. Review relay rule examples, local-secret disclosure, and security guidance; add regression tests for the journeys and radio-output guard rails.
+Follow the package boundaries and release order in [the UX revamp roadmap](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md); keep each package separately approved and manually accepted:
+
+1. **R1 — First Morse session:** packages 01–03 cover audio activation/recovery, an explicit first-success path, and accurate live-versus-saved settings status.
+2. **R2 — Trust and accessibility:** packages 04–05 clarify relay privacy/local credential storage and make core controls/modals accessible.
+3. **R3 — Practice and findability:** packages 06–07 improve practice clarity and add goal-based routes into existing settings.
+4. **R4–R5 — Guided setup:** package 08 adds safe core wizard paths; packages 09–10 extend it for educators and hardware/relay with explicit safety review.
+5. **R6–R7 — Reusable configurations:** package 11 adds named presets after the shared output-safety classifier; package 12 integrates accepted presets with the wizard.
+6. **R8 — Operating workspaces:** package 13 proposes clearer view choices while preserving the combined conversation and ongoing RX/TX streams.
 
 ## Product-level success criteria
 

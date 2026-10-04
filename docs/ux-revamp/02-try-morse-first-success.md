@@ -1,7 +1,9 @@
 # Work Package 02 — “Try Morse” First-Success Path
 
-**Priority:** 2 — make the first useful outcome discoverable  
-**Proposed release:** R1 — A reliable first Morse session  
+**Priority:** 2 — make the first useful outcome discoverable
+
+**Proposed release:** R1 — A reliable first Morse session
+
 **Dependencies:** Work Package 01 for accurate audio-state/error messaging
 
 ## Goal
@@ -10,8 +12,8 @@ Give a new user a short, non-blocking route to load a sample, understand the enc
 
 ## Existing behavior to preserve
 
-- The main screen has a shared RX/TX display and encoder field in `/home/runner/work/mcs/mcs/src/app/app.component.html:110-215`.
-- Normal send behavior is controlled by `encoderMode` and the existing TX button/keyboard handlers in `/home/runner/work/mcs/mcs/src/app/app.component.ts`.
+- The main screen has a shared RX/TX display and encoder field in `src/app/app.component.html:110-215`.
+- Normal send behavior is controlled by `encoderMode` and the existing TX button/keyboard handlers in `src/app/app.component.ts`.
 - User-configured outputs can include radio keying. A sample send must not be treated as safe merely because it is a sample.
 
 ## In scope
@@ -59,4 +61,3 @@ Ask the owner to verify on desktop and a narrow/touch viewport:
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 02, especially the card copy, sample phrase, and external-output confirmation interaction.** After implementation, stop for the owner’s manual checks; do not proceed to package 03 without acceptance.
-

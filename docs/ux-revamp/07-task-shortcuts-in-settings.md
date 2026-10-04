@@ -1,7 +1,9 @@
 # Work Package 07 — Task Shortcuts in Existing Settings
 
-**Priority:** 7 — improve discoverability now while preserving the full configuration model  
-**Proposed release:** R3 — Practice and findability  
+**Priority:** 7 — improve discoverability now while preserving the full configuration model
+
+**Proposed release:** R3 — Practice and findability
+
 **Dependencies:** None; this is complementary to (not a replacement for) the wizard in package 08
 
 ## Goal
@@ -10,8 +12,8 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 
 ## Scope and locations
 
-- Settings shell: `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-modal.component.html` and `.ts`.
-- Tab shells: `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.html`, `settings-outputs-tab/settings-outputs-tab.component.html`, and `settings-other-tab/settings-other-tab.component.html`.
+- Settings shell: `src/app/components/settings-modal/settings-modal.component.html` and `.ts`.
+- Tab shells: `src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.html`, `settings-outputs-tab/settings-outputs-tab.component.html`, and `settings-other-tab/settings-other-tab.component.html`.
 - Relevant cards, for example: `encoder-card`, `cw-detector-card`, `practice-card`, keyer cards, audio/serial/MIDI/WinKeyer/RTDB output cards.
 
 ## In scope
@@ -56,4 +58,3 @@ Ask the owner to verify the shortcut-to-card mapping and labels first, then test
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 07 and its mapping table.** If a goal has no obvious single card or would require toggling multiple settings, pause and ask how that scenario should be represented. Stop for owner testing before package 08.
-

@@ -1,7 +1,9 @@
 # Work Package 06 — Practice Workflow Clarity
 
-**Priority:** 6 — improve the existing learner journey without replacing it  
-**Proposed release:** R3 — Practice and findability  
+**Priority:** 6 — improve the existing learner journey without replacing it
+
+**Proposed release:** R3 — Practice and findability
+
 **Dependencies:** Work Package 05 for accessible modal/button conventions
 
 ## Goal
@@ -10,8 +12,8 @@ Make Copy Practice easy to find, start, pause, type into when appropriate, and u
 
 ## Existing behavior to preserve
 
-- Copy Practice is disabled by default and its settings live under Settings → Other → Copy Practice (`/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-other-tab/practice-card/practice-card.component.html`).
-- `PracticeService` handles sequence generation and scoring; `MorseEncoderService` plays sequences, and `/home/runner/work/mcs/mcs/src/app/app.component.html:203-256` switches field placeholder, field availability, and controls based on mode/state.
+- Copy Practice is disabled by default and its settings live under Settings → Other → Copy Practice (`src/app/components/settings-modal/settings-other-tab/practice-card/practice-card.component.html`).
+- `PracticeService` handles sequence generation and scoring; `MorseEncoderService` plays sequences, and `src/app/app.component.html:203-256` switches field placeholder, field availability, and controls based on mode/state.
 - Non-type-along modes intentionally disable text entry; type-along accepts typed answers. Local pipeline avoids external serial/MIDI/RTDB/vibration outputs. Preserve that safety behavior.
 
 ## In scope
@@ -53,4 +55,3 @@ Ask the owner to test all three feedback modes, all content modes, each practice
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 06.** Any scoring, educator-report, default, or full-pipeline change requires separate approval. Stop for owner practice-session testing before package 07.
-

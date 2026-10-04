@@ -1,7 +1,9 @@
 # Work Package 11 — Named User Presets
 
-**Priority:** 11 — recallable setups, independent of device profiles  
-**Proposed release:** R6 — Recallable named configurations  
+**Priority:** 11 — recallable setups, independent of device profiles
+
+**Proposed release:** R6 — Recallable named configurations
+
 **Dependencies:** Packages 03, 04, and 10 accepted; reuse the pure external-output change classifier introduced in package 10
 
 ## Goal
@@ -44,7 +46,7 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 
 ## Implementation instructions
 
-1. Inspect `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts` for `AppSettings`, `DEFAULT_SETTINGS`, profile migration/backfill, and current localStorage error handling. Inspect audio/MIDI/serial mappings before designing DTOs.
+1. Inspect `src/app/services/settings.service.ts` for `AppSettings`, `DEFAULT_SETTINGS`, profile migration/backfill, and current localStorage error handling. Inspect audio/MIDI/serial mappings before designing DTOs.
 2. Use a separate versioned DTO and storage key. Validate parsed data at runtime; reject malformed entries safely and never crash app initialization. Keep legacy `morseProfiles` values untouched.
 3. Deep-clone/normalize supported data on save and read; test nested mapping independence. Do not spread secrets into errors, UI summaries, or diagnostic logs.
 4. Add an explicit device-resolution stage before applying unavailable or ambiguous hardware routes. Never map an unresolved transmitter output to an arbitrary target.

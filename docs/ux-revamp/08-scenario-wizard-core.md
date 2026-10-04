@@ -1,7 +1,9 @@
 # Work Package 08 — Scenario Wizard Core
 
-**Priority:** 8 — strategic onboarding feature after first-use and accessibility foundations  
-**Proposed release:** R4 — Guided scenario setup  
+**Priority:** 8 — strategic onboarding feature after first-use and accessibility foundations
+
+**Proposed release:** R4 — Guided setup foundation
+
 **Dependencies:** Packages 01, 03, and 05 accepted; package 07 task shortcuts may link to this wizard
 
 ## Goal
@@ -19,7 +21,7 @@ The owner must approve this flow, the labels, and the selected fields/defaults b
 
 ## In scope
 
-1. Add a standalone wizard component under `/home/runner/work/mcs/mcs/src/app/components/` and integrate it with the existing app/modal navigation. Keep the app’s no-router architecture and browser back-button depth behavior.
+1. Add a standalone wizard component under `src/app/components/` and integrate it with the existing app/modal navigation. Keep the app’s no-router architecture and browser back-button depth behavior.
 2. Use a typed in-memory draft based on current `AppSettings` values. Store only user-selected changes; do not mutate `SettingsService.settings()` while moving between steps.
 3. Implement Back, Next, Skip (where optional), Cancel, and Review. Going Back retains entered answers; Cancel discards the draft and leaves live settings untouched.
 4. Apply a minimal explicit patch once, only after the user confirms the final review. Keep `SettingsService` as the settings authority; do not call service-specific start/stop APIs from the wizard.
@@ -66,4 +68,3 @@ Ask the owner to walk all three scenarios on Chrome/Edge, including browser Back
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 08 and the exact flow/setting-diff proposal.** If any runtime effect, permission timing, or modal-history interaction is uncertain, pause and resolve it with the owner. Stop for manual owner acceptance before package 09.
-

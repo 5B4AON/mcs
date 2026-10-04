@@ -1,7 +1,9 @@
 # Work Package 12 — Integrate Named Presets with the Wizard
 
-**Priority:** 12 — remove duplicated setup effort after the two features are accepted  
-**Proposed release:** R7 — Seamless saved-setup journeys  
+**Priority:** 12 — remove duplicated setup effort after the two features are accepted
+
+**Proposed release:** R7 — Seamless saved-setup journeys
+
 **Dependencies:** Packages 08, 09, 10, and 11 accepted; do not build a second preset implementation
 
 ## Goal
@@ -47,4 +49,3 @@ Ask the owner to select a saved preset, alter values, navigate back and forth, c
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 12.** If the owner does not want saving a draft separately from applying it, remove that option rather than inventing semantics. Stop for owner acceptance before package 13.
-

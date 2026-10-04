@@ -1,9 +1,10 @@
 # Work Package 01 — Audio Activation and Failure Recovery
 
-**Priority:** 1 — first-use blocker and lifecycle correctness  
-**Proposed release:** R1 — A reliable first Morse session  
-**Dependencies:** None  
-**Estimated scope:** `AppComponent` header/audio lifecycle, with narrowly necessary audio-service cleanup only.
+**Priority:** 1 — first-use blocker and lifecycle correctness
+
+**Proposed release:** R1 — A reliable first Morse session
+
+**Dependencies:** None
 
 ## Goal
 
@@ -11,8 +12,8 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 
 ## Existing behavior to preserve and logic risk
 
-- The audio control in `/home/runner/work/mcs/mcs/src/app/app.component.html:9-18` is an icon-only button whose state text is only a `title`.
-- `/home/runner/work/mcs/mcs/src/app/app.component.ts:665-690` starts mic input only when enabled, starts CW input (which itself returns if disabled), then starts audio output. `audioRunning` and the localStorage running marker are set only after all starts complete.
+- The audio control in `src/app/app.component.html:9-18` is an icon-only button whose state text is only a `title`.
+- `src/app/app.component.ts:665-690` starts mic input only when enabled, starts CW input (which itself returns if disabled), then starts audio output. `audioRunning` and the localStorage running marker are set only after all starts complete.
 - If a later `start()` rejects, earlier successfully started services are not stopped in this catch-free user-start path. The `finally` only clears `audioStarting`; the UI can report stopped while a prior service still owns a stream/context.
 - Auto-start in `AppComponent.autoStartAudio()` has a catch, but it clears the stored marker without stopping any earlier service that already started.
 - Do not tell users that every audio start requests microphone permission. Mic and CW input request `getUserMedia` only when their respective settings are enabled. Output setup is a distinct concern.
@@ -64,4 +65,3 @@ Ask the owner to check on Chrome or Edge:
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 01.** If error wording or the proposed behavior during stop failure needs a product decision, ask the owner first. After code/tests, stop and ask the owner to complete the manual checkpoint; do not begin package 02 without acceptance.
-

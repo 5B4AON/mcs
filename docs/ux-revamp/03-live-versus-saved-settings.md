@@ -1,7 +1,9 @@
 # Work Package 03 — Live Changes Versus Saved Settings
 
-**Priority:** 3 — prevent confusing or misleading settings behavior  
-**Proposed release:** R1 — A reliable first Morse session  
+**Priority:** 3 — prevent confusing or misleading settings behavior
+
+**Proposed release:** R1 — A reliable first Morse session
+
 **Dependencies:** None
 
 ## Goal
@@ -10,10 +12,10 @@ Explain the real contract of Settings: edits update the running app immediately,
 
 ## Existing behavior and concrete omissions
 
-- `SettingsService.update()` changes the settings signal and marks it dirty (`/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:957-961`).
-- `SettingsService.save()` persists a snapshot only when `currentFingerprint()` exists; otherwise it returns silently (`/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:1022-1044`).
-- The Settings modal footer shows “Save Settings”/“Saved ✓” but does not explain live versus persisted state (`/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-modal.component.html:67-70`).
-- Closing the modal emits `closed` without restoring the previous profile (`/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-modal.component.ts:82-85`). Thus unsaved edits remain active during this app session.
+- `SettingsService.update()` changes the settings signal and marks it dirty (`src/app/services/settings.service.ts:957-961`).
+- `SettingsService.save()` persists a snapshot only when `currentFingerprint()` exists; otherwise it returns silently (`src/app/services/settings.service.ts:1022-1044`).
+- The Settings modal footer shows “Save Settings”/“Saved ✓” but does not explain live versus persisted state (`src/app/components/settings-modal/settings-modal.component.html:67-70`).
+- Closing the modal emits `closed` without restoring the previous profile (`src/app/components/settings-modal/settings-modal.component.ts:82-85`). Thus unsaved edits remain active during this app session.
 
 ## In scope
 
@@ -53,4 +55,3 @@ Ask the owner to verify: edit a setting and observe its immediate effect; close 
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 03.** If the owner wants discard/rollback behavior rather than the narrowly scoped status clarification, pause and propose that as a separate package. Stop for manual owner acceptance before package 04.
-

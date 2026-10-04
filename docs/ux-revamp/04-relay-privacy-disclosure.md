@@ -1,7 +1,9 @@
 # Work Package 04 — Relay Privacy and Credential Disclosure
 
-**Priority:** 4 — trust/safety disclosure before relay becomes easier to set up  
-**Proposed release:** R2 — Inclusive, trustworthy controls (may ship independently or with R1)  
+**Priority:** 4 — trust/safety disclosure before relay becomes easier to set up
+
+**Proposed release:** R2 — Inclusive, trustworthy controls
+
 **Dependencies:** None; do not wait for the wizard to correct misleading or missing disclosure
 
 ## Goal
@@ -10,17 +12,17 @@ Explain the existing Firebase RTDB relay model accurately at the point of config
 
 ## Evidence and boundary
 
-- `/home/runner/work/mcs/mcs/src/app/firebase.config.ts:19-41` shows example `.read: true` and `.write: true` rules and `/home/runner/work/mcs/mcs/src/app/firebase.config.ts:65-66` says limits are not enforced by the app.
-- `/home/runner/work/mcs/mcs/src/app/services/firebase-rtdb.service.ts:27-30,59-65,304-319,564-585` documents/uses the secret as a path segment.
-- `/home/runner/work/mcs/mcs/src/app/services/settings.service.ts:1022-1044` serializes settings profiles to localStorage, including relay settings.
+- `src/app/firebase.config.ts:19-41` shows example `.read: true` and `.write: true` rules and `src/app/firebase.config.ts:65-66` says limits are not enforced by the app.
+- `src/app/services/firebase-rtdb.service.ts:27-30,59-65,304-319,564-585` documents/uses the secret as a path segment.
+- `src/app/services/settings.service.ts:1022-1044` serializes settings profiles to localStorage, including relay settings.
 - The actual production database rules and hosting setup have not been inspected. Do not claim this review proves a live deployment is public or insecure.
 
 ## In scope
 
 1. Add short plain-language privacy/trust guidance beside the RTDB channel name/secret controls in:
-   - `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-inputs-tab/rtdb-input-card/rtdb-input-card.component.html`
-   - `/home/runner/work/mcs/mcs/src/app/components/settings-modal/settings-outputs-tab/rtdb-output-card/rtdb-output-card.component.html`
-2. Expand the existing Firebase Help chapter at `/home/runner/work/mcs/mcs/src/app/components/help/help-ch-firebase.component.html` with the same facts and a clear explanation of who can read/write under the documented example rules.
+   - `src/app/components/settings-modal/settings-inputs-tab/rtdb-input-card/rtdb-input-card.component.html`
+   - `src/app/components/settings-modal/settings-outputs-tab/rtdb-output-card/rtdb-output-card.component.html`
+2. Expand the existing Firebase Help chapter at `src/app/components/help/help-ch-firebase.component.html` with the same facts and a clear explanation of who can read/write under the documented example rules.
 3. State that password input masking is only visual, channel values may be stored in this browser's local settings profile, and users should not reuse sensitive credentials or send sensitive content over this relay.
 4. Direct project owners to configure and independently review restrictive Firebase rules, validation, quotas/rate limits, and stale-data cleanup. State plainly that the application itself does not enforce server-side limits.
 5. Keep the copy accurate if the app has no authentication. Describe the channel token as a shared capability/path secret, not as encryption, user authentication, or a private messaging guarantee.
@@ -54,4 +56,3 @@ Ask the owner to review the final copy for accuracy and tone, confirm it does no
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 04.** This package changes privacy/security messaging; do not modify Firebase behavior. Stop after the owner’s copy review and acceptance.
-

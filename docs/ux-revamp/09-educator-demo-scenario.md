@@ -1,7 +1,9 @@
 # Work Package 09 — Educator and Group-Demonstration Scenario
 
-**Priority:** 9 — extend the accepted wizard for classrooms and public demonstrations  
-**Proposed release:** R5 — Extended setup scenarios  
+**Priority:** 9 — extend the accepted wizard for classrooms and public demonstrations
+
+**Proposed release:** R5 — Audience and station setup paths
+
 **Dependencies:** Work Package 08 accepted
 
 ## Goal
@@ -48,4 +50,3 @@ Ask the owner to run the educator path at presentation-size and mobile-size view
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 09.** Ask the owner before adding any teacher-specific feature, storing participant data, or choosing a forced display default. Stop for demo testing and owner acceptance before package 10.
-

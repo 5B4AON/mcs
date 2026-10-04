@@ -1,7 +1,9 @@
 # Work Package 13 — Intent-Based Operating Workspaces
 
-**Priority:** 13 — major navigation/interaction refinement; implement last  
-**Proposed release:** R8 — Clear operating workspaces  
+**Priority:** 13 — major navigation/interaction refinement; implement last
+
+**Proposed release:** R8 — Clear operating workspaces
+
 **Dependencies:** Packages 05, 06, 08, and 09 accepted; package 12 is recommended for saved-setup continuity
 
 ## Goal
@@ -59,4 +61,3 @@ Ask the owner to approve the wireframe before coding, then manually test each wo
 ## Approval gate
 
 **Before implementation, request explicit approval for Work Package 13 and its proposed workspace model/wireframe.** Any proposal that changes a sending mode, routing, running service, or buffer lifecycle requires a separate approval. Stop for the owner’s final UX regression pass before treating the workspace redesign as accepted.
-
