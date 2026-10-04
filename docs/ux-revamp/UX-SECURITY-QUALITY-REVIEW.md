@@ -107,12 +107,14 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 Follow the package boundaries and release order in [the UX revamp roadmap](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md); keep each package separately approved and manually accepted:
 
-1. **R1 — First Morse session:** packages 01–03 cover audio activation/recovery, an explicit first-success path, and accurate live-versus-saved settings status.
-2. **R2 — Trust and accessibility:** packages 04–05 clarify relay privacy/local credential storage and make core controls/modals accessible.
+1. **R1 — A reliable first Morse session:** packages 01–03 cover audio activation/recovery, an explicit first-success path, and accurate live-versus-saved settings status.
+2. **R2 — Inclusive, trustworthy controls:** packages 04–05 clarify relay privacy/local credential storage and make core controls/modals accessible.
 3. **R3 — Practice and findability:** packages 06–07 improve practice clarity and add goal-based routes into existing settings.
-4. **R4–R5 — Guided setup:** package 08 adds safe core wizard paths; packages 09–10 extend it for educators and hardware/relay with explicit safety review.
-5. **R6–R7 — Reusable configurations:** package 11 adds named presets after the shared output-safety classifier; package 12 integrates accepted presets with the wizard.
-6. **R8 — Operating workspaces:** package 13 proposes clearer view choices while preserving the combined conversation and ongoing RX/TX streams.
+4. **R4 — Guided setup foundation:** package 08 adds safe core wizard paths.
+5. **R5 — Audience and station setup paths:** packages 09–10 add educator and hardware/relay scenarios with explicit safety review.
+6. **R6 — Recallable named configurations:** package 11 adds named presets after the shared output-safety classifier.
+7. **R7 — Seamless saved-setup journeys:** package 12 integrates accepted presets with the wizard.
+8. **R8 — Clear operating workspaces:** package 13 proposes clearer view choices while preserving the combined conversation and ongoing RX/TX streams.
 
 ## Product-level success criteria
 

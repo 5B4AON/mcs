@@ -27,7 +27,7 @@ Give a new user a short, non-blocking route to load a sample, understand the enc
 
 ## Out of scope
 
-- A persona survey, full setup wizard, or named presets (packages 08–10).
+- A persona survey, full setup wizard, or named presets (packages 08–12).
 - Automatically switching `encoderMode`, changing saved `AppSettings`, enabling audio, playing a sample, or opening device permission prompts on page load.
 - Replacing the shared conversation display or changing any output route.
 

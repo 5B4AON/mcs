@@ -39,7 +39,7 @@ The owner must approve this flow, the labels, and the selected fields/defaults b
 
 ## Out of scope
 
-- Educator/group demonstration or setup of keyboard/mouse/touch hardware, physical transmitter keying, MIDI/serial, WinKeyer, or RTDB. Those are package 09/10 work.
+- Educator/group demonstrations (package 09) and keyboard/mouse/touch, physical transmitter keying, MIDI/serial, WinKeyer, or RTDB setup (package 10).
 - Named preset storage/recall (packages 11/12).
 - New route architecture, settings-schema rewrite, automatic permissions, autoplay, or a general-purpose workflow engine.
 
