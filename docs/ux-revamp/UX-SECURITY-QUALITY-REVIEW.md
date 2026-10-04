@@ -6,7 +6,7 @@ Morse Code Studio has unusually broad and useful capabilities: text encoding, li
 
 The main product risk is that the interface presents this capability in the same terms the implementation uses—inputs, outputs, RX/TX, WPM pools, and device settings—before helping a person decide what they want to accomplish. New users can encounter a configuration task before they have experienced a clear first success. The opportunity is not to remove flexibility, but to put an inviting, intent-first path in front of it and let advanced users reach the full routing model when they need it.
 
-This is a static, code-grounded review, not a usability study or a penetration test. Priorities below describe product risk, not implementation estimates.
+This is a static, code-grounded review, not a usability study or a penetration test. Priorities below describe product risk, not implementation estimates. The prioritized work packages and proposed release sequence are in `/home/runner/work/mcs/mcs/docs/ux-revamp/00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md`.
 
 ## What is already working
 
