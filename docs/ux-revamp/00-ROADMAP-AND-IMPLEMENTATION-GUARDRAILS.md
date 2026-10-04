@@ -5,7 +5,7 @@
 This folder contains the review and independently numbered implementation plans for making Morse Code Studio easier to discover and use without removing its current capability or flexibility.
 
 - Review: `/home/runner/work/mcs/mcs/docs/ux-revamp/UX-SECURITY-QUALITY-REVIEW.md`
-- Work packages: `/home/runner/work/mcs/mcs/docs/ux-revamp/01-audio-startup-and-recovery.md` through `/home/runner/work/mcs/mcs/docs/ux-revamp/11-intent-based-workspaces.md`
+- Work packages: `/home/runner/work/mcs/mcs/docs/ux-revamp/01-audio-startup-and-recovery.md` through `/home/runner/work/mcs/mcs/docs/ux-revamp/13-intent-based-workspaces.md`
 
 These documents are proposals, not implementation authorization. **No package is approved merely because it is written here or because another package was approved.** Before editing code, the implementing agent must request and receive explicit owner approval for that numbered package. If design choices called out in a package have not been approved, stop and ask rather than choosing on the owner's behalf. At the end of each package, stop for the owner to run the specified manual checks and explicitly accept the behavior before beginning another package.
 
@@ -20,10 +20,12 @@ These documents are proposals, not implementation authorization. **No package is
 | 5 | Improve accessibility | Essential for every new path and existing modal. Current controls rely on icons, titles, and clickable non-button elements. | Correct semantics, names, focus behavior, and keyboard/touch operation in bounded surfaces. Do not use accessibility work as a reason for a visual redesign of unrelated screens. |
 | 6 | Clarify practice | High value for learners; practice already exists and can be exposed without changing its sequence/scoring engine. | Explain current modes and disabled-field behavior; preserve sequence generation, scoring, timing, and local/full pipeline behavior. |
 | 7 | Make current Settings easier to navigate by goal | Useful as an incremental improvement and as an always-available route to advanced settings. | Add task shortcuts into the existing cards; keep existing tabs/cards and every control in place. This is complementary to, not a substitute for, the later wizard. |
-| 8 | Add a scenario setup wizard | High strategic value, but the highest regression risk because it touches settings and external outputs. | Build it as a draft/review/apply flow with Back/Next, capability-aware options, safe defaults, and an explicit final diff. Preserve existing routing. Require owner approval of the exact scenario list and review wording before coding. |
-| 9 | Save named presets | High value, independent of the wizard. Current per-device profiles solve a different problem. | Add named, user-managed presets in separate storage; do not change the existing per-device auto-profile format. Preview before applying and handle device remapping conservatively. |
-| 10 | Connect presets to the wizard | Useful after both features work separately. Not required for either standalone feature. | Add save/recall entry points in the wizard only after package 08 and package 09 are accepted. |
-| 11 | Clarify operating workspaces | Valuable but a larger information-architecture change with risk to the combined conversation model. | Prototype and obtain explicit approval before implementing; make workspace changes presentational, not feature switches. Keep this last. |
+| 8 | Add a scenario setup wizard | High strategic value, but the highest regression risk because it touches settings and external outputs. | Start with safe core workflows and a draft/review/apply flow; require owner-approved exact fields/copy before coding. |
+| 9 | Add educator/group demonstration path | High value for a named audience, using existing fullscreen views and settings. | Add an educator recipe as a separately testable extension to the accepted wizard; do not invent classroom accounts or analytics. |
+| 10 | Add hardware/radio/relay setup path | High value for experienced operators, with elevated transmitter and privacy risk. | Add capability-aware routes into current cards; use a target-specific review before any newly enabled external output. |
+| 11 | Save named presets | High value, independent of the wizard. Current per-device profiles solve a different problem. | Add named, user-managed presets in separate storage; keep RTDB secrets out by default, preview before apply, and resolve devices conservatively. |
+| 12 | Connect presets to the wizard | Useful after both features work separately. Not required for either standalone feature. | Seed a wizard draft from a preset and optionally save an approved draft using package 11's existing preset service/policy. |
+| 13 | Clarify operating workspaces | Valuable but a larger information-architecture change with risk to the combined conversation model. | Prototype and obtain explicit approval before implementing; make workspace changes presentational, not feature switches. Keep this last. |
 
 ### Ideas intentionally deferred or rejected
 
@@ -43,10 +45,12 @@ These documents are proposals, not implementation authorization. **No package is
 5. **Accessible core controls and modals** — semantics, accessible names, focus management, keyboard operation, and touch-keyer parity.
 6. **Practice workflow clarity** — explain modes and states without changing the practice engine.
 7. **Task shortcuts in existing Settings** — intent-labelled routes to current settings cards without replacing tabs or cards.
-8. **Scenario setup wizard** — navigable, capability-aware draft/review/apply workflow with safe output handling.
-9. **Named user presets** — independently save, preview, recall, rename, duplicate, and delete configurations.
-10. **Wizard and preset integration** — reuse accepted preset operations from the accepted wizard.
-11. **Intent-based operating workspaces** — approved view model over existing activities and buffers.
+8. **Scenario wizard core** — navigable draft/review/apply for safe local, practice, and decode workflows.
+9. **Educator scenario** — guide group demos to existing fullscreen views and settings.
+10. **Hardware/relay scenarios** — add carefully reviewed physical-key, transmitter-keying, and relay paths.
+11. **Named user presets** — independently save, preview, recall, rename, duplicate, and delete configurations.
+12. **Wizard/preset integration** — reuse accepted preset operations from the accepted wizard.
+13. **Intent-based operating workspaces** — approved view model over existing activities and buffers.
 
 ## Proposed release roadmap
 
@@ -57,12 +61,13 @@ These documents are proposals, not implementation authorization. **No package is
 | **R1 — A reliable first Morse session** | 01, 02, 03 | Users can see how to start, try an explicit sample, understand output safety, and know which settings are live versus saved. | Resolves the primary first-use barrier before adding new configuration architecture. |
 | **R2 — Inclusive, trustworthy controls** | 04, 05 | Relay's trust/storage model is explained, and the most-used shell/modal controls can be discovered and operated accessibly. | Raises safety and accessibility quality before introducing wizard and preset surfaces. |
 | **R3 — Practice and findability** | 06, 07 | Learners understand practice controls; goal-labelled shortcuts lead into the complete existing settings. | Improves current workflows without requiring a new wizard. |
-| **R4 — Guided scenario setup** | 08 | A user can configure an approved scenario through a reversible, reviewable wizard. | Wizard is independently useful even before saved named presets exist. |
-| **R5 — Recallable named configurations** | 09 | Users can manage named presets from Settings and apply one safely. | Presets are independently useful without wizard integration. |
-| **R6 — Seamless saved-setup journeys** | 10 | Users can start from or save to named presets in the wizard without duplicating preset logic. | Integration follows the separately tested wizard and preset implementations. |
-| **R7 — Clear operating workspaces** | 11 | Users can select a clearly named activity view while existing RX/TX functions continue. | Intentionally last because it changes navigation and needs a human-approved interaction prototype. |
+| **R4 — Guided setup foundation** | 08 | A user can configure an approved safe core scenario through a reversible, reviewable wizard. | Wizard is independently useful before it handles specialist hardware or saved presets. |
+| **R5 — Audience and station setup paths** | 09, 10 | Educators reach current demo views; operators receive guided input/output/relay choices with hardware safety review. | Both packages extend the accepted wizard; retain separate commits, owner approvals, and manual tests. Package 10 may ship later if its safety gates need more review. |
+| **R6 — Recallable named configurations** | 11 | Users can manage named presets from Settings and apply one safely. | Presets are independently useful without wizard integration. |
+| **R7 — Seamless saved-setup journeys** | 12 | Users can start from or save to named presets in the wizard without duplicating preset logic. | Integration follows the separately tested wizard and preset implementations. |
+| **R8 — Clear operating workspaces** | 13 | Users can select a clearly named activity view while existing RX/TX functions continue. | Intentionally last because it changes navigation and needs a human-approved interaction prototype. |
 
-Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages.
+Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages. R5's educator and hardware paths can also ship as separate increments, each with its own approval and manual test gate; package 11 remains after package 10 because it reuses package 10's tested external-output change classifier.
 
 ## Required implementation guardrails for every package
 
@@ -85,4 +90,3 @@ No implementation packages are approved by this planning document. When reviewin
 - Before implementation: approve the numbered package and, where requested, its proposed UI wording/scenario layout.
 - After the agent's automated validation: personally perform its listed manual checks and explicitly accept or report a defect.
 - Before the next dependent package: accept its dependencies and the current package first.
-
