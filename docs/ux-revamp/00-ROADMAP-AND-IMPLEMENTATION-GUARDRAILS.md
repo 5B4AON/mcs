@@ -5,7 +5,7 @@
 This folder contains the review and independently numbered implementation plans for making Morse Code Studio easier to discover and use without removing its current capability or flexibility.
 
 - Review: [`UX-SECURITY-QUALITY-REVIEW.md`](./UX-SECURITY-QUALITY-REVIEW.md)
-- Work packages: `01-audio-startup-and-recovery.md` through `13-intent-based-workspaces.md` in this folder.
+- Work packages: `01-audio-startup-and-recovery.md` through `14-settings-profile-portability.md` in this folder. Package numbers are stable identifiers, not a promise of strict implementation order.
 
 These documents are proposals, not implementation authorization. **No package is approved merely because it is written here or because another package was approved.** Before editing code, the implementing agent must request and receive explicit owner approval for that numbered package. If design choices called out in a package have not been approved, stop and ask rather than choosing on the owner's behalf. At the end of each package, stop for the owner to run the specified manual checks and explicitly accept the behavior before beginning another package.
 
@@ -16,6 +16,7 @@ These documents are proposals, not implementation authorization. **No package is
 | 1 | Explain and expose audio startup | Essential. Audio is a first-use prerequisite, and a failed multi-service startup can leave earlier services running while the UI reports audio as stopped. | Make the control understandable, report actual success/failure, and clean up partial startup. Do not imply microphone access is always needed. |
 | 2 | Provide a simple first success | Essential. The current landing screen asks users to infer a starting action. | Add a non-blocking, reversible “Try Morse” path using the existing encoder and buffers. Never auto-play, auto-send, or silently bypass configured outputs. |
 | 3 | Explain settings changes and persistence | Essential. `SettingsService.update()` changes live state; `save()` persists by device fingerprint. Saving with no fingerprint returns without an explanation, and closing Settings does not undo live changes. | State precisely what is live and what is saved; handle unavailable storage/profile cases. Do not promise “discard” unless it truly restores the prior state. |
+| 3a | Make settings portable for safe preview/migration checks | Useful early testing support: browser preview origins have isolated `localStorage`, so device settings otherwise need to be recreated by hand. | Add a distinct, versioned settings-profile export/import package immediately after package 03. Keep it separate from named presets; never export relay secrets or trust portable hardware identifiers, and require a reviewed import before live settings change. |
 | 4 | Address relay privacy | High value and directly relevant before making relay easier to configure. Client-side channel secrets and the sample open RTDB rules need plain-language context. | Improve in-app/help disclosure and explicitly distinguish public client configuration, channel capability tokens, and local browser storage. Do not change deployed rules, credentials, or anonymous-relay compatibility in a UX package. |
 | 5 | Improve accessibility | Essential for every new path and existing modal. Current controls rely on icons, titles, and clickable non-button elements. | Correct semantics, names, focus behavior, and keyboard/touch operation in bounded surfaces. Do not use accessibility work as a reason for a visual redesign of unrelated screens. |
 | 6 | Clarify practice | High value for learners; practice already exists and can be exposed without changing its sequence/scoring engine. | Explain current modes and disabled-field behavior; preserve sequence generation, scoring, timing, and local/full pipeline behavior. |
@@ -90,16 +91,17 @@ For every UI-changing package, manually inspect: actual Galaxy S21 portrait at d
 1. **Audio activation and failure recovery** — first propagate the approved numeric UI contract into Copilot instructions as a docs-only change; then deliver obvious Start/Stop action, consistent actionable errors, and rollback on partial startup.
 2. **Try Morse first-success path** — an approachable sample workflow using existing encode/play behavior with no automatic transmission.
 3. **Live-versus-saved settings status** — accurately distinguish active edits from persisted device-profile settings; surface save failures.
-4. **Relay privacy and credential disclosure** — bounded RTDB setup/help copy and local-storage disclosure.
-5. **Accessible core controls and modals** — semantics, accessible names, focus management, keyboard operation, and touch-keyer parity.
-6. **Practice workflow clarity** — explain modes and states without changing the practice engine.
-7. **Task shortcuts in existing Settings** — intent-labelled routes to current settings cards without replacing tabs or cards.
-8. **Scenario wizard core** — navigable draft/review/apply for safe local, practice, and decode workflows.
-9. **Educator scenario** — guide group demos to existing fullscreen views and settings.
-10. **Hardware/relay scenarios** — add carefully reviewed physical-key, transmitter-keying, and relay paths.
-11. **Named user presets** — independently save, preview, recall, rename, duplicate, and delete configurations.
-12. **Wizard/preset integration** — reuse accepted preset operations from the accepted wizard.
-13. **Intent-based operating workspaces** — approved view model over existing activities and buffers.
+4. **Early settings-profile portability (new WP14)** — after package 03, provide a guarded, versioned export/import path for preview-origin setup and migration checks; preserve the existing per-device profile model and keep named presets separate.
+5. **Relay privacy and credential disclosure** — bounded RTDB setup/help copy and local-storage disclosure.
+6. **Accessible core controls and modals** — semantics, accessible names, focus management, keyboard operation, and touch-keyer parity.
+7. **Practice workflow clarity** — explain modes and states without changing the practice engine.
+8. **Task shortcuts in existing Settings** — intent-labelled routes to current settings cards without replacing tabs or cards.
+9. **Scenario wizard core** — navigable draft/review/apply for safe local, practice, and decode workflows.
+10. **Educator scenario** — guide group demos to existing fullscreen views and settings.
+11. **Hardware/relay scenarios** — add carefully reviewed physical-key, transmitter-keying, and relay paths.
+12. **Named user presets** — independently save, preview, recall, rename, duplicate, and delete configurations.
+13. **Wizard/preset integration** — reuse accepted preset operations from the accepted wizard.
+14. **Intent-based operating workspaces** — approved view model over existing activities and buffers.
 
 ## Proposed release roadmap
 
@@ -107,7 +109,7 @@ For every UI-changing package, manually inspect: actual Galaxy S21 portrait at d
 
 | Release | Packages | User-visible outcome | Why this is a coherent release |
 |---|---|---|---|
-| **R1 — A reliable first Morse session** | 01, 02, 03 | Users can see how to start, try an explicit sample, understand output safety, and know which settings are live versus saved. | Resolves the primary first-use barrier before adding new configuration architecture. |
+| **R1 — A reliable first Morse session** | 01, 02, 03, 14 (after 03) | Users can see how to start, try an explicit sample, understand output safety, know which settings are live versus saved, and transfer a reviewed settings snapshot into a separate preview origin. | Resolves the primary first-use barrier and provides safe settings portability before adding wizard/preset architecture. |
 | **R2 — Inclusive, trustworthy controls** | 04, 05 | Relay's trust/storage model is explained, and the most-used shell/modal controls can be discovered and operated accessibly. | Raises safety and accessibility quality before introducing wizard and preset surfaces. |
 | **R3 — Practice and findability** | 06, 07 | Learners understand practice controls; goal-labelled shortcuts lead into the complete existing settings. | Improves current workflows without requiring a new wizard. |
 | **R4 — Guided setup foundation** | 08 | A user can configure an approved safe core scenario through a reversible, reviewable wizard. | Wizard is independently useful before it handles specialist hardware or saved presets. |
@@ -116,7 +118,7 @@ For every UI-changing package, manually inspect: actual Galaxy S21 portrait at d
 | **R7 — Seamless saved-setup journeys** | 12 | Users can start from or save to named presets in the wizard without duplicating preset logic. | Integration follows the separately owner-accepted wizard and preset implementations. |
 | **R8 — Clear operating workspaces** | 13 | Users can select a clearly named activity view while existing RX/TX functions continue. | Intentionally last because it changes navigation and needs a human-approved interaction prototype. |
 
-Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages. R5's educator and hardware paths can also ship as separate increments, each with its own approval and manual test gate; package 11 remains after package 10 because it reuses package 10's tested external-output change classifier.
+Package 14 is a new early addition; the existing package numbers remain unchanged so issue links and approval references stay stable. It follows package 03's live-versus-saved contract and is listed in R1, but it is independently reviewed and manually accepted. Packages 04 and 05 can ship separately if either is ready first; keep them as separate commits and acceptance gates. The same applies to every package within a release. If the owner prefers faster security disclosure, package 04 may ship with R1; it does not depend on the other packages. R5's educator and hardware paths can also ship as separate increments, each with its own approval and manual test gate; package 11 remains after package 10 because it reuses package 10's tested external-output change classifier.
 
 ## Required implementation guardrails for every package
 

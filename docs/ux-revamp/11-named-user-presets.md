@@ -42,7 +42,7 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 
 ## Out of scope
 
-- Cloud sync, import/export, preset sharing, account identity, encrypted local storage, cross-device profiles, and automatic preset switching.
+- Cloud sync, import/export of named presets, preset sharing, account identity, encrypted local storage, cross-device profiles, and automatic preset switching. Portable device-profile settings export/import is separately scoped in Work Package 14.
 - Modifying defaults or existing device-profile migration/backfill.
 - Saving secrets through an implicit default or changing existing RTDB credentials behavior in `SettingsService.save()`.
 

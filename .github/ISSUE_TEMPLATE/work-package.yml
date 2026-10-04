@@ -1,0 +1,85 @@
+name: UX work package
+description: Track one approved, independently reviewable UX revamp work package.
+title: "[UX] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use one issue per work package and link it to the UX Revamp master issue. Issue creation is planning only; implementation still requires explicit owner approval for this package.
+  - type: input
+    id: user-story
+    attributes:
+      label: User story
+      description: State the audience, goal, and benefit.
+      placeholder: "As a ..., I want ..., so that ..."
+    validations:
+      required: true
+  - type: textarea
+    id: background
+    attributes:
+      label: Background and problem
+      description: Summarize the problem and link the UX Revamp master issue.
+      placeholder: "What is confusing or difficult today? Link the parent issue."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope and out of scope
+      description: Define the bounded change and explicitly list adjacent behavior that must not change.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria and manual scenarios
+      description: Use short observable behaviors as owner-run manual checks. Do not create automated UI tests.
+      placeholder: |
+        - Given ..., when ..., then ...
+        - Given ..., when ..., then ...
+    validations:
+      required: true
+  - type: input
+    id: dependencies
+    attributes:
+      label: Dependencies
+      description: Link prerequisite work-package issues, or write None.
+      placeholder: "Blocked by #123, #124 / None"
+    validations:
+      required: true
+  - type: textarea
+    id: affected-areas
+    attributes:
+      label: Affected areas
+      description: List likely components, services, documentation, or settings. Confirm actual scope before implementation.
+    validations:
+      required: true
+  - type: textarea
+    id: manual-verification
+    attributes:
+      label: Manual verification
+      description: UI behavior is verified only by the owner. Use the repository's responsive UI contract when UI changes apply.
+      value: |
+        - [ ] Owner manually checked the actual Samsung Galaxy S21 portrait layout at default zoom.
+        - [ ] Owner checked narrow/short layouts, breakpoint edges, desktop resizing, and 200% zoom.
+        - [ ] No clipping, overlap, horizontal scrolling, hidden top-bar action, or reduced human-tested control/text scale.
+        - [ ] Hardware/output behavior was checked only with an owner-approved safe setup.
+        - [ ] Owner explicitly accepted the behavior.
+        - [ ] Not applicable — no UI behavior changed.
+    validations:
+      required: true
+  - type: checkboxes
+    id: definition-of-done
+    attributes:
+      label: Definition of done
+      options:
+        - label: Explicit owner approval was received before implementation.
+          required: true
+        - label: "`npm run build` passes."
+          required: true
+        - label: No automated UI/component/DOM/browser/visual/end-to-end tests were created or run.
+          required: true
+        - label: Relevant documentation/help was updated and owner manual acceptance is recorded.
+          required: true

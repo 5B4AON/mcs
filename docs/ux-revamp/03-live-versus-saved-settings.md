@@ -33,6 +33,8 @@ Explain the real contract of Settings: edits update the running app immediately,
 - Adding a new export/import format or changing existing profile schema/backfill rules.
 - Changing settings auto-save/persistence semantics beyond explaining and reporting the existing contract.
 
+Settings export/import is intentionally a separate early package: see [Work Package 14](./14-settings-profile-portability.md). Package 03 remains independently implementable and must be accepted before package 14 begins.
+
 ## Implementation instructions
 
 1. Before coding, trace where `currentFingerprint` is set, the refresh-device flow, the `needsValidation` state, and all calls to `save()`.
