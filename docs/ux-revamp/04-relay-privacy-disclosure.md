@@ -6,6 +6,10 @@
 
 **Dependencies:** None; do not wait for the wizard to correct misleading or missing disclosure
 
+**UI test prohibition:** Do not create or run framework-based UI tests for this package. The owner performs all UI validation manually; follow the viewport checks in the shared roadmap.
+
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep short notice copy within the existing settings-card flow; put detailed explanation in Help or an existing/focused modal rather than widening cards or crowding the header.
+
 ## Goal
 
 Explain the existing Firebase RTDB relay model accurately at the point of configuration and in Help: the app is a public browser client, a channel name/secret pair is part of the database path, saved settings are browser-local, and the example rules permit anonymous read/write.
@@ -47,11 +51,11 @@ Explain the existing Firebase RTDB relay model accurately at the point of config
 - Help explains the example rule's anonymous access implications, external enforcement boundary, and safe-use limitations.
 - No text promises encryption, confidentiality, authentication, or server-side enforcement the app does not provide.
 - No Firebase configuration, deployment, RTDB protocol, or local persistence behavior changes.
-- Documentation and template changes introduce no new dependencies; `npm run build` passes.
+- Documentation and template changes introduce no new dependencies; `npm run build` passes. Do not create or run automated UI tests.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and confirm that the disclosure is noticeable on desktop and mobile. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
+Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and confirm that the disclosure is noticeable without crowding on a Samsung Galaxy S21 in portrait. Also resize desktop from narrow through typical to wide widths to check balanced layout and visible/discoverable top-bar actions. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
 
 ## Approval gate
 

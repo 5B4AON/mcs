@@ -6,6 +6,8 @@
 
 **Dependencies:** Packages 04, 08, and 09 accepted; 01 and 03 should be accepted before any audio/hardware flow
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep the scenario entry compact; put detailed hardware choices and safety review in wizard steps/modals instead of adding persistent toolbar controls or compressing the Galaxy S21 portrait layout.
+
 ## Goal
 
 Guide a user from intent (“use a physical key,” “key my radio,” “use online relay”) to the correct existing card and, where approved, configure a minimal explicit draft. Preserve all advanced mappings and require clear review before any external path can be enabled.
@@ -49,13 +51,13 @@ Owner must approve labels, routing explanations, and the exact Review screen bef
 
 ## Implementation instructions
 
-1. Before code, trace every possible output path from settings to `MorseEncoderService`, `AudioOutputService`, serial, MIDI, WinKeyer, and Firebase. Enumerate both global and per-mapping enable/forward fields in tests.
+1. Before code, trace every possible output path from settings to `MorseEncoderService`, `AudioOutputService`, serial, MIDI, WinKeyer, and Firebase. Enumerate global and per-mapping enable/forward fields in the source review and pure classifier unit cases.
 2. Have the owner approve the scenario menu, exact safety acknowledgement, output summary, unsupported-browser copy, and behavior when a target cannot be resolved.
 3. Keep the wizard patch allow-listed by selected setting keys; do not merge a whole `DEFAULT_SETTINGS` object or silently reset unrelated mappings.
 4. Validate output conflicts and capability before final apply; revalidate at apply in case current devices/settings changed since the wizard began.
 5. Keep all permissions, output tests, and sends behind direct user gestures. Do not use route entry as a substitute for consent.
 6. Keep the output-change classifier pure and generic enough for package 11 to use; it must report changed route type/target/enablement and whether explicit acknowledgement is required, without itself applying settings.
-7. Add tests for each listed output category, disabled-to-enabled protection, unresolved devices, conflicts, skip/cancel, and unchanged multi-mapping settings.
+7. If implementing the pure output-change classifier, test only that side-effect-free utility's classification rules using the existing non-UI unit-test setup. Do not create or run automated wizard/component/DOM/browser tests for scenario navigation, permissions, outputs, or responsive behavior; the owner manually verifies those paths below.
 
 ## Acceptance criteria
 
@@ -64,11 +66,11 @@ Owner must approve labels, routing explanations, and the exact Review screen bef
 - Unavailable/ambiguous hardware never silently falls back to a different port/device or system default.
 - Existing independent keyer mappings, output mappings, channel controls, forward selectors, relay, and manual test controls remain intact.
 - Local-only and input-only scenarios continue to work when hardware options are unavailable.
-- `npm test` and `npm run build` pass; manual validation never uses a connected live transmitter without the owner's explicit safe test setup.
+- `npm run build` passes; any automated tests are limited to pure non-UI classifier logic. Manual validation never uses a connected live transmitter without the owner's explicit safe test setup.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify all scenario branches with hardware disconnected first, then with safe test hardware only. Confirm API support messages, chooser timing, conflict behavior, final output summary, cancellation, and disabled output state. Actual transmitter keying tests require the owner to explicitly approve and provide a safe test setup (e.g. dummy load); never assume a live on-air test is safe.
+Ask the owner to verify on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide widths while resizing. Confirm all scenario steps, route names, target-specific warnings, and existing top-bar actions remain legible/discoverable without overflow or crowding. Then verify all scenario branches with hardware disconnected first, followed only by safe test hardware when approved. Confirm API support messages, chooser timing, conflict behavior, final output summary, cancellation, and disabled output state. Actual transmitter keying tests require the owner to explicitly approve and provide a safe test setup (e.g. dummy load); never assume a live on-air test is safe.
 
 ## Approval gate
 

@@ -6,6 +6,8 @@
 
 **Dependencies:** Packages 08, 09, 10, and 11 accepted; do not build a second preset implementation
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Integrate preset choices into existing wizard steps/review; do not add a persistent toolbar row or squeeze wizard controls on the Galaxy S21 portrait.
+
 ## Goal
 
 Allow users to start a wizard draft from an accepted named preset and optionally save the reviewed wizard result as a named preset. Reuse the existing preset validation, sensitive-field policy, device resolution, diff, and safety confirmation.
@@ -31,7 +33,7 @@ Allow users to start a wizard draft from an accepted named preset and optionally
 2. Treat a preset as immutable source data: deep-copy into the draft and prove editing a wizard answer does not change the saved preset.
 3. Keep saved preset selection, wizard draft state, active `SettingsService` state, and device-profile persistence separate.
 4. Reuse the same final apply function for wizard-built drafts and saved-preset-derived drafts. Do not duplicate output safety checks or device remapping.
-5. Add tests for loading without applying, preserving a preset after edits/cancel, saving a draft with collision/storage handling, shared review diff, and hardware/credential policy parity.
+5. Do not create or run automated wizard/component/DOM/browser tests. The owner manually verifies preset selection, draft retention, save/apply separation, cancellation, and shared safety behavior using the checkpoint below.
 
 ## Acceptance criteria
 
@@ -40,11 +42,11 @@ Allow users to start a wizard draft from an accepted named preset and optionally
 - Saving through the wizard creates a preset using exactly the package 11 schema, name rules, and secret exclusions.
 - Final Apply has identical conflict checks, device-resolution behavior, external-output confirmation, and live-versus-saved messaging regardless of draft origin.
 - Cancel/failure changes neither live settings nor an existing preset.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to select a saved preset, alter values, navigate back and forth, cancel, re-open the preset manager, then repeat and apply. Verify the preset remains unchanged until an explicit save, and that hardware routes, relay credentials, unresolved devices, and device-profile Save behave exactly like the standalone screens.
+Ask the owner to select a saved preset on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide widths while resizing. Confirm the integrated controls fit and remain discoverable, without horizontal scrolling or losing top-bar actions. Alter values, navigate back and forth, cancel, re-open the preset manager, then repeat and apply. Verify the preset remains unchanged until an explicit save, and that hardware routes, relay credentials, unresolved devices, and device-profile Save behave exactly like the standalone screens.
 
 ## Approval gate
 

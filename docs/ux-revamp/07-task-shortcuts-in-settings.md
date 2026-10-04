@@ -6,6 +6,8 @@
 
 **Dependencies:** None; this is complementary to (not a replacement for) the wizard in package 08
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). The goal shortcuts must not consume persistent horizontal space in the Settings header or replace existing tab controls; use the existing modal flow or compact in-flow layout.
+
 ## Goal
 
 Let users enter Settings by a goal they recognize—such as practice, receive CW, type/send, connect a key, connect radio keying, or relay—and then land on the relevant existing card. Preserve the current Inputs/Outputs/Other tabs and every settings card.
@@ -18,7 +20,7 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 
 ## In scope
 
-1. Add a small **Set up by goal** landing/shortcut section to the existing Settings shell. It may be collapsible/dismissible but must not replace or hide the existing tab controls.
+1. Add a small **Set up by goal** landing/shortcut section to the existing Settings shell. It may be collapsible/dismissible or presented in a focused modal, but must not replace, hide, or crowd the existing tab controls.
 2. Use a short owner-approved set of plain-language goals and map each to a precise current tab + card, e.g.:
    - Type text into Morse → Keyboard Encoder
    - Practice receiving → Copy Practice
@@ -41,7 +43,7 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 2. Prefer narrow child inputs/events or stable element IDs to control disclosure; do not use brittle DOM traversal or hard-coded scroll offsets. Retain normal tab selection, swipe support, modal scroll, and keyboard focus.
 3. If cards currently own private `expanded` state, make only the smallest explicit API change required for a parent-requested expansion; keep user-operated collapse/expand working.
 4. Ensure any shortcut to radio/relay explains consequences and does not toggle the corresponding service. Hardware card toggles remain under explicit user control.
-5. Add focused tests for each shortcut mapping and for normal manual tab/card operation after a shortcut is used.
+5. Do not create or run automated UI/component/browser tests. The owner manually verifies every shortcut mapping and normal tab/card use after navigation.
 
 ## Acceptance criteria
 
@@ -49,11 +51,11 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 - Existing Inputs/Outputs/Other navigation, swipe behavior, all cards, card toggles, validation, and save behavior continue to work.
 - No shortcut mutates `AppSettings`, starts audio, opens device permissions, or enables a radio output.
 - Full advanced settings are still discoverable and reachable.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify the shortcut-to-card mapping and labels first, then test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
+Ask the owner to verify the shortcut-to-card mapping and labels first on a Samsung Galaxy S21 in portrait, then resize desktop from narrow through typical to wide and check that shortcuts and existing tab controls stay accessible without crowding or clipping. Test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
 
 ## Approval gate
 

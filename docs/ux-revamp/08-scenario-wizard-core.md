@@ -6,6 +6,8 @@
 
 **Dependencies:** Packages 01, 03, and 05 accepted; package 07 task shortcuts may link to this wizard
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). The wizard must fit Galaxy S21 portrait without a crowded persistent stepper or toolbar; keep Back/Next/Cancel/Review discoverable using a compact or stacked modal layout and preserve all actions at desktop width limits.
+
 ## Goal
 
 Create a short, navigable setup wizard for low-risk core journeys. A user chooses a goal, sees only relevant options, can move Back/Next without losing answers, and reviews a draft before applying it. This first increment covers **Try Morse**, **Practice receiving**, and **Decode CW from audio**. Educator and external-radio/relay paths are later packages 09 and 10.
@@ -50,7 +52,7 @@ The owner must approve this flow, the labels, and the selected fields/defaults b
 3. Keep wizard state local and typed. Do not duplicate `DEFAULT_SETTINGS`, device remapping, settings validation, or settings persistence.
 4. On Apply, validate the draft against current capabilities and `settings.channelConflict()`; show blocking conflicts and an actionable route to Settings rather than applying an invalid state.
 5. Keep Next/Back deterministic and accessible. On browser Back/close, ask whether to discard a non-empty draft; Cancel returns to the wizard and preserves the draft.
-6. Add focused tests for every state transition, retained answers, cancel/no mutation, exact patch application, unsupported browser path, conflict handling, and no hardware-output mutation.
+6. Do not create or run automated wizard/component/DOM/browser tests. The owner manually verifies every scenario, transition, retention/cancel/apply behavior, unsupported-device path, conflict, and hardware-output invariant below.
 
 ## Acceptance criteria
 
@@ -59,11 +61,11 @@ The owner must approve this flow, the labels, and the selected fields/defaults b
 - Apply changes only fields shown in the approved summary; it does not silently reset unrelated settings or persist to the device profile.
 - None of the core scenarios auto-starts audio, invokes a permission chooser before explicit action, sends Morse, or enables/changes an external keying/relay route.
 - Existing modal history/back behavior and full Settings remain available.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to walk all three scenarios on Chrome/Edge, including browser Back, Cancel, Back/Next answer retention, current dirty settings, an unsupported/missing device, and a setup with external outputs already enabled. Verify that Apply changes only the summary-listed fields and that audio/permission prompts occur only at the disclosed explicit action.
+Ask the owner to walk all three scenarios on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm all steps and actions fit/remain discoverable without clipping, overlap, horizontal scrolling, or hidden top-bar actions. Also test browser Back, Cancel, Back/Next answer retention, current dirty settings, an unsupported/missing device, and a setup with external outputs already enabled. Verify that Apply changes only the summary-listed fields and that audio/permission prompts occur only at the disclosed explicit action.
 
 ## Approval gate
 

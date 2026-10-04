@@ -6,6 +6,8 @@
 
 **Dependencies:** Packages 03, 04, and 10 accepted; reuse the pure external-output change classifier introduced in package 10
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Put preset management and long before/after summaries in the existing Settings flow or focused modal; do not add persistent header controls or force a wide summary into the Galaxy S21 portrait layout.
+
 ## Goal
 
 Let a user save the current configuration under a meaningful name and later preview, recall, rename, duplicate, or delete it. Keep named user presets separate from the existing audio-device-fingerprint profiles.
@@ -52,7 +54,7 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 4. Add an explicit device-resolution stage before applying unavailable or ambiguous hardware routes. Never map an unresolved transmitter output to an arbitrary target.
 5. Apply a confirmed snapshot through `SettingsService` only; do not call hardware output methods directly. Reflect package 03 semantics: preset application is live, while saving it into the current device profile is a separate action.
 6. Guard browser storage failures and keep a visible unsaved/error state. Use no new dependency.
-7. Add unit specs for schema validation, name uniqueness, clone isolation, storage errors, omitted secrets, device resolution, diff generation, cancel/no mutation, and external-output confirmation.
+7. Add unit specs only for non-UI preset data/service behavior: schema validation, name uniqueness, clone isolation, storage errors, omitted secrets, device resolution, diff generation, and cancel/no mutation. Do not create or run Angular component, DOM, browser, or other automated UI tests; the owner manually verifies preset screens and confirmation flow below.
 
 ## Acceptance criteria
 
@@ -63,11 +65,11 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 - Missing/ambiguous audio/MIDI/serial targets require resolution; a serial index is never assumed durable.
 - Any newly enabled external keying target is target-specific and explicitly confirmed; no output test or browser chooser runs automatically.
 - Preset corruption/storage failure cannot crash the app or falsely indicate success; all existing per-device settings still load as before.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; any automated tests are limited to non-UI preset logic.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to create two named presets with different nested mappings, edit the active settings, preview/apply/cancel each preset, rename/duplicate/delete them, reload, and verify device-profile auto-loading still works. Test an unavailable audio/MIDI device and serial port, an ambiguous label, an enabled keying route, omitted relay secrets, and blocked localStorage.
+Ask the owner to use a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm the preset entry point, management actions, and long summaries remain usable without consuming the constrained top-bar width or clipping. Then create two named presets with different nested mappings, edit the active settings, preview/apply/cancel each preset, rename/duplicate/delete them, reload, and verify device-profile auto-loading still works. Test an unavailable audio/MIDI device and serial port, an ambiguous label, an enabled keying route, omitted relay secrets, and blocked localStorage.
 
 ## Approval gate
 

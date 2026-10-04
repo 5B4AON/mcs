@@ -32,7 +32,7 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 **Evidence:** `src/app/app.component.html:1-18`; `src/app/app.component.ts:665-690`; `README.md:75-81`.
 
-**Recommendation:** Give the control a visible **Start audio** label in the initial/idle state, and explain its effect at the point of use. Show clear states for starting, active, and failed—with actionable recovery for permission denial, missing devices, and unavailable audio. Explain separately when a selected workflow actually needs microphone access; do not make users grant it just to explore typed encoding or local practice.
+**Recommendation:** Keep the existing compact icon control so it continues to fit the mobile-first header. Give it a programmatic accessible name and an owner-approved in-flow hint, existing menu entry, or focused dialog that makes **Start audio** discoverable without reserving more header width. Show clear states for starting, active, and failed—with actionable recovery for permission denial, missing devices, and unavailable audio. Explain separately when a selected workflow actually needs microphone access; do not make users grant it just to explore typed encoding or local practice.
 
 ### P1 — Offer audience-based setup recipes and a short configuration wizard
 
@@ -44,13 +44,13 @@ This is a static, code-grounded review, not a usability study or a penetration t
 
 | Starting point | Default focus | Important guard rail |
 |---|---|---|
-| **First visit / Try Morse** | A sample phrase, local sidetone, an immediate encode-and-hear loop, and a visible route to practice. | No hardware setup or microphone permission required for the basic demonstration. |
+| **First visit / Try Morse** | A sample phrase, local sidetone, an immediate encode-and-hear loop, and a discoverable route to practice. | No hardware setup or microphone permission required for the basic demonstration; preserve the compact portrait layout. |
 | **Student / self-study** | Copy Practice, a simple starting character set, type-along or listen-and-reveal feedback, and a gentle speed/gap choice. | Keep controls such as pipeline routing and fine-grained pool tuning optional. |
 | **Educator / group demonstration** | A large, readable conversation display, easy-to-understand RX/TX distinction, and optional named/coloured participants. | Make classroom display and input setup discoverable without requiring a radio configuration. |
 | **New radio amateur** | Receive/decode first, then a guided local keyer or sidetone test, followed by an optional hardware setup. | Never silently enable a transmitter keying output; require explicit review of the selected hardware route. |
 | **Experienced operator** | Direct access to independent RX/TX calibration, keyers, MIDI/serial/WinKeyer, relay, and routing controls. | Preserve custom routing and provide a clear path back to the complete settings model. |
 
-Make setup a navigable wizard rather than a one-way questionnaire. A useful flow is: choose the goal and audience; see relevant input/output options based on browser support and connected devices; configure the selected options; run applicable checks; then review the complete proposed setup before applying it. Every stage should have clear **Back** and **Next** actions, with optional steps skippable and earlier choices retained when users revisit them. Keep changes in a draft until the user confirms the final summary, and offer a route to full settings at any point.
+Make setup a navigable wizard rather than a one-way questionnaire. A useful flow is: choose the goal and audience; see relevant input/output options based on browser support and connected devices; configure the selected options; perform safe, owner-approved manual checks; then review the complete proposed setup before applying it. Every stage should have clear **Back** and **Next** actions, with optional steps skippable and earlier choices retained when users revisit them. Keep changes in a draft until the user confirms the final summary, and offer a route to full settings at any point.
 
 Keep three concepts clear and distinct: built-in scenario recipes are editable starting points; named user presets are configurations the user explicitly saves and can recall, rename, duplicate, or delete; existing device profiles continue to auto-load settings for a particular audio-device fingerprint. Let users save a named preset from the current setup or the wizard’s final review, and preview what recalling it will change before applying it. Apply it to the current hardware without silently discarding unrelated custom settings; identify unavailable devices and let the user remap them. Since saved settings can include RTDB channel secrets, explain where presets are stored and whether a saved preset includes those credentials.
 
@@ -60,7 +60,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Evidence:** `src/app/app.component.html:9-27`; `src/app/components/settings-modal/settings-modal.component.html:1-2,32-46`; `src/app/components/settings-modal/settings-inputs-tab/cw-detector-card/cw-detector-card.component.html:3-15`; `src/app/components/fullscreen-modal/fs-decoder-view/fs-decoder-view.component.html:105-144`.
 
-**Recommendation:** Use visible labels for primary actions and programmatic accessible names for icon-only controls. Give dialogs and tab navigation appropriate semantics and keyboard behavior; manage focus on open/close; make expandable card headers keyboard-operable; and make touch keyer controls accessible as buttons with clear dit/dah or straight-key names. Verify contrast, target sizes, zoom, and screen-reader announcements across mobile and desktop.
+**Recommendation:** Keep existing icon-button footprints where labels would exceed the mobile-first layout; provide programmatic accessible names and put longer explanations or secondary actions in established menus/modals or approved compact in-flow content. Give dialogs and tab navigation appropriate semantics and keyboard behavior; manage focus on open/close; make expandable card headers keyboard-operable; and make touch keyer controls accessible as buttons with clear dit/dah or straight-key names. Preserve Galaxy S21 portrait fit and verify contrast, target sizes, zoom, and screen-reader announcements across mobile and desktop.
 
 ### P2 — Give encoder and decoder distinct, persistent identities without splitting their capabilities
 
@@ -68,7 +68,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Evidence:** `src/app/app.component.html:163-171,270-279`; `src/app/components/fullscreen-modal/fullscreen-modal.component.html:12-24`; `src/app/components/help/help-ch-config.component.html:85-109`.
 
-**Recommendation:** Provide persistent **Practice**, **Listen/Decode**, **Compose/Send**, and **Operate** workspace choices with a concise explanation of what each emphasizes. Keep a clearly named **Combined conversation** view for users who want both directions together. These should be views over the same independent RX/TX streams and existing buffers—not mutually exclusive feature modes. Make the current workspace visible and make switching views preserve ongoing activity and history.
+**Recommendation:** Provide discoverable **Practice**, **Listen/Decode**, **Compose/Send**, and **Operate** workspace choices with a concise explanation of what each emphasizes, without adding a crowded persistent toolbar row on mobile. Use an existing menu or focused modal if needed to fit the Galaxy S21 portrait layout. Keep a clearly named **Combined conversation** view for users who want both directions together. These should be views over the same independent RX/TX streams and existing buffers—not mutually exclusive feature modes. Make the current workspace visible and make switching views preserve ongoing activity and history.
 
 ### P2 — Replace “look it up in Help” with just-in-time guidance and status
 
@@ -76,7 +76,7 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Evidence:** `src/app/app.component.html:22-65`; `src/app/components/help/help.component.html:19-127`; `src/app/components/help/help-ch-intro.component.html:67-99`.
 
-**Recommendation:** Keep the detailed manual as the reference layer, but surface brief “what this does / when to use it” hints beside unfamiliar controls. Add a visible setup checklist with current readiness, meaningful device/permission errors, and a contextual next action (for example, “Audio is off—start audio to hear this test”). Explain RX, TX, keyer, and encoder speed at first use rather than relying on abbreviations or tooltips. In practice mode, explain why the text field changes or becomes unavailable for some feedback styles and make the active exercise/feedback mode obvious. Keep specialist hardware wiring guidance available, but let beginners defer the lengthy technical details until they choose that setup.
+**Recommendation:** Keep the detailed manual as the reference layer, but surface brief “what this does / when to use it” hints beside unfamiliar controls. Offer a compact, expandable or modal setup checklist with current readiness, meaningful device/permission errors, and a contextual next action (for example, “Audio is off—start audio to hear this test”) without permanently displacing controls or crowding the mobile layout. Explain RX, TX, keyer, and encoder speed at first use rather than relying on abbreviations or tooltips. In practice mode, explain why the text field changes or becomes unavailable for some feedback styles and make the active exercise/feedback mode obvious. Keep specialist hardware wiring guidance available, but let beginners defer the lengthy technical details until they choose that setup.
 
 ## Security and privacy review
 
@@ -98,9 +98,9 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 ## Code quality and validation notes
 
-- The separation into focused services, standalone components, and settings cards is a sound basis for incremental UX work. The main component nevertheless imports and orchestrates many services and owns much of the main-screen behavior; adding guided flows there without further boundaries could make future changes harder to reason about. Keep new onboarding/workspace state localized and testable.
+- The separation into focused services, standalone components, and settings cards is a sound basis for incremental UX work. The main component nevertheless imports and orchestrates many services and owns much of the main-screen behavior; adding guided flows there without further boundaries could make future changes harder to reason about. Keep new onboarding/workspace state localized, reviewable, and suitable for owner-run manual validation.
 - Audio startup errors are caught in the auto-start path, but the user-initiated `toggleAudio()` path only has a `finally` block. Provide visible error state and recovery for both paths, and keep their behavior consistent.
-- The repository has an `npm test` script, but no `*.spec.ts` files were present in this checkout. Add focused automated coverage for first-run setup, audio permission failure, preset preview/apply/cancel, view switching with ongoing RX/TX, and the rule that a setup preset cannot silently enable external radio keying.
+- UI behavior is to be verified manually by the owner, not through automated UI tests. The action plans specify owner-run checks for first-run setup, audio permission failure/recovery, preset preview/apply/cancel, view switching with ongoing RX/TX, and prevention of silent external radio keying. They explicitly prohibit downstream agents from creating or running framework-based UI tests.
 - No exploitable issue was confirmed from this static review. The Firebase rule example and client-side secret persistence above are concrete risks to address or clearly communicate; any deployment-specific exposure depends on the actual database rules and hosting configuration.
 
 ## Suggested implementation sequence

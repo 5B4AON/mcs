@@ -4,7 +4,9 @@
 
 **Proposed release:** R2 — Inclusive, trustworthy controls
 
-**Dependencies:** Work Package 01 for the audio control's final markup (or coordinate changes so the label is not overwritten)
+**Dependencies:** Work Package 01 for the audio control's final icon/accessible-name markup (or coordinate changes to avoid conflicting updates)
+
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Do not add persistent text labels or toolbar controls that exceed Galaxy S21 portrait fit; preserve icon footprints with accessible names and use existing menus/modals for extended instructions.
 
 ## Goal
 
@@ -36,7 +38,7 @@ Make core controls discoverable and usable by keyboard, touch, and assistive tec
 3. For cards, separate the disclosure button and enable checkbox/switch in the header layout. Do not add a button around the existing header containing a nested switch.
 4. For touch keying, preserve down/up timing and all existing pointer/touch cancellation paths. Test Space/Enter key repeat and blur/focus loss; a keyboard press must not generate repeated stuck closures.
 5. Use existing CSS and shared-style conventions; do not add UI libraries. If styles are shared globally, follow `.github/copilot-instructions.md` and do not re-add shared CSS to every component.
-6. Add focused component/spec tests for tab state, disclosure state, and key-release paths if they can be isolated in the existing Jasmine/Karma setup.
+6. Do not create or run automated component, accessibility, DOM, browser, or other UI tests. The owner manually tests keyboard, touch, screen-reader, focus, modal, and key-release behavior using the checkpoint below.
 
 ## Acceptance criteria
 
@@ -46,11 +48,11 @@ Make core controls discoverable and usable by keyboard, touch, and assistive tec
 - Icon-only core controls have clear accessible names and visible keyboard focus.
 - Touch-keyer hold/release behavior remains correct for mouse, touch, and keyboard, including cancellation/focus loss.
 - RX/TX routing, modal/browser history, modal text, and all existing control effects are unchanged.
-- `npm test` and `npm run build` pass; no new dependency is introduced.
+- `npm run build` passes; no new dependency is introduced and no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to test mouse, keyboard-only, and touch interaction on Settings, Help, and both fullscreen modes. Include opening/closing with Escape and browser Back, switching Settings tabs with keyboard and swipe, and pressing/releasing the on-screen keyer using both touch and keyboard. If possible, include one screen-reader pass to confirm dialog names, selected tab, button labels, and state announcements.
+Ask the owner to test mouse, keyboard-only, and touch interaction on Settings, Help, and both fullscreen modes on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm no new labels/controls crowd or hide existing actions. Include opening/closing with Escape and browser Back, switching Settings tabs with keyboard and swipe, and pressing/releasing the on-screen keyer using both touch and keyboard. If possible, include one screen-reader pass to confirm dialog names, selected tab, button labels, and state announcements.
 
 ## Approval gate
 

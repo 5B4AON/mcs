@@ -6,6 +6,8 @@
 
 **Dependencies:** None
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Keep save/status messaging within existing modal space or a focused dialog; do not widen the persistent header/footer or shrink current controls to make room.
+
 ## Goal
 
 Explain the real contract of Settings: edits update the running app immediately, while **Save Settings** persists them in the profile for the current audio-device fingerprint. Make unavailable saves and storage failures visible; never imply that closing Settings discards live changes.
@@ -37,7 +39,7 @@ Explain the real contract of Settings: edits update the running app immediately,
 2. Keep a single source of truth for whether persistence succeeded. Prefer returning an explicit result from the service (saved / no profile / storage failure) rather than inferring success from a click.
 3. Do not set `isDirty` false unless the profile write completed successfully. Catch storage failures at the persistence boundary and expose a typed, non-sensitive result to the modal.
 4. Do not add a “Discard” button. If a later design asks for discard, first design a real snapshot/revert flow with runtime side-effect review and get separate owner approval.
-5. Add tests covering dirty settings, no fingerprint, successful save, failed storage write, and continued live setting values after closing the modal.
+5. Do not create or run automated UI/component/browser tests. The owner manually verifies live/save status, errors, and close/reopen behavior in the checkpoint below.
 
 ## Acceptance criteria
 
@@ -46,11 +48,11 @@ Explain the real contract of Settings: edits update the running app immediately,
 - Save with no fingerprint and a storage exception both have visible, accurate outcomes; neither reports a false success.
 - A successful save continues to use the existing device-specific profile format and label-based audio-device remapping.
 - Current immediate settings/service effects, reset confirmation, and validation behavior are unchanged.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify: edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
+Ask the owner to verify on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm the new status fits without crowding or obscuring controls. Then edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
 
 ## Approval gate
 

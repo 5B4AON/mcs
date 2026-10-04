@@ -6,6 +6,8 @@
 
 **Dependencies:** Work Package 01 for accurate audio-state/error messaging
 
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Do not add a permanent banner/action that crowds the Galaxy S21 portrait view; use a compact entry point with focused modal or in-flow details if needed.
+
 ## Goal
 
 Give a new user a short, non-blocking route to load a sample, understand the encoder, and choose to hear/send it through the existing pipeline. The app must not autoplay or transmit merely because the user opened the page or dismissed onboarding.
@@ -37,7 +39,7 @@ Give a new user a short, non-blocking route to load a sample, understand the enc
 2. Reuse the existing textarea reference, encoder event handlers, and TX action. Keep the user's current text safe: loading a sample must not silently overwrite non-empty text; prompt or offer an explicit append/replace choice.
 3. Preserve the selected mode and all existing buffers. Do not clear, reclassify, or duplicate displayed text as part of the sample action.
 4. Treat `sidetoneEnabled` as local audio but identify every path that can reach external hardware/relay before declaring a send safe. Do not send a test pulse or call a low-level output service directly.
-5. Add focused tests for load-with-empty-field, non-empty-field protection, dismissal/reopen behavior, no automatic send/audio, and the external-output confirmation gate.
+5. Do not create or run automated UI/component/browser tests. The owner manually verifies onboarding, text preservation, idle-on-open behavior, and external-output confirmation in the checkpoint below.
 
 ## Acceptance criteria
 
@@ -47,11 +49,11 @@ Give a new user a short, non-blocking route to load a sample, understand the enc
 - The existing send pipeline, selected mode, routing, and text display remain authoritative.
 - A potentially external send is clearly identified and requires the approved explicit confirmation.
 - The guidance remains reachable after dismissal, and existing experienced-user controls remain visible.
-- `npm test` and `npm run build` pass.
+- `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to verify on desktop and a narrow/touch viewport:
+Ask the owner to verify on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm there is no clipping, overlap, horizontal scrolling, hidden top-bar action, or awkward stretching. Also verify:
 
 1. The user sees an understandable first action and can dismiss and reopen it.
 2. Loading an example is not the same as sending it; audio and outputs remain idle until the user's explicit action.
