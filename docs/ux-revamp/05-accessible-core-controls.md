@@ -6,7 +6,7 @@
 
 **Dependencies:** Work Package 01 for the audio control's final icon/accessible-name markup (or coordinate changes to avoid conflicting updates)
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, icon/button, touch-target, and spacing scale. Do not add persistent text labels or toolbar controls that exceed Galaxy S21 portrait fit, and do not shrink controls to accommodate them; preserve icon footprints with accessible names and use existing menus/modals for extended instructions.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the tested font, icon/button, touch-target, and spacing scale. Do not add persistent text labels or toolbar controls that exceed the established reference portrait fit, and do not shrink controls to accommodate them; preserve icon footprints with accessible names and use existing menus/modals for extended instructions.
 
 ## Goal
 
@@ -52,7 +52,7 @@ Make core controls discoverable and usable by keyboard, touch, and assistive tec
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to compare changed screens against the supplied screenshots and test mouse, keyboard-only, and touch interaction on Settings, Help, and both fullscreen modes on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm font/control scale is unchanged and no new labels/controls crowd or hide existing actions. Include opening/closing with Escape and browser Back, switching Settings tabs with keyboard and swipe, and pressing/releasing the on-screen keyer using both touch and keyboard. If possible, include one screen-reader pass to confirm dialog names, selected tab, button labels, and state announcements.
+Ask the owner to compare changed screens against the supplied mobile reference screenshots and test mouse, keyboard-only, and touch interaction on Settings, Help, and both fullscreen modes using a representative phone at the measured portrait CSS viewport and desktop at narrow, typical, and wide widths while resizing. Confirm font/control scale is unchanged and no new labels/controls crowd or hide existing actions. Include opening/closing with Escape and browser Back, switching Settings tabs with keyboard and swipe, and pressing/releasing the on-screen keyer using both touch and keyboard. If possible, include one screen-reader pass to confirm dialog names, selected tab, button labels, and state announcements.
 
 ## Approval gate
 

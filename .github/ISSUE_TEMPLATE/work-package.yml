@@ -62,7 +62,7 @@ body:
       label: Manual verification
       description: UI behavior is verified only by the owner. Use the repository's responsive UI contract when UI changes apply.
       value: |
-        - [ ] Owner manually checked the actual Samsung Galaxy S21 portrait layout at default zoom.
+        - [ ] Owner manually checked a representative physical phone at the defined reference portrait CSS viewport and default zoom.
         - [ ] Owner checked narrow/short layouts, breakpoint edges, desktop resizing, and 200% zoom.
         - [ ] No clipping, overlap, horizontal scrolling, hidden top-bar action, or reduced human-tested control/text scale.
         - [ ] Hardware/output behavior was checked only with an owner-approved safe setup.

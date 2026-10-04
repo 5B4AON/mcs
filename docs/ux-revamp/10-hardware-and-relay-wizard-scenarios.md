@@ -6,7 +6,7 @@
 
 **Dependencies:** Packages 04, 08, and 09 accepted; 01 and 03 should be accepted before any audio/hardware flow
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Keep scenario entry compact; put detailed hardware choices and safety review in wizard steps/modals instead of adding persistent toolbar controls, shrinking controls, or compressing the Galaxy S21 portrait layout.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the tested font, button, touch-target, and spacing scale. Keep scenario entry compact; put detailed hardware choices and safety review in wizard steps/modals instead of adding persistent toolbar controls, shrinking controls, or compressing the established reference portrait layout.
 
 ## Goal
 
@@ -70,7 +70,7 @@ Owner must approve labels, routing explanations, and the exact Review screen bef
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to compare the scenario flow with the supplied screenshots on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide widths while resizing. Confirm screenshot-relative font/button scale is unchanged and all scenario steps, route names, target-specific warnings, and existing top-bar actions remain legible/discoverable without overflow or crowding. Then verify all scenario branches with hardware disconnected first, followed only by safe test hardware when approved. Confirm API support messages, chooser timing, conflict behavior, final output summary, cancellation, and disabled output state. Actual transmitter keying tests require the owner to explicitly approve and provide a safe test setup (e.g. dummy load); never assume a live on-air test is safe.
+Ask the owner to compare the scenario flow with the supplied mobile reference screenshots and a representative phone at the measured portrait CSS viewport, plus desktop at narrow, typical, and wide widths while resizing. Confirm the established font/button scale is unchanged and all scenario steps, route names, target-specific warnings, and existing top-bar actions remain legible/discoverable without overflow or crowding. Then verify all scenario branches with hardware disconnected first, followed only by safe test hardware when approved. Confirm API support messages, chooser timing, conflict behavior, final output summary, cancellation, and disabled output state. Actual transmitter keying tests require the owner to explicitly approve and provide a safe test setup (e.g. dummy load); never assume a live on-air test is safe.
 
 ## Approval gate
 

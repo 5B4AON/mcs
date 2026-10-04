@@ -6,7 +6,7 @@
 
 **Dependencies:** Work Package 03 accepted. Coordinate relay-secret wording with Work Package 04; do not block this package on later named-preset or wizard work.
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract) and numeric UI constraints. Keep import/export entry points within existing Settings surfaces or a focused modal; do not add persistent header controls, shrink controls/text, or require horizontal scrolling on the Galaxy S21 portrait layout.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract) and numeric UI constraints. Keep import/export entry points within existing Settings surfaces or a focused modal; do not add persistent header controls, shrink controls/text, or require horizontal scrolling within the established reference portrait layout.
 
 ## Goal
 
@@ -64,7 +64,7 @@ Obtain owner approval for the exact file format/version policy, excluded fields,
 
 ## Manual owner checkpoint — required before acceptance
 
-The owner manually compares the affected Settings/import surfaces with the supplied Galaxy S21 portrait reference and checks the shared viewport matrix, including desktop resizing. Confirm that the existing text/control scale and top-bar footprint remain intact and that every action remains reachable without horizontal scrolling, clipping, or overlap.
+The owner manually compares the affected Settings/import surfaces with the supplied mobile reference screenshots and checks the shared viewport matrix on a representative phone and desktop. Confirm that the established text/control scale and top-bar footprint remain intact and that every action remains reachable without horizontal scrolling, clipping, or overlap.
 
 Export a configuration and inspect the file to confirm both relay secrets are absent. Import it into a separate preview origin; inspect every change, cancel once and verify nothing changed, then repeat and apply only after reviewing the summary. Verify secrets already configured in the preview remain unchanged; check unsupported/corrupt/oversized input; confirm device mismatch and ambiguous labels require resolution; and verify an external route cannot be newly enabled without its exact target acknowledgement. Confirm the imported settings are live but not marked saved until the normal save action succeeds. If testing relay behavior, use a throwaway channel because preview and production share RTDB.
 

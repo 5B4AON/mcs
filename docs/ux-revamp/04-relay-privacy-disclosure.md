@@ -55,7 +55,7 @@ Explain the existing Firebase RTDB relay model accurately at the point of config
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and compare the changed settings cards with the supplied screenshots on a Samsung Galaxy S21 in portrait. Confirm the notice is noticeable without reducing screenshot-tested text/control sizing or crowding. Also resize desktop from narrow through typical to wide widths to check balanced layout and visible/discoverable top-bar actions. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
+Ask the owner to review the final copy for accuracy and tone, confirm it does not imply that production rules were inspected, and compare the changed settings cards with the supplied mobile reference screenshots and a representative phone in portrait at the measured CSS viewport. Confirm the notice is noticeable without reducing the established text/control sizing or crowding. Also resize desktop from narrow through typical to wide widths to check balanced layout and visible/discoverable top-bar actions. If the owner wants authentication, rule changes, or a credential-storage change, stop and create a separately approved security package.
 
 ## Approval gate
 

@@ -8,7 +8,7 @@
 
 **Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the screenshot-tested font, button, touch-target, and spacing scale; preserve the icon's current header footprint and use a fitting in-flow hint or existing modal/menu instead of shrinking controls or adding a persistent label.
 
-**Early shared-guidance deliverable:** After the owner approves Work Package 01, but before changing application UI code, update `.github/copilot-instructions.md` with the confirmed numeric UI constraints from the roadmap's **Numeric UI constraint framework** (breakpoints, viewport-width measurement caveat, role-specific type/control/touch sizes, contrast/focus thresholds, and manual viewport matrix). Have the owner capture the Galaxy S21 CSS viewport metrics on-device; if unavailable, pause and ask rather than inventing them. Make this a docs-only first commit and ask the owner to review/accept the instructions diff before proceeding to the audio UI/lifecycle change. Do not copy screenshot raster dimensions as CSS dimensions or edit these instructions during planning.
+**Early shared-guidance deliverable:** After the owner approves Work Package 01, but before changing application UI code, update `.github/copilot-instructions.md` with the confirmed numeric UI constraints from the roadmap's **Numeric UI constraint framework** (breakpoints, viewport-width measurement caveat, role-specific type/control/touch sizes, contrast/focus thresholds, and manual viewport matrix). Have the owner capture the reference phone's effective CSS viewport metrics at default zoom; if unavailable, pause and ask rather than inventing them. The baseline is the measured viewport and rendering context, not a device model. Make this a docs-only first commit and ask the owner to review/accept the instructions diff before proceeding to the audio UI/lifecycle change. Do not copy screenshot raster dimensions as CSS dimensions or edit these instructions during planning.
 
 ## Goal
 
@@ -24,7 +24,7 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 
 ## In scope
 
-1. Keep the existing icon control and compact header footprint; expose state-dependent **Start audio**/**Stop audio** programmatic accessible names. Make the action discoverable through a compact, owner-approved in-flow hint or existing menu/modal, without requiring a persistent text label or taking horizontal space from the Galaxy S21 portrait layout.
+1. Keep the existing icon control and compact header footprint; expose state-dependent **Start audio**/**Stop audio** programmatic accessible names. Make the action discoverable through a compact, owner-approved in-flow hint or existing menu/modal, without requiring a persistent text label or taking horizontal space from the established reference portrait layout.
 2. Add a concise explanation/status in available in-flow space or a focused existing UI surface. Say what is currently enabled and only describe microphone permission when an enabled mic/CW input will request it.
 3. Represent startup failure visibly and in plain language. Provide the error category when known (permission denied, device absent/in use, unsupported browser, or other startup failure) and one relevant next action. Do not display raw exception dumps.
 4. Make user-start and remembered auto-start converge on the same lifecycle/status/error handling where possible.
@@ -58,7 +58,7 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to check in their target browser(s), comparing the affected view directly with the supplied screenshots. As required by the shared UI contract, include the Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide window sizes while resizing:
+Ask the owner to check in their target browser(s), comparing the affected view directly with the supplied mobile reference screenshots. As required by the shared UI contract, include a representative physical phone in portrait at the measured reference CSS viewport and desktop at narrow, typical, and wide window sizes while resizing:
 
 1. Confirm the header/icon fits without horizontal scrolling, clipping, overlap, or reduced existing touch targets; verify its accessible name and in-flow/menu/modal explanation are discoverable.
 2. Resize desktop widths and verify top-bar actions remain visible or discoverable and spacing stays balanced.

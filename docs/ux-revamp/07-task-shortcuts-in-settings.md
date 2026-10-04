@@ -55,7 +55,7 @@ Let users enter Settings by a goal they recognize—such as practice, receive CW
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to compare the Settings surface to the supplied screenshots and verify the shortcut-to-card mapping and labels on a Samsung Galaxy S21 in portrait, then resize desktop from narrow through typical to wide and check that shortcuts and existing tab controls stay accessible without crowding or clipping. Confirm existing font/button scale is retained. Test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
+Ask the owner to compare the Settings surface to the supplied mobile reference screenshots and verify the shortcut-to-card mapping and labels on a representative phone at the measured portrait CSS viewport, then resize desktop from narrow through typical to wide and check that shortcuts and existing tab controls stay accessible without crowding or clipping. Confirm the established font/button scale is retained. Test every shortcut with keyboard and touch. Confirm opening a shortcut only navigates/expands; it does not change settings or activate inputs/outputs. Check that returning to the tabs and using swipe/scroll remains natural.
 
 ## Approval gate
 

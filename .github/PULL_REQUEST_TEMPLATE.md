@@ -31,7 +31,7 @@
 
 ## Manual owner verification — UI changes only
 
-- [ ] Owner reviewed behavior on the Samsung Galaxy S21 in portrait at the default zoom.
+- [ ] Owner reviewed behavior on a representative physical phone at the defined reference portrait CSS viewport and default zoom.
 - [ ] Owner checked the shared responsive viewport matrix, including breakpoint edges, narrow/short layouts, desktop resizing, and 200% zoom.
 - [ ] Current human-tested font, button, touch-target, and spacing scale is preserved; no clipping, overlap, hidden top-bar controls, or horizontal scrolling was introduced.
 - [ ] Keyboard/touch/focus behavior and the issue-specific manual acceptance scenarios were checked.

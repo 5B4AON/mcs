@@ -6,7 +6,7 @@
 
 **Dependencies:** Packages 03, 04, and 10 accepted; reuse the pure external-output change classifier introduced in package 10
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Put preset management and long before/after summaries in the existing Settings flow or focused modal; do not add persistent header controls, shrink controls/text, or force a wide summary into the Galaxy S21 portrait layout.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the tested font, button, touch-target, and spacing scale. Put preset management and long before/after summaries in the existing Settings flow or focused modal; do not add persistent header controls, shrink controls/text, or force a wide summary into the established reference portrait layout.
 
 ## Goal
 
@@ -74,7 +74,7 @@ Obtain owner approval for this contract, the exact sensitive-field copy, and dev
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to compare the preset screens with the supplied screenshots on a Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide widths while resizing. Confirm screenshot-relative font/control scale is preserved and the preset entry point, management actions, and long summaries remain usable without consuming the constrained top-bar width or clipping. Create presets with different nested mappings, export one and inspect it for omitted relay secrets, then import it in a separate browser profile/origin. Resolve a duplicate name without overwrite and verify import only adds a saved preset. Edit active settings, preview/apply/cancel presets, rename/duplicate/delete them, reload, and verify device-profile auto-loading still works. Check an unavailable audio/MIDI device and serial port, an ambiguous label, an enabled keying route, omitted relay secrets, and blocked localStorage.
+Ask the owner to compare the preset screens with the supplied mobile reference screenshots and a representative phone at the measured portrait CSS viewport, plus desktop at narrow, typical, and wide widths while resizing. Confirm the established font/control scale is preserved and the preset entry point, management actions, and long summaries remain usable without consuming the constrained top-bar width or clipping. Create presets with different nested mappings, export one and inspect it for omitted relay secrets, then import it in a separate browser profile/origin. Resolve a duplicate name without overwrite and verify import only adds a saved preset. Edit active settings, preview/apply/cancel presets, rename/duplicate/delete them, reload, and verify device-profile auto-loading still works. Check an unavailable audio/MIDI device and serial port, an ambiguous label, an enabled keying route, omitted relay secrets, and blocked localStorage.
 
 ## Approval gate
 

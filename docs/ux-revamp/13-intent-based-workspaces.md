@@ -6,7 +6,7 @@
 
 **Dependencies:** Packages 05, 06, 08, and 09 accepted; package 12 is recommended for saved-setup continuity
 
-**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve screenshot-tested font, button, touch-target, and spacing scale. Obtain approval for portrait and desktop wireframes; do not add a permanent workspace toolbar row that exceeds Galaxy S21 portrait fit or shrink controls to fit it. Keep choices discoverable through an existing compact menu/modal if necessary.
+**Mobile-first UI constraint:** Follow the shared [mobile-first and responsive UI contract](./00-ROADMAP-AND-IMPLEMENTATION-GUARDRAILS.md#mobile-first-and-responsive-ui-contract). Preserve the tested font, button, touch-target, and spacing scale. Obtain approval for portrait and desktop wireframes; do not add a permanent workspace toolbar row that exceeds the established reference portrait fit or shrink controls to fit it. Keep choices discoverable through an existing compact menu/modal if necessary.
 
 ## Goal
 
@@ -53,12 +53,12 @@ The current main view, decoder fullscreen view, and encoder fullscreen view are 
 - The combined RX/TX conversation experience and both existing fullscreen views remain available.
 - Switching workspace does not stop reception, transmission, key input, practice, change routing, clear buffers, or alter settings.
 - Fullscreen/modal/browser history, mobile virtual keyboard, touch keyers, buffer persistence, and display controls work as before.
-- Selection and transitions work with keyboard, touch, focus management, and the Galaxy S21 portrait viewport.
+- Selection and transitions work with keyboard, touch, focus management, and the established reference portrait viewport.
 - `npm run build` passes; no automated UI test is created or run.
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to approve the portrait and desktop wireframes before coding. On a Samsung Galaxy S21 in portrait, compare affected screens with the supplied screenshots and verify that relative font/button/touch-target scale is unchanged. On desktop at narrow, typical, and wide widths while resizing, manually verify that choices and existing top-bar actions remain available, layouts do not clip/overlap/scroll horizontally, and wider layouts remain balanced. Then test each workspace during active RX, queued TX, held touch-keyer input, and active/paused practice. Switch views, use browser Back, close/reopen fullscreen, and verify text buffers, RX/TX patterns, output state, and settings are unchanged.
+Ask the owner to approve the portrait and desktop wireframes before coding. On a representative phone at the measured reference portrait CSS viewport, compare affected screens with the supplied mobile reference screenshots and verify that relative font/button/touch-target scale is unchanged. On desktop at narrow, typical, and wide widths while resizing, manually verify that choices and existing top-bar actions remain available, layouts do not clip/overlap/scroll horizontally, and wider layouts remain balanced. Then test each workspace during active RX, queued TX, held touch-keyer input, and active/paused practice. Switch views, use browser Back, close/reopen fullscreen, and verify text buffers, RX/TX patterns, output state, and settings are unchanged.
 
 ## Approval gate
 

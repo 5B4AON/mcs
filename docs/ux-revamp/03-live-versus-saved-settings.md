@@ -54,7 +54,7 @@ Settings export/import is intentionally a separate early package: see [Work Pack
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to compare the changed Settings surface with the supplied screenshots on a Samsung Galaxy S21 in portrait and on desktop at narrow, typical, and wide window sizes while resizing. Confirm the screenshot-relative font/control scale is preserved and the new status fits without crowding or obscuring controls. Then edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
+Ask the owner to compare the changed Settings surface with the supplied mobile reference screenshots and a representative physical phone at the measured portrait CSS viewport, plus desktop at narrow, typical, and wide window sizes while resizing. Confirm the established relative font/control scale is preserved and the new status fits without crowding or obscuring controls. Then edit a setting and observe its immediate effect; close and reopen Settings; reload the app; compare unsaved and saved behavior; test a no-device/no-fingerprint situation; and simulate blocked/full local storage if practical. Confirm wording distinguishes “active now” from “saved for this device.”
 
 ## Approval gate
 
