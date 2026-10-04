@@ -56,7 +56,7 @@ Make it clear when audio is stopped, starting, running, or unavailable, and make
 
 ## Manual owner checkpoint — required before acceptance
 
-Ask the owner to check on Chrome or Edge. As required by the shared UI contract, include the Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide window sizes while resizing:
+Ask the owner to check in their target browser(s). As required by the shared UI contract, include the Samsung Galaxy S21 in portrait and desktop at narrow, typical, and wide window sizes while resizing:
 
 1. Confirm the header/icon fits without horizontal scrolling, clipping, overlap, or reduced existing touch targets; verify its accessible name and in-flow/menu/modal explanation are discoverable.
 2. Resize desktop widths and verify top-bar actions remain visible or discoverable and spacing stays balanced.
