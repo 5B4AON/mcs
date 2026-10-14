@@ -60,7 +60,7 @@ src/app/
 │   ├── firebase-rtdb.service.ts — Firebase RTDB relay (send/receive)
 │   ├── mouse-keyer.service.ts  — mouse-based keyer input
 │   ├── loop-detection.service.ts — prevents audio feedback loops
-│   ├── wake-lock.service.ts    — Screen Wake Lock API
+│   ├── wake-lock.service.ts   — Screen Wake Lock API
 │   ├── vibration-output.service.ts — Vibration API output
 │   └── practice.service.ts     — copy practice sequence generation + scoring
 └── components/
@@ -195,5 +195,16 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 - Do NOT open public issues for vulnerabilities — use email or GitHub private vulnerability reporting (see `SECURITY.md`)
 - Firebase credentials in `firebase.config.ts` are intentionally public (client-side RTDB with security rules)
 
+## User Interface and UX Invariants
+- Apply these rules to all user-visible changes, not only to a particular redesign or work package. Before a broad change to user-facing behavior, confirm the intended direction and any unresolved product choices with the project owner.
+- Make the user's current task, mode, and available actions clear. Use plain labels, helpful status, and concise inline guidance; when a screen supports distinct tasks, make the selected task explicit rather than making the tasks appear interchangeable. Introduce capabilities progressively so a new user can start with a sensible path while experienced users can still reach and combine advanced options. Where setup is involved, consider optional, clearly described presets or guided paths for common user needs; explain what each choice changes and keep settings available for customization.
+- Keep related actions and settings together, explain important consequences before the user acts, and make permission, connection, and output states visible. Do not rely on hidden conventions or assume that users know which mode or device is active.
+- Preserve existing inputs, outputs, routing, settings, histories, and behavior unless the approved scope explicitly changes them. Never autoplay or silently enable or redirect an external keying or relay route. Permission-gated APIs and hardware actions must follow a clear user action, identify the requested device or destination, and show the resulting state.
+- Preserve the established responsive scale. The main application shell is currently capped at 940 CSS pixels; common toolbar controls are 40 by 40 CSS pixels; and the settings dialog is capped at 640 CSS pixels wide. Do not shrink existing text, controls, or touch targets to fit new content. Do not add persistent toolbar space just to fit it. Prefer reflow, vertical scrolling, and progressive disclosure, and avoid clipping, overlap, hidden controls, and unintended horizontal scrolling.
+- Treat viewport sizes as CSS pixels, not device-model names or screenshot image dimensions. The current layout uses 768-pixel and 480-pixel width breakpoints, plus a short-landscape rule at 500 pixels high. When changing layout, test at 320 pixels wide; at 479, 480, and 481 pixels; at 767, 768, and 769 pixels; at 499, 500, and 501 pixels high in landscape; and at 200% browser zoom. Also check a representative phone at its owner-confirmed portrait CSS viewport. If that reference viewport is not known, ask the owner to confirm it rather than inferring it from a device model or screenshot.
+- Use semantic controls with accessible names, visible keyboard focus, and usable keyboard operation. Keep instructions and status understandable without relying on color alone, and ensure added motion or animation does not obstruct use.
+- For UI changes, run `npm run build` and relevant existing tests, then manually check the affected flows at the applicable viewport sizes and with keyboard and touch input. A successful build or unit test does not establish that a UI change is usable. Do not add or run automated browser, DOM, visual-regression, or end-to-end UI tests; use the existing test setup for applicable non-UI logic tests.
+- Write issues and implementation plans in plain language for developers. State the user problem, intended outcome, what must remain unchanged, dependencies, and how the result will be checked. Keep proposed work focused and independently reviewable, and do not imply that the work is intended for a particular kind of implementer.
+
 ## Forbidden Operations
-- **NEVER run `firebase deploy` or any Firebase CLI deployment commands** (`firebase deploy`, `firebase hosting:channel:deploy`, `firebase functions:deploy`, etc.). Deployment is handled outside of Copilot's scope. Only the project owner deploys to production.
+- **NEVER run `firebase deploy` or any Firebase CLI deployment commands** (`firebase deploy`, `firebase hosting:channel:deploy`, `firebase functions:deploy`, etc.). Deployment is handled outside this repository; only the project owner deploys to production.
