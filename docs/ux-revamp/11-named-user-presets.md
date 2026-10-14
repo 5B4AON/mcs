@@ -2,7 +2,7 @@
 
 **Priority:** 11 — recallable setups, independent of device profiles
 
-**Proposed release:** R6 — Recallable named configurations
+**Proposed release:** R7 — Recallable named configurations
 
 **Dependencies:** Packages 03, 04, and 10 accepted; reuse the pure external-output change classifier introduced in package 10
 

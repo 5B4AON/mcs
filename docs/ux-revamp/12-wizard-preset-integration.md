@@ -2,7 +2,7 @@
 
 **Priority:** 12 — remove duplicated setup effort after the two features are accepted
 
-**Proposed release:** R7 — Seamless saved-setup journeys
+**Proposed release:** R8 — Seamless saved-setup journeys
 
 **Dependencies:** Packages 08, 09, 10, and 11 accepted; do not build a second preset implementation
 

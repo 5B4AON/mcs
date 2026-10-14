@@ -2,7 +2,7 @@
 
 **Priority:** 10 — high-value advanced path with external-output safety risk
 
-**Proposed release:** R5 — Audience and station setup paths
+**Proposed release:** R6 — Audience and station setup paths
 
 **Dependencies:** Packages 04, 08, and 09 accepted; 01 and 03 should be accepted before any audio/hardware flow
 

@@ -66,13 +66,13 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 **Recommendation:** Keep existing icon-button footprints where labels would exceed the mobile-first layout; provide programmatic accessible names and put longer explanations or secondary actions in established menus/modals or approved compact in-flow content. Give dialogs and tab navigation appropriate semantics and keyboard behavior; manage focus on open/close; make expandable card headers keyboard-operable; and make touch keyer controls accessible as buttons with clear dit/dah or straight-key names. Preserve the established reference portrait fit and verify contrast, target sizes, zoom, and screen-reader announcements across mobile and desktop.
 
-### P2 — Give encoder and decoder distinct, persistent identities without splitting their capabilities
+### P2 — Make fullscreen keyboard behavior explicit without splitting the conversation
 
-**Observation:** The main display intentionally combines RX and TX text, and the fullscreen UI conditionally presents either a decoder or encoder view. That is powerful for conversation use, but the mode choice is reached through a fullscreen menu rather than a persistent, understandable workspace choice. The combined display marks RX/TX lines by style without an adjacent plain-language legend. A user can reasonably assume that changing views changes what the app can receive or send.
+**Observation:** The app has separate fullscreen decoder and encoder views even though users may want to watch received Morse and send a reply in one conversation. Their main practical difference is keyboard behavior: Decoder uses mapped keys to operate the Morse keyer, while Encoder captures typed text. The labels do not explain this distinction, and choosing a different view can feel as though it changes what the app can receive or send. The combined display also marks RX/TX lines by style without an adjacent plain-language legend.
 
-**Evidence:** `src/app/app.component.html:163-171,270-279`; `src/app/components/fullscreen-modal/fullscreen-modal.component.html:12-24`; `src/app/components/help/help-ch-config.component.html:85-109`.
+**Evidence:** `src/app/app.component.html:163-171,270-279`; `src/app/components/fullscreen-modal/fullscreen-modal.component.html:12-24`; `src/app/app.component.ts:1132-1143`; `src/app/components/fullscreen-modal/fs-decoder-view/fs-decoder-view.component.ts:121-125`; `src/app/components/fullscreen-modal/fs-encoder-view/fs-encoder-view.component.ts:210-280`; `src/app/services/keyer.service.ts:273-344`; `src/app/services/display-buffer.service.ts:188-205`.
 
-**Recommendation:** Provide discoverable **Practice**, **Listen/Decode**, **Compose/Send**, and **Operate** workspace choices with a concise explanation of what each emphasizes, without adding a crowded persistent toolbar row on mobile. Use an existing menu or focused modal if needed to fit the established reference portrait layout. Keep a clearly named **Combined conversation** view for users who want both directions together. These should be views over the same independent RX/TX streams and existing buffers—not mutually exclusive feature modes. Make the current workspace visible and make switching views preserve ongoing activity and history.
+**Recommendation:** Replace the two fullscreen choices with one **Full-screen conversation** and an accessible, visible **Key / Type message** control. In Key mode, preserve mapped keyboard Morse keying; in Type mode, let the keyboard enter text through the existing encoder and practice behavior. Make mode handoff release held mapped keys, prevent text-field clicks from triggering mouse keying, and leave mouse/touch, MIDI, serial, relay, and other configured inputs available. Preserve current send/practice choices and output safety; selecting or switching input mode must not send text or change settings. Use one persistent fullscreen conversation history while keeping the main-screen history independent. Explain RX/TX plainly and retain a clear entry point without adding a permanent toolbar row on mobile. If the current fullscreen histories differ and cannot be reconciled without losing visible text, ask the owner before choosing.
 
 ### P2 — Replace “look it up in Help” with just-in-time guidance and status
 
@@ -102,9 +102,9 @@ Keep three concepts clear and distinct: built-in scenario recipes are editable s
 
 ## Code quality and validation notes
 
-- The separation into focused services, standalone components, and settings cards is a sound basis for incremental UX work. The main component nevertheless imports and orchestrates many services and owns much of the main-screen behavior; adding guided flows there without further boundaries could make future changes harder to reason about. Keep new onboarding/workspace state localized, reviewable, and suitable for owner-run manual validation.
+- The separation into focused services, standalone components, and settings cards is a sound basis for incremental UX work. The main component nevertheless imports and orchestrates many services and owns much of the main-screen behavior; adding guided flows there without further boundaries could make future changes harder to reason about. Keep new onboarding/input-mode state localized, reviewable, and suitable for owner-run manual validation.
 - Audio startup errors are caught in the auto-start path, but the user-initiated `toggleAudio()` path only has a `finally` block. Provide visible error state and recovery for both paths, and keep their behavior consistent.
-- UI behavior is to be verified manually by the owner, not through automated UI tests. The action plans specify owner-run checks for first-run setup, audio permission failure/recovery, preset preview/apply/cancel, view switching with ongoing RX/TX, and prevention of silent external radio keying. They explicitly prohibit downstream agents from creating or running framework-based UI tests; only isolated non-UI unit specs for the pure output classifier and preset data/service logic remain allowed.
+- UI behavior is to be verified manually by the owner, not through automated UI tests. The action plans specify owner-run checks for first-run setup, audio permission failure/recovery, preset preview/apply/cancel, Key/Type handoff with ongoing RX/TX, and prevention of silent external radio keying. They explicitly prohibit downstream agents from creating or running framework-based UI tests; only isolated non-UI unit specs for the pure output classifier and preset data/service logic remain allowed.
 - No exploitable issue was confirmed from this static review. The Firebase rule example and client-side secret persistence above are concrete risks to address or clearly communicate; any deployment-specific exposure depends on the actual database rules and hosting configuration.
 
 ## Suggested implementation sequence
@@ -113,12 +113,12 @@ Follow the package boundaries and release order in [the UX revamp roadmap](./00-
 
 1. **R1 — A reliable first Morse session:** packages 01–03 cover audio activation/recovery, an explicit first-success path, and accurate live-versus-saved settings status.
 2. **R2 — Inclusive, trustworthy controls:** packages 04–05 clarify relay privacy/local credential storage and make core controls/modals accessible.
-3. **R3 — Practice and findability:** packages 06–07 improve practice clarity and add goal-based routes into existing settings.
-4. **R4 — Guided setup foundation:** package 08 adds safe core wizard paths.
-5. **R5 — Audience and station setup paths:** packages 09–10 add educator and hardware/relay scenarios with explicit safety review.
-6. **R6 — Recallable named configurations:** package 11 adds named presets after the shared output-safety classifier.
-7. **R7 — Seamless saved-setup journeys:** package 12 integrates accepted presets with the wizard.
-8. **R8 — Clear operating workspaces:** package 13 proposes clearer view choices while preserving the combined conversation and ongoing RX/TX streams.
+3. **R3 — One clear fullscreen conversation:** package 13 replaces separate Decoder/Encoder choices with one conversation and an explicit Key/Type input choice.
+4. **R4 — Practice and findability:** packages 06–07 improve practice clarity and add goal-based routes into existing settings.
+5. **R5 — Guided setup foundation:** package 08 adds safe core wizard paths.
+6. **R6 — Audience and station setup paths:** packages 09–10 add educator and hardware/relay scenarios with explicit safety review.
+7. **R7 — Recallable named configurations:** package 11 adds named presets after the shared output-safety classifier.
+8. **R8 — Seamless saved-setup journeys:** package 12 integrates accepted presets with the wizard.
 
 ## Product-level success criteria
 
@@ -126,6 +126,6 @@ Follow the package boundaries and release order in [the UX revamp roadmap](./00-
 - Users can move backward and forward through a scenario setup without losing choices, review changes before applying them, and later recall a clearly named saved configuration.
 - Starting audio, microphone permission, and device failures are visibly explained with a next action; users can tell which capabilities are active.
 - A learner, educator, new operator, and experienced amateur can choose a relevant starting point, understand what it changes, and edit or leave it.
-- Decoder, encoder, and combined conversation views have distinct, persistent labels while retaining shared RX/TX activity, independent buffers, and full routing flexibility.
+- One fullscreen conversation makes RX/TX activity and the Key/Type keyboard choice clear while retaining existing inputs, send modes, practice behavior, history, and routing flexibility.
 - No preset enables an external transmitter/keying output without explicit user review and confirmation.
 - Core journeys work with keyboard, touch, and assistive technologies, and the relay’s client-side storage and access model are accurately communicated.

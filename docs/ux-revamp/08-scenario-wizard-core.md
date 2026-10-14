@@ -2,7 +2,7 @@
 
 **Priority:** 8 — strategic onboarding feature after first-use and accessibility foundations
 
-**Proposed release:** R4 — Guided setup foundation
+**Proposed release:** R5 — Guided setup foundation
 
 **Dependencies:** Packages 01, 03, and 05 accepted; package 07 task shortcuts may link to this wizard
 
@@ -17,7 +17,7 @@ Create a short, navigable setup wizard for low-risk core journeys. A user choose
 1. **Choose a goal:** Try Morse; Practice receiving; Decode CW from radio/audio; or “I need a key/radio/relay setup” (links to existing full Settings until package 10).
 2. **Choose relevant options:** For Practice, retain or adjust existing content/feedback choices and explicitly show that the pipeline is local-only. For Decode, choose available audio device/channel and explain that audio must be started and browser microphone permission may be requested if audio is already running or when the user starts it.
 3. **Review:** Show every exact setting that will change and what will not change. The user explicitly chooses Apply or Cancel.
-4. **Finish:** Explain the next user action (start audio, go to the relevant workspace, or open full Settings); do not auto-start or auto-send.
+4. **Finish:** Explain the next user action (start audio, open the fullscreen conversation, or open full Settings); do not auto-start or auto-send.
 
 The owner must approve this flow, the labels, and the selected fields/defaults before implementation. Do not add questions or steps not listed here without approval.
 

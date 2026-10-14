@@ -2,7 +2,7 @@
 
 **Priority:** 6 — improve the existing learner journey without replacing it
 
-**Proposed release:** R3 — Practice and findability
+**Proposed release:** R4 — Practice and findability
 
 **Dependencies:** Work Package 05 for accessible modal/button conventions
 

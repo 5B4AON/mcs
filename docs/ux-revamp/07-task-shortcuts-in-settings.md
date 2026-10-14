@@ -2,7 +2,7 @@
 
 **Priority:** 7 — improve discoverability now while preserving the full configuration model
 
-**Proposed release:** R3 — Practice and findability
+**Proposed release:** R4 — Practice and findability
 
 **Dependencies:** None; this is complementary to (not a replacement for) the wizard in package 08
 
