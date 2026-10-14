@@ -37,7 +37,7 @@ Make core controls discoverable and usable by keyboard, touch, and assistive tec
 2. Prefer native HTML semantics. Avoid ARIA roles if the expected keyboard behavior cannot also be implemented.
 3. For cards, separate the disclosure button and enable checkbox/switch in the header layout. Do not add a button around the existing header containing a nested switch.
 4. For touch keying, preserve down/up timing and all existing pointer/touch cancellation paths. Test Space/Enter key repeat and blur/focus loss; a keyboard press must not generate repeated stuck closures.
-5. Use existing CSS and shared-style conventions; do not add UI libraries. If styles are shared globally, follow `.github/copilot-instructions.md` and do not re-add shared CSS to every component.
+5. Use existing CSS and shared-style conventions; do not add UI libraries. If styles are shared globally, follow the project guidance and do not re-add shared CSS to every component.
 6. Do not create or run automated component, accessibility, DOM, browser, or other UI tests. The owner manually tests keyboard, touch, screen-reader, focus, modal, and key-release behavior using the checkpoint below.
 
 ## Acceptance criteria

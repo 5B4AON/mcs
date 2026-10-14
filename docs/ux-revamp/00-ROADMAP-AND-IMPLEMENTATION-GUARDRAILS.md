@@ -1,4 +1,4 @@
-# UX Revamp — Prioritized Roadmap and Agent Guardrails
+# UX Revamp — Prioritized Roadmap and Implementation Guidance
 
 ## Purpose and approval status
 
@@ -7,7 +7,7 @@ This folder contains the review and independently numbered implementation plans 
 - Review: [`UX-SECURITY-QUALITY-REVIEW.md`](./UX-SECURITY-QUALITY-REVIEW.md)
 - Work packages: `01-audio-startup-and-recovery.md` through `14-settings-profile-portability.md` in this folder. Package numbers are stable identifiers, not a promise of strict implementation order.
 
-These documents are proposals, not implementation authorization. **No package is approved merely because it is written here or because another package was approved.** Before editing code, the implementing agent must request and receive explicit owner approval for that numbered package. If design choices called out in a package have not been approved, stop and ask rather than choosing on the owner's behalf. At the end of each package, stop for the owner to run the specified manual checks and explicitly accept the behavior before beginning another package.
+These documents describe proposed work; they are not approval to begin it. **Each package needs the owner's explicit approval**, even when another package has already been approved. Before coding, confirm approval for the numbered package and any unresolved design choices. Keep the work within the approved package. After implementation, build the app and ask the owner to complete the listed manual checks and accept the result before dependent work begins.
 
 ## Assessment of the review recommendations
 
@@ -54,7 +54,7 @@ The owner states that the current mobile-first UI fits the established reference
 
 ### Numeric UI constraint framework
 
-The following source-derived values are the baseline; agents must inspect the cited declarations before changing the affected surface. They are floors/reference sizes for preserving current usability, not permission to reduce controls or a claim that every component has identical dimensions.
+The following source-derived values are the baseline; developers should inspect the cited declarations before changing an affected surface. They are floors/reference sizes for preserving current usability, not permission to reduce controls or a claim that every component has identical dimensions.
 
 | Surface/property | Current numeric baseline | Implementation constraint and source |
 |---|---:|---|
@@ -72,7 +72,7 @@ The following source-derived values are the baseline; agents must inspect the ci
 #### Derived layout rules (required)
 
 1. **Minimum layout test width:** support a `320 CSS px` wide layout as an explicit stress-test target, plus the actual phone-measured CSS viewport and the existing breakpoint edges listed above. `320px` is a project acceptance target, not a value derivable from the 738px screenshot raster. At widths below 320 CSS px, preserve access by reflow and scrolling, but do not promise that a complex app can display every control simultaneously.
-2. **Record the reference viewport:** in Work Package 01, have the owner or implementing agent use a representative physical phone to record `window.innerWidth`, `window.innerHeight`, `window.devicePixelRatio`, and `window.visualViewport.width`, `.height`, and `.scale` in portrait, at default zoom. Store the measured CSS viewport and relevant rendering context in `.github/copilot-instructions.md` only after owner confirmation; do not make a phone model part of the contract. Never infer these values by dividing 738×1599 by an assumed DPR.
+2. **Record the reference viewport:** Work Package 01 asks the owner to use a representative physical phone to record `window.innerWidth`, `window.innerHeight`, `window.devicePixelRatio`, and `window.visualViewport.width`, `.height`, and `.scale` in portrait at default zoom. Record the measured CSS viewport and relevant rendering context here only after owner confirmation; do not make a phone model part of the contract. Never infer these values by dividing 738×1599 by an assumed DPR.
 3. **Horizontal fit equation:** available shell width is `min(viewport CSS width, 940px) − 2 × computed shell inline padding`. At `≤480px`, shell inline padding is `0.5rem` per side. Every new row must fit inside this resulting width: use `min-width:0`, wrapping, and stacked fields/actions when needed. No page-level horizontal scroll, clipping, overlap, or essential-text ellipsis at 320 CSS px or at the actual phone viewport.
 4. **Touch-target floors:** on coarse pointers, new ordinary actionable buttons must have at least `40px` block-size; new icon-only actions must retain a square target at least `40×40px`. Use `44px` minimum block-size for new tab-like navigation and preserve existing 44px fullscreen floating controls; use `48px` minimum block-size for settings-card headers. These are minimums, not fixed heights: allow labels to wrap and controls to grow vertically. Do not reduce current target sizes to satisfy row width.
 5. **Typography and content:** use the table's same-role font-size anchor or larger. For newly added explanatory body copy, use at least `0.85rem`; secondary compact status may use `0.72rem` only where it matches an existing hint role. Do not set fixed heights on text-containing controls or cards. Wrap ordinary labels and paragraphs; never clip/ellipsis required instructions, error text, or safety disclosures. On desktop, keep paragraph measure at or below `65ch` where that does not constrain forms or technical tables.
@@ -88,7 +88,7 @@ For every UI-changing package, manually inspect the owner-selected reference pho
 
 ## Prioritized work-package list
 
-1. **Audio activation and failure recovery** — first propagate the approved numeric UI contract into Copilot instructions as a docs-only change; then deliver obvious Start/Stop action, consistent actionable errors, and rollback on partial startup.
+1. **Audio activation and failure recovery** — make Start/Stop easy to discover, explain errors and next steps, and clean up safely after partial startup.
 2. **Try Morse first-success path** — an approachable sample workflow using existing encode/play behavior with no automatic transmission.
 3. **Live-versus-saved settings status** — accurately distinguish active edits from persisted device-profile settings; surface save failures.
 4. **Early settings-profile portability (new WP14)** — after package 03, provide a guarded, versioned export/import path for preview-origin setup and migration checks; preserve the existing per-device profile model and keep named presets separate.
@@ -126,10 +126,10 @@ Package 14 is a new early addition; the existing package numbers remain unchange
 2. **Understand existing behavior:** Inspect all named files and their callers, settings effects, modal/history interactions, service lifecycle, and any relevant current help before editing. Record the existing behavior to preserve. Do not assume labels reflect runtime behavior.
 3. **Preserve capability:** Keep current inputs, outputs, keyer modes, independent mappings, RX/TX routing/calibration, practice modes, Firebase relay, fullscreen operations, mobile behavior, and existing device-profile loading/saving unless the owner separately approves a change. Preserve main-screen and fullscreen text history; Work Package 13 specifically consolidates the two fullscreen histories into one after checking that no visible text is lost. New UI should expose existing paths, not replace them.
 4. **Hardware safety:** No new flow may autoplay or silently enable/redirect an external keying path (audio optocoupler, serial DTR/RTS, WinKeyer, MIDI output, or relay). Do not send a hardware test except after a user-initiated action with visible target and consequence. Preserve all existing active settings unless the user explicitly chooses a reviewed change.
-5. **Angular/code conventions:** Follow `.github/copilot-instructions.md` and `.editorconfig`: Angular 19 standalone components, existing Signals/RxJS patterns, Angular template control flow, 2-space indentation, single quotes, TS header, JSDoc for public APIs, explicit lifecycle interfaces, and subscription cleanup. Keep logic in focused existing services/components; no new dependencies or UI framework.
+5. **Angular/code conventions:** Follow the project's implementation guidance and `.editorconfig`: Angular 19 standalone components, existing Signals/RxJS patterns, Angular template control flow, 2-space indentation, single quotes, TS header, JSDoc for public APIs, explicit lifecycle interfaces, and subscription cleanup. Keep logic in focused existing services/components; no new dependencies or UI framework.
 6. **Settings integrity:** `AppSettings` and `DEFAULT_SETTINGS` live in `src/app/services/settings.service.ts`. Preserve schema/backfill behavior for old profiles. Do not mutate the existing `morseProfiles` device-fingerprint format when adding a different concept such as named presets.
 7. **Accessibility and responsive behavior:** New actions need accessible names, keyboard operation, visible focus, and usable touch targets. Follow the mobile-first UI contract below; do not rely on `title` alone for essential instructions.
-8. **UI test prohibition and docs:** Do not create or run automated UI tests of any kind for these packages. This explicitly forbids downstream agents from adding or using Angular component/template tests, Jasmine/Karma UI specs, DOM-based tests, browser/UI automation, visual regression tests, or end-to-end UI tests. This is not a ban on isolated, non-UI unit tests: packages 10 and 11 explicitly allow tests of the pure output classifier and preset data/service logic using the existing setup only; those tests must not render components, access the DOM, or automate browser interactions. Do not add test frameworks, dependencies, or test configuration. The owner is the sole tester and acceptance authority for UI behavior; use the package's manual checkpoint. Run `npm run build` to catch compile/template errors, but do not describe a build as a UI test or UX sign-off. Update the relevant help chapter when user-facing behavior changes.
+8. **Build, manual checks, and Help:** Run `npm run build` to catch compile and template errors. The owner completes each package's manual UI checks and decides whether the behavior is accepted; a passing build is not UX sign-off. Follow the project's test guidance. Update the relevant Help chapter when user-facing behavior changes.
 9. **Manual user checkpoint:** After implementation and build/code review, give the owner exact manual test steps and results, including the mobile/desktop viewport checks required above. **Stop and wait for explicit owner testing and acceptance**; do not proceed to the next package or treat automated validation as UX sign-off.
 10. **Security and release limits:** Never run Firebase deployment commands. Never put credentials in documentation, test fixtures, screenshots, or logs. Do not bump versions, update release notes, push, or deploy unless explicitly requested.
 11. **Maintainability:** Prefer the smallest complete change. Add comments only where needed; document public service APIs and non-obvious domain/safety invariants with JSDoc. Do not perform broad renames or rewrites.
@@ -139,5 +139,5 @@ Package 14 is a new early addition; the existing package numbers remain unchange
 No implementation packages are approved by this planning document. When reviewing a package, approve or request changes by its exact number and title. Suggested checkpoints:
 
 - Before implementation: approve the numbered package and, where requested, its proposed UI wording/scenario layout.
-- After the agent's build/code validation: personally perform its listed manual checks and explicitly accept or report a defect.
+- After the build: perform the package's listed manual checks and explicitly accept the result or report what needs correction.
 - Before the next dependent package: accept its dependencies and the current package first.
