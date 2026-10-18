@@ -365,18 +365,26 @@ export class AudioOutputService {
     try { this.optoOsc?.stop(); } catch { }
     try { this.optoSource?.stop(); } catch { }
     try { this.pilotOsc?.stop(); } catch { }
-    this.merger?.disconnect();
-    this.sidetoneMerger?.disconnect();
-    this.optoMerger?.disconnect();
-    this.pilotMerger?.disconnect();
-    await this.sharedCtx?.close().catch(() => {});
-    await this.sidetoneCtx?.close().catch(() => {});
-    await this.optoCtx?.close().catch(() => {});
-    await this.pilotCtx?.close().catch(() => {});
-    this.sharedCtx = null;
-    this.sidetoneCtx = null;
-    this.optoCtx = null;
-    this.pilotCtx = null;
+    try { this.merger?.disconnect(); } catch { }
+    try { this.sidetoneMerger?.disconnect(); } catch { }
+    try { this.optoMerger?.disconnect(); } catch { }
+    try { this.pilotMerger?.disconnect(); } catch { }
+
+    const contexts = [this.sharedCtx, this.sidetoneCtx, this.optoCtx, this.pilotCtx];
+    const closeFailures: AudioContext[] = [];
+    for (const ctx of contexts) {
+      if (!ctx) continue;
+      try {
+        await ctx.close();
+      } catch {
+        if (ctx.state !== 'closed') closeFailures.push(ctx);
+      }
+    }
+
+    this.sharedCtx = this.sharedCtx && closeFailures.includes(this.sharedCtx) ? this.sharedCtx : null;
+    this.sidetoneCtx = this.sidetoneCtx && closeFailures.includes(this.sidetoneCtx) ? this.sidetoneCtx : null;
+    this.optoCtx = this.optoCtx && closeFailures.includes(this.optoCtx) ? this.optoCtx : null;
+    this.pilotCtx = this.pilotCtx && closeFailures.includes(this.pilotCtx) ? this.pilotCtx : null;
     this.merger = null;
     this.sidetoneMerger = null;
     this.optoMerger = null;
@@ -388,7 +396,10 @@ export class AudioOutputService {
     this.optoGain = null;
     this.pilotOsc = null;
     this.pilotGain = null;
-    this.started = false;
+    this.started = closeFailures.length > 0;
+    if (closeFailures.length > 0) {
+      throw new Error('One or more audio output contexts could not be closed.');
+    }
   }
 
   // ---- internal ----

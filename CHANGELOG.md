@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.3] - 2026-10-18
+
+### Added
+
+- **Audio Startup Status and Recovery** — The main screen now shows whether
+  audio is stopped, starting, running, or failed, with recovery guidance and
+  retry cleanup when audio cannot be fully stopped. Microphone permission
+  guidance is shown only when microphone or CW input is enabled.
+
 ## [1.8.2] - 2026-03-22
 
 ### Changed
