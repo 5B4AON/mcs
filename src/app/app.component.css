@@ -74,6 +74,48 @@
 .audio-toggle-btn:disabled { opacity: .7; cursor: wait; }
 .audio-toggle-btn svg { display: block; }
 
+.audio-inline-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: .5rem;
+  flex: 1 1 120px;
+  min-width: 0;
+  padding: .3rem .55rem;
+  border-radius: 4px;
+  background: #392322;
+  color: #ffb4aa;
+  font-size: .82rem;
+  overflow-wrap: anywhere;
+}
+.audio-inline-status.audio-status-stopped,
+.audio-inline-status.audio-status-failed {
+  background: #392322;
+  color: #ffb4aa;
+}
+.audio-inline-status.audio-status-progress {
+  background: #38301e;
+  color: #ffd27a;
+}
+.audio-inline-status.audio-status-running {
+  background: #1d3025;
+  color: #9ce0b3;
+}
+.audio-retry-stop-btn {
+  min-height: 32px;
+  padding: .3rem .6rem;
+  border: 1px solid currentColor;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.audio-retry-stop-btn:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.audio-retry-stop-btn:disabled { opacity: .65; cursor: wait; }
+
 /* Kebab menu — always visible in header */
 .kebab-wrapper {
   position: relative;
@@ -256,6 +298,7 @@
 /* Panel title row with WPM indicators */
 .panel-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: .5rem;
   margin-bottom: .7rem;

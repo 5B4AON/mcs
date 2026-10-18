@@ -60,6 +60,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   audioRunning = false;
   /** True while start/stop is in progress (shows spinner) */
   audioStarting = false;
+  audioState: 'stopped' | 'starting' | 'running' | 'stopping' | 'failed' = 'stopped';
+  audioStatusMessage = 'Audio is stopped. Press Start Audio to begin.';
+  audioFailureMessage: string | null = null;
   /** Current mic input level for the level meter bar */
   micLevel = 0;
   /** True when the mic-based key detector reports key-down */
@@ -540,7 +543,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     // Auto-reconnect audio if it was running before the page reload.
-    if (localStorage.getItem('morseAudioRunning') === '1') {
+    if (this.isAudioMarkedRunning()) {
       this.autoStartAudio();
     }
 
@@ -663,29 +666,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   async toggleAudio(): Promise<void> {
-    this.audioStarting = true;
-    try {
-      if (this.audioRunning) {
-        await this.audioInput.stop();
-        await this.cwInput.stop();
-        await this.audioOutput.stop();
-        this.midiInput.stop();
-        this.audioRunning = false;
-        this.micKeyDown = false;
-        this.cwKeyDown = false;
-        localStorage.removeItem('morseAudioRunning');
-      } else {
-        if (this.settings.settings().micInputEnabled) {
-          await this.audioInput.start();
-        }
-        await this.cwInput.start();
-        await this.audioOutput.start();
-        this.audioRunning = true;
-        localStorage.setItem('morseAudioRunning', '1');
-        await this.refreshDeviceConfig();
-      }
-    } finally {
-      this.audioStarting = false;
+    if (this.audioRunning) {
+      await this.stopAudio();
+    } else {
+      await this.startAudio();
     }
   }
 
@@ -695,22 +679,151 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * Chrome remembers granted permissions so this works without a user gesture.
    */
   private async autoStartAudio(): Promise<void> {
+    await this.startAudio();
+  }
+
+  private async startAudio(): Promise<void> {
     this.audioStarting = true;
+    this.audioState = 'starting';
+    this.audioStatusMessage = 'Starting audio...';
+    this.audioFailureMessage = null;
+    this.audioRunning = false;
+    let stage = 'microphone input';
+
     try {
-      if (this.settings.settings().micInputEnabled) {
+      const settings = this.settings.settings();
+      const needsInput = settings.micInputEnabled || settings.cwInputEnabled;
+      if (typeof AudioContext === 'undefined' || (needsInput && !navigator.mediaDevices?.getUserMedia)) {
+        const unsupportedError = new Error();
+        unsupportedError.name = 'UnsupportedAudioError';
+        throw unsupportedError;
+      }
+
+      if (settings.micInputEnabled) {
         await this.audioInput.start();
       }
+
+      stage = 'CW input';
       await this.cwInput.start();
+
+      stage = 'audio output';
       await this.audioOutput.start();
-      this.audioRunning = true;
+
       await this.refreshDeviceConfig();
-    } catch {
-      // Permission may have been revoked — clear the flag so we don't retry
-      localStorage.removeItem('morseAudioRunning');
-      this.audioRunning = false;
+
+      this.audioRunning = true;
+      this.audioState = 'running';
+      this.audioStatusMessage = 'Audio is running.';
+      this.rememberAudioRunning();
+    } catch (error) {
+      this.clearRememberedAudioRunning();
+      const cleanupFailures = await this.stopAudioServices();
+      this.micKeyDown = false;
+      this.cwKeyDown = false;
+      this.audioRunning = cleanupFailures.length > 0;
+      this.audioState = 'failed';
+      this.audioFailureMessage = this.audioStartFailureMessage(error, stage);
+      if (cleanupFailures.length > 0) {
+        this.audioFailureMessage += ` Audio cleanup is incomplete for ${cleanupFailures.join(', ')}. Retry stopping audio.`;
+      }
+      this.audioStatusMessage = this.audioFailureMessage;
     } finally {
       this.audioStarting = false;
     }
+  }
+
+  private async stopAudio(): Promise<void> {
+    this.audioStarting = true;
+    this.audioState = 'stopping';
+    this.audioStatusMessage = 'Stopping audio...';
+    this.audioFailureMessage = null;
+    this.clearRememberedAudioRunning();
+
+    try {
+      const cleanupFailures = await this.stopAudioServices();
+      this.micKeyDown = false;
+      this.cwKeyDown = false;
+      this.audioRunning = cleanupFailures.length > 0;
+      if (cleanupFailures.length > 0) {
+        this.audioState = 'failed';
+        this.audioFailureMessage = `Audio could not be fully stopped. Cleanup is incomplete for ${cleanupFailures.join(', ')}. Retry stopping audio.`;
+        this.audioStatusMessage = this.audioFailureMessage;
+      } else {
+        this.audioState = 'stopped';
+        this.audioStatusMessage = 'Audio is stopped. Press Start Audio to begin.';
+      }
+    } finally {
+      this.audioStarting = false;
+    }
+  }
+
+  async retryStopAudio(): Promise<void> {
+    await this.stopAudio();
+  }
+
+  private async stopAudioServices(): Promise<string[]> {
+    const services: { name: string; stop: () => Promise<void> }[] = [
+      { name: 'microphone input', stop: () => this.audioInput.stop() },
+      { name: 'CW input', stop: () => this.cwInput.stop() },
+      { name: 'audio output', stop: () => this.audioOutput.stop() },
+    ];
+    const failures: string[] = [];
+
+    for (const service of services) {
+      try {
+        await service.stop();
+      } catch {
+        failures.push(service.name);
+      }
+    }
+
+    return failures;
+  }
+
+  private isAudioMarkedRunning(): boolean {
+    try {
+      return localStorage.getItem('morseAudioRunning') === '1';
+    } catch {
+      return false;
+    }
+  }
+
+  private rememberAudioRunning(): void {
+    try { localStorage.setItem('morseAudioRunning', '1'); } catch { }
+  }
+
+  private clearRememberedAudioRunning(): void {
+    try { localStorage.removeItem('morseAudioRunning'); } catch { }
+  }
+
+  private audioStartFailureMessage(error: unknown, stage: string): string {
+    const errorName = (error as { name?: string } | null)?.name;
+    const inputEnabled = this.settings.settings().micInputEnabled || this.settings.settings().cwInputEnabled;
+
+    if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
+      if (stage === 'microphone input' || stage === 'CW input') {
+        return 'Microphone access was denied. Allow microphone access for this site in your browser settings, then retry.';
+      }
+      return "The browser blocked audio playback. Select Start Audio to retry, and check this site's audio permissions if needed.";
+    }
+    if (errorName === 'NotFoundError' || errorName === 'OverconstrainedError') {
+      if (stage === 'audio output') {
+        return 'The selected audio output is unavailable. Connect an output device or choose another in Settings, then retry.';
+      }
+      return 'The selected audio input is unavailable. Connect an input device or choose another in Settings, then retry.';
+    }
+    if (errorName === 'NotReadableError' || errorName === 'TrackStartError') {
+      if (stage === 'audio output') {
+        return 'The selected audio output may be busy. Close other apps using it or choose another device in Settings, then retry.';
+      }
+      return 'The selected audio input may be busy. Close other apps using it or choose another device in Settings, then retry.';
+    }
+    if (errorName === 'UnsupportedAudioError') {
+      return inputEnabled
+        ? 'This browser does not support the audio input features required by your enabled inputs. Try a supported browser.'
+        : 'This browser does not support the audio features required by Morse Code Studio. Try a supported browser.';
+    }
+    return `Audio ${stage} could not start. Check your audio settings and device connections, then retry.`;
   }
 
   /**

@@ -6,8 +6,10 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
       <span class="rtdb-label">RTDB</span>
     </span>
-    <button class="audio-toggle-btn" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
-            [title]="audioStarting ? (audioRunning ? 'Stopping…' : 'Starting…') : (audioRunning ? 'Stop Audio' : 'Start Audio')">
+        <button class="audio-toggle-btn" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
+          [attr.aria-label]="audioState === 'starting' ? 'Starting audio' : audioState === 'stopping' ? 'Stopping audio' : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete; retry stopping audio' : audioRunning ? 'Stop audio; audio is running' : 'Start audio; audio is stopped'"
+          [attr.aria-pressed]="audioRunning"
+          [title]="audioStarting ? audioStatusMessage : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete. Retry stopping audio' : audioRunning ? 'Audio is running. Stop Audio' : 'Audio is stopped. Start Audio'">
       @if (audioStarting) {
         <span class="spinner"></span>
       } @else if (audioRunning) {
@@ -123,6 +125,17 @@
         <circle cx="36" cy="44" r="2" fill="currentColor" opacity="0.6"/>
         <circle cx="36" cy="38" r="1.5" fill="currentColor" opacity="0.4"/>
       </svg>
+      <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
+           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping'"
+           [class.audio-status-running]="audioState === 'running'"
+           [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
+        <span>{{ audioStatusMessage }}</span>
+        @if (audioState === 'failed' && audioRunning) {
+          <button class="audio-retry-stop-btn" (click)="retryStopAudio()" [disabled]="audioStarting">
+            Retry stopping audio
+          </button>
+        }
+      </div>
       <div class="wpm-indicators">
         <span class="wpm-indicator" title="RX Decoder WPM">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>

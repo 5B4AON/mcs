@@ -153,13 +153,28 @@ export class AudioInputService {
   /** Stop the audio input pipeline and release all resources */
   async stop(): Promise<void> {
     this.clearKeepAlive();
-    this.workletNode?.disconnect();
-    this.stream?.getTracks().forEach(t => t.stop());
-    await this.audioCtx?.close();
-    this.audioCtx = null;
+    try { this.workletNode?.disconnect(); } catch { }
+    for (const track of this.stream?.getTracks() ?? []) {
+      try { track.stop(); } catch { }
+    }
+
+    const ctx = this.audioCtx;
+    let closeFailed = false;
+    if (ctx && ctx.state !== 'closed') {
+      try {
+        await ctx.close();
+      } catch {
+        closeFailed = (ctx.state as AudioContextState) !== 'closed';
+      }
+    }
+
+    if (!closeFailed) this.audioCtx = null;
     this.workletNode = null;
     this.stream = null;
-    this.started = false;
+    this.started = closeFailed;
+    if (closeFailed) {
+      throw new Error('The microphone input audio context could not be closed.');
+    }
   }
 
   /**
