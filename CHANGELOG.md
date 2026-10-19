@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.6] - 2026-10-19
+
+### Changed
+
+- **Settings Save Status** — Settings now distinguishes active, unsaved changes
+  from settings saved for the current device profile. Missing profiles and
+  browser storage failures are reported without appearing as successful saves.
+
 ## [1.8.5] - 2026-10-19
 
 ### Added

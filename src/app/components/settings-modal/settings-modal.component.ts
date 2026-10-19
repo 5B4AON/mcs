@@ -4,7 +4,7 @@
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, isTouchDevice } from '../../services/settings.service';
+import { SettingsSaveResult, SettingsService, isTouchDevice } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
@@ -64,6 +64,12 @@ export class SettingsModalComponent {
 
   /** Whether the scan results overlay is visible */
   showScanResults = false;
+
+  /** Whether a save result dialog is visible */
+  showSaveResult = false;
+
+  saveResultTitle = '';
+  saveResultMessage = '';
 
   /** Input devices found during the last scan */
   scanResultInputs: { label: string }[] = [];
@@ -156,13 +162,28 @@ export class SettingsModalComponent {
 
   // ---- Save ----
 
-  /** Persist current settings to localStorage keyed by audio device fingerprint */
+  /** Persist current settings to the active audio-device profile */
   saveSettings(): void {
-    this.settings.save(
+    const result = this.settings.save(
       this.devices.inputDevices(),
       this.devices.outputDevices()
     );
-    this.saved.emit();
+
+    if (result === 'saved') {
+      this.saved.emit();
+    } else if (result === 'no-profile') {
+      this.showSaveResult = true;
+      this.saveResultTitle = 'Settings not saved';
+      this.saveResultMessage = 'No device profile is available to save to. Refresh audio devices to identify a profile, then try again. Your changes remain active now.';
+    } else {
+      this.showSaveResult = true;
+      this.saveResultTitle = 'Settings not saved';
+      this.saveResultMessage = 'Browser storage could not save these settings. Check that site storage is available, then try again. Your changes remain active now.';
+    }
+  }
+
+  dismissSaveResult(): void {
+    this.showSaveResult = false;
   }
 
   // ---- Device refresh ----

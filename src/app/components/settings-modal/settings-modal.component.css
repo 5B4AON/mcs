@@ -191,6 +191,24 @@
   margin: .5rem 1.25rem 0;
 }
 
+.settings-save-status {
+  background: #20343a;
+  color: #d5e9ed;
+  border: 1px solid #42636a;
+  border-left: 4px solid #6bb8c4;
+  border-radius: 4px;
+  padding: .4rem .75rem;
+  font-size: .85rem;
+  margin: .35rem 1.25rem 0;
+}
+
+.settings-save-status.validation-banner {
+  background: #4a3a10;
+  color: #fed;
+  border-color: #8a6a20;
+  border-left-color: #da2;
+}
+
 /* Save button */
 .save-btn {
   background: #2a6;
