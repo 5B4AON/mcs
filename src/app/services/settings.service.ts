@@ -616,7 +616,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   encoderName: '',
   encoderColor: '',
 
-  keyboardKeyerEnabled: true,
+  keyboardKeyerEnabled: !isTouchDevice(),
   keyboardInputMappings: [
     {
       enabled: true,
@@ -634,17 +634,6 @@ const DEFAULT_SETTINGS: AppSettings = {
       mode: 'paddle',
       keyCode: 'BracketLeft',
       dahKeyCode: 'BracketRight',
-      source: 'tx',
-      reversePaddles: false,
-      paddleMode: 'iambic-b',
-      name: '',
-      color: '',
-    },
-    {
-      enabled: true,
-      mode: 'paddle',
-      keyCode: 'ControlLeft',
-      dahKeyCode: 'ControlRight',
       source: 'tx',
       reversePaddles: false,
       paddleMode: 'iambic-b',
@@ -757,7 +746,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   farnsworthEffectiveWpm: 10,
   farnsworthMultiplier: 2,
   farnsworthWordsworth: false,
-  farnsworthAppliesTo: 'tx',
+  farnsworthAppliesTo: 'rx',
 
   practiceEnabled: false,
   practiceContentMode: 'characters',
@@ -779,8 +768,8 @@ const DEFAULT_SETTINGS: AppSettings = {
 
   prosignActionsEnabled: true,
   prosignActions: {
-    '<AR>': { enabled: true, action: 'newParagraph' },
-    '<BK>': { enabled: true, action: 'newLine' },
+    '<AR>': { enabled: true, action: 'clearScreen' },
+    '<BK>': { enabled: true, action: 'newParagraph' },
     '<BT>': { enabled: true, action: 'newLine' },
     '<HH>': { enabled: true, action: 'clearLastWord' },
   },
@@ -907,7 +896,7 @@ export class SettingsService {
 
     // Triple conflict: all 3 outputs on one stereo device (only if pilot is active)
     if (pilotActive && sidetoneActive && optoActive &&
-        sideId === optoId && optoId === pilotId) {
+      sideId === optoId && optoId === pilotId) {
       warnings.push(
         'Stereo sound card has only 2 channels \u2014 cannot carry Sidetone + Key Out + Pilot simultaneously. Disable one or add a second sound card.'
       );
@@ -915,15 +904,15 @@ export class SettingsService {
     }
 
     if (sidetoneActive && optoActive && sideId === optoId &&
-        s.sidetoneOutputChannel === s.optoOutputChannel) {
+      s.sidetoneOutputChannel === s.optoOutputChannel) {
       warnings.push(`Sidetone and Key Output both use ${s.sidetoneOutputChannel} channel on the same device.`);
     }
     if (pilotActive && optoActive && pilotId === optoId &&
-        s.pilotOutputChannel === s.optoOutputChannel) {
+      s.pilotOutputChannel === s.optoOutputChannel) {
       warnings.push(`Pilot and Key Output both use ${s.pilotOutputChannel} channel on the same device.`);
     }
     if (pilotActive && sidetoneActive && pilotId === sideId &&
-        s.pilotOutputChannel === s.sidetoneOutputChannel) {
+      s.pilotOutputChannel === s.sidetoneOutputChannel) {
       warnings.push(`Pilot and Sidetone both use ${s.pilotOutputChannel} channel on the same device.`);
     }
     return warnings.length ? warnings : null;
@@ -934,7 +923,7 @@ export class SettingsService {
     const s = this.settings();
     const norm = (id: string) => id || 'default';
     return norm(s.sidetoneOutputDeviceId) === norm(s.optoOutputDeviceId) &&
-           norm(s.optoOutputDeviceId) === norm(s.pilotOutputDeviceId);
+      norm(s.optoOutputDeviceId) === norm(s.pilotOutputDeviceId);
   });
 
   constructor() {

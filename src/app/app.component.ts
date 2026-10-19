@@ -61,7 +61,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** True while start/stop is in progress (shows spinner) */
   audioStarting = false;
   audioState: 'stopped' | 'starting' | 'running' | 'stopping' | 'failed' = 'stopped';
-  audioStatusMessage = 'Audio is stopped. Press Start Audio to begin.';
+  audioStatusMessage = 'Audio is stopped. Start Audio to begin.';
   audioFailureMessage: string | null = null;
   /** Current mic input level for the level meter bar */
   micLevel = 0;
