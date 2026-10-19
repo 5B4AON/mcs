@@ -17,10 +17,13 @@
       </div>
     </div>
 
-    <!-- Validation banner -->
-    @if (settings.needsValidation()) {
-      <div class="validation-banner">
-        New device configuration detected. Please review your settings and click <strong>Save Settings</strong>.
+    @if (settings.needsValidation() || settings.isDirty()) {
+      <div class="settings-save-status" [class.validation-banner]="settings.needsValidation()" role="status">
+        @if (settings.needsValidation()) {
+          New device profile. Changes are active now; save to keep them for future sessions.
+        } @else {
+          Active now, not saved. Save to keep changes for this device and future sessions.
+        }
       </div>
     }
 
@@ -82,6 +85,16 @@ This cannot be undone."
     cancelLabel="Cancel"
     [danger]="true"
     (confirmed)="onResetConfirmed($event)">
+  </app-confirm-dialog>
+}
+
+@if (showSaveResult) {
+  <app-confirm-dialog
+    [title]="saveResultTitle"
+    [message]="saveResultMessage"
+    confirmLabel="OK"
+    [singleAction]="true"
+    (confirmed)="dismissSaveResult()">
   </app-confirm-dialog>
 }
 

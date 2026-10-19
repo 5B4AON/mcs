@@ -14,7 +14,9 @@
 
     <!-- Actions -->
     <div class="confirm-actions">
-      <button class="confirm-btn cancel-btn" (click)="cancel()">{{ cancelLabel }}</button>
+      @if (!singleAction) {
+        <button class="confirm-btn cancel-btn" (click)="cancel()">{{ cancelLabel }}</button>
+      }
       <button class="confirm-btn ok-btn" [class.danger]="danger" (click)="confirm()">{{ confirmLabel }}</button>
     </div>
   </div>

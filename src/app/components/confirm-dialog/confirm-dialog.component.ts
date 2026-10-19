@@ -34,6 +34,9 @@ export class ConfirmDialogComponent {
   /** Whether the confirm button should use the danger (red) colour */
   @Input() danger = false;
 
+  /** Whether to show only the confirm action */
+  @Input() singleAction = false;
+
   /** Emits true when confirmed, false when cancelled */
   @Output() confirmed = new EventEmitter<boolean>();
 

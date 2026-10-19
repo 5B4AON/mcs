@@ -46,6 +46,7 @@ export type SerialInputPin = 'dsr' | 'cts' | 'dcd' | 'ri';
 export type OutputForward = 'rx' | 'tx' | 'both';
 /** Action to perform when a prosign is decoded */
 export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLastWord' | 'clearLine' | 'clearScreen';
+export type SettingsSaveResult = 'saved' | 'no-profile' | 'storage-error';
 
 /**
  * Unique identifier for each decoder input pipeline.
@@ -1011,29 +1012,35 @@ export class SettingsService {
   save(
     currentInputs: { deviceId: string; label: string }[],
     currentOutputs: { deviceId: string; label: string }[],
-  ): void {
+  ): SettingsSaveResult {
     const fp = this.currentFingerprint();
-    if (!fp) return;
+    if (!fp) return 'no-profile';
 
     const s = this.settings();
-    const deviceLabels: Record<string, string> = {};
-    for (const key of DEVICE_SETTINGS_KEYS) {
-      const did = (s as any)[key] as string;
-      if (!did || did === 'default') {
-        deviceLabels[key] = 'System Default';
-      } else {
-        const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
-        const devices = isInput ? currentInputs : currentOutputs;
-        deviceLabels[key] = devices.find(d => d.deviceId === did)?.label ?? 'Unknown';
+    try {
+      const raw = localStorage.getItem(PROFILES_KEY);
+      const profiles: Record<string, StoredProfile> = raw ? JSON.parse(raw) : {};
+      const deviceLabels: Record<string, string> = {};
+      for (const key of DEVICE_SETTINGS_KEYS) {
+        const did = (s as any)[key] as string;
+        if (!did || did === 'default') {
+          deviceLabels[key] = 'System Default';
+        } else {
+          const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
+          const devices = isInput ? currentInputs : currentOutputs;
+          deviceLabels[key] = devices.find(d => d.deviceId === did)?.label ?? 'Unknown';
+        }
       }
-    }
 
-    const profiles = this._getProfiles();
-    profiles[fp] = { settings: { ...s }, deviceLabels };
-    localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+      profiles[fp] = { settings: { ...s }, deviceLabels };
+      localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+    } catch {
+      return 'storage-error';
+    }
 
     this.isDirty.set(false);
     this.needsValidation.set(false);
+    return 'saved';
   }
 
   resetToDefaults(): void {
