@@ -48,6 +48,12 @@ export class SettingsModalComponent {
   /** Emitted when the user closes the settings modal */
   @Output() closed = new EventEmitter<void>();
 
+  /** Emitted after a confirmed reset to defaults */
+  @Output() defaultsReset = new EventEmitter<void>();
+
+  /** Emitted after settings are saved */
+  @Output() saved = new EventEmitter<void>();
+
   // ---- UI state ----
 
   /** Currently active settings tab */
@@ -94,6 +100,7 @@ export class SettingsModalComponent {
     this.showResetConfirm = false;
     if (confirmed) {
       this.settings.resetToDefaults();
+      this.defaultsReset.emit();
 
       // Stop any active RTDB connections since defaults have both disabled
       this.rtdbService.stopInput();
@@ -155,6 +162,7 @@ export class SettingsModalComponent {
       this.devices.inputDevices(),
       this.devices.outputDevices()
     );
+    this.saved.emit();
   }
 
   // ---- Device refresh ----

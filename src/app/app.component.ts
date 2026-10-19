@@ -20,6 +20,7 @@ import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { PracticeService } from './services/practice.service';
+import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
@@ -50,7 +51,7 @@ import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.compon
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent],
+  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -93,6 +94,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Whether the encoder textarea has text (for TX button state) */
   encoderInputHasText = false;
+
+  /** Whether the first-use Morse guide is visible */
+  showTryMorseGuide = true;
+
+  /** Active confirmation action for example replacement or external TX */
+  tryMorseConfirmAction: 'replace' | 'external-send' | 'live-send' | null = null;
+  tryMorseConfirmMessage = '';
+  tryMorseConfirmTitle = '';
+  tryMorseConfirmLabel = '';
+  private pendingExternalDestinations: string[] = [];
+  private confirmedLiveDestinations: string[] = [];
+  private defaultsResetInSettings = false;
+  private defaultsResetSaved = false;
 
   // ---- Kebab menu state ----
   controlsKebabOpen = false;
@@ -404,6 +418,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
+    try {
+      this.showTryMorseGuide = localStorage.getItem('mcsTryMorseGuideDismissed') !== '1';
+    } catch {
+      this.showTryMorseGuide = true;
+    }
+
     this.refreshDeviceConfig();
 
     // Wire mic key events into decoder — use configured source (RX or TX)
@@ -892,9 +912,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.settings.settings().encoderMode === 'enter' && event.key === 'Enter') {
       event.preventDefault();
-      this.encoder.submitText(textarea.value);
-      textarea.value = '';
-      this.encoderInputHasText = false;
+      this.requestEncoderTx(textarea);
     }
   }
 
@@ -906,14 +924,157 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.settings.settings().encoderMode === 'practice') {
       this.practice.userInput.set(textarea.value);
     } else if (this.settings.settings().encoderMode === 'live') {
+      const destinations = this.getExternalEncoderDestinations();
+      if (textarea.value.trim() && destinations.length
+          && !this.sameDestinations(destinations, this.confirmedLiveDestinations)) {
+        this.openExternalConfirmation('live-send', destinations);
+        return;
+      }
       this.encoder.setBuffer(textarea.value);
     }
+  }
+
+  /** Dismiss the guide without changing Morse settings or buffers. */
+  dismissTryMorseGuide(): void {
+    this.showTryMorseGuide = false;
+    try { localStorage.setItem('mcsTryMorseGuideDismissed', '1'); } catch { }
+  }
+
+  /** Reopen the guide and remember that it is wanted on the next visit. */
+  reopenTryMorseGuide(): void {
+    this.showTryMorseGuide = true;
+    try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
+  }
+
+  /** Load a supported sample into the text field without invoking live input. */
+  loadTryMorseExample(): void {
+    if (this.encoder.isSending()) return;
+    const textarea = this.encoderInputRef?.nativeElement;
+    if (!textarea) return;
+    if (textarea.value.length > 0) {
+      this.tryMorseConfirmAction = 'replace';
+      this.tryMorseConfirmTitle = 'Replace encoder text?';
+      this.tryMorseConfirmMessage = 'Replace the text in the encoder with CQ TEST?';
+      this.tryMorseConfirmLabel = 'Replace text';
+      return;
+    }
+    this.selectExampleEncoderMode();
+    this.fillTryMorseExample(textarea);
+  }
+
+  /** Gate encoder starts when configured destinations can transmit externally. */
+  requestEncoderTx(textarea: HTMLTextAreaElement): void {
+    if (this.encoder.isSending()) {
+      this.toggleEncoderTx(textarea);
+      return;
+    }
+    if (!textarea.value.trim() && this.encoder.buffer().length <= this.encoder.sentIndex()) return;
+    const destinations = this.getExternalEncoderDestinations();
+    if (destinations.length) {
+      this.openExternalConfirmation('external-send', destinations);
+      return;
+    }
+    this.toggleEncoderTx(textarea);
+  }
+
+  /** Handle the example replacement and external-send confirmation dialog. */
+  onTryMorseConfirmation(confirmed: boolean): void {
+    const action = this.tryMorseConfirmAction;
+    this.tryMorseConfirmAction = null;
+    if (!confirmed || !action) return;
+
+    if (action === 'replace') {
+      const textarea = this.encoderInputRef?.nativeElement;
+      if (textarea && !this.encoder.isSending()) {
+        this.selectExampleEncoderMode();
+        this.fillTryMorseExample(textarea);
+      }
+      return;
+    }
+
+    const destinations = this.getExternalEncoderDestinations();
+    if (destinations.length && !this.sameDestinations(destinations, this.pendingExternalDestinations)) {
+      this.openExternalConfirmation(action, destinations);
+      return;
+    }
+    this.confirmedLiveDestinations = destinations;
+    if (action === 'live-send') {
+      const textarea = this.encoderInputRef?.nativeElement;
+      if (textarea) this.encoder.setBuffer(textarea.value);
+    } else if (this.encoderInputRef) {
+      this.toggleEncoderTx(this.encoderInputRef.nativeElement);
+    }
+  }
+
+  private fillTryMorseExample(textarea: HTMLTextAreaElement): void {
+    textarea.value = 'CQ TEST';
+    this.encoderInputHasText = true;
+  }
+
+  private selectExampleEncoderMode(): void {
+    if (this.settings.settings().encoderMode === 'practice') this.practice.reset();
+    this.settings.update({ encoderMode: 'enter' });
+  }
+
+  private openExternalConfirmation(action: 'external-send' | 'live-send', destinations: string[]): void {
+    this.tryMorseConfirmAction = action;
+    this.pendingExternalDestinations = [...destinations];
+    this.tryMorseConfirmTitle = action === 'live-send' ? 'Allow live sending?' : 'Confirm external send';
+    this.tryMorseConfirmLabel = action === 'live-send' ? 'Allow live sending' : 'Send to these outputs';
+    this.tryMorseConfirmMessage = action === 'live-send'
+      ? `Live mode sends as you type. Confirm to allow sending through:\n${destinations.map(name => `- ${name}`).join('\n')}`
+      : `This send can key or relay through:\n${destinations.map(name => `- ${name}`).join('\n')}\n\nContinue only if you intend to use these destinations.`;
+  }
+
+  private getExternalEncoderDestinations(): string[] {
+    const s = this.settings.settings();
+    const source = s.encoderSource;
+    const matchesSource = (forward: string) => forward === 'both' || forward === source;
+    const destinations: string[] = [];
+
+    if (s.serialEnabled) {
+      s.serialOutputMappings.forEach((mapping, index) => {
+        if (mapping.enabled && mapping.portIndex >= 0 && matchesSource(mapping.forward)) {
+          const port = this.serialOutput.ports()[mapping.portIndex];
+          const portName = port ? this.serialOutput.portLabel(port) : `Serial port ${mapping.portIndex + 1}`;
+          destinations.push(`${portName} ${mapping.pin.toUpperCase()} keying (mapping ${index + 1})`);
+        }
+      });
+    }
+    if (s.midiOutputEnabled) {
+      s.midiOutputMappings.forEach((mapping, index) => {
+        if (mapping.enabled && matchesSource(mapping.forward)) {
+          const device = this.midiOutput.midiOutputs().find(output => output.id === mapping.deviceId)?.name
+            || mapping.deviceId
+            || this.midiOutput.midiOutputs()[0]?.name
+            || 'connected MIDI output';
+          destinations.push(`MIDI ${device}, channel ${mapping.channel} (mapping ${index + 1})`);
+        }
+      });
+    }
+    if (s.winkeyerEnabled && s.winkeyerPortIndex >= 0 && matchesSource(s.winkeyerForward)) {
+      const port = this.winkeyerOutput.ports()[s.winkeyerPortIndex];
+      const portName = port ? this.winkeyerOutput.portLabel(port) : `serial port ${s.winkeyerPortIndex + 1}`;
+      destinations.push(`WinKeyer on ${portName}`);
+    }
+    if (s.rtdbOutputEnabled && matchesSource(s.rtdbOutputForward)) {
+      destinations.push(`Firebase relay channel ${s.rtdbOutputChannelName || '(unnamed)'}`);
+    }
+    return destinations;
+  }
+
+  private sameDestinations(first: string[], second: string[]): boolean {
+    return first.length === second.length && first.every((destination, index) => destination === second[index]);
   }
 
   toggleEncoderTx(textarea: HTMLTextAreaElement): void {
     if (this.encoder.isSending()) {
       this.encoder.stopTx();
     } else {
+      if (this.settings.settings().encoderMode === 'live' && textarea.value.trim()) {
+        this.encoder.setBuffer(textarea.value);
+        return;
+      }
       // In 'enter' mode, submit textarea text if there are characters to send
       if (this.settings.settings().encoderMode === 'enter' && textarea.value.trim()) {
         this.encoder.submitText(textarea.value);
@@ -1093,6 +1254,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */
   closeSettings(): void {
+    if (this.defaultsResetInSettings && this.defaultsResetSaved && !this.settings.isDirty()) {
+      this.reopenTryMorseGuide();
+    }
+    this.defaultsResetInSettings = false;
+    this.defaultsResetSaved = false;
     this.showSettings = false;
     this.popModalState();
     // Clear reconnect flags if the user has re-enabled the services
@@ -1189,6 +1355,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.devices.inputDevices(),
       this.devices.outputDevices()
     );
+  }
+
+  onSettingsDefaultsReset(): void {
+    this.defaultsResetInSettings = true;
+    this.defaultsResetSaved = false;
+  }
+
+  onSettingsSaved(): void {
+    if (this.defaultsResetInSettings) this.defaultsResetSaved = true;
   }
 
   // ---- WPM adjustments ----

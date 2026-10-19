@@ -61,6 +61,9 @@
         <button class="kebab-help-btn" (click)="openSymbolsRef(); controlsKebabOpen = false" title="Symbols Reference">
           Symbols Ref
         </button>
+        <button class="kebab-help-btn" (click)="reopenTryMorseGuide(); controlsKebabOpen = false" title="Try Morse">
+          Try Morse
+        </button>
         <button class="kebab-help-btn" (click)="openHelp(); controlsKebabOpen = false" title="Help &amp; Documentation">
           Help
         </button>
@@ -213,6 +216,28 @@
       </div>
     }
 
+    @if (showTryMorseGuide) {
+      <section class="try-morse-guide" aria-labelledby="try-morse-title">
+        <div class="try-morse-guide-heading">
+          <h2 id="try-morse-title">Try Morse</h2>
+          <button class="kebab-help-btn try-morse-dismiss" (click)="dismissTryMorseGuide()" aria-label="Dismiss Try Morse guide">Close</button>
+        </div>
+        <p>Type below to turn text into Morse. Received and sent Morse appear in the conversation above. Load the example, then choose the send control. Live mode sends as you type after any destination confirmation.</p>
+        @if (audioState === 'stopped') {
+          <p>To hear Morse played out, turn on Start Audio. If you still hear nothing, check that audio output is enabled in Settings. Start Audio does not send the text in this box by itself.</p>
+        }
+        @if (settings.settings().encoderMode === 'practice') {
+          <p class="try-morse-note">Copy Practice uses its own controls. Choose Send on Enter or Live to try this example.</p>
+        }
+        <div class="try-morse-actions">
+          <button class="kebab-help-btn try-morse-load" (click)="loadTryMorseExample()"
+                  [disabled]="encoder.isSending()">
+            Load example
+          </button>
+        </div>
+      </section>
+    }
+
     <div class="encoder-input-row">
       <textarea #encoderInput rows="2"
                 style="text-transform: uppercase"
@@ -263,7 +288,7 @@
           </button>
         }
       } @else {
-        <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="!encoder.isSending() && (encoderInputHasText || encoder.buffer().length > encoder.sentIndex())" (click)="toggleEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+        <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="!encoder.isSending() && (encoderInputHasText || encoder.buffer().length > encoder.sentIndex())" (click)="requestEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
         </button>
       }
@@ -294,7 +319,7 @@
   </section>
 
   <!-- ========== STRAIGHT-KEY SPRITE BUTTON ========== -->
-  @if (settings.settings().spriteButtonEnabled && spriteSpaceAvailable && spriteReady) {
+  @if (settings.settings().spriteButtonEnabled && !showTryMorseGuide && spriteSpaceAvailable && spriteReady) {
     <div class="touch-key-sprite-wrapper">
       <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
               (touchstart)="onSpriteTouch(true, $event)"
@@ -313,7 +338,8 @@
 
 <!-- ========== SETTINGS MODAL ========== -->
 @if (showSettings) {
-  <app-settings-modal [audioRunning]="audioRunning" (closed)="closeSettings()"></app-settings-modal>
+  <app-settings-modal [audioRunning]="audioRunning" (defaultsReset)="onSettingsDefaultsReset()"
+                      (saved)="onSettingsSaved()" (closed)="closeSettings()"></app-settings-modal>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->
@@ -329,4 +355,15 @@
 <!-- ========== HELP MODAL ========== -->
 @if (showHelp) {
   <app-help (closed)="closeHelp()"></app-help>
+}
+
+@if (tryMorseConfirmAction) {
+  <app-confirm-dialog
+    [title]="tryMorseConfirmTitle"
+    [message]="tryMorseConfirmMessage"
+    [confirmLabel]="tryMorseConfirmLabel"
+    [cancelLabel]="'Cancel'"
+    [danger]="tryMorseConfirmAction === 'external-send'"
+    (confirmed)="onTryMorseConfirmation($event)">
+  </app-confirm-dialog>
 }

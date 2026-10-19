@@ -921,8 +921,64 @@
   text-transform: none;
 }
 
+.try-morse-guide {
+  margin: .75rem 0 0;
+  padding: .7rem .8rem;
+  border-left: 3px solid #46aa9c;
+  border-radius: 4px;
+  background: #1b2a2c;
+  color: #dbe8e5;
+  font-size: .86rem;
+  line-height: 1.45;
+}
+.try-morse-guide-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: .75rem;
+}
+.try-morse-guide-heading h2 {
+  margin: 0;
+  color: #f0f5f2;
+  font-size: 1rem;
+  font-weight: 650;
+}
+.try-morse-guide p {
+  margin: .4rem 0 0;
+}
+.try-morse-guide .try-morse-note {
+  color: #f0cc78;
+}
+.try-morse-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: .65rem;
+}
+.try-morse-guide-heading .try-morse-dismiss {
+  width: auto;
+  min-height: 40px;
+  margin-top: 0;
+  align-self: auto;
+  flex-shrink: 0;
+}
+.try-morse-load {
+  max-width: 170px;
+}
+.try-morse-load:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+  transform: none;
+  filter: none;
+}
+.try-morse-guide .kebab-help-btn:focus-visible {
+  outline: 2px solid #8bd6c9;
+  outline-offset: 2px;
+}
+
 .encoder-actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 1rem;
   align-items: center;

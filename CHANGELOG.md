@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.5] - 2026-10-19
+
+### Added
+
+- **Try Morse First-Use Guide** — Added a dismissible, reopenable guide with a
+  safe `CQ TEST` example, external-output confirmation, and clearer audio
+  playback guidance. Loading the example selects Send on Enter; the guide is
+  available from the top-right menu and hides the Straight-Key Sprite while
+  open.
+
 ## [1.8.4] - 2026-10-19
 
 ### Changed
