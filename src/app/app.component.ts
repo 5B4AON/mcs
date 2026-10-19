@@ -750,7 +750,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.audioStatusMessage = this.audioFailureMessage;
       } else {
         this.audioState = 'stopped';
-        this.audioStatusMessage = 'Audio is stopped. Press Start Audio to begin.';
+        this.audioStatusMessage = 'Audio is stopped. Start Audio to begin.';
       }
     } finally {
       this.audioStarting = false;
