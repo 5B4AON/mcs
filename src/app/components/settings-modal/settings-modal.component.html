@@ -11,6 +11,9 @@
         <button (click)="confirmReset()" class="settings-action-btn" title="Reset all settings to defaults">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" overflow="visible" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M-2.2 12a14.2 14.2 0 1 1 14.2 14.2 14.85 14.85 0 0 1-10.4-4.3L-2.2 18.3" stroke-width="1.6"/><polygon points="-3.1 23.2 -3.1 18.3 2.3 18.3" fill="currentColor" stroke="none"/><g transform="translate(12,12) scale(0.828)"><circle cx="0" cy="0" r="3" stroke-width="2.2"/><path d="M7.4 3a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 3 7.32a1.65 1.65 0 0 0-1 1.51V9a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0-3 7.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0-7.32 3a1.65 1.65 0 0 0-1.51-1H-9a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0-7.4-3a1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0-3-7.32a1.65 1.65 0 0 0-1-1.51V-9a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 7.4-3a1.65 1.65 0 0 0 1.51 1H9a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2.2"/></g></svg>
         </button>
+        <button class="settings-action-btn" (click)="openSettingsTransfer($event)" title="Presets: save, import, export, apply" aria-label="Presets">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4 4m-4-4 4-4"/></svg>
+        </button>
         <button class="settings-close-btn" (click)="close()" title="Close settings">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -164,5 +167,179 @@ This cannot be undone."
         <button class="scan-results-ok-btn" (click)="dismissScanResults()">OK</button>
       </div>
     </div>
+  </div>
+}
+
+@if (showPresets) {
+  <div class="settings-transfer-overlay" (click)="closeSettingsTransfer()">
+    <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onSettingsTransferKeydown($event)">
+      <header class="settings-transfer-header">
+        <h2 id="settings-transfer-title">Presets</h2>
+        <button type="button" class="settings-close-btn" (click)="closeSettingsTransfer()" aria-label="Close presets">×</button>
+      </header>
+
+      <div class="settings-transfer-content" (scroll)="closePresetMenu()" (click)="closePresetMenu()">
+        @if (!transferReview) {
+          @if (presets.loadError()) {
+            <p class="transfer-error" role="alert">{{ presets.loadError() }}</p>
+          }
+
+          <div class="transfer-actions">
+            <button type="button" class="transfer-action-btn" (click)="startSavePreset()" [disabled]="!!presets.loadError()">Save current setup as preset</button>
+            <button type="button" class="transfer-action-btn" (click)="presetFile.click()" [disabled]="!!presets.loadError()">Import preset file</button>
+            <input #presetFile type="file" accept=".json,application/json" hidden (change)="onSettingsFileSelected($event)">
+          </div>
+
+          @if (nameForm; as form) {
+            <form class="preset-name-form" (ngSubmit)="submitNameForm()">
+              <label for="preset-name-input">
+                @switch (form.mode) {
+                  @case ('save') { Name for the new preset }
+                  @case ('rename') { New name }
+                  @case ('duplicate') { Name for the copy }
+                  @default { Name for the imported preset (added only, not applied) }
+                }
+              </label>
+              <input id="preset-name-input" class="preset-name-input" name="presetName" type="text" autocomplete="off" [maxLength]="presetNameMaxLength" [(ngModel)]="form.value">
+              <small>{{ form.value.trim().length }} / {{ presetNameMaxLength }} characters. Names are not case sensitive.</small>
+              <div class="transfer-actions">
+                <button type="submit" class="transfer-apply-btn">{{ form.mode === 'import' ? 'Add preset' : 'Save name' }}</button>
+                <button type="button" class="transfer-cancel-btn" (click)="cancelNameForm()">Cancel</button>
+              </div>
+            </form>
+          }
+
+          @if (transferError) {
+            <p class="transfer-error" role="alert">{{ transferError }}</p>
+          }
+          @if (presetNotice) {
+            <p class="transfer-success" role="status">{{ presetNotice }}</p>
+          }
+
+          <h3 class="preset-list-title">Saved presets ({{ presets.presets().length }})</h3>
+          @if (presets.loadError()) {
+            <p>Presets are unavailable until the problem above is resolved. Nothing stored was changed.</p>
+          } @else if (presets.presets().length === 0) {
+            <p>No presets yet. Save the current setup to create one.</p>
+          } @else {
+            <ul class="preset-list">
+              @for (preset of presets.presets(); track preset.id) {
+                <li class="preset-item">
+                  <div class="preset-item-head">
+                    <div class="preset-item-text">
+                      <strong class="preset-item-name">{{ preset.name }}</strong>
+                      <span class="preset-item-date">Saved {{ preset.updatedAt | date: 'medium' }}</span>
+                    </div>
+                    @if (deletePresetId !== preset.id && updatePresetId !== preset.id) {
+                      <button type="button" class="preset-menu-btn" (click)="togglePresetMenu(preset, $event)" [attr.aria-label]="'Actions for ' + preset.name" aria-haspopup="menu" [attr.aria-expanded]="presetMenuId === preset.id" title="Actions">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                      </button>
+                    }
+                  </div>
+                  @if (updatePresetId === preset.id) {
+                    <div class="preset-delete-confirm" role="alert">
+                      <span>Overwrite "{{ preset.name }}" with the current settings? Its saved contents will be replaced.</span>
+                      <button type="button" class="transfer-apply-btn" (click)="updateConfirmedPreset()">Overwrite</button>
+                      <button type="button" class="transfer-cancel-btn" (click)="cancelUpdatePreset()">Keep</button>
+                    </div>
+                  }
+                  @if (deletePresetId === preset.id) {
+                    <div class="preset-delete-confirm" role="alert">
+                      <span>Delete "{{ preset.name }}"? This cannot be undone.</span>
+                      <button type="button" class="transfer-apply-btn" (click)="deleteConfirmedPreset()">Delete</button>
+                      <button type="button" class="transfer-cancel-btn" (click)="cancelDeletePreset()">Keep</button>
+                    </div>
+                  }
+                </li>
+              }
+            </ul>
+          }
+        }
+
+        @if (transferReview; as review) {
+          <section class="transfer-review" [class.transfer-review-identical]="review.changes.length === 0" aria-labelledby="transfer-review-title">
+            <h3 id="transfer-review-title">Review "{{ reviewPreset?.name }}" before applying</h3>
+            @if (review.changes.length > 0) {
+              <p>Nothing changes until you apply. Applying can take effect immediately; it does not save or overwrite this browser's device profile.</p>
+            }
+
+            @if (review.unresolvedTargets.length > 0) {
+              <div class="transfer-unresolved" role="status">
+                <h4>Targets not transferred</h4>
+                <p>These device targets could not be verified here. Their destination settings remain unchanged; resolve them later in Settings.</p>
+                <ul>
+                  @for (target of review.unresolvedTargets; track target) {
+                    <li>{{ target }}</li>
+                  }
+                </ul>
+              </div>
+            }
+
+            @if (transferChangeGroups.length === 0) {
+              <p class="transfer-identical" role="status">This preset is identical to the current setup, so there is nothing to apply.</p>
+            } @else {
+              @for (group of transferChangeGroups; track group.name) {
+                <section class="transfer-change-group">
+                  <h4>{{ group.name }}</h4>
+                  @for (change of group.changes; track change.field) {
+                    <article class="transfer-change">
+                      <h5>{{ settingLabel(change.field) }}</h5>
+                      <div><strong>Before:</strong><pre>{{ formatSettingValue(change, change.before) }}</pre></div>
+                      <div><strong>After:</strong><pre>{{ formatSettingValue(change, change.after) }}</pre></div>
+                    </article>
+                  }
+                </section>
+              }
+            }
+
+            @if (review.routeChanges.length > 0) {
+              <section class="transfer-route-acknowledgements" aria-labelledby="transfer-routes-title">
+                <h4 id="transfer-routes-title">Hardware and relay acknowledgements</h4>
+                <p>Each changed target must be acknowledged separately. Permissions and connections do not transfer. No route is activated during file selection or review.</p>
+                @for (route of review.routeChanges; track route.id) {
+                  <label class="transfer-route-ack">
+                    <input type="checkbox" [checked]="routeAcknowledgements[route.id] || false" (change)="acknowledgeRoute(route.id, $event)">
+                    <span><strong>{{ route.type }} — {{ route.change }}.</strong> Confirm destination: {{ describeRouteChange(route) }}.</span>
+                  </label>
+                }
+              </section>
+            }
+          </section>
+        }
+      </div>
+
+
+      @if (presetMenuId && menuPreset; as preset) {
+        <div class="preset-menu" role="menu" [attr.aria-label]="'Actions for ' + preset.name" [style.top.px]="presetMenuPos.top" [style.bottom.px]="presetMenuPos.bottom" [style.right.px]="presetMenuPos.right">
+          <button type="button" role="menuitem" class="preset-menu-item" (click)="runPresetMenu('apply', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Review and apply
+          </button>
+          <button type="button" role="menuitem" class="preset-menu-item" (click)="runPresetMenu('update', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>Update with current settings
+          </button>
+          <button type="button" role="menuitem" class="preset-menu-item" (click)="runPresetMenu('export', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>Export
+          </button>
+          <button type="button" role="menuitem" class="preset-menu-item" (click)="runPresetMenu('rename', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>Rename
+          </button>
+          <button type="button" role="menuitem" class="preset-menu-item" (click)="runPresetMenu('duplicate', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>Duplicate
+          </button>
+          <button type="button" role="menuitem" class="preset-menu-item preset-menu-danger" (click)="runPresetMenu('delete', preset)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>Delete
+          </button>
+        </div>
+      }
+
+      <footer class="settings-transfer-footer">
+        @if (transferReview) {
+          <button type="button" class="transfer-cancel-btn" (click)="cancelReview()">Back without applying</button>
+          <button type="button" class="transfer-apply-btn" [disabled]="!canApplySettingsImport()" (click)="applySettingsImport()">Apply reviewed preset</button>
+        } @else {
+          <button type="button" class="transfer-cancel-btn" (click)="closeSettingsTransfer()">Close</button>
+        }
+      </footer>
+    </section>
   </div>
 }

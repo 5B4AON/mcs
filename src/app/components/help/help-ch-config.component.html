@@ -70,6 +70,35 @@
   asking you to review and save.
 </p>
 
+<h3>Presets: Save, Export, and Import</h3>
+<p>
+  Device profiles follow your audio devices automatically. If you also want
+  setups you name yourself, such as "Home station" or "Classroom", open
+  <strong>Presets</strong> from the header of Settings. You can save the
+  current setup as a preset (names are up to 40 characters and not case
+  sensitive), update a preset with your current settings (after
+  confirmation), rename, duplicate, delete, and export a preset to a local
+  JSON file. Presets are kept in this browser separately from device profiles.
+</p>
+<p>
+  To move a setup to another browser, export the preset there and use
+  <strong>Import preset file</strong> here. Import only adds the file to your
+  preset list; it never changes your running settings. To use a preset, choose
+  <strong>Review and apply</strong>. You see a grouped before-and-after list
+  first, and nothing changes until you apply. Applied settings become active
+  immediately but are not saved to the current device profile; use
+  <strong>Save Settings</strong> separately to keep them.
+</p>
+<p>
+  RTDB channel secrets are never saved in presets or files. Applying a preset
+  keeps the secrets already stored in this browser and will not enable an RTDB
+  direction if its secret is empty. Audio and MIDI device identifiers and
+  serial port numbers are not portable identities. If a target cannot be
+  verified in this browser, its setting is left unchanged. Each keying or
+  relay destination that would be newly enabled or redirected must be
+  acknowledged separately before you can apply.
+</p>
+
 <div class="example-box">
   <div class="example-title">Example — Home vs. portable</div>
   <p>

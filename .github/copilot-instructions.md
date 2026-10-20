@@ -44,6 +44,10 @@ src/app/
 │   └── callsign-prefixes.ts — international callsign prefix database
 ├── services/                — singleton services (providedIn: 'root')
 │   ├── settings.service.ts  — central settings signal + localStorage persistence
+│   ├── settings-transfer.ts     — versioned secret-free settings snapshot format + validation (pure)
+│   ├── settings-transfer-review.ts — import preparation, grouped change list, route comparison (pure)
+│   ├── settings-presets.ts      — preset name rules, storage format (`morsePresets`), parsing (pure)
+│   ├── preset.service.ts        — named presets store (separate from `morseProfiles`)
 │   ├── audio-device.service.ts — audio device enumeration & fingerprinting
 │   ├── audio-input.service.ts  — microphone capture + AudioWorklet processing
 │   ├── audio-output.service.ts — audio playback (keyed tone generation)
@@ -145,6 +149,7 @@ AppComponent
 - **MIDI output mappings pipeline**: `MidiOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.midiOutputMappings`, UI in `midi-output-card` + `MidiOutputEditModalComponent`, runtime in `MidiOutputService`.
 - **Serial input mappings pipeline**: `SerialInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialInputMappings`, UI in `serial-input-card` + `SerialInputEditModalComponent`, runtime in `SerialKeyInputService` (per-mapping independent iambic keyer, similar to MIDI input). Each mapping has optional `name`/`color` for multi-user fullscreen conversation views.
 - **Serial output mappings pipeline**: `SerialOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialOutputMappings`, UI in `serial-output-card` + `SerialOutputEditModalComponent`, runtime in `SerialKeyOutputService`. Each mapping specifies `portIndex`, `pin` (DTR/RTS), `invert`, and `forward` (OutputForward). Multiple mappings can target different ports or different pins on the same port.
+- **Presets pipeline**: the Presets dialog (header button in `settings-modal`) saves/updates (overwrites with current settings)/renames/duplicates/deletes/exports/imports named presets via `PresetService` (key `morsePresets`, separate from `morseProfiles`, max 40-char case-insensitive names). Files use the `mcs-settings` v1 format from `settings-transfer.ts` (no RTDB secrets). Import only adds a preset; apply goes through `prepareSettingsImport` review with per-route acknowledgements, then `SettingsService.update()` without saving the profile.
 - **Settings card CSS** (`settings-shared.css`, `settings-outputs-tab.component.css`, `settings-other-tab.component.css`) is loaded **globally** via `angular.json` `styles` array — not via component `styleUrls`. Card components use `styles: [':host { display: contents; }']` only. Do NOT add these CSS files back into component `styleUrls` or the bundle will bloat.
 - **Fullscreen modal CSS** (`fullscreen-shared.css`) is similarly shared. Child components (`fs-toolbar`, `fs-decoder-view`, `fs-encoder-view`) import it via `styleUrls` (only 3 consumers, so duplication is acceptable here — unlike the 19 settings cards).
 - **Morse table** (`morse-table.ts`): `MORSE_TABLE` maps characters/prosigns to dot-dash strings; `MORSE_REVERSE` is the inverse. Changes to the table can affect encoding, decoding, and the symbols reference panel.
