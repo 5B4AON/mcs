@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-10-20
+
+### Added
+
+- **Named Presets** — A new Presets dialog in Settings saves the current setup
+  under a name (up to 40 characters, case-insensitive), and lets you update a
+  preset with the current settings, rename, duplicate, delete, and export it.
+  Presets are stored separately from automatic device profiles.
+- **Preset File Export and Import** — Presets export to a versioned local JSON
+  file that never includes RTDB channel secrets. Importing a file only adds a
+  preset; it never changes live settings.
+- **Reviewed Apply** — Applying a preset shows a grouped before-and-after
+  review, requires separate acknowledgement of each newly enabled or redirected
+  hardware or relay route, keeps this browser's RTDB secrets, leaves
+  unverifiable device targets unchanged, and does not save the device profile.
+  A preset identical to the current setup reports that there is nothing to apply.
+
+### Changed
+
+- **Help** — Configuration chapter now explains presets, file transfer, and
+  secret handling.
+
 ## [1.8.6] - 2026-10-19
 
 ### Changed
