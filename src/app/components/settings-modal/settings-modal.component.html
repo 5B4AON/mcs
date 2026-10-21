@@ -174,8 +174,10 @@ This cannot be undone."
   <div class="settings-transfer-overlay" (click)="closeSettingsTransfer()">
     <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onSettingsTransferKeydown($event)">
       <header class="settings-transfer-header">
-        <h2 id="settings-transfer-title">Presets</h2>
-        <button type="button" class="settings-close-btn" (click)="closeSettingsTransfer()" aria-label="Close presets">×</button>
+        <h2 id="settings-transfer-title" [class.preset-review-title]="transferReview && reviewPreset">{{ transferReview && reviewPreset ? reviewPreset.name : 'Presets' }}</h2>
+        <button type="button" class="settings-close-btn" (click)="closeSettingsTransfer()" aria-label="Close presets" title="Close presets">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </header>
 
       <div class="settings-transfer-content" (scroll)="closePresetMenu()" (click)="closePresetMenu()">
@@ -185,7 +187,7 @@ This cannot be undone."
           }
 
           <div class="transfer-actions">
-            <button type="button" class="transfer-action-btn" (click)="startSavePreset()" [disabled]="!!presets.loadError()">Save current setup as preset</button>
+            <button type="button" class="transfer-action-btn" (click)="startSavePreset()" [disabled]="!!presets.loadError()">Save current setup</button>
             <button type="button" class="transfer-action-btn" (click)="presetFile.click()" [disabled]="!!presets.loadError()">Import preset file</button>
             <input #presetFile type="file" accept=".json,application/json" hidden (change)="onSettingsFileSelected($event)">
           </div>
@@ -238,14 +240,14 @@ This cannot be undone."
                   </div>
                   @if (updatePresetId === preset.id) {
                     <div class="preset-delete-confirm" role="alert">
-                      <span>Overwrite "{{ preset.name }}" with the current settings? Its saved contents will be replaced.</span>
+                      <span>Overwrite this preset with the current settings? Its saved contents will be replaced.</span>
                       <button type="button" class="transfer-apply-btn" (click)="updateConfirmedPreset()">Overwrite</button>
                       <button type="button" class="transfer-cancel-btn" (click)="cancelUpdatePreset()">Keep</button>
                     </div>
                   }
                   @if (deletePresetId === preset.id) {
                     <div class="preset-delete-confirm" role="alert">
-                      <span>Delete "{{ preset.name }}"? This cannot be undone.</span>
+                      <span>Delete this preset? This cannot be undone.</span>
                       <button type="button" class="transfer-apply-btn" (click)="deleteConfirmedPreset()">Delete</button>
                       <button type="button" class="transfer-cancel-btn" (click)="cancelDeletePreset()">Keep</button>
                     </div>
@@ -258,7 +260,7 @@ This cannot be undone."
 
         @if (transferReview; as review) {
           <section class="transfer-review" [class.transfer-review-identical]="review.changes.length === 0" aria-labelledby="transfer-review-title">
-            <h3 id="transfer-review-title">Review "{{ reviewPreset?.name }}" before applying</h3>
+            <h3 id="transfer-review-title">Review before applying</h3>
             @if (review.changes.length > 0) {
               <p>Nothing changes until you apply. Applying can take effect immediately; it does not save or overwrite this browser's device profile.</p>
             }
@@ -284,8 +286,22 @@ This cannot be undone."
                   @for (change of group.changes; track change.field) {
                     <article class="transfer-change">
                       <h5>{{ settingLabel(change.field) }}</h5>
-                      <div><strong>Before:</strong><pre>{{ formatSettingValue(change, change.before) }}</pre></div>
-                      <div><strong>After:</strong><pre>{{ formatSettingValue(change, change.after) }}</pre></div>
+                      @let values = changedValues(change);
+                      @if (values.inline) {
+                        <div class="transfer-change-inline">
+                          <span><strong>Before:</strong> {{ values.before }}</span>
+                          <span><strong>After:</strong> {{ values.after }}</span>
+                        </div>
+                      } @else {
+                        <details class="transfer-change-details">
+                          <summary>Before:</summary>
+                          <pre>{{ values.before }}</pre>
+                        </details>
+                        <details class="transfer-change-details">
+                          <summary>After:</summary>
+                          <pre>{{ values.after }}</pre>
+                        </details>
+                      }
                     </article>
                   }
                 </section>
@@ -332,14 +348,12 @@ This cannot be undone."
         </div>
       }
 
-      <footer class="settings-transfer-footer">
-        @if (transferReview) {
+      @if (transferReview) {
+        <footer class="settings-transfer-footer">
           <button type="button" class="transfer-cancel-btn" (click)="cancelReview()">Back without applying</button>
           <button type="button" class="transfer-apply-btn" [disabled]="!canApplySettingsImport()" (click)="applySettingsImport()">Apply reviewed preset</button>
-        } @else {
-          <button type="button" class="transfer-cancel-btn" (click)="closeSettingsTransfer()">Close</button>
-        }
-      </footer>
+        </footer>
+      }
     </section>
   </div>
 }
