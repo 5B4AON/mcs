@@ -1119,10 +1119,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   clearAllBuffers(): void {
     if (this.settings.settings().encoderMode === 'practice') {
       if (this.practice.state() !== 'idle') this.practice.abort();
-      if (this.encoderInputRef) {
-        this.encoderInputRef.nativeElement.value = '';
-        this.encoderInputHasText = false;
-      }
+      this.practice.userInput.set('');
+    }
+    if (this.encoderInputRef) {
+      this.encoderInputRef.nativeElement.value = '';
+      this.encoderInputHasText = false;
     }
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();

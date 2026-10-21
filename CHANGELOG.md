@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.1] - 2026-10-21
+
+### Fixed
+
+- **Clear All Text Areas** — "All text areas" in the main page clear menu now
+  also empties the input box in every encoder mode, not only in practice mode.
+- **Presets Dialog Buttons** — The close and actions buttons are true 40 px
+  circles on touch devices and match the Settings and main page icon buttons.
+
+### Changed
+
+- **Presets Dialog Layout** — The dialog uses the same size as Settings
+  (full screen on small phones), the redundant bottom Close button is removed,
+  and "Save current setup" and "Import preset file" use the pill style of the
+  main page menu, centered and wrapping when space is short.
+- **Preset Review** — The dialog title shows the preset name, setting names
+  and group titles are colour-coded, and only changed parts of structured
+  settings are listed, in collapsible Before and After sections. Simple values
+  show Before and After on one line. Saved preset names are highlighted, and
+  the delete confirmation no longer repeats the name.
+
 ## [1.9.0] - 2026-10-20
 
 ### Added

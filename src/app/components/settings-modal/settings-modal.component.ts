@@ -641,6 +641,27 @@ export class SettingsModalComponent {
     return JSON.stringify(this.formatReviewValue(value), null, 2);
   }
 
+  /**
+   * Before/after text for a review entry. Structured values show only the
+   * parts that differ; unchanged object fields are omitted and unchanged array items become an ellipsis.
+   */
+  changedValues(change: SettingChange): { before: string; after: string; inline: boolean } {
+    if (typeof change.before === 'object' && change.before !== null
+        && typeof change.after === 'object' && change.after !== null) {
+      const [before, after] = this.diffValues(change.before, change.after);
+      return {
+        before: JSON.stringify(this.formatReviewValue(before), null, 2),
+        after: JSON.stringify(this.formatReviewValue(after), null, 2),
+        inline: false,
+      };
+    }
+    return {
+      before: this.formatSettingValue(change, change.before),
+      after: this.formatSettingValue(change, change.after),
+      inline: true,
+    };
+  }
+
   /** Apply a concise human-readable label to an AppSettings key */
   settingLabel(field: string): string {
     const acronyms: Record<string, string> = {
@@ -702,6 +723,42 @@ export class SettingsModalComponent {
       ?.closest('app-settings-modal')
       ?.querySelector<HTMLElement>('.settings-transfer-dialog');
     dialog?.querySelector<HTMLElement>('button:not([disabled])')?.focus();
+  }
+
+  private diffValues(a: unknown, b: unknown): [unknown, unknown] {
+    if (JSON.stringify(a) === JSON.stringify(b)) return ['…', '…'];
+    if (Array.isArray(a) && Array.isArray(b)) {
+      const left: unknown[] = [];
+      const right: unknown[] = [];
+      for (let i = 0; i < Math.max(a.length, b.length); i++) {
+        if (i >= a.length) right.push(b[i]);
+        else if (i >= b.length) left.push(a[i]);
+        else {
+          const [x, y] = this.diffValues(a[i], b[i]);
+          left.push(x);
+          right.push(y);
+        }
+      }
+      return [left, right];
+    }
+    if (isRecord(a) && isRecord(b)) {
+      const left: Record<string, unknown> = {};
+      const right: Record<string, unknown> = {};
+      for (const key of new Set([...Object.keys(a), ...Object.keys(b)])) {
+        if (JSON.stringify(a[key]) === JSON.stringify(b[key])) {
+          continue;
+        }
+        if (key in a && key in b) {
+          [left[key], right[key]] = this.diffValues(a[key], b[key]);
+        } else if (key in a) {
+          left[key] = a[key];
+        } else {
+          right[key] = b[key];
+        }
+      }
+      return [left, right];
+    }
+    return [a, b];
   }
 
   private formatReviewValue(value: unknown): unknown {
