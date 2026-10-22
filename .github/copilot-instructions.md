@@ -186,7 +186,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
   5. If new functionality was added, enrich or update the relevant help chapter(s) in `src/app/help/`
   6. If help chapters were added or removed, update the table of contents in the help component (`help.component.ts` / `help.component.html`)
   7. Review and update `README.md` (project root) and `arduino/README.md` if changes affect their general overview content
-- **Help system**: standalone chapter components in `src/app/help/` with content-only HTML and minimal TS; wiring diagrams as SVGs in `src/app/help/diagrams/`
+- **Help system**: standalone chapter components in `src/app/help/` with content-only HTML and minimal TS; wiring diagrams as SVGs in `src/app/help/diagrams/`. Contextual Help links emit their target element ID through `helpRequested` outputs; wrapper components forward the ID, and `AppComponent` closes the source modal before calling `openHelp(sectionId)`. `HelpComponent.initialSection` scrolls to that target. Keep the destination at the link source rather than hard-coding a section in a generic app-level handler.
 - **Architecture changes**: when adding/removing/moving components, services, or shared CSS files, update this `copilot-instructions.md` — specifically the Project Structure tree, Component hierarchy, and Key interdependencies sections — so future sessions have accurate context
 
 ## Work Package Workflow

@@ -21,6 +21,13 @@
   </div>
   @if (expanded) {
     <div class="settings-card-body">
+      <div class="cw-hint">
+        Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
+        The secret is hidden on screen only, and channel values may be saved in this browser.
+        Don’t reuse sensitive credentials or send sensitive content.
+        <a [href]="'#' + helpSection" (click)="$event.preventDefault(); helpRequested.emit(helpSection)">Read Firebase Help</a>.
+      </div>
+
       @if (!rtdbService.isOnline()) {
         <div class="conflict-warning">
           You are currently offline. Firebase Realtime Database requires an internet connection.
@@ -54,8 +61,8 @@
         from remote stations. Letters arrive as already-decoded characters and are
         fed into the encoder as if typed on the keyboard.<br><br>
         Both sender and receiver must share the same <strong>Channel Name</strong>
-        and <strong>Channel Secret</strong>. Only the last letter per channel is
-        stored &mdash; no chat history is retained.<br><br>
+        and <strong>Channel Secret</strong>. Only the latest letter per channel
+        is written; the app does not automatically delete stored data.<br><br>
         <strong>Requires an internet connection.</strong> Offline caching is disabled.
       </div>
 

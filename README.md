@@ -18,7 +18,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly on a 
 
 **Key Your Radio** — Drives your transmitter's keying line through multiple output methods: Arduino MIDI optocoupler (multiple mappings with per-mapping forward selectors), sound card optocoupler (DC or AC mode), USB-serial adapter (multiple mappings with per-mapping DTR/RTS pin, invert, and forward selectors via Web Serial API), or WinKeyer.
 
-**Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. Channels use a name + secret pair for access control, with callsign-prefixed lines in the fullscreen conversation view. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
+**Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. The channel name and secret together identify a database path; they are not user authentication or encryption. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
 
 ## Connecting Your Key and Radio
 
@@ -118,6 +118,12 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for gu
 
 To report a security vulnerability, please see [SECURITY.md](SECURITY.md).
 
+### Firebase RTDB project-owner guidance
+
+The app connects to Firebase Realtime Database from a public browser client. The repository's example rules allow anonymous reads and writes; they are examples only and do not establish the rules used by a deployed project. Review the actual project's rules before enabling relay.
+
+The channel name and secret form a database path, not an authentication or privacy boundary. Configure and review restrictive database rules and data validation in Firebase, and quotas, rate limits, and old-data cleanup in Firebase or related infrastructure. The app does not enforce these protections or limits, and it does not automatically clean up stored channel data.
+
 ## License
 To maximize freedom for downstream users, and because portions of AI-generated material may not be eligible for copyright protection in some jurisdictions, we dedicate this project to the **public domain** using **CC0 1.0 Universal**. 
 
@@ -135,5 +141,4 @@ During a production build, Angular extracts all dependency license texts into:
 `dist/3rdpartylicenses.txt`
 
 This is enabled by setting `"extractLicenses": true` in `angular.json`, which is the recommended way to ensure all license obligations are met.
-
 

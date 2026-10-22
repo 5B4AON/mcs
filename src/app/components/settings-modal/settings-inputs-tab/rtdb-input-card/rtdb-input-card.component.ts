@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Component, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, Output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AppSettings } from '../../../../services/settings.service';
 import { FirebaseRtdbService } from '../../../../services/firebase-rtdb.service';
@@ -22,6 +22,12 @@ import { FirebaseRtdbService } from '../../../../services/firebase-rtdb.service'
   styles: [':host { display: contents; }'],
 })
 export class RtdbInputCardComponent implements OnDestroy {
+  /** Help section targeted by this card's contextual Help link. */
+  readonly helpSection = 'ch10';
+
+  /** Emitted with the requested Help section ID. */
+  @Output() readonly helpRequested = new EventEmitter<string>();
+
   /** Whether this card's body is expanded */
   expanded = false;
 

@@ -21,6 +21,13 @@
   </div>
   @if (expanded) {
     <div class="settings-card-body">
+      <div class="cw-hint">
+        Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
+        The secret is hidden on screen only, and channel values may be saved in this browser.
+        Don’t reuse sensitive credentials or send sensitive content.
+        <a [href]="'#' + helpSection" (click)="$event.preventDefault(); helpRequested.emit(helpSection)">Read Firebase Help</a>.
+      </div>
+
       <label>Forward:
         <select [value]="settings.settings().rtdbOutputForward"
                 (change)="onSettingChange('rtdbOutputForward', $event)">
@@ -124,9 +131,9 @@
         <strong>User Name</strong> is attached to each posted letter (typically your
         callsign). Select which decoded text to forward: RX (received), TX
         (transmitted by the encoder/keyer), or both.<br><br>
-        Only the <strong>last letter</strong> per channel is stored &mdash; no message
-        history is retained. Channel limits and automatic expiry are configured
-        externally via Firebase Security Rules and Cloud Functions.<br><br>
+        Only the <strong>latest letter</strong> per channel is written; the app
+        does not automatically clean up stored data. See the project README for
+        developer guidance on security and data retention.<br><br>
         <strong>Requires an internet connection.</strong> Offline caching is disabled.
       </div>
 

@@ -81,6 +81,9 @@ export class SettingsModalComponent {
   /** Emitted after settings are saved */
   @Output() saved = new EventEmitter<void>();
 
+  /** Emitted with the Help section ID requested by a settings card. */
+  @Output() helpRequested = new EventEmitter<string>();
+
   // ---- UI state ----
 
   /** Currently active settings tab */

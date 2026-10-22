@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MicCardComponent } from './mic-card/mic-card.component';
 import { CwDetectorCardComponent } from './cw-detector-card/cw-detector-card.component';
 import { KeyboardKeyerCardComponent } from './keyboard-keyer-card/keyboard-keyer-card.component';
@@ -41,4 +41,7 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
 export class SettingsInputsTabComponent {
   /** Whether audio contexts are running (passed to child cards that need it) */
   @Input() audioRunning = false;
+
+  /** Emitted with the requested Help section ID from a child card. */
+  @Output() readonly helpRequested = new EventEmitter<string>();
 }
