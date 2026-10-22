@@ -26,8 +26,9 @@
 </ul>
 
 <p>
-  Firebase RTDB requires an internet connection. Only the last letter per
-  channel is stored — there is no message history or offline caching.
+  Firebase RTDB requires an internet connection. The app writes the latest
+  letter to each channel rather than keeping a message history, but this does
+  not mean stored data is automatically deleted. Offline caching is disabled.
 </p>
 
 <!-- 10.2 How Channels Work -->
@@ -42,21 +43,29 @@
   <tr>
     <td><strong>Channel Name</strong></td>
     <td>A human-readable name (e.g. <code>cw-practice</code>). This is
-        the public identifier — share it freely.</td>
+        one part of the database path.</td>
   </tr>
   <tr>
     <td><strong>Channel Secret</strong></td>
-    <td>A shared password that restricts who can read or write the
-        channel. Only clients that know <em>both</em> the name and
-        secret can participate.</td>
+    <td>The other part of the database path. It is not a protected account
+        credential.</td>
   </tr>
 </table>
 
 <p>
   Both values are used as path segments in the database
-  (<code>/morse-code-studio/channels/&lbrace;name&rbrace;/&lbrace;secret&rbrace;</code>), so they
-  are effectively a two-part access key. Choose a secret that is hard to
-  guess.
+  (<code>/morse-code-studio/channels/&lbrace;name&rbrace;/&lbrace;secret&rbrace;</code>).
+  Together they identify the channel path; they do not authenticate users or
+  encrypt messages.
+</p>
+
+<p>
+  RTDB is accessed by a public browser client. Under the repository's example
+  rules, anyone who can reach a channel path may read or write its data.
+  These are examples, not verified production rules. Channel values may be
+  saved in this browser's settings profile, and the password field only hides
+  the secret on screen. Do not reuse sensitive credentials or send sensitive
+  content.
 </p>
 
 <!-- 10.3 Input (Receive) -->
@@ -304,9 +313,9 @@
       <code>src/app/firebase.config.ts</code> before building the app.</li>
   <li>An <strong>internet connection</strong> on both stations. Firebase
       RTDB does not work offline.</li>
-  <li><strong>Security Rules</strong> should be configured in the Firebase
-      Console to validate data shape and prevent abuse. Example rules are
-      documented in <code>firebase.config.ts</code>.</li>
+  <li>Project owners should review the Firebase RTDB security and data-retention
+      guidance in the project README. This Help page does not verify the rules
+      used by any deployed Firebase project.</li>
 </ul>
 
 <!-- 10.8 Auto-Reconnect -->

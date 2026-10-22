@@ -57,11 +57,13 @@
          (touchend)="onTabContentTouchEnd($event)">
 
       @if (settingsTab === 'inputs') {
-        <app-settings-inputs-tab [audioRunning]="audioRunning"></app-settings-inputs-tab>
+        <app-settings-inputs-tab [audioRunning]="audioRunning"
+                                 (helpRequested)="helpRequested.emit($event)"></app-settings-inputs-tab>
       }
 
       @if (settingsTab === 'outputs') {
-        <app-settings-outputs-tab [audioRunning]="audioRunning"></app-settings-outputs-tab>
+        <app-settings-outputs-tab [audioRunning]="audioRunning"
+                                  (helpRequested)="helpRequested.emit($event)"></app-settings-outputs-tab>
       }
 
       @if (settingsTab === 'other') {

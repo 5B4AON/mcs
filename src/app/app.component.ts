@@ -72,6 +72,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showSettings = false;
   /** Whether the Help modal is visible */
   showHelp = false;
+  /** Help section to scroll to when opened from a contextual link */
+  helpInitialSection: string | null = null;
   /** Whether the Symbols Reference modal is visible */
   showSymbolsRef = false;
 
@@ -921,6 +923,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     textarea.value = textarea.value.toUpperCase();
     textarea.selectionStart = textarea.selectionEnd = pos;
     this.encoderInputHasText = textarea.value.trim().length > 0;
+    requestAnimationFrame(() => this.checkSpriteSpace());
     if (this.settings.settings().encoderMode === 'practice') {
       this.practice.userInput.set(textarea.value);
     } else if (this.settings.settings().encoderMode === 'live') {
@@ -938,12 +941,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissTryMorseGuide(): void {
     this.showTryMorseGuide = false;
     try { localStorage.setItem('mcsTryMorseGuideDismissed', '1'); } catch { }
+    // The guide changes the panel height, so re-measure once the DOM settles
+    requestAnimationFrame(() => this.checkSpriteSpace());
   }
 
   /** Reopen the guide and remember that it is wanted on the next visit. */
   reopenTryMorseGuide(): void {
     this.showTryMorseGuide = true;
     try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
+    requestAnimationFrame(() => this.checkSpriteSpace());
   }
 
   /** Load a supported sample into the text field without invoking live input. */
@@ -1274,9 +1280,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /** Open help modal */
-  openHelp(): void {
+  openHelp(initialSection: string | null = null): void {
+    this.helpInitialSection = initialSection;
     this.showHelp = true;
     this.pushModalState('help');
+  }
+
+  /** Close Settings and open the requested Help section. */
+  onSettingsHelpRequested(sectionId: string): void {
+    this.closeSettings();
+    this.openHelp(sectionId);
   }
 
   /** Close help modal */

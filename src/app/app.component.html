@@ -339,7 +339,8 @@
 <!-- ========== SETTINGS MODAL ========== -->
 @if (showSettings) {
   <app-settings-modal [audioRunning]="audioRunning" (defaultsReset)="onSettingsDefaultsReset()"
-                      (saved)="onSettingsSaved()" (closed)="closeSettings()"></app-settings-modal>
+                      (saved)="onSettingsSaved()" (closed)="closeSettings()"
+                      (helpRequested)="onSettingsHelpRequested($event)"></app-settings-modal>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->
@@ -354,7 +355,7 @@
 
 <!-- ========== HELP MODAL ========== -->
 @if (showHelp) {
-  <app-help (closed)="closeHelp()"></app-help>
+  <app-help [initialSection]="helpInitialSection" (closed)="closeHelp()"></app-help>
 }
 
 @if (tryMorseConfirmAction) {

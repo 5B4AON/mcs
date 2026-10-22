@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-10-22
+
+### Added
+
+- **Relay Privacy Notices** — The Firebase RTDB Input and Output cards in
+  Settings now show a short notice when expanded: the channel name and secret
+  together form a database path, not protected credentials; the secret is only
+  hidden on screen and may be saved in this browser; and sensitive credentials
+  or content should not be used. A link opens the Firebase Help chapter
+  directly.
+- **Contextual Help Links** — Help can now open at a requested section, so
+  other parts of the app can link straight to the relevant chapter.
+
+### Changed
+
+- **Firebase Help** — Chapter 10 no longer describes the channel secret as
+  access control. It explains the public browser client, the repository's
+  example rules (not verified production rules), on-screen masking and browser
+  storage, and that the app does not clean up stored data.
+- **README** — The relay description is corrected and developer guidance for
+  database rules, validation, quotas, rate limits and old-data cleanup is
+  added.
+
 ## [1.9.1] - 2026-10-21
 
 ### Fixed

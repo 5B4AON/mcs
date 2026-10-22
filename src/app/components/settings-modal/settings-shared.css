@@ -554,6 +554,14 @@
   border-left: 3px solid #486;
   border-radius: 2px;
 }
+.cw-hint a {
+  color: #8cf;
+  text-decoration: underline;
+}
+.cw-hint a:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
+}
 .cw-auto-info {
   font-size: .75rem;
   color: #acd;

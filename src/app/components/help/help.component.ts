@@ -20,6 +20,7 @@ import {
   Component,
   EventEmitter,
   Output,
+  Input,
   ElementRef,
   ViewChild,
   AfterViewInit,
@@ -61,6 +62,9 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   /** Application version for display in the help title. */
   readonly version = APP_VERSION;
 
+  /** Optional chapter to open when Help is launched from a contextual link. */
+  @Input() initialSection: string | null = null;
+
   /** Emitted when the user closes the Help modal. */
   @Output() closed = new EventEmitter<void>();
 
@@ -78,6 +82,10 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
       this.showBackToTop = el.scrollTop > 300;
     };
     el.addEventListener('scroll', this.scrollListener, { passive: true });
+    if (this.initialSection) {
+      const section = this.initialSection;
+      requestAnimationFrame(() => this.scrollTo(section, 'auto'));
+    }
   }
 
   ngOnDestroy(): void {
@@ -87,10 +95,10 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Scroll to a given anchor ID within the document. */
-  scrollTo(id: string): void {
+  scrollTo(id: string, behavior: ScrollBehavior = 'smooth'): void {
     const target = this.scrollContainer.nativeElement.querySelector('#' + id);
     if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      target.scrollIntoView({ behavior, block: 'start' });
     }
   }
 
