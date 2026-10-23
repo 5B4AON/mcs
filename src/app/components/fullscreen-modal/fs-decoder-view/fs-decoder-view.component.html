@@ -1,3 +1,14 @@
+@if (settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong') {
+  <section class="fs-practice-guide" aria-live="polite">
+    <div><strong>Practice:</strong> {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
+    <div>{{ practiceUi.practiceFeedbackDescription(settings.settings()) }}</div>
+    @if (practiceUi.practiceExternalRouteNotice(settings.settings()); as routeNotice) {
+      <div>{{ routeNotice }}</div>
+    }
+    <div><strong>Action:</strong> {{ practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0) }}</div>
+  </section>
+}
+
 <!-- Decoder: live decoded text conversation area -->
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen"
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"

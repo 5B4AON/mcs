@@ -3,6 +3,24 @@
    Used by both decoder-view and encoder-view children.
    ============================================================ */
 
+/* Practice summary */
+.fs-practice-guide {
+  display: grid;
+  gap: .2rem;
+  flex: 0 0 auto;
+  padding: .45rem .6rem;
+  border: 1px solid rgba(140, 204, 255, .45);
+  border-radius: 5px;
+  background: rgba(29, 43, 58, .92);
+  color: #d5e8f5;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  line-height: 1.3;
+}
+.fs-practice-guide strong {
+  color: #8cf;
+}
+
 /* Conversation area (scrollable) */
 .fs-conversation {
   flex: 1;

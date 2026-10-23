@@ -190,6 +190,14 @@
   font-size: 0.8em;
   color: rgba(255, 255, 255, 0.7);
 }
+.practice-session-summary {
+  display: grid;
+  gap: .25em;
+  font-family: system-ui, sans-serif;
+  font-size: .8em;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.85);
+}
 
 /* ---- Practice type-along typed text ---- */
 .fs-typed-text {

@@ -13,6 +13,7 @@ import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatTextNoEmoji, formatLine } from '../fullscreen-format.utils';
+import * as practiceUi from '../../../practice-ui.utils';
 
 /**
  * Fullscreen encoder view component.
@@ -36,6 +37,9 @@ import { formatText, formatTextNoEmoji, formatLine } from '../fullscreen-format.
   styleUrls: ['../fullscreen-shared.css', './fs-encoder-view.component.css'],
 })
 export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, AfterViewChecked {
+  /** Shared labels for the compact Practice guide. */
+  readonly practiceUi = practiceUi;
+
   /**
    * Whether the on-screen keyboard is likely open.
    * Used to adjust auto-scroll behaviour and force-scroll to bottom.
@@ -127,11 +131,8 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
 
   /** Start a new practice round or advance to next sequence */
   practiceStartOrNext(): void {
-    // In type-along mode, first press after finish computes feedback
-    if (this.practice.state() === 'finished'
-        && this.settings.settings().practiceFeedbackMode === 'typealong'
-        && this.practice.feedback().length === 0) {
-      this.practice.computeFeedback(this.practice.userInput());
+    if (this.settings.settings().practiceFeedbackMode === 'typealong') {
+      this.practice.advanceTypeAlongSession();
       return;
     }
     if (this.practice.state() === 'finished') {

@@ -85,6 +85,13 @@ export class PracticeCardComponent {
     });
   }
 
+  /** Handle Type-along session round count change */
+  onRoundsChange(event: Event): void {
+    this.settings.update({
+      practiceRounds: +(event.target as HTMLSelectElement).value,
+    });
+  }
+
   /** Handle pipeline change */
   onPipelineChange(event: Event): void {
     this.settings.update({

@@ -179,7 +179,7 @@
     <div class="decoded-parchment">
       <div class="decoded-text" #decoderBox
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
-           [class.blur-revealing]="mainRevealing">@if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session</strong><div>You will copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div><div>Type what you hear, then press Enter to validate each round.</div><div>After the final round, press Enter to view your results and average.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
@@ -243,15 +243,30 @@
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (settings.settings().practiceFeedbackMode === 'typealong'
-                    ? 'Press enter to start and type what you hear...'
-                    : settings.settings().practiceFeedbackMode === 'listen'
-                      ? 'Press start for listening and seeing practice text...'
-                      : 'Press start for listening but not seeing practice text...')
+                    ? (practice.isMultiRoundTypeAlong() && practice.sessionStage() === 'none'
+                      ? 'Press Enter to view the session briefing...'
+                      : practice.isMultiRoundTypeAlong() && practice.sessionStage() === 'briefing'
+                        ? 'Press Enter to start round 1...'
+                        : 'Type what you hear, then press Enter to continue...')
+                    : 'Practice answer entry is unavailable for this feedback mode.')
                   : 'Type text to encode...'"
                 [disabled]="settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong'"
                 (keydown)="onEncoderKeydown($event, encoderInput)"
                 (input)="onEncoderInput(encoderInput)"></textarea>
     </div>
+
+    @if (settings.settings().encoderMode === 'practice') {
+      <section class="practice-guide" aria-live="polite">
+        <div><strong>Practice:</strong> plays {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
+        <div>{{ practiceUi.practiceFeedbackDescription(settings.settings()) }}</div>
+        @if (settings.settings().practiceFeedbackMode !== 'typealong') {
+          <div>Typing is unavailable in Listen and Blurred practice so the answer stays hidden. Choose Type-along to enter what you hear.</div>
+        }
+        @if (practiceUi.practiceExternalRouteNotice(settings.settings()); as routeNotice) {
+          <div>{{ routeNotice }}</div>
+        }
+      </section>
+    }
 
     <div class="encoder-actions">
       <label class="encoder-mode-label">
@@ -260,22 +275,26 @@
           <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
           <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
           @if (settings.settings().practiceEnabled) {
-            <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Copy Practice</option>
+            <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Practice</option>
           }
         </select>
       </label>
       @if (settings.settings().encoderMode === 'practice') {
         <!-- Practice control: single button like TX -->
         @if (practice.state() === 'idle') {
-          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)" title="Start practice" aria-label="Start practice">
+          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
+                  [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'"
+                  [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
-        } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0) {
-          <button class="tx-icon-btn practice-results" (click)="practiceStartOrNext(encoderInput)" title="Validate" aria-label="Validate">
+        } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0 && !practice.isSessionSummary()) {
+          <button class="tx-icon-btn practice-results" (click)="practiceStartOrNext(encoderInput)" [title]="practice.typeAlongActionLabel()" [attr.aria-label]="practice.typeAlongActionLabel()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         } @else if (practice.state() === 'finished') {
-          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)" title="Next sequence" aria-label="Next sequence">
+          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
+                  [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'"
+                  [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         } @else if (practice.state() === 'playing') {
@@ -287,6 +306,9 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         }
+        <span class="practice-action-label">{{ settings.settings().practiceFeedbackMode === 'typealong'
+          ? practice.typeAlongActionLabel()
+          : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0) }}</span>
       } @else {
         <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="!encoder.isSending() && (encoderInputHasText || encoder.buffer().length > encoder.sentIndex())" (click)="requestEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>

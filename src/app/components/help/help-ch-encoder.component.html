@@ -24,7 +24,7 @@
     <td>Casual QSOs, real-time ragchew</td>
   </tr>
   <tr>
-    <td><strong>Copy Practice</strong></td>
+    <td><strong>Practice</strong></td>
     <td>The app generates a random sequence, plays it as Morse, and you
         type what you hear. After the round, per-character feedback shows
         your accuracy.</td>
@@ -33,7 +33,7 @@
 </table>
 
 <p>
-  Copy Practice mode appears in the encoder mode dropdown when the
+  Practice appears in the encoder mode dropdown when the
   <strong>Copy Practice</strong> card is enabled in Settings &rarr; Other.
   See <a href="#" class="help-link" data-section="s3-5">&sect;&nbsp;3.5</a>
   for full details.
@@ -144,7 +144,7 @@
 <p>
   Copy Practice turns Morse Code Studio into a self-study CW trainer.
   Enable the feature in <strong>Settings &rarr; Other &rarr; Copy
-  Practice</strong>, then select <strong>Copy Practice</strong> from the
+  Practice</strong>, then select <strong>Practice</strong> from the
   encoder mode dropdown on the main screen or in the fullscreen encoder
   toolbar.
 </p>
@@ -200,14 +200,18 @@
   <tr>
     <td><strong>Listen Only</strong></td>
     <td>Audio plays and decoded characters appear fully visible in the
-        output area. Copy what you hear on paper or in your head. After
+        output area. Copy what you hear on paper or in your head. Typing is
+        unavailable in Listen and Blurred practice so the answer stays hidden.
+        Choose Type-Along to enter what you hear. After
         the sequence finishes, press Next to start another round. No
         typed input or scoring is provided.</td>
   </tr>
   <tr>
     <td><strong>Blurred</strong></td>
     <td>Audio plays and decoded characters appear blurred. Hold the
-        reveal button to peek. After the sequence finishes the text
+        reveal button to peek. Typing is unavailable in Listen and Blurred
+        practice so the answer stays hidden. Choose Type-Along to enter what
+        you hear. After the sequence finishes the text
         unblurs so you can check your copy. Press Next to start
         another round. No typed input or scoring is provided.</td>
   </tr>
@@ -220,26 +224,87 @@
   </tr>
 </table>
 
+<h3>Type-Along Rounds</h3>
+<p>
+  The <strong>Rounds</strong> selector appears when Feedback is set to
+  <strong>Type-Along</strong>. Choose 1 to keep the normal single-round
+  exercise. Choose 2 to 5 to make a temporary practice session.
+</p>
+<ol>
+  <li>Press Enter once to read the session briefing. No sequence plays yet.</li>
+  <li>Press Enter again to start round 1. Type what you hear and press Enter
+      after playback finishes to validate that round.</li>
+  <li>Press Enter to start each following round.</li>
+  <li>After validating the final round, press Enter to view each round's
+      percentage and the average percentage.</li>
+  <li>Press Enter again to return to the briefing for a new session. A further
+      Enter starts its first round.</li>
+</ol>
+<p>
+  Round results are available only while the current practice session is open;
+  they are not saved in settings or a history.
+</p>
+
 <h3>Pipeline</h3>
 <p>
-  The <strong>Pipeline</strong> selector controls which outputs carry the
-  practice audio:
+  The <strong>Pipeline</strong> selector controls whether a practice round
+  stays on this device or can use the configured output routes. The
+  <strong>Direction</strong> selector is separate: it chooses whether
+  practice text is displayed as RX or TX, and selects the RX or TX timing
+  settings. It does not choose external output routes.
 </p>
-<ul>
-  <li><strong>Local audio and vibration</strong> &mdash; plays through the
-      sidetone speaker and vibration output only. Serial, MIDI, and RTDB
-      outputs are not driven. Best for solo practice without keying a
-      transmitter.</li>
-  <li><strong>Full pipeline</strong> &mdash; sends characters through the
-      complete output chain, including serial, MIDI, RTDB, and vibration.
-      Useful when practising with external keying hardware or sharing
-      practice sessions over Firebase RTDB.</li>
-</ul>
+<table>
+  <tr><th>Pipeline</th><th>Practice Direction</th><th>What happens</th></tr>
+  <tr>
+    <td><strong>Local</strong></td>
+    <td><strong>RX</strong></td>
+    <td>Practice audio and vibration stay on this device. Text appears as RX
+        and uses RX timing. Serial, MIDI, WinKeyer, and RTDB routes are not
+        used.</td>
+  </tr>
+  <tr>
+    <td><strong>Local</strong></td>
+    <td><strong>TX</strong></td>
+    <td>Practice audio and vibration stay on this device. Text appears as TX
+        and uses TX timing. Serial, MIDI, WinKeyer, and RTDB routes are not
+        used.</td>
+  </tr>
+  <tr>
+    <td><strong>Full</strong></td>
+    <td><strong>RX</strong></td>
+    <td>Text appears as RX and uses RX timing. Enabled output routes may
+        receive the round when they match the separate Encoder direction.</td>
+  </tr>
+  <tr>
+    <td><strong>Full</strong></td>
+    <td><strong>TX</strong></td>
+    <td>Text appears as TX and uses TX timing. Enabled output routes may
+        receive the round when they match the separate Encoder direction.</td>
+  </tr>
+</table>
+
+<h3>Sending Practice to External Outputs</h3>
+<p>
+  To route a practice round to external outputs, choose
+  <strong>Full pipeline</strong>, then enable and configure the desired
+  serial, MIDI, WinKeyer, or RTDB output. In
+  <strong>Settings &rarr; Inputs &rarr; Keyboard Encoder</strong>, set
+  <strong>Used for</strong> to RX or TX. Configure the external output to
+  forward that same Encoder direction (or Both). For RTDB, also start its
+  configured output channel.
+</p>
+<p>
+  The Copy Practice <strong>Direction</strong> setting does not need to
+  match the external output. Use it to choose the displayed RX/TX label and
+  timing; use the separate Keyboard Encoder <strong>Used for</strong>
+  setting and each output's forwarding rule to control routing.
+</p>
 
 <h3>Additional Settings</h3>
 <ul>
   <li><strong>Direction</strong> &mdash; controls whether practice characters
-      appear as RX or TX in the conversation view and colour tagging.</li>
+      appear as RX or TX in the conversation view, colour tagging, and
+      timing. It does not control external output routing.</li>
   <li><strong>Name / Colour</strong> &mdash; optional display name and colour
       for practice characters in the fullscreen conversation view.</li>
 </ul>
@@ -276,7 +341,7 @@
     Enable Copy Practice in Settings &rarr; Other. Set Content to
     <em>Random Characters</em>, Count to 5, Group size to 1, Feedback to
     <em>Listen Only</em>, and Encoder WPM to 15. Open the fullscreen
-    encoder, select <em>Copy Practice</em> mode from the kebab menu, and
+    encoder, select <em>Practice</em> mode from the kebab menu, and
     press Play. You will hear five individual characters while the
     decoded text appears on screen. Copy them on paper or in your head,
     then press Next to start a new round. Increase Count, Group size, or

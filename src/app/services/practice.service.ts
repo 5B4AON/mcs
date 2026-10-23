@@ -12,6 +12,8 @@ import { MORSE_TABLE } from '../morse-table';
 
 /** Practice playback state */
 export type PracticeState = 'idle' | 'playing' | 'paused' | 'finished';
+/** Current phase of a multi-round Type-along session */
+export type PracticeSessionStage = 'none' | 'briefing' | 'in-progress' | 'round-feedback' | 'summary';
 
 /** Per-character feedback entry after a round completes */
 export interface PracticeFeedback {
@@ -54,6 +56,25 @@ export class PracticeService {
   /** User-typed input text (shared between main screen and fullscreen) */
   readonly userInput = signal('');
 
+  /** Current multi-round session phase; never persisted */
+  readonly sessionStage = signal<PracticeSessionStage>('none');
+  /** Completed round percentages for the current multi-round session */
+  readonly roundScores = signal<number[]>([]);
+  /** Whether the configured Type-along exercise has multiple rounds */
+  readonly isMultiRoundTypeAlong = computed(() =>
+    this.settings.settings().practiceFeedbackMode === 'typealong'
+    && this.settings.settings().practiceRounds > 1
+  );
+  /** Whether the current practice result area shows a multi-round summary */
+  readonly isSessionSummary = computed(() => this.sessionStage() === 'summary');
+  /** Current round number for an active multi-round session */
+  readonly currentRound = computed(() => this.roundScores().length + 1);
+  /** Unweighted average of the completed round percentages */
+  readonly averageRoundScore = computed(() => {
+    const scores = this.roundScores();
+    return scores.length ? Math.round(scores.reduce((total, score) => total + score, 0) / scores.length) : 0;
+  });
+
   /** Accuracy percentage (correct / total reference chars, ignoring spaces) */
   readonly accuracy = computed(() => {
     const fb = this.feedback();
@@ -80,6 +101,59 @@ export class PracticeService {
     this.feedback.set([]);
     this.userInput.set('');
     this.playSequence(text);
+  }
+
+  /**
+   * Advance a Type-along session without changing the single-round flow.
+   *
+   * Multi-round sessions show a briefing before playback and retain only
+   * round percentages until the summary is shown.
+   */
+  advanceTypeAlongSession(): void {
+    if (!this.isMultiRoundTypeAlong()) {
+      if (this.state() === 'finished' && this.feedback().length === 0) {
+        this.computeFeedback(this.userInput());
+        return;
+      }
+      if (this.state() === 'finished') {
+        this.next();
+      } else {
+        this.start();
+      }
+      return;
+    }
+
+    switch (this.sessionStage()) {
+      case 'none':
+        this.sessionStage.set('briefing');
+        return;
+      case 'briefing':
+        this.startMultiRound();
+        return;
+      case 'in-progress':
+        if (this.state() === 'finished' && this.feedback().length === 0) {
+          this.computeFeedback(this.userInput());
+          this.roundScores.update(scores => [...scores, this.accuracy()]);
+          this.sessionStage.set('round-feedback');
+        }
+        return;
+      case 'round-feedback':
+        if (this.roundScores().length >= this.settings.settings().practiceRounds) {
+          this.feedback.set([]);
+          this.userInput.set('');
+          this.sessionStage.set('summary');
+        } else {
+          this.startMultiRound();
+        }
+        return;
+      case 'summary':
+        this.roundScores.set([]);
+        this.referenceText.set('');
+        this.feedback.set([]);
+        this.userInput.set('');
+        this.state.set('idle');
+        this.sessionStage.set('briefing');
+    }
   }
 
   /** Retry the same sequence */
@@ -118,6 +192,8 @@ export class PracticeService {
     this.state.set('idle');
     this.feedback.set([]);
     this.userInput.set('');
+    this.sessionStage.set('none');
+    this.roundScores.set([]);
   }
 
   /** Stop and reset (called when switching away from practice mode) */
@@ -191,6 +267,31 @@ export class PracticeService {
     }
 
     this.feedback.set(result);
+  }
+
+  /**
+   * Label the next type-along action for the visible control and guide.
+   */
+  typeAlongActionLabel(): string {
+    if (this.state() === 'playing') return 'Pause';
+    if (this.state() === 'paused') return 'Resume';
+    if (!this.isMultiRoundTypeAlong()) {
+      return this.state() === 'finished' && this.feedback().length === 0
+        ? 'Validate'
+        : this.state() === 'finished'
+          ? 'Next sequence'
+          : 'Start';
+    }
+    switch (this.sessionStage()) {
+      case 'none': return 'Show session briefing';
+      case 'briefing': return 'Start round 1';
+      case 'in-progress': return 'Validate';
+      case 'round-feedback':
+        return this.roundScores().length >= this.settings.settings().practiceRounds
+          ? 'View session summary'
+          : `Start round ${this.currentRound()}`;
+      case 'summary': return 'Start new session';
+    }
   }
 
   /**
@@ -334,6 +435,12 @@ export class PracticeService {
 
     // Feed text into encoder for audio playback
     this.encoder.submitText(text);
+  }
+
+  /** Start the next playback round in the current multi-round session. */
+  private startMultiRound(): void {
+    this.sessionStage.set('in-progress');
+    this.start();
   }
 
   /**

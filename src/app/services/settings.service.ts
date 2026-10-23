@@ -462,6 +462,8 @@ export interface AppSettings {
   practiceWordLengths: number[];
   /** Feedback mode: listen-only, blurred reveal, or type-along */
   practiceFeedbackMode: PracticeFeedbackMode;
+  /** Number of Type-along rounds in a transient practice session (1–5) */
+  practiceRounds: number;
   /** Pipeline: local audio only or full (serial, MIDI, RTDB, etc.) */
   practicePipeline: PracticePipeline;
   /** Input direction: characters appear as RX or TX */
@@ -758,6 +760,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   practiceIncludePunctuation: false,
   practiceWordLengths: [3, 4, 5],
   practiceFeedbackMode: 'listen',
+  practiceRounds: 1,
   practicePipeline: 'local',
   practiceSource: 'rx',
   practiceName: '',

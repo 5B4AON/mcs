@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0] - 2026-10-23
+
+### Added
+
+- **Practice discovery and guidance** — The encoder mode now uses the concise
+  **Practice** label and explains the configured content, feedback style,
+  available action, and eligible Full-pipeline external routes without starting
+  playback when selected.
+- **Type-Along Rounds** — Type-Along practice can now run 2–5 transient rounds.
+  A pre-session briefing explains the exercise, each round retains its
+  existing feedback, and a final summary lists every round percentage and the
+  average. Results are not saved.
+
+### Changed
+
+- **Practice explanation and Help** — Settings and Help now explain why
+  typing is unavailable in Listen and Blurred modes, clarify Local versus Full
+  output routing and Practice Direction, and document the full multi-round
+  Type-Along flow.
+
 ## [1.11.0] - 2026-10-23
 
 ### Added
