@@ -72,10 +72,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showSettings = false;
   /** Whether the Help modal is visible */
   showHelp = false;
+  /** Visible control to focus if the Help trigger is hidden when Help closes */
+  helpFocusFallback: HTMLElement | null = null;
   /** Help section to scroll to when opened from a contextual link */
   helpInitialSection: string | null = null;
   /** Whether the Symbols Reference modal is visible */
   showSymbolsRef = false;
+  /** Visible control to focus if the Symbols Reference trigger is hidden when it closes */
+  symbolsRefFocusFallback: HTMLElement | null = null;
 
   // ---- CW audio input state ----
   /** Current CW Goertzel magnitude for the CW level meter */
@@ -118,6 +122,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ---- Fullscreen context menu state ----
   fullscreenMenuOpen = false;
+  /** Visible control to focus if the fullscreen menu item is hidden when the view closes */
+  fullscreenFocusFallback: HTMLElement | null = null;
 
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
@@ -687,6 +693,54 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.fullscreenMenuOpen = false;
   }
 
+  /** Activate the close action in the topmost open dialog on Escape. */
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape' || event.defaultPrevented) return;
+
+    const dialogs = Array.from(
+      document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]'),
+    ).filter(dialog =>
+      !dialog.hidden &&
+      dialog.getAttribute('aria-hidden') !== 'true' &&
+      dialog.getClientRects().length > 0);
+    const topmostDialog = dialogs[dialogs.length - 1];
+    if (!topmostDialog) {
+      const menu = this.fullscreenMenuOpen
+        ? { open: true, selector: '.expand-btn' }
+        : this.clearMenuOpen
+          ? { open: true, selector: '.clear-icon-btn' }
+          : this.controlsKebabOpen
+            ? { open: true, selector: '.kebab-btn' }
+            : null;
+      if (!menu?.open) return;
+
+      event.preventDefault();
+      this.clearMenuOpen = false;
+      this.fullscreenMenuOpen = false;
+      this.controlsKebabOpen = false;
+      document.querySelector<HTMLButtonElement>(menu.selector)?.focus();
+      return;
+    }
+
+    const closeButton = Array.from(
+      topmostDialog.querySelectorAll<HTMLButtonElement>(
+        'button[aria-label^="Close"], button.close-btn',
+      ),
+    ).find(button => !button.disabled && button.getClientRects().length > 0);
+    const dismissButton = closeButton ?? (
+      topmostDialog.getAttribute('role') === 'alertdialog'
+        ? topmostDialog.querySelector<HTMLButtonElement>(
+          'button.cancel-btn:not([disabled]), button.ok-btn:not([disabled])',
+        )
+        : null
+    );
+    if (!dismissButton) return;
+
+    event.preventDefault();
+    dismissButton.click();
+  }
+
   async toggleAudio(): Promise<void> {
     if (this.audioRunning) {
       await this.stopAudio();
@@ -1214,9 +1268,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.mainRevealing = false;
   }
 
+  toggleControlsKebab(): void {
+    this.controlsKebabOpen = !this.controlsKebabOpen;
+    this.clearMenuOpen = false;
+    this.fullscreenMenuOpen = false;
+  }
+
   toggleClearMenu(): void {
     this.clearMenuOpen = !this.clearMenuOpen;
     this.fullscreenMenuOpen = false;
+    this.controlsKebabOpen = false;
   }
 
   closeClearMenu(): void {
@@ -1226,6 +1287,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleFullscreenMenu(): void {
     this.fullscreenMenuOpen = !this.fullscreenMenuOpen;
     this.clearMenuOpen = false;
+    this.controlsKebabOpen = false;
   }
 
   closeFullscreenMenu(): void {
@@ -1281,6 +1343,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Open help modal */
   openHelp(initialSection: string | null = null): void {
+    this.helpFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn')
+      ?? document.querySelector<HTMLElement>('.settings-btn');
     this.helpInitialSection = initialSection;
     this.showHelp = true;
     this.pushModalState('help');
@@ -1300,6 +1364,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Open symbols reference modal */
   openSymbolsRef(): void {
+    this.symbolsRefFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn')
+      ?? document.querySelector<HTMLElement>('.settings-btn');
     this.showSymbolsRef = true;
     this.pushModalState('symbolsRef');
   }
@@ -1432,6 +1498,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Fullscreen modal ----
 
   openModal(mode: 'decoder' | 'encoder'): void {
+    this.fullscreenFocusFallback = this.findMenuTriggerFallback('.clear-menu', '.expand-btn');
     this.activeModal = mode;
     this.pushModalState(mode);
     // Disable keyboard keyer in encoder mode so keyer keys
@@ -1443,5 +1510,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.activeModal = null;
     this.keyer.setEnabled(true);
     this.popModalState();
+  }
+
+  private findMenuTriggerFallback(menuSelector: string, triggerSelector: string): HTMLElement | null {
+    const active = document.activeElement;
+    return active instanceof HTMLElement && active.closest(menuSelector)
+      ? active.closest('.kebab-wrapper, .fs-kebab-wrapper, .clear-menu-wrapper')
+        ?.querySelector<HTMLElement>(triggerSelector) ?? null
+      : null;
   }
 }

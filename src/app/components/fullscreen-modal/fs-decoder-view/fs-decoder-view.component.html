@@ -52,7 +52,7 @@
           (touchstart)="onRevealStart($event)"
           (touchend)="onRevealEnd()"
           (touchcancel)="onRevealEnd()"
-          title="Hold to reveal text">
+          title="Hold to reveal text" aria-label="Hold to reveal text">
     <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
          stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -65,19 +65,19 @@
 @if (settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong') {
   <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="settings.settings().touchKeyerEnabled">
     @if (practice.state() === 'idle') {
-      <button class="fs-float-btn fs-float-play" (click)="practice.start()" title="Start practice">
+      <button class="fs-float-btn fs-float-play" (click)="practice.start()" title="Start practice" aria-label="Start practice">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
       </button>
     } @else if (practice.state() === 'finished') {
-      <button class="fs-float-btn fs-float-play" (click)="practice.next()" title="Next sequence">
+      <button class="fs-float-btn fs-float-play" (click)="practice.next()" title="Next sequence" aria-label="Next sequence">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
       </button>
     } @else if (practice.state() === 'playing') {
-      <button class="fs-float-btn fs-float-pause" (click)="practice.pause()" title="Pause">
+      <button class="fs-float-btn fs-float-pause" (click)="practice.pause()" title="Pause" aria-label="Pause">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
       </button>
     } @else if (practice.state() === 'paused') {
-      <button class="fs-float-btn fs-float-play" (click)="practice.resume()" title="Resume">
+      <button class="fs-float-btn fs-float-play" (click)="practice.resume()" title="Resume" aria-label="Resume">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
       </button>
     }
@@ -91,7 +91,7 @@
               (touchstart)="onRevealStart($event)"
               (touchend)="onRevealEnd()"
               (touchcancel)="onRevealEnd()"
-              title="Hold to reveal text">
+              title="Hold to reveal text" aria-label="Hold to reveal text">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -106,39 +106,54 @@
 @if (settings.settings().touchKeyerEnabled) {
   <div class="touch-overlay">
     @if (settings.settings().touchKeyerMode === 'straight') {
-      <div class="touch-btn touch-btn-straight"
+      <button type="button" class="touch-btn touch-btn-straight"
+           aria-label="Straight key. Press and hold to send Morse."
+           (keydown)="onTouchKeyboardKey('straight', true, $event)"
+           (keyup)="onTouchKeyboardKey('straight', false, $event)"
+           (blur)="onTouchKeyBlur()"
            (touchstart)="onTouchKey('straight', true, $event)"
            (touchend)="onTouchKey('straight', false, $event)"
            (touchcancel)="onTouchKey('straight', false, $event)"
+           (pointercancel)="onTouchKey('straight', false, $event)"
            (contextmenu)="$event.preventDefault()"
            (mousedown)="onTouchMouseKey('straight', true, $event)"
            (mouseup)="onTouchMouseKey('straight', false, $event)"
            (mouseleave)="onTouchMouseKey('straight', false, $event)">
         <span class="touch-btn-icon">&#x25CF;</span>
-      </div>
+      </button>
     } @else {
-      <div class="touch-btn touch-btn-left"
+      <button type="button" class="touch-btn touch-btn-left"
+           [attr.aria-label]="'Left paddle, sends ' + effectiveTouchElement('left') + '. Press and hold to key.'"
+           (keydown)="onTouchKeyboardKey('left', true, $event)"
+           (keyup)="onTouchKeyboardKey('left', false, $event)"
+           (blur)="onTouchKeyBlur()"
            (touchstart)="onTouchKey('left', true, $event)"
            (touchend)="onTouchKey('left', false, $event)"
            (touchcancel)="onTouchKey('left', false, $event)"
+           (pointercancel)="onTouchKey('left', false, $event)"
            (contextmenu)="$event.preventDefault()"
            (mousedown)="onTouchMouseKey('left', true, $event)"
            (mouseup)="onTouchMouseKey('left', false, $event)"
            (mouseleave)="onTouchMouseKey('left', false, $event)">
         <span class="touch-btn-icon">{{ effectiveTouchElement('left') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
         <span class="touch-btn-label">{{ effectiveTouchElement('left') }}</span>
-      </div>
-      <div class="touch-btn touch-btn-right"
+      </button>
+      <button type="button" class="touch-btn touch-btn-right"
+           [attr.aria-label]="'Right paddle, sends ' + effectiveTouchElement('right') + '. Press and hold to key.'"
+           (keydown)="onTouchKeyboardKey('right', true, $event)"
+           (keyup)="onTouchKeyboardKey('right', false, $event)"
+           (blur)="onTouchKeyBlur()"
            (touchstart)="onTouchKey('right', true, $event)"
            (touchend)="onTouchKey('right', false, $event)"
            (touchcancel)="onTouchKey('right', false, $event)"
+           (pointercancel)="onTouchKey('right', false, $event)"
            (contextmenu)="$event.preventDefault()"
            (mousedown)="onTouchMouseKey('right', true, $event)"
            (mouseup)="onTouchMouseKey('right', false, $event)"
            (mouseleave)="onTouchMouseKey('right', false, $event)">
         <span class="touch-btn-icon">{{ effectiveTouchElement('right') === 'dit' ? '&#x25CF;' : '&#x2014;' }}</span>
         <span class="touch-btn-label">{{ effectiveTouchElement('right') }}</span>
-      </div>
+      </button>
     }
   </div>
 }

@@ -1,10 +1,11 @@
 <div class="confirm-overlay" (click)="cancel()">
-  <div class="confirm-dialog" (click)="$event.stopPropagation()" role="alertdialog"
-       [attr.aria-label]="title">
+  <div #dialog class="confirm-dialog" (click)="$event.stopPropagation()" role="alertdialog"
+       aria-modal="true" aria-labelledby="confirm-dialog-title" tabindex="-1"
+       (keydown)="onDialogKeydown($event)">
 
     <!-- Header -->
     <div class="confirm-header">
-      <h3>{{ title }}</h3>
+      <h3 id="confirm-dialog-title">{{ title }}</h3>
     </div>
 
     <!-- Body -->

@@ -98,6 +98,29 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     this.clearMenuOpen = false;
   }
 
+  /** Dismiss the open toolbar menu on Escape without closing fullscreen itself. */
+  onToolbarKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Escape') return;
+
+    const clearTrigger = event.currentTarget instanceof HTMLElement
+      ? event.currentTarget.querySelector<HTMLButtonElement>('.fs-clear-btn')
+      : null;
+    const kebabTrigger = event.currentTarget instanceof HTMLElement
+      ? event.currentTarget.querySelector<HTMLButtonElement>('.fs-kebab-wrapper > .kebab-btn')
+      : null;
+    if (this.clearMenuOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.clearMenuOpen = false;
+      clearTrigger?.focus();
+    } else if (this.fsKebabOpen) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.fsKebabOpen = false;
+      kebabTrigger?.focus();
+    }
+  }
+
   // ---- WPM adjustment methods ----
 
   /**

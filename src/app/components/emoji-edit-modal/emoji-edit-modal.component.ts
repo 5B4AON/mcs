@@ -2,10 +2,13 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, ViewChild, ElementRef, OnInit } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
 import { EmojiMapping } from '../../services/settings.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves an emoji mapping.
@@ -33,7 +36,9 @@ export interface EmojiEditSaveEvent {
   templateUrl: './emoji-edit-modal.component.html',
   styleUrls: ['./emoji-edit-modal.component.css'],
 })
-export class EmojiEditModalComponent implements OnInit {
+export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: EmojiMapping = { enabled: true, match: '', emoji: '', meaning: '' };
 
@@ -72,12 +77,27 @@ export class EmojiEditModalComponent implements OnInit {
 
   /** Cursor position in the emoji input before opening the picker */
   private cursorPos = 0;
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
   ngOnInit(): void {
     this.editMatch = this.mapping.match;
     this.editEmoji = this.mapping.emoji;
     this.editMeaning = this.mapping.meaning ?? '';
     this.error = '';
+  }
+
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
+
+  /** Keep keyboard focus inside the emoji mapping editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
   }
 
   /** Save the edited mapping after validation */

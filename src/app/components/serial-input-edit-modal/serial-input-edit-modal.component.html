@@ -1,5 +1,6 @@
 <div class="serial-edit-overlay" (click)="cancel()">
-  <div class="serial-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+  <div #dialog class="serial-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+       aria-modal="true" tabindex="-1" (keydown)="onDialogKeydown($event)"
        aria-label="Edit Serial Input Mapping">
 
     <!-- Header -->

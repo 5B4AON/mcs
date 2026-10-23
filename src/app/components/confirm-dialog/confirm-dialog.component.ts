@@ -2,7 +2,17 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  Output,
+  ViewChild,
+} from '@angular/core';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * A reusable confirmation dialog component.
@@ -18,7 +28,12 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.css'],
 })
-export class ConfirmDialogComponent {
+export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** Dialog title shown in the header */
   @Input() title = 'Confirm';
 
@@ -39,6 +54,19 @@ export class ConfirmDialogComponent {
 
   /** Emits true when confirmed, false when cancelled */
   @Output() confirmed = new EventEmitter<boolean>();
+
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement);
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
+
+  /** Keep keyboard focus in the confirmation dialog. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
 
   confirm(): void {
     this.confirmed.emit(true);

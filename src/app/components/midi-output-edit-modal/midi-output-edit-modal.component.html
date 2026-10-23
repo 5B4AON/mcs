@@ -1,5 +1,6 @@
 <div class="midi-edit-overlay" (click)="cancel()">
-  <div class="midi-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+  <div #dialog class="midi-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+       aria-modal="true" tabindex="-1" (keydown)="onDialogKeydown($event)"
        aria-label="Edit MIDI Output Mapping">
 
     <!-- Header -->

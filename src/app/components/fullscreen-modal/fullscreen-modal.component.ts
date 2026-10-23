@@ -3,13 +3,15 @@
  */
 
 import {
-  Component, EventEmitter, Input, Output, OnInit, OnDestroy,
-  NgZone
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
+  NgZone, ViewChild
 } from '@angular/core';
 import { SettingsService } from '../../services/settings.service';
+import { MorseEncoderService } from '../../services/morse-encoder.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
 import { FsDecoderViewComponent } from './fs-decoder-view/fs-decoder-view.component';
 import { FsEncoderViewComponent } from './fs-encoder-view/fs-encoder-view.component';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Fullscreen modal component (parent shell).
@@ -31,9 +33,12 @@ import { FsEncoderViewComponent } from './fs-encoder-view/fs-encoder-view.compon
   templateUrl: './fullscreen-modal.component.html',
   styleUrls: ['./fullscreen-modal.component.css'],
 })
-export class FullscreenModalComponent implements OnInit, OnDestroy {
+export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Which modal mode: 'decoder' (conversation) or 'encoder' (QSO) */
   @Input() mode: 'decoder' | 'encoder' = 'decoder';
+
+  /** Visible trigger to focus if the menu item that opened fullscreen is hidden */
+  @Input() focusReturnFallback: HTMLElement | null = null;
 
   /** Emitted when the user closes the modal */
   @Output() closed = new EventEmitter<void>();
@@ -54,9 +59,13 @@ export class FullscreenModalComponent implements OnInit, OnDestroy {
 
   /** VisualViewport event handler (for cleanup) */
   private vvHandler: (() => void) | null = null;
+  @ViewChild('fullscreenDialog') private fullscreenDialog?: ElementRef<HTMLElement>;
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
   constructor(
     public settings: SettingsService,
+    private encoder: MorseEncoderService,
     private zone: NgZone,
   ) {}
 
@@ -66,11 +75,34 @@ export class FullscreenModalComponent implements OnInit, OnDestroy {
     this.setupVisualViewport();
   }
 
+  ngAfterViewInit(): void {
+    if (this.fullscreenDialog) {
+      focusDialog(this.fullscreenDialog.nativeElement, '.fs-close-btn');
+    }
+  }
+
   ngOnDestroy(): void {
     // Clean up VisualViewport listeners
     if (window.visualViewport && this.vvHandler) {
       window.visualViewport.removeEventListener('resize', this.vvHandler);
       window.visualViewport.removeEventListener('scroll', this.vvHandler);
+    }
+    restoreDialogFocus(
+      this.focusReturnTarget,
+      this.focusReturnFallback ?? document.querySelector<HTMLElement>('.expand-btn'),
+    );
+  }
+
+  /** Keep focus in fullscreen and stop an active encoder before closing it. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.mode === 'encoder' && this.encoder.isSending()) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.encoder.stopTx();
+      return;
+    }
+    if (this.fullscreenDialog) {
+      trapDialogTabKey(event, this.fullscreenDialog.nativeElement);
     }
   }
 

@@ -2,7 +2,17 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, HostListener, Input, Output } from '@angular/core';
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnDestroy,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppSettings, SettingsSaveResult, SettingsService, isTouchDevice } from '../../services/settings.service';
@@ -36,6 +46,7 @@ import {
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Settings modal component — modal chrome and tab navigation.
@@ -68,7 +79,7 @@ import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-t
   templateUrl: './settings-modal.component.html',
   styleUrls: ['./settings-modal.component.css'],
 })
-export class SettingsModalComponent {
+export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Whether audio contexts are running (passed to tab children for test buttons) */
   @Input() audioRunning = false;
 
@@ -88,6 +99,13 @@ export class SettingsModalComponent {
 
   /** Currently active settings tab */
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
+
+  @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
+  @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  private scanResultsTrigger: HTMLElement | null = null;
 
   /** Whether the reset confirmation dialog is visible */
   showResetConfirm = false;
@@ -170,9 +188,53 @@ export class SettingsModalComponent {
     private winkeyerOutput: WinkeyerOutputService,
   ) {}
 
+  ngAfterViewInit(): void {
+    if (this.settingsDialog) {
+      focusDialog(this.settingsDialog.nativeElement, '.settings-close-btn');
+    }
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
+
   /** Close the settings modal */
   close(): void {
     this.closed.emit();
+  }
+
+  /** Keep keyboard focus in Settings while allowing the standard dialog tab order. */
+  onSettingsDialogKeydown(event: KeyboardEvent): void {
+    if (this.settingsDialog) {
+      trapDialogTabKey(event, this.settingsDialog.nativeElement);
+    }
+  }
+
+  /** Keep keyboard focus inside the device scan results dialog. */
+  onScanDialogKeydown(event: KeyboardEvent): void {
+    if (this.scanDialog) trapDialogTabKey(event, this.scanDialog.nativeElement);
+  }
+
+  /** Move between Settings tabs with the standard horizontal tab keyboard pattern. */
+  onTabKeydown(event: KeyboardEvent, currentTab: 'inputs' | 'outputs' | 'other'): void {
+    const currentIndex = this.tabOrder.indexOf(currentTab);
+    let nextIndex: number | null = null;
+    if (event.key === 'ArrowRight') {
+      nextIndex = (currentIndex + 1) % this.tabOrder.length;
+    } else if (event.key === 'ArrowLeft') {
+      nextIndex = (currentIndex - 1 + this.tabOrder.length) % this.tabOrder.length;
+    } else if (event.key === 'Home') {
+      nextIndex = 0;
+    } else if (event.key === 'End') {
+      nextIndex = this.tabOrder.length - 1;
+    }
+    if (nextIndex === null) return;
+
+    event.preventDefault();
+    this.settingsTab = this.tabOrder[nextIndex];
+    window.requestAnimationFrame(() => {
+      document.getElementById(`settings-tab-${this.settingsTab}`)?.focus();
+    });
   }
 
   /** Show the reset-confirmation dialog */
@@ -230,13 +292,23 @@ export class SettingsModalComponent {
   /** Move to the next tab (Inputs → Outputs → Other → Inputs) */
   private nextTab(): void {
     const idx = this.tabOrder.indexOf(this.settingsTab);
-    this.settingsTab = this.tabOrder[(idx + 1) % this.tabOrder.length];
+    this.changeTab(this.tabOrder[(idx + 1) % this.tabOrder.length]);
   }
 
   /** Move to the previous tab (Other → Outputs → Inputs → Other) */
   private prevTab(): void {
     const idx = this.tabOrder.indexOf(this.settingsTab);
-    this.settingsTab = this.tabOrder[(idx - 1 + this.tabOrder.length) % this.tabOrder.length];
+    this.changeTab(this.tabOrder[(idx - 1 + this.tabOrder.length) % this.tabOrder.length]);
+  }
+
+  private changeTab(tab: 'inputs' | 'outputs' | 'other'): void {
+    const tabHadFocus = document.activeElement?.getAttribute('role') === 'tab';
+    this.settingsTab = tab;
+    if (tabHadFocus) {
+      window.requestAnimationFrame(() => {
+        document.getElementById(`settings-tab-${tab}`)?.focus();
+      });
+    }
   }
 
   // ---- Save ----
@@ -293,32 +365,7 @@ export class SettingsModalComponent {
       this.closeSettingsTransfer();
       return;
     }
-    if (event.key !== 'Tab') return;
-
-    const dialog = event.currentTarget as HTMLElement;
-    if (!dialog) return;
-    const focusable = Array.from(
-      dialog.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]):not([type="file"])'),
-    ).filter(element => !element.hasAttribute('hidden'));
-    if (focusable.length === 0) {
-      event.preventDefault();
-      dialog.focus();
-      return;
-    }
-
-    const first = focusable[0];
-    const last = focusable[focusable.length - 1];
-    const active = document.activeElement;
-    if (!dialog.contains(active)) {
-      event.preventDefault();
-      first.focus();
-    } else if (event.shiftKey && (active === first || active === dialog)) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && active === last) {
-      event.preventDefault();
-      first.focus();
-    }
+    trapDialogTabKey(event, event.currentTarget as HTMLElement);
   }
 
   /** A fixed-position menu would be misplaced after the viewport changes */
@@ -795,6 +842,8 @@ export class SettingsModalComponent {
    * settings profile for the new configuration is loaded automatically.
    */
   async onRefreshDevices(): Promise<void> {
+    this.scanResultsTrigger =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousFp = this.settings.currentFingerprint();
     await this.devices.requestAndEnumerate();
     const fp = this.devices.computeFingerprint();
@@ -809,11 +858,15 @@ export class SettingsModalComponent {
     this.scanResultOutputs = this.devices.outputDevices().map(d => ({ label: d.label }));
     this.scanProfileChanged = !!(fp && fp !== previousFp);
     this.showScanResults = true;
+    window.setTimeout(() => {
+      if (this.scanDialog) focusDialog(this.scanDialog.nativeElement);
+    }, 0);
   }
 
   /** Dismiss the scan results overlay */
   dismissScanResults(): void {
     this.showScanResults = false;
+    window.setTimeout(() => restoreDialogFocus(this.scanResultsTrigger), 0);
   }
 }
 

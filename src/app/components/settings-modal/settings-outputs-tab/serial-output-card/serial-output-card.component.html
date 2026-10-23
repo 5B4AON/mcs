@@ -1,13 +1,13 @@
 <!-- Serial Output (DTR/RTS keying) -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().serialEnabled">
+<div class="settings-card" id="settings-card-serial-output-card" [class.disabled-card]="!settings.settings().serialEnabled">
   <div class="settings-card-header" (click)="toggleExpand()">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-serial-output-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Serial Output</span>
       @for (fwd of forwardBadges(); track fwd) {
         <span class="source-badge" [class.source-rx]="fwd === 'rx'" [class.source-tx]="fwd === 'tx'" [class.source-both]="fwd === 'both'">{{ forwardLabel(fwd) }}</span>
       }
-    </div>
+    </button>
     <span class="connectivity-badge" [class.connected]="serialOutput.connected()" [class.disconnected]="!serialOutput.connected()">
       @if (serialOutput.connected()) {
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>

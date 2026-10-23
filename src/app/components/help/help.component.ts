@@ -38,6 +38,7 @@ import { HelpChReferenceComponent } from './help-ch-reference.component';
 import { HelpChPwaComponent } from './help-ch-pwa.component';
 import { HelpChFirebaseComponent } from './help-ch-firebase.component';
 import { APP_VERSION } from '../../version';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 @Component({
   selector: 'app-help',
@@ -57,6 +58,13 @@ import { APP_VERSION } from '../../version';
   ],
   templateUrl: './help.component.html',
   styleUrls: ['./help.component.css'],
+  host: {
+    role: 'dialog',
+    'aria-modal': 'true',
+    'aria-labelledby': 'help-dialog-title',
+    tabindex: '-1',
+    '(keydown)': 'onDialogKeydown($event)',
+  },
 })
 export class HelpComponent implements AfterViewInit, OnDestroy {
   /** Application version for display in the help title. */
@@ -64,6 +72,9 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
 
   /** Optional chapter to open when Help is launched from a contextual link. */
   @Input() initialSection: string | null = null;
+
+  /** Visible trigger to focus if Help was opened from a menu that is now hidden. */
+  @Input() focusReturnFallback: HTMLElement | null = null;
 
   /** Emitted when the user closes the Help modal. */
   @Output() closed = new EventEmitter<void>();
@@ -75,8 +86,13 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   showBackToTop = false;
 
   private scrollListener: (() => void) | null = null;
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  constructor(private host: ElementRef<HTMLElement>) {}
 
   ngAfterViewInit(): void {
+    focusDialog(this.host.nativeElement, '.help-close-btn');
     const el = this.scrollContainer.nativeElement;
     this.scrollListener = () => {
       this.showBackToTop = el.scrollTop > 300;
@@ -92,6 +108,15 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
     if (this.scrollListener && this.scrollContainer) {
       this.scrollContainer.nativeElement.removeEventListener('scroll', this.scrollListener);
     }
+    restoreDialogFocus(
+      this.focusReturnTarget,
+      this.focusReturnFallback ?? document.querySelector<HTMLElement>('.settings-btn'),
+    );
+  }
+
+  /** Keep keyboard focus within Help while preserving existing close behavior. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    trapDialogTabKey(event, this.host.nativeElement);
   }
 
   /** Scroll to a given anchor ID within the document. */

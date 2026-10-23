@@ -215,7 +215,6 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
    * - Printable characters are enqueued to the encoder buffer
    * - Backspace deletes the last unsent character
    * - Enter starts transmission (in 'enter' mode)
-   * - Escape stops transmission
    * - Modifier combos (Ctrl/Alt/Meta) are ignored
    */
   onEncoderModalKeydown(event: KeyboardEvent): void {
@@ -256,12 +255,6 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
       if (buf.length > minKeep) {
         this.encoder.setBuffer(buf.slice(0, -1));
       }
-      return;
-    }
-
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      this.encoder.stopTx();
       return;
     }
 
@@ -344,7 +337,7 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
     input.setSelectionRange(1, 1);
   }
 
-  /** Handle Enter / Escape from the virtual keyboard (keydown is reliable for these) */
+  /** Handle Enter from the virtual keyboard (keydown is reliable for this key) */
   onVirtualKeyKeydown(event: KeyboardEvent): void {
     if (event.key === 'Enter') {
       event.preventDefault();
@@ -353,9 +346,6 @@ export class FsEncoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
       } else if (this.settings.settings().encoderMode === 'enter') {
         this.encoder.startTx();
       }
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      this.encoder.stopTx();
     }
   }
 }

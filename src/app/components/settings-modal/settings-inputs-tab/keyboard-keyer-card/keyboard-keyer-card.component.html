@@ -1,13 +1,13 @@
 <!-- Keyboard Keyer -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().keyboardKeyerEnabled">
+<div class="settings-card" id="settings-card-keyboard-keyer-card" [class.disabled-card]="!settings.settings().keyboardKeyerEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-keyboard-keyer-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Keyboard Keyer</span>
       @for (src of sourceBadges(); track src) {
         <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
       }
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().keyboardKeyerEnabled"
              (change)="onBoolChange('keyboardKeyerEnabled', $event)">

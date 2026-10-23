@@ -3,7 +3,7 @@
  */
 
 import {
-  Component, Input, OnInit, OnDestroy, OnChanges, SimpleChanges,
+  Component, HostListener, Input, OnInit, OnDestroy, OnChanges, SimpleChanges,
   AfterViewChecked, ElementRef, ViewChild
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
@@ -49,6 +49,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   private lastScrollHeight = 0;
   private needsScroll = false;
   private mouseAttached = false;
+  private readonly keyboardHeldButtons = new Set<'straight' | 'left' | 'right'>();
 
   /** Whether text is currently being revealed (button held) */
   revealing = false;
@@ -104,6 +105,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   }
 
   ngOnDestroy(): void {
+    this.releaseKeyboardHeldButtons();
     // Detach mouse keyer from the conversation area
     if (this.mouseAttached && this.conversationAreaRef) {
       this.mouseKeyer.detach(this.conversationAreaRef.nativeElement);
@@ -155,9 +157,37 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
   private touchMouseActive = new Set<string>();
 
   /** Handle touch events on the touch keyer overlay buttons */
-  onTouchKey(button: 'straight' | 'left' | 'right', down: boolean, event: TouchEvent): void {
+  onTouchKey(button: 'straight' | 'left' | 'right', down: boolean, event: Event): void {
     event.preventDefault();
     this.dispatchTouchButton(button, down);
+  }
+
+  /** Send a keyboard press-and-hold from a focused fullscreen touch-keyer button. */
+  onTouchKeyboardKey(
+    button: 'straight' | 'left' | 'right',
+    down: boolean,
+    event: KeyboardEvent,
+  ): void {
+    if (event.key !== ' ' && event.key !== 'Enter') return;
+    event.preventDefault();
+    if (down) {
+      if (this.keyboardHeldButtons.has(button)) return;
+      this.keyboardHeldButtons.add(button);
+    } else {
+      if (!this.keyboardHeldButtons.has(button)) return;
+      this.keyboardHeldButtons.delete(button);
+    }
+    this.dispatchTouchButton(button, down);
+  }
+
+  /** Release held keyboard keys when focus leaves a keyer button. */
+  onTouchKeyBlur(): void {
+    this.releaseKeyboardHeldButtons();
+  }
+
+  @HostListener('window:blur')
+  onWindowBlur(): void {
+    this.releaseKeyboardHeldButtons();
   }
 
   /** Handle mouse events on the touch keyer overlay buttons (for desktop testing) */
@@ -193,6 +223,7 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
       this.keyer.straightKeyInput(down, source, false, 'touchStraightKey', opts);
       return;
     }
+
     const reverse = s.touchReversePaddles;
     const element = button === 'left' ? 'dit' : 'dah';
     const effective = reverse ? (element === 'dit' ? 'dah' : 'dit') : element;
@@ -201,6 +232,13 @@ export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, Aft
     } else {
       this.keyer.dahPaddleInput(down, source, false, 'touchPaddle', s.touchPaddleMode, opts);
     }
+  }
+
+  private releaseKeyboardHeldButtons(): void {
+    for (const button of this.keyboardHeldButtons) {
+      this.dispatchTouchButton(button, false);
+    }
+    this.keyboardHeldButtons.clear();
   }
 
   /** Returns the effective paddle element for a touch button, accounting for reverse */

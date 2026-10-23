@@ -1,11 +1,11 @@
 <!-- Sidetone / Speaker -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().sidetoneEnabled">
+<div class="settings-card" id="settings-card-sidetone-card" [class.disabled-card]="!settings.settings().sidetoneEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-sidetone-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Sidetone</span>
       <span class="source-badge" [class.source-rx]="settings.settings().sidetoneForward === 'rx'" [class.source-tx]="settings.settings().sidetoneForward === 'tx'" [class.source-both]="settings.settings().sidetoneForward === 'both'">{{ settings.settings().sidetoneForward === 'rx' ? 'RX' : settings.settings().sidetoneForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().sidetoneEnabled"
              (change)="onBoolChange('sidetoneEnabled', $event)">
