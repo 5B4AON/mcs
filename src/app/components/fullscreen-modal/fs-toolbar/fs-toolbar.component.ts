@@ -40,11 +40,13 @@ import { PracticeService } from '../../../services/practice.service';
   styleUrls: ['./fs-toolbar.component.css'],
 })
 export class FsToolbarComponent implements OnInit, OnDestroy {
-  /** Which modal mode is active — controls which WPM pills and kebab items are shown */
-  @Input() mode: 'decoder' | 'encoder' = 'decoder';
+  /** Temporary fullscreen input choice. */
+  @Input() inputMode: 'key' | 'type' = 'key';
 
   /** Emitted when the user clicks the close button */
   @Output() closeRequest = new EventEmitter<void>();
+  /** Emitted when the user changes the temporary fullscreen input choice. */
+  @Output() inputModeChange = new EventEmitter<'key' | 'type'>();
 
   /** Emitted when the user requests the help dialog */
   @Output() helpRequested = new EventEmitter<void>();
@@ -121,6 +123,11 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Toggle between mapped-key keying and text entry without changing settings. */
+  toggleInputMode(): void {
+    this.inputModeChange.emit(this.inputMode === 'key' ? 'type' : 'key');
+  }
+
   // ---- WPM adjustment methods ----
 
   /**
@@ -181,18 +188,15 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   /** Clear the current mode's conversation buffer */
   clearConversation(): void {
     if (this.settings.settings().encoderMode === 'practice') {
-      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.abort();
     }
-    const buf = this.mode === 'decoder'
-      ? this.displayBuffers.fullscreenDecoder
-      : this.displayBuffers.fullscreenEncoder;
-    buf.clear();
+    this.displayBuffers.fullscreenConversation.clear();
   }
 
   /** Clear all four display buffers plus encoder operational state */
   clearAllBuffers(): void {
     if (this.settings.settings().encoderMode === 'practice') {
-      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.abort();
     }
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();

@@ -99,8 +99,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   levelMeterMax = 0.01;
 
   // ---- Fullscreen modal state ----
-  /** Which modal is open: 'decoder' (conversation), 'encoder' (QSO), or null */
-  activeModal: 'decoder' | 'encoder' | null = null;
+  /** Whether the fullscreen conversation modal is open. */
+  activeModal: 'conversation' | null = null;
 
   /** Whether the encoder textarea has text (for TX button state) */
   encoderInputHasText = false;
@@ -124,8 +124,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Clear context menu state ----
   clearMenuOpen = false;
 
-  // ---- Fullscreen context menu state ----
-  fullscreenMenuOpen = false;
+  // ---- Fullscreen focus fallback ----
   /** Visible control to focus if the fullscreen menu item is hidden when the view closes */
   fullscreenFocusFallback: HTMLElement | null = null;
 
@@ -405,6 +404,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
 
+    // Practice on the main screen accepts typing only: no keyboard or mouse keying
+    effect(() => {
+      this.settings.settings().encoderMode;
+      this.syncMainPracticeKeying();
+    });
+
     // Sync practice userInput signal to main-screen textarea
     // (handles clear from fullscreen toolbar or abort resetting the input)
     effect(() => {
@@ -621,7 +626,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.showSettings = false;
     } else if (this.activeModal) {
       this.activeModal = null;
-      this.keyer.setEnabled(true);
+      this.syncMainPracticeKeying();
     }
   }
 
@@ -637,8 +642,23 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  /** Whether main-screen practice is active, so straight-key style inputs are off. */
+  get mainPracticeActive(): boolean {
+    return this.settings.settings().encoderMode === 'practice';
+  }
+
+  /** Disable keyboard and mouse keying on the main screen during practice; restore otherwise. */
+  private syncMainPracticeKeying(): void {
+    if (this.activeModal) return;
+    this.keyer.setKeyboardMappingsEnabled(!this.mainPracticeActive);
+    const box = this.decoderBoxRef?.nativeElement;
+    if (!box) return;
+    if (this.mainPracticeActive) this.mouseKeyer.detach(box);
+    else this.mouseKeyer.attach(box);
+  }
+
   ngAfterViewInit(): void {
-    if (this.decoderBoxRef) {
+    if (this.decoderBoxRef && !this.mainPracticeActive) {
       this.mouseKeyer.attach(this.decoderBoxRef.nativeElement);
     }
 
@@ -694,7 +714,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onDocumentClick(): void {
     this.controlsKebabOpen = false;
     this.clearMenuOpen = false;
-    this.fullscreenMenuOpen = false;
   }
 
   /** Activate the close action in the topmost open dialog on Escape. */
@@ -710,19 +729,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       dialog.getClientRects().length > 0);
     const topmostDialog = dialogs[dialogs.length - 1];
     if (!topmostDialog) {
-      const menu = this.fullscreenMenuOpen
-        ? { open: true, selector: '.expand-btn' }
-        : this.clearMenuOpen
-          ? { open: true, selector: '.clear-icon-btn' }
-          : this.controlsKebabOpen
-            ? { open: true, selector: '.kebab-btn' }
-            : null;
+      const menu = this.clearMenuOpen
+        ? { open: true, selector: '.clear-icon-btn' }
+        : this.controlsKebabOpen
+          ? { open: true, selector: '.kebab-btn' }
+          : null;
       if (!menu?.open) return;
 
       event.preventDefault();
       this.clearMenuOpen = false;
-      this.fullscreenMenuOpen = false;
-      this.controlsKebabOpen = false;
+        this.controlsKebabOpen = false;
       document.querySelector<HTMLButtonElement>(menu.selector)?.focus();
       return;
     }
@@ -1159,7 +1175,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Clear only the encoder textarea input (not the buffer or log) */
   clearEncoderTextarea(textarea: HTMLTextAreaElement): void {
     if (this.settings.settings().encoderMode === 'practice') {
-      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.abort();
       this.practice.userInput.set('');
     }
     textarea.value = '';
@@ -1169,7 +1185,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Clear the main output display buffer and reset operational state */
   clearMainOutput(): void {
     if (this.settings.settings().encoderMode === 'practice') {
-      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.abort();
       if (this.encoderInputRef) {
         this.encoderInputRef.nativeElement.value = '';
         this.encoderInputHasText = false;
@@ -1182,7 +1198,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Clear all three display buffers plus encoder operational state */
   clearAllBuffers(): void {
     if (this.settings.settings().encoderMode === 'practice') {
-      if (this.practice.state() !== 'idle') this.practice.abort();
+      this.practice.abort();
       this.practice.userInput.set('');
     }
     if (this.encoderInputRef) {
@@ -1272,27 +1288,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleControlsKebab(): void {
     this.controlsKebabOpen = !this.controlsKebabOpen;
     this.clearMenuOpen = false;
-    this.fullscreenMenuOpen = false;
   }
 
   toggleClearMenu(): void {
     this.clearMenuOpen = !this.clearMenuOpen;
-    this.fullscreenMenuOpen = false;
     this.controlsKebabOpen = false;
   }
 
   closeClearMenu(): void {
     this.clearMenuOpen = false;
-  }
-
-  toggleFullscreenMenu(): void {
-    this.fullscreenMenuOpen = !this.fullscreenMenuOpen;
-    this.clearMenuOpen = false;
-    this.controlsKebabOpen = false;
-  }
-
-  closeFullscreenMenu(): void {
-    this.fullscreenMenuOpen = false;
   }
 
   /**
@@ -1498,18 +1502,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ---- Fullscreen modal ----
 
-  openModal(mode: 'decoder' | 'encoder'): void {
+  openModal(): void {
     this.fullscreenFocusFallback = this.findMenuTriggerFallback('.clear-menu', '.expand-btn');
-    this.activeModal = mode;
-    this.pushModalState(mode);
-    // Disable keyboard keyer in encoder mode so keyer keys
-    // don't interfere with typing; keep it active for decoder mode.
-    this.keyer.setEnabled(mode !== 'encoder');
+    this.activeModal = 'conversation';
+    this.keyer.setKeyboardMappingsEnabled(true);
+    this.pushModalState('conversation');
   }
 
   closeModal(): void {
     this.activeModal = null;
-    this.keyer.setEnabled(true);
+    this.syncMainPracticeKeying();
     this.popModalState();
   }
 

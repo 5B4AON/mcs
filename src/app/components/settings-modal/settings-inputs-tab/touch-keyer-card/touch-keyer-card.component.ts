@@ -9,7 +9,7 @@ import { SettingsService, AppSettings } from '../../../../services/settings.serv
 /**
  * Settings card — Touch Keyer.
  *
- * Configures touch-screen-based keying in the fullscreen decoder view.
+ * Configures touch-screen-based keying in the full-screen conversation (Key mode).
  * Supports straight key mode (single button) and paddle mode (two
  * buttons). Includes left/right paddle assignment, reverse setting,
  * and paddle mode selection.

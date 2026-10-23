@@ -11,7 +11,7 @@ const FOCUSABLE_SELECTOR = [
   '[tabindex]:not([tabindex="-1"])',
 ].join(',');
 
-function getFocusableElements(dialog: HTMLElement): HTMLElement[] {
+export function getFocusableElements(dialog: HTMLElement): HTMLElement[] {
   return Array.from(dialog.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
     .filter(element =>
       !element.hidden &&

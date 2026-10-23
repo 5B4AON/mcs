@@ -115,26 +115,24 @@
 <h2 id="s8-3">8.3 &nbsp;Fullscreen Mode</h2>
 
 <p>
-  The main toolbar has a <strong>⛶</strong> button that opens a menu with
-  <em>Fullscreen Decoder View</em> and <em>Fullscreen Encoder View</em> options.
-  Choosing either opens a fullscreen overlay optimised for operating.
+  The main toolbar has a <strong>⛶</strong> button that opens the
+  <em>Full-screen conversation</em> directly.
 </p>
 
 <h3>Independent Display Buffers</h3>
 <p>
-  The application maintains <strong>three independent FIFO text buffers</strong>:
+  The application maintains <strong>two independent FIFO text buffers</strong>:
 </p>
 <ul>
   <li><strong>Main Output</strong> &mdash; the combined decoder/encoder output panel on the main screen.</li>
-  <li><strong>Fullscreen Decoder</strong> &mdash; the conversation log in the fullscreen decoder view.</li>
-  <li><strong>Fullscreen Encoder</strong> &mdash; the conversation log in the fullscreen encoder view.</li>
+  <li><strong>Full-screen conversation</strong> &mdash; the shared RX/TX conversation log.</li>
 </ul>
 <p>
   Each buffer receives text from the same data sources (decoded characters,
   sent encoder characters, and Firebase RTDB input) but can be
   <strong>cleared independently</strong>. Pressing the Clear button (🗑)
   opens a context menu with <strong>This text area</strong> (clears the current
-  buffer only) and <strong>All text areas</strong> (clears all three buffers at
+  buffer only) and <strong>All text areas</strong> (clears both buffers at
   once). On the main screen, the encoder&rsquo;s clear menu adds an
   <strong>Input box</strong> option to empty the text-entry field without
   affecting any log.
@@ -142,14 +140,17 @@
 <p>
   Buffers are capped at approximately <strong>5 000 characters</strong>
   (~2× a full screen of text). When the limit is reached, the oldest
-  characters are silently discarded (FIFO). The fullscreen buffers persist
-  across close/reopen &mdash; you will not lose your conversation history by
-  switching between views.
+  characters are silently discarded (FIFO). The full-screen conversation
+  persists across close/reopen &mdash; you will not lose its history by
+  switching Key/Type.
 </p>
 
-<h3>Decoder Fullscreen</h3>
+<h3>Full-screen conversation</h3>
 <p>
-  Large, scrollable decoded text with RX/TX colour coding. The toolbar
+  Large, scrollable RX/TX text with inline pending encoder text. The toolbar
+  includes a Key/Type toggle beside Close: Key uses mapped physical keyboard
+  keys and keying surfaces; Type captures text while displaying it inline.
+  The toolbar
   shows read-only WPM indicator pills (RX, TX, Keyer) and a CW level
   meter (when CW input is enabled). The kebab menu (⋮) contains
   interactive WPM adjustment with calibration reset buttons, display
@@ -157,17 +158,6 @@
   When Firebase RTDB input or output is active, a small
   <strong>RTDB status indicator</strong> (wifi icon) turns green in
   the toolbar.
-</p>
-
-<h3>Encoder Fullscreen</h3>
-<p>
-  Conversation history plus your encoder buffer inline. Every keystroke is
-  captured directly &mdash; no need to click a text box. The toolbar shows
-  encoder WPM; the kebab menu (⋮) provides WPM adjustment, sending mode
-  selection (Send on Enter / Live), display settings, and links to the
-  Symbols Reference and Help. On touch-capable devices, a floating keyboard
-  button appears at the bottom to toggle the on-screen virtual keyboard.
-  The RTDB status indicator is also visible here.
 </p>
 
 <h3>Responsive Toolbars</h3>
@@ -186,7 +176,7 @@
 
 <h3>Display Customisation</h3>
 <p>
-  The following display settings are available in both fullscreen views and
+  The following display settings are available in the full-screen conversation and
   are persisted independently of device profiles:
 </p>
 <ul>
@@ -291,7 +281,7 @@
 <p>
   This is a <em>display-only</em> transformation &mdash; the application
   continues to work with punctuation characters internally. The conversion
-  applies to the fullscreen decoder and encoder conversation windows only;
+  applies to the full-screen conversation window only;
   main screen log panels show the raw punctuation. Prosigns that do not
   share a pattern with punctuation (e.g. <code>&lt;SK&gt;</code>,
   <code>&lt;HH&gt;</code>) are always shown in their prosign form

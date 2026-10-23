@@ -143,6 +143,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Preset awaiting delete confirmation */
   deletePresetId: string | null = null;
 
+  /** Whether removal of an unreadable preset store needs confirmation */
+  confirmDiscardDamagedPresets = false;
+
   /** The preset whose reviewed apply is being shown */
   reviewPreset: SettingsPreset | null = null;
 
@@ -191,6 +194,50 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     if (this.settingsDialog) {
       focusDialog(this.settingsDialog.nativeElement, '.settings-close-btn');
+    }
+  }
+
+  /** Download unreadable preset data before deciding whether to remove it. */
+  downloadDamagedPresetStore(): void {
+    const raw = this.presets.damagedRawStore();
+    if (raw === null) {
+      this.transferError = 'The damaged preset data is no longer available to download.';
+      return;
+    }
+    try {
+      const url = URL.createObjectURL(new Blob([raw], { type: 'application/json' }));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'morse-code-studio-damaged-presets.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 0);
+      this.presetNotice = 'Downloaded the unreadable preset data. Keep it private and do not share it unless you trust the recipient.';
+    } catch {
+      this.transferError = 'The unreadable preset data could not be downloaded in this browser.';
+    }
+  }
+
+  /** Show the explicit destructive confirmation for unreadable preset storage. */
+  requestDiscardDamagedPresets(): void {
+    this.transferError = '';
+    this.confirmDiscardDamagedPresets = true;
+  }
+
+  /** Keep unreadable data unchanged and return to the recovery choices. */
+  cancelDiscardDamagedPresets(): void {
+    this.confirmDiscardDamagedPresets = false;
+  }
+
+  /** Remove only the unreadable preset store and restore preset creation/import. */
+  discardDamagedPresets(): void {
+    const result = this.presets.discardDamagedStore();
+    this.confirmDiscardDamagedPresets = false;
+    if (result.ok) {
+      this.presetNotice = 'Removed the unreadable saved presets. You can save or import presets again; live settings were not changed.';
+    } else {
+      this.transferError = result.error;
     }
   }
 
@@ -492,6 +539,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   cancelDeletePreset(): void {
     this.deletePresetId = null;
+    this.confirmDiscardDamagedPresets = false;
   }
 
   deleteConfirmedPreset(): void {

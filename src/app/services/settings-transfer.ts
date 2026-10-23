@@ -267,19 +267,22 @@ export function createSettingsSnapshot(settings: AppSettings, name?: string): Se
 }
 
 /**
- * Check a complete portable settings object (as stored in a preset) and
- * return a deep copy, or null if it is incomplete or invalid.
+ * Check portable settings from a preset and return a deep copy, or null when
+ * known values are invalid. Older snapshots may omit fields introduced after
+ * they were saved; those fields are supplied from the current defaults.
  */
 export function validatePortableSettings(
   value: unknown,
   defaults: AppSettings,
 ): PortableAppSettings | null {
-  if (!isRecord(value)
-    || !hasExactKeys(value, SETTINGS_TRANSFER_FIELDS)
-    || !matchesSettingsShape(value, defaults)) {
+  if (!isRecord(value)) {
     return null;
   }
-  return structuredClone(value) as PortableAppSettings;
+  const normalized = Object.fromEntries(
+    SETTINGS_TRANSFER_FIELDS.map(field => [field, value[field] ?? defaults[field]]),
+  );
+  if (!matchesSettingsShape(normalized, defaults)) return null;
+  return structuredClone(normalized) as PortableAppSettings;
 }
 
 /**

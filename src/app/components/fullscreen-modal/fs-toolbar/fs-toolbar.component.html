@@ -3,6 +3,12 @@
   <button class="fs-close-btn" (click)="closeRequest.emit()" title="Close fullscreen" aria-label="Close fullscreen">
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
   </button>
+  <button class="fs-input-toggle" type="button" [class.type-active]="inputMode === 'type'"
+          [attr.aria-label]="'Switch input mode. Current mode: ' + (inputMode === 'key' ? 'Key' : 'Type')"
+          (click)="toggleInputMode()">
+    <span [class.selected]="inputMode === 'key'">Key</span>
+    <span [class.selected]="inputMode === 'type'">Type</span>
+  </button>
 
   <!-- CW level meter (left-aligned) -->
   @if (settings.settings().cwInputEnabled) {
@@ -22,29 +28,21 @@
 
   <!-- Right: WPM pills, RTDB, Clear, Kebab -->
   <div class="wpm-indicators">
-    @if (mode === 'decoder') {
-      <span class="wpm-indicator" title="RX Decoder WPM">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="wpm-indicator-label">RX</span>
-        <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
-      </span>
-      <span class="wpm-indicator" title="TX Decoder WPM">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="wpm-indicator-label">TX</span>
-        <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
-      </span>
-      <span class="wpm-indicator" title="Keyer WPM">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
-        <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
-      </span>
-    } @else {
-      <span class="wpm-indicator" title="Encoder WPM">
-        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-        <span class="wpm-indicator-label">Encoder</span>
-        <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
-      </span>
-    }
+    <span class="wpm-indicator" title="RX Decoder WPM">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="wpm-indicator-label">RX</span>
+      <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
+    </span>
+    <span class="wpm-indicator" title="TX Decoder WPM">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="wpm-indicator-label">TX</span>
+      <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
+    </span>
+    <span class="wpm-indicator" title="Keyer WPM">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
+      <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
+    </span>
   </div>
   <span class="rtdb-status-icon" [class.rtdb-connected]="rtdb.inputListening() || rtdb.outputActive()" title="Firebase RTDB">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
@@ -70,48 +68,30 @@
     <div class="fs-kebab-items" [class.open]="fsKebabOpen">
       <!-- WPM controls + mode -->
       <div class="fs-toolbar-controls">
-        @if (mode === 'decoder') {
-          <span class="wpm-pill wpm-pill-interactive">
-            <button class="wpm-btn" aria-label="Decrease RX decoder speed" (click)="adjustWpm('rxDecoderWpm', -1)">-</button>
-            <span class="wpm-pill-label">RX</span>
-            <span class="wpm-pill-value">{{ decoder.rxEstimatedWpm() }}</span>
-            <button class="wpm-btn" aria-label="Increase RX decoder speed" (click)="adjustWpm('rxDecoderWpm', 1)">+</button>
-            <button class="wpm-cal-btn" (click)="decoder.resetRxCalibration()" title="Reset RX Calibration" aria-label="Reset RX Calibration">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-            </button>
-          </span>
-          <span class="wpm-pill wpm-pill-interactive">
-            <button class="wpm-btn" aria-label="Decrease TX decoder speed" (click)="adjustWpm('txDecoderWpm', -1)">-</button>
-            <span class="wpm-pill-label">TX</span>
-            <span class="wpm-pill-value">{{ decoder.txEstimatedWpm() }}</span>
-            <button class="wpm-btn" aria-label="Increase TX decoder speed" (click)="adjustWpm('txDecoderWpm', 1)">+</button>
-            <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration" aria-label="Reset TX Calibration">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
-            </button>
-          </span>
-          <span class="wpm-pill wpm-pill-interactive">
-            <button class="wpm-btn" aria-label="Decrease keyer speed" (click)="adjustWpm('keyerWpm', -1)">-</button>
-            <span class="wpm-pill-label">Keyer</span>
-            <span class="wpm-pill-value">{{ settings.settings().keyerWpm }}</span>
-            <button class="wpm-btn" aria-label="Increase keyer speed" (click)="adjustWpm('keyerWpm', 1)">+</button>
-          </span>
-        } @else {
-          <span class="wpm-pill wpm-pill-interactive">
-            <button class="wpm-btn" aria-label="Decrease encoder speed" (click)="adjustEncoderWpm(-1)">-</button>
-            <span class="wpm-pill-label">Encoder</span>
-            <span class="wpm-pill-value">{{ settings.settings().encoderWpm }}</span>
-            <button class="wpm-btn" aria-label="Increase encoder speed" (click)="adjustEncoderWpm(1)">+</button>
-          </span>
-          <label class="fs-mode-select">
-            <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
-              <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
-              <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
-              @if (settings.settings().practiceEnabled) {
-                <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Practice</option>
-              }
-            </select>
-          </label>
-        }
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" aria-label="Decrease RX decoder speed" (click)="adjustWpm('rxDecoderWpm', -1)">-</button>
+          <span class="wpm-pill-label">RX</span>
+          <span class="wpm-pill-value">{{ decoder.rxEstimatedWpm() }}</span>
+          <button class="wpm-btn" aria-label="Increase RX decoder speed" (click)="adjustWpm('rxDecoderWpm', 1)">+</button>
+          <button class="wpm-cal-btn" (click)="decoder.resetRxCalibration()" title="Reset RX Calibration" aria-label="Reset RX Calibration">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" aria-label="Decrease TX decoder speed" (click)="adjustWpm('txDecoderWpm', -1)">-</button>
+          <span class="wpm-pill-label">TX</span>
+          <span class="wpm-pill-value">{{ decoder.txEstimatedWpm() }}</span>
+          <button class="wpm-btn" aria-label="Increase TX decoder speed" (click)="adjustWpm('txDecoderWpm', 1)">+</button>
+          <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration" aria-label="Reset TX Calibration">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
+          </button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" aria-label="Decrease keyer speed" (click)="adjustWpm('keyerWpm', -1)">-</button>
+          <span class="wpm-pill-label">Keyer</span>
+          <span class="wpm-pill-value">{{ settings.settings().keyerWpm }}</span>
+          <button class="wpm-btn" aria-label="Increase keyer speed" (click)="adjustWpm('keyerWpm', 1)">+</button>
+        </span>
       </div>
 
       <!-- Display settings -->
@@ -147,20 +127,7 @@
                    (input)="onModalDisplayChange('rxBackground', $event)">
           </label>
         </div>
-        @if (mode === 'encoder') {
-          <div class="fs-color-row">
-            <label class="fs-color-ctl" title="Buffered text colour">
-              <span class="fs-color-label">BUF</span>
-              <input type="color" [value]="settings.modalDisplay().bufferForeground"
-                     (input)="onModalDisplayChange('bufferForeground', $event)">
-            </label>
-            <label class="fs-color-ctl" title="Currently sending colour">
-              <span class="fs-color-label">CUR</span>
-              <input type="color" [value]="settings.modalDisplay().sendingForeground"
-                     (input)="onModalDisplayChange('sendingForeground', $event)">
-            </label>
-          </div>
-        }
+
       </div>
       <button class="kebab-help-btn" (click)="symbolsRefRequested.emit(); fsKebabOpen = false" title="Symbols Reference" aria-label="Symbols Reference">
         Symbols Ref

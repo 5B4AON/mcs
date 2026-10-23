@@ -16,6 +16,7 @@ import {
 } from './settings-presets';
 
 export type PresetResult = { ok: true; preset: SettingsPreset } | { ok: false; error: string };
+export type PresetRecoveryResult = { ok: true } | { ok: false; error: string };
 
 /**
  * Named settings presets stored in this browser under their own versioned key.
@@ -31,6 +32,8 @@ export class PresetService {
 
   /** Set when saved presets could not be loaded; nothing is overwritten in that case */
   readonly loadError = signal('');
+  /** Raw unreadable preset store retained until the user explicitly removes it. */
+  readonly damagedRawStore = signal<string | null>(null);
 
   constructor(private settings: SettingsService) {
     this.reload();
@@ -44,19 +47,42 @@ export class PresetService {
     } catch {
       this.presets.set([]);
       this.loadError.set('Browser storage is unavailable, so presets cannot be loaded or saved.');
+      this.damagedRawStore.set(null);
       return;
     }
     const result = parsePresetStore(raw, this.settings.getDefaults());
     if (result.status === 'ok') {
       this.presets.set(result.presets);
       this.loadError.set('');
+      this.damagedRawStore.set(null);
     } else if (result.status === 'empty') {
       this.presets.set([]);
       this.loadError.set('');
+      this.damagedRawStore.set(null);
     } else {
       this.presets.set([]);
       this.loadError.set(result.error);
+      this.damagedRawStore.set(raw);
     }
+  }
+
+  /**
+   * Remove only an unreadable saved preset store after the user has had an
+   * opportunity to download it. Live settings and device profiles are untouched.
+   */
+  discardDamagedStore(): PresetRecoveryResult {
+    if (this.damagedRawStore() === null) {
+      return { ok: false, error: 'There is no damaged preset store to remove.' };
+    }
+    try {
+      localStorage.removeItem(PRESETS_STORAGE_KEY);
+    } catch {
+      return { ok: false, error: 'The damaged presets could not be removed. Browser storage may be blocked.' };
+    }
+    this.presets.set([]);
+    this.loadError.set('');
+    this.damagedRawStore.set(null);
+    return { ok: true };
   }
 
   checkName(name: string, ignoreId?: string): PresetNameValidation {
