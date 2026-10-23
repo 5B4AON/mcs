@@ -1,9 +1,37 @@
+@if (settings.settings().encoderMode === 'practice') {
+  <section class="fs-practice-guide" aria-live="polite">
+    <div><strong>Practice:</strong> {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
+    <div>{{ practiceUi.practiceFeedbackDescription(settings.settings()) }}</div>
+    @if (practiceUi.practiceExternalRouteNotice(settings.settings()); as routeNotice) {
+      <div>{{ routeNotice }}</div>
+    }
+    <div><strong>Action:</strong> {{ settings.settings().practiceFeedbackMode === 'typealong'
+      ? practice.typeAlongActionLabel()
+      : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0) }}</div>
+  </section>
+}
+
 <!-- Encoder mode: conversation + inline encoder buffer -->
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen"
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
      [class.blur-revealing]="revealing" #conversationArea
      tabindex="0" (keydown)="onEncoderModalKeydown($event)">
-  @if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {
+  @if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>Practice session</strong>
+      <div>You will copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
+      <div>Type what you hear, then press Enter to validate each round.</div>
+      <div>After the final round, press Enter to view your results and average.</div>
+    </section>
+  } @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>Practice session results</strong>
+      @for (score of practice.roundScores(); track $index) {
+        <div>Round {{ $index + 1 }} — {{ score }}%</div>
+      }
+      <div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div>
+    </section>
+  } @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {
     <span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
       [class.fb-correct]="fb.result === 'correct'"
       [class.fb-incorrect]="fb.result === 'incorrect'"
@@ -93,15 +121,19 @@
   <!-- Start/Stop TX or Play/Pause practice -->
   @if (settings.settings().encoderMode === 'practice') {
     @if (practice.state() === 'idle') {
-      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()" title="Start practice" aria-label="Start practice">
+      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()"
+              [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'"
+              [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
       </button>
-    } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0) {
-      <button class="fs-float-btn fs-float-results" (click)="practiceStartOrNext()" title="Validate" aria-label="Validate">
+    } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0 && !practice.isSessionSummary()) {
+      <button class="fs-float-btn fs-float-results" (click)="practiceStartOrNext()" [title]="practice.typeAlongActionLabel()" [attr.aria-label]="practice.typeAlongActionLabel()">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       </button>
     } @else if (practice.state() === 'finished') {
-      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()" title="Next sequence" aria-label="Next sequence">
+      <button class="fs-float-btn fs-float-play" (click)="practiceStartOrNext()"
+              [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'"
+              [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'">
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
       </button>
     } @else if (practice.state() === 'playing') {

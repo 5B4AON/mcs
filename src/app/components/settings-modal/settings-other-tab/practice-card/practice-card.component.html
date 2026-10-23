@@ -15,9 +15,9 @@
     <div class="settings-card-body">
       <div class="cw-hint">
         Copy practice plays random Morse sequences for you to decode
-        by ear. When enabled, a &ldquo;Practice&rdquo; option appears
-        in the encoder mode dropdown. Select it and press Start to begin
-        a round.
+        by ear. When enabled, choose &ldquo;Practice&rdquo; in the encoder
+        mode dropdown, then press Start when you are ready. Choosing
+        Practice alone does not start a round.
       </div>
 
       <!-- Content mode -->
@@ -106,15 +106,34 @@
       </label>
       <div class="cw-hint">
         @if (settings.settings().practiceFeedbackMode === 'listen') {
-          Audio plays and decoded text appears in the output area.
+          Listen only: audio plays and decoded text appears in the output area.
         } @else if (settings.settings().practiceFeedbackMode === 'blur') {
-          Audio plays and decoded text appears blurred. Use the reveal button to peek.
+          Blurred: audio plays and decoded text appears blurred. Use the reveal button to peek.
         } @else {
-          Audio plays with text blurred. Type what you hear in the input
-          box. At the end of the sequence, characters are highlighted as
-          correct or missed.
+          Type-along: audio plays with text blurred. Type what you hear in
+          the input box, then validate your answer when the sequence ends.
+        }
+        @if (settings.settings().practiceFeedbackMode !== 'typealong') {
+          Typing is unavailable in Listen and Blurred practice so the answer
+          stays hidden. Choose Type-along to enter what you hear.
         }
       </div>
+
+      @if (settings.settings().practiceFeedbackMode === 'typealong') {
+        <label>
+          Rounds:
+          <select (change)="onRoundsChange($event)">
+            @for (n of [1,2,3,4,5]; track n) {
+              <option [value]="n" [selected]="settings.settings().practiceRounds === n">{{ n }}</option>
+            }
+          </select>
+        </label>
+        <div class="cw-hint">
+          Choose 2 to 5 rounds for a short Type-along session. The first Enter
+          shows a session briefing; after the final round, you can view each
+          round's score and the average.
+        </div>
+      }
 
       <!-- Pipeline -->
       <label>
@@ -126,11 +145,11 @@
       </label>
       <div class="cw-hint">
         @if (settings.settings().practicePipeline === 'local') {
-          Practice audio and vibration are played locally only &mdash;
-          serial, MIDI, and RTDB outputs are not driven.
+          Practice audio and vibration are played locally only &mdash; serial,
+          MIDI, WinKeyer, and RTDB outputs are not driven.
         } @else {
-          Practice audio is sent through the full output pipeline
-          including serial, MIDI, and RTDB outputs.
+          Practice uses configured audio, serial, MIDI, RTDB, and vibration
+          outputs through the full output pipeline.
         }
       </div>
 

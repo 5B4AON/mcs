@@ -623,7 +623,6 @@
   font-size: 0.85em;
   color: #1e1812;
 }
-
 /* Reveal button — parchment-themed */
 .blur-reveal-btn-main {
   position: absolute;
@@ -982,6 +981,27 @@
   gap: 10px;
   margin-top: 1rem;
   align-items: center;
+}
+
+.practice-guide {
+  display: grid;
+  gap: .35rem;
+  margin-top: .75rem;
+  padding: .65rem .75rem;
+  border: 1px solid #3d617a;
+  border-radius: 6px;
+  background: #1d2b3a;
+  color: #d5e8f5;
+  font-size: .85rem;
+  line-height: 1.35;
+}
+.practice-guide strong {
+  color: #8cf;
+}
+.practice-action-label {
+  color: #d5e8f5;
+  font-size: .9rem;
+  font-weight: 600;
 }
 
 .encoder-mode-label {

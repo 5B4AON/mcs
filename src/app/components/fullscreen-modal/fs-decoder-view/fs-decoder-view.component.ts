@@ -14,6 +14,7 @@ import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
+import * as practiceUi from '../../../practice-ui.utils';
 
 /**
  * Fullscreen decoder view component.
@@ -36,6 +37,9 @@ import { formatText, formatLine } from '../fullscreen-format.utils';
   styleUrls: ['../fullscreen-shared.css', './fs-decoder-view.component.css'],
 })
 export class FsDecoderViewComponent implements OnInit, OnDestroy, OnChanges, AfterViewChecked {
+  /** Shared labels for the compact Practice guide. */
+  readonly practiceUi = practiceUi;
+
   /**
    * Whether the on-screen keyboard is likely open.
    * Used to adjust auto-scroll behaviour (instant vs smooth) and

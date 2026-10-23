@@ -25,6 +25,7 @@ import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
 import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
+import * as practiceUi from './practice-ui.utils';
 
 /**
  * Morse Code Studio
@@ -56,6 +57,9 @@ import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.compon
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
+  /** Shared labels for the Practice guidance shown in the main view. */
+  readonly practiceUi = practiceUi;
+
   // ---- Application state ----
   /** Whether audio contexts are running (Start/Stop toggle) */
   audioRunning = false;
@@ -1194,11 +1198,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Start practice or advance to next sequence */
   practiceStartOrNext(textarea: HTMLTextAreaElement): void {
-    // If finishing type-along, compute feedback first before advancing
-    if (this.practice.state() === 'finished'
-        && this.settings.settings().practiceFeedbackMode === 'typealong'
-        && this.practice.feedback().length === 0) {
-      this.practice.computeFeedback(this.practice.userInput());
+    if (this.settings.settings().practiceFeedbackMode === 'typealong') {
+      this.practice.advanceTypeAlongSession();
       return;
     }
     if (this.practice.state() === 'finished') {
