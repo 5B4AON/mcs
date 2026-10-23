@@ -8,10 +8,11 @@ import {
 } from '@angular/core';
 import { SettingsService } from '../../services/settings.service';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
+import { KeyerService } from '../../services/keyer.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
-import { FsDecoderViewComponent } from './fs-decoder-view/fs-decoder-view.component';
-import { FsEncoderViewComponent } from './fs-encoder-view/fs-encoder-view.component';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { PracticeService } from '../../services/practice.service';
+import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
+import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
 
 /**
  * Fullscreen modal component (parent shell).
@@ -19,8 +20,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
  * Provides the modal overlay, visual viewport management for mobile
  * on-screen keyboards, and orchestrates child components:
  * - **FsToolbarComponent** — top bar with WPM controls, level meter, menus
- * - **FsDecoderViewComponent** — decoded conversation with touch keyer
- * - **FsEncoderViewComponent** — encoder conversation with virtual keyboard
+ * - **FsConversationViewComponent** — combined conversation with keying and typing
  *
  * The overlay tracks the VisualViewport API so that on mobile devices
  * the modal shrinks above the on-screen keyboard, keeping all content
@@ -29,14 +29,11 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 @Component({
   selector: 'app-fullscreen-modal',
   standalone: true,
-  imports: [FsToolbarComponent, FsDecoderViewComponent, FsEncoderViewComponent],
+  imports: [FsToolbarComponent, FsConversationViewComponent],
   templateUrl: './fullscreen-modal.component.html',
   styleUrls: ['./fullscreen-modal.component.css'],
 })
 export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewInit {
-  /** Which modal mode: 'decoder' (conversation) or 'encoder' (QSO) */
-  @Input() mode: 'decoder' | 'encoder' = 'decoder';
-
   /** Visible trigger to focus if the menu item that opened fullscreen is hidden */
   @Input() focusReturnFallback: HTMLElement | null = null;
 
@@ -51,6 +48,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** True when the on-screen keyboard is likely open (viewport significantly shorter than window) */
   viewportKeyboardOpen = false;
+  inputMode: 'key' | 'type' = 'key';
 
   /** Controls overlay height so it stays above the on-screen keyboard */
   overlayHeight: string | null = null;
@@ -59,6 +57,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** VisualViewport event handler (for cleanup) */
   private vvHandler: (() => void) | null = null;
+  @ViewChild(FsConversationViewComponent) private conversationView?: FsConversationViewComponent;
   @ViewChild('fullscreenDialog') private fullscreenDialog?: ElementRef<HTMLElement>;
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -66,6 +65,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   constructor(
     public settings: SettingsService,
     private encoder: MorseEncoderService,
+    private keyer: KeyerService,
+    private practice: PracticeService,
     private zone: NgZone,
   ) {}
 
@@ -77,7 +78,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   ngAfterViewInit(): void {
     if (this.fullscreenDialog) {
-      focusDialog(this.fullscreenDialog.nativeElement, '.fs-close-btn');
+      focusDialog(this.fullscreenDialog.nativeElement, '.fs-conversation');
     }
   }
 
@@ -95,20 +96,49 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** Keep focus in fullscreen and stop an active encoder before closing it. */
   onDialogKeydown(event: KeyboardEvent): void {
-    if (event.key === 'Escape' && this.mode === 'encoder' && this.encoder.isSending()) {
+    if (event.key === 'Escape' && this.encoder.isSending()) {
       event.preventDefault();
       event.stopPropagation();
       this.encoder.stopTx();
       return;
     }
     if (this.fullscreenDialog) {
-      trapDialogTabKey(event, this.fullscreenDialog.nativeElement);
+      this.handleTab(event, this.fullscreenDialog.nativeElement);
     }
+  }
+
+  /** Tab order: main window, practice/transmit and touch buttons, then the toolbar, then back. */
+  private handleTab(event: KeyboardEvent, dialog: HTMLElement): void {
+    if (event.key !== 'Tab' || event.defaultPrevented) return;
+    const all = getFocusableElements(dialog);
+    const body = dialog.querySelector('.fs-body');
+    const order = [
+      ...all.filter(el => body?.contains(el)),
+      ...all.filter(el => !body?.contains(el) && el !== dialog),
+    ];
+    if (order.length === 0) return;
+    event.preventDefault();
+    const index = order.indexOf(document.activeElement as HTMLElement);
+    const step = event.shiftKey ? -1 : 1;
+    const next = index < 0
+      ? (event.shiftKey ? order.length - 1 : 0)
+      : (index + step + order.length) % order.length;
+    order[next].focus();
   }
 
   /** Close the modal and notify the parent */
   close(): void {
+    this.keyer.setKeyboardMappingsEnabled(true);
     this.closed.emit();
+  }
+
+  /** Switch the temporary input choice without changing saved settings. */
+  setInputMode(mode: 'key' | 'type'): void {
+    this.inputMode = mode;
+    this.keyer.setKeyboardMappingsEnabled(mode === 'key');
+    if (mode === 'key' && this.settings.settings().encoderMode === 'practice') this.practice.abort();
+    if (mode === 'type') this.conversationView?.focusTypeInput();
+    else this.conversationView?.focusMain();
   }
 
   /** Open the help dialog (delegates to parent via output event) */

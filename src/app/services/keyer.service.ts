@@ -80,6 +80,7 @@ export class KeyerService implements OnDestroy {
   private straightKeyPath: InputPath = 'keyboardStraightKey';
 
   private enabled = true;
+  private keyboardMappingsEnabled = true;
 
   /**
    * Emits true on keyer key-down and false on keyer key-up for
@@ -124,6 +125,33 @@ export class KeyerService implements OnDestroy {
     this.enabled = enabled;
     if (!enabled) {
       this.releaseAll();
+    }
+  }
+
+  /**
+   * Enable or suspend only mapped physical keyboard input.
+   * Other keyer sources, including mouse and touch controls, remain active.
+   */
+  setKeyboardMappingsEnabled(enabled: boolean): void {
+    this.keyboardMappingsEnabled = enabled;
+    if (!enabled) {
+      this.releaseKeyboardMappings();
+    }
+  }
+
+  /** Release active mapped physical keyboard keys without affecting other sources. */
+  private releaseKeyboardMappings(): void {
+    const mappings = this.settings.settings().keyboardInputMappings;
+    for (const [idx, held] of this.straightKeyStates) {
+      if (idx < 0 || !held) continue;
+      const mapping = mappings[idx];
+      if (mapping) this.handleStraightKeyUp(idx, mapping);
+    }
+    for (const [idx, state] of this.paddleKeyers) {
+      if (idx < 0) continue;
+      state.leftPaddleDown = false;
+      state.rightPaddleDown = false;
+      this.stopKeyer(state);
     }
   }
 
@@ -271,7 +299,7 @@ export class KeyerService implements OnDestroy {
   // ---- Keyboard event handlers ----
 
   private onKeyDown(e: KeyboardEvent): void {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.keyboardMappingsEnabled) return;
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
@@ -306,7 +334,7 @@ export class KeyerService implements OnDestroy {
   }
 
   private onKeyUp(e: KeyboardEvent): void {
-    if (!this.enabled) return;
+    if (!this.enabled || !this.keyboardMappingsEnabled) return;
     const s = this.settings.settings();
     if (!s.keyboardKeyerEnabled) return;
 

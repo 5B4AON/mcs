@@ -95,13 +95,11 @@ src/app/
     │       ├── show-prosigns-card/
     │       ├── prosign-actions-card/
     │       └── emojis-card/
-    ├── fullscreen-modal/    — fullscreen encode/decode views
+    ├── fullscreen-modal/    — unified fullscreen conversation view
     │   ├── fullscreen-modal.component.* — container
-    │   ├── fullscreen-shared.css        — shared fullscreen styles
     │   ├── fullscreen-format.utils.ts   — shared formatting utilities
-    │   ├── fs-toolbar/      — fullscreen mode toolbar
-    │   ├── fs-decoder-view/ — fullscreen decoder display
-    │   └── fs-encoder-view/ — fullscreen encoder display
+    │   ├── fs-toolbar/      — fullscreen conversation toolbar
+    │   └── fs-conversation-view/ — unified conversation with temporary Key/Type input
     ├── help/                — help system (chapter components + diagrams)
     │   ├── help.component.*             — shell with table of contents
     │   ├── help-ch-*.component.*        — individual chapter components (HTML-only content)
@@ -127,8 +125,7 @@ AppComponent
 │   └── ConfirmDialogComponent (reset confirmation)
 ├── FullscreenModalComponent
 │   ├── FsToolbarComponent
-│   ├── FsDecoderViewComponent
-│   └── FsEncoderViewComponent
+│   └── FsConversationViewComponent (unified conversation)
 ├── HelpComponent → help-ch-* chapter components
 ├── SymbolsRefComponent
 ├── EmojiPickerComponent
@@ -151,13 +148,14 @@ AppComponent
 - **Serial output mappings pipeline**: `SerialOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialOutputMappings`, UI in `serial-output-card` + `SerialOutputEditModalComponent`, runtime in `SerialKeyOutputService`. Each mapping specifies `portIndex`, `pin` (DTR/RTS), `invert`, and `forward` (OutputForward). Multiple mappings can target different ports or different pins on the same port.
 - **Presets pipeline**: the Presets dialog (header button in `settings-modal`) saves/updates (overwrites with current settings)/renames/duplicates/deletes/exports/imports named presets via `PresetService` (key `morsePresets`, separate from `morseProfiles`, max 40-char case-insensitive names). Files use the `mcs-settings` v1 format from `settings-transfer.ts` (no RTDB secrets). Import only adds a preset; apply goes through `prepareSettingsImport` review with per-route acknowledgements, then `SettingsService.update()` without saving the profile.
 - **Settings card CSS** (`settings-shared.css`, `settings-outputs-tab.component.css`, `settings-other-tab.component.css`) is loaded **globally** via `angular.json` `styles` array — not via component `styleUrls`. Card components use `styles: [':host { display: contents; }']` only. Do NOT add these CSS files back into component `styleUrls` or the bundle will bloat.
-- **Fullscreen modal CSS** (`fullscreen-shared.css`) is similarly shared. Child components (`fs-toolbar`, `fs-decoder-view`, `fs-encoder-view`) import it via `styleUrls` (only 3 consumers, so duplication is acceptable here — unlike the 19 settings cards).
+- **Fullscreen modal CSS** lives in each component's own stylesheet (`fs-conversation-view` owns the conversation, practice and touch-overlay styles). The fullscreen toolbar owns the compact temporary Key/Type toggle beside Close; it defaults to Key and neither saves a setting nor activates an output. Type uses a hidden native input to support physical and mobile keyboards while text renders inline; only mapped physical keyboard keying is suspended, while mouse/touch and other inputs remain active.
 - **Morse table** (`morse-table.ts`): `MORSE_TABLE` maps characters/prosigns to dot-dash strings; `MORSE_REVERSE` is the inverse. Changes to the table can affect encoding, decoding, and the symbols reference panel.
-- **`DisplayBufferService`** bridges decoded/encoded text with prosign actions and emoji replacements — changes to prosign or emoji logic converge here.
+- **`DisplayBufferService`** bridges decoded/encoded text with prosign actions and emoji replacements — changes to prosign or emoji logic converge here. `mainOutput` and `fullscreenConversation` are independent persistent FIFO buffers; the direct full-screen action has no submenu.
 - **Audio chain**: `AudioDeviceService` → `AudioInputService` → `CwInputService` (detection) → `MorseDecoderService` (decode). Output: `MorseEncoderService` → `AudioOutputService` + optional `SerialKeyOutputService` / `WinkeyerOutputService` / `MidiOutputService` / `FirebaseRtdbService`.
 - **Serial input/output muting**: `SerialKeyOutputService.isSending` signal (with 30 ms holdoff per mapping) prevents `SerialKeyInputService` from processing key-down events while output is active — same pattern as `MidiOutputService.isSending` / `MidiInputService`. `SerialKeyInputService` has its own independent iambic keyer per mapping (like `MidiInputService`), bypassing `KeyerService` entirely.
 - **Serial port sharing**: when serial input and output mappings use the same port index, `SerialKeyInputService` piggybacks on `SerialKeyOutputService.getOpenPort(portIndex)` instead of opening a second connection. The output service exposes an `openPorts` signal (Map<number, PortState>) and a `getOpenPort(portIndex)` method for this purpose.
-- **Copy practice pipeline**: settings (`practiceEnabled`, `practiceContentMode`, `practiceFeedbackMode`, `practicePipeline`, etc.) in `AppSettings` + `DEFAULT_SETTINGS`, UI in `practice-card`, sequence generation + scoring in `PracticeService`, playback via `MorseEncoderService.submitText()`. Practice characters are routed through `PracticeService.pushPracticeChar()` instead of `DisplayBufferService.pushSent()`. When `practicePipeline` is `'local'`, external outputs (serial, MIDI, RTDB, vibration) are skipped in `MorseEncoderService`.
+- **Copy practice pipeline**: settings (`practiceEnabled`, `practiceContentMode`, `practiceFeedbackMode`, `practicePipeline`, etc.) in `AppSettings` + `DEFAULT_SETTINGS`, UI in `practice-card`, sequence generation + scoring in `PracticeService`, playback via `MorseEncoderService.submitText()`. Practice characters are routed through `PracticeService.pushPracticeChar()` instead of `DisplayBufferService.pushSent()`. When `practicePipeline` is `'local'`, external outputs (serial, MIDI, RTDB, vibration) are skipped in `MorseEncoderService`. Practice and keying are exclusive: on the main screen `AppComponent.syncMainPracticeKeying()` disables mapped keyboard keying, the mouse keyer and the sprite while `encoderMode === 'practice'`; in fullscreen, practice UI exists only in Type mode and `FullscreenModalComponent.setInputMode('key')` aborts practice.
+- **Fullscreen focus model**: `FullscreenModalComponent` opens with focus on `.fs-conversation`, owns Tab order (`handleTab`: body controls, then toolbar, wrapping) and focuses the always-rendered hidden `typeInput` synchronously from the Key/Type toggle so mobile keyboards open; Key mode focuses the conversation instead.
 - **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone-card).
 
 ## Build and Test

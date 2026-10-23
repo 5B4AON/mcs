@@ -18,6 +18,30 @@
   overflow: visible;
   position: relative;
 }
+.fs-input-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  min-height: 32px;
+  padding: 2px;
+  border: 1px solid #556;
+  border-radius: 17px;
+  background: #282c34;
+  color: #8ab;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.fs-input-toggle span {
+  min-width: 2.75rem;
+  padding: .28rem .35rem;
+  border-radius: 14px;
+}
+.fs-input-toggle span.selected {
+  background: #315778;
+  color: #fff;
+}
 
 /* ---- WPM indicator pills (read-only, toolbar right side) ---- */
 .wpm-indicators {

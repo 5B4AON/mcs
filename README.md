@@ -6,13 +6,15 @@
 
 A browser-based Morse code encoder, decoder and keyer built with Angular 19. Runs entirely in the browser — no installation, no backend. Provides real-time CW encoding and decoding with sub-millisecond timing precision, suitable for on-air operating at 5–50+ WPM.
 
-Connect a physical key or paddle, and decoded Morse code appears instantly on a fullscreen display with customisable letter size and colours — ideal for live demonstrations, training sessions, and events promoting interest in Morse code.
+Connect a physical key or paddle, and decoded Morse code appears instantly in a full-screen conversation with customisable letter size and colours — ideal for live demonstrations, training sessions, and events promoting interest in Morse code.
 
 ## Features
 
 **Decode** — Decodes incoming Morse code in real time from a radio receiver's audio via CW tone detection. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send), "Live" (send as you type), and "Practice" (self-study CW trainer) modes.
+
+**Full-screen conversation** — Opens directly from the ⛶ button and combines RX and TX history in one persistent view. A compact Key/Type toggle beside Close switches between mapped-key keying and inline text entry without changing saved settings or activating an output. In Type mode focus goes straight to the conversation (and raises the on-screen keyboard on phones); Tab cycles conversation → play/transmit button → toolbar. Practice runs in Type mode only, and switching to Key stops it. On the main screen, Practice accepts typing only (keyer, mouse keyer and sprite are disabled).
 
 **Key** — Five keyer modes: straight key, Iambic A, Iambic B, Ultimatic, and Single Lever, with full dit/dah memory and per-keyer reverse paddles. Input from an Arduino MIDI paddle interface (multiple mappings with independent settings), USB-serial adapter (multiple mappings with independent ports, pins, and polling — DSR/CTS/DCD/RI via Web Serial API), computer keyboard (multiple mappings with per-mapping paddle mode), mouse, or touchscreen. MIDI, serial, and keyboard input mappings support optional **Name** and **Colour** per mapping for multi-user conversation views. Experimental: physical key input via microphone with ultrasonic pilot-tone detection.
 

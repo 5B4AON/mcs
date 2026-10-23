@@ -179,7 +179,7 @@
     <div class="decoded-parchment">
       <div class="decoded-text" #decoderBox
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
-           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session</strong><div>You will copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div><div>Type what you hear, then press Enter to validate each round.</div><div>After the final round, press Enter to view your results and average.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session</strong><div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div><div>Type what you hear, press Enter to validate.</div><div>After the final round, view your average.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
@@ -326,22 +326,16 @@
           </div>
         }
       </div>
-      <div class="clear-menu-wrapper" (click)="$event.stopPropagation()">
-        <button class="expand-btn" (click)="toggleFullscreenMenu()" title="Fullscreen" aria-label="Fullscreen">
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+      <div class="clear-menu-wrapper">
+        <button class="expand-btn" (click)="openModal()" title="Open full-screen conversation" aria-label="Open full-screen conversation">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V3h6M15 3h6v6M21 15v6h-6M9 21H3v-6"/></svg>
         </button>
-        @if (fullscreenMenuOpen) {
-          <div class="clear-menu">
-            <button class="clear-menu-btn clear-decoder" (click)="openModal('decoder'); closeFullscreenMenu()">Fullscreen Decoder View</button>
-            <button class="clear-menu-btn clear-encoder" (click)="openModal('encoder'); closeFullscreenMenu()">Fullscreen Encoder View</button>
-          </div>
-        }
       </div>
     </div>
   </section>
 
   <!-- ========== STRAIGHT-KEY SPRITE BUTTON ========== -->
-  @if (settings.settings().spriteButtonEnabled && !showTryMorseGuide && spriteSpaceAvailable && spriteReady) {
+  @if (settings.settings().spriteButtonEnabled && !mainPracticeActive && !showTryMorseGuide && spriteSpaceAvailable && spriteReady) {
     <div class="touch-key-sprite-wrapper">
       <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
               (touchstart)="onSpriteTouch(true, $event)"
@@ -367,7 +361,7 @@
 
 <!-- ========== FULLSCREEN MODAL ========== -->
 @if (activeModal) {
-  <app-fullscreen-modal [mode]="activeModal" [focusReturnFallback]="fullscreenFocusFallback"
+  <app-fullscreen-modal [focusReturnFallback]="fullscreenFocusFallback"
                         (closed)="closeModal()" (helpRequested)="openHelp()"
                         (symbolsRefRequested)="openSymbolsRef()"></app-fullscreen-modal>
 }

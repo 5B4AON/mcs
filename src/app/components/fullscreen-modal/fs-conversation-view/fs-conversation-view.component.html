@@ -1,0 +1,118 @@
+<input #typeInput type="text" class="fs-type-input" aria-label="Type message"
+       [attr.tabindex]="inputMode === 'type' ? 0 : -1"
+       autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+       (input)="onTypeInput($event)"
+       (keydown)="onTypeKeydown($event)">
+
+<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen"
+     [attr.tabindex]="inputMode === 'key' ? 0 : -1"
+     (click)="onConversationClick()"
+     [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
+     [class.blur-revealing]="revealing" #conversationArea>
+  @if (practiceView && practice.sessionStage() === 'briefing') {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>Practice session</strong>
+      <div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
+      <div>Type what you hear, press Enter to validate.</div>
+      <div>After the final round, view your average.</div>
+    </section>
+  } @else if (practiceView && practice.isSessionSummary()) {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>Practice results</strong>
+      @for (score of practice.roundScores(); track $index) {
+        <div>Round {{ $index + 1 }} — {{ score }}%</div>
+      }
+      <div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div>
+    </section>
+  } @else if (practiceView && practice.feedback().length > 0) {
+    <div class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+      [class.fb-correct]="fb.result === 'correct'"
+      [class.fb-incorrect]="fb.result === 'incorrect'"
+      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</div>
+    <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
+  } @else {
+    @for (line of conversationLines; track $index) {
+      <div class="fs-line" [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
+           [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
+           [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
+           [innerHTML]="formatLine(line)"></div>
+    }
+    @if (decoder.rxCurrentPattern()) {
+      <span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+    }
+    @if (decoder.txCurrentPattern()) {
+      <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+    }
+    @if (encoderPendingChars().length) {
+      <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+        [class.sending]="$first && encoder.isSending()"
+        [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
+        [innerHTML]="formatPendingText(char)"></span>}</span>
+    }
+    @if (!conversationLines.length && !decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
+      <span class="cursor"></span>
+    }
+    @if (practiceView && settings.settings().practiceFeedbackMode === 'typealong' && practice.userInput()) {
+      <div class="fs-typed-text">{{ practice.userInput() }}</div>
+    }
+  }
+</div>
+
+<div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
+  @if (blurMode) {
+    <button class="fs-float-btn" [class.revealing]="revealing"
+            (mousedown)="onRevealStart($event)"
+            (mouseup)="onRevealEnd()"
+            (mouseleave)="onRevealEnd()"
+            (touchstart)="onRevealStart($event)"
+            (touchend)="onRevealEnd()"
+            (touchcancel)="onRevealEnd()"
+            title="Hold to reveal text" aria-label="Hold to reveal text">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+        <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  }
+  @if (practiceView) {
+    <button class="fs-float-btn fs-float-play" (click)="practiceAction()"
+            [attr.aria-label]="practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+    </button>
+  } @else if (inputMode === 'type') {
+    <button class="fs-float-btn" [class.fs-float-tx-active]="encoder.isSending()"
+            [class.fs-float-tx-ready]="!encoder.isSending() && encoderPendingChars().length > 0"
+            (click)="toggleTx()" [attr.aria-label]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
+    </button>
+  }
+</div>
+
+@if (inputMode === 'key' && settings.settings().touchKeyerEnabled) {
+  <div class="touch-overlay">
+    @if (settings.settings().touchKeyerMode === 'straight') {
+      <button type="button" class="touch-btn touch-btn-straight" aria-label="Straight key. Press and hold to send Morse."
+              (keydown)="onTouchKeyboardKey('straight', true, $event)" (keyup)="onTouchKeyboardKey('straight', false, $event)"
+              (blur)="onTouchKeyBlur()" (touchstart)="onTouchKey('straight', true, $event)"
+              (touchend)="onTouchKey('straight', false, $event)" (touchcancel)="onTouchKey('straight', false, $event)"
+              (pointercancel)="onTouchKey('straight', false, $event)" (mousedown)="onTouchMouseKey('straight', true, $event)"
+              (mouseup)="onTouchMouseKey('straight', false, $event)" (mouseleave)="onTouchMouseKey('straight', false, $event)">
+        <span class="touch-btn-icon">&#x25CF;</span>
+      </button>
+    } @else {
+      <button type="button" class="touch-btn touch-btn-left" aria-label="Left paddle. Press and hold to key."
+              (keydown)="onTouchKeyboardKey('left', true, $event)" (keyup)="onTouchKeyboardKey('left', false, $event)"
+              (blur)="onTouchKeyBlur()" (touchstart)="onTouchKey('left', true, $event)"
+              (touchend)="onTouchKey('left', false, $event)" (touchcancel)="onTouchKey('left', false, $event)"
+              (pointercancel)="onTouchKey('left', false, $event)" (mousedown)="onTouchMouseKey('left', true, $event)"
+              (mouseup)="onTouchMouseKey('left', false, $event)" (mouseleave)="onTouchMouseKey('left', false, $event)">DIT</button>
+      <button type="button" class="touch-btn touch-btn-right" aria-label="Right paddle. Press and hold to key."
+              (keydown)="onTouchKeyboardKey('right', true, $event)" (keyup)="onTouchKeyboardKey('right', false, $event)"
+              (blur)="onTouchKeyBlur()" (touchstart)="onTouchKey('right', true, $event)"
+              (touchend)="onTouchKey('right', false, $event)" (touchcancel)="onTouchKey('right', false, $event)"
+              (pointercancel)="onTouchKey('right', false, $event)" (mousedown)="onTouchMouseKey('right', true, $event)"
+              (mouseup)="onTouchMouseKey('right', false, $event)" (mouseleave)="onTouchMouseKey('right', false, $event)">DAH</button>
+    }
+  </div>
+}

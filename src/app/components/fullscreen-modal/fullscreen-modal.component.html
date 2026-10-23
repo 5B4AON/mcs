@@ -1,12 +1,13 @@
 <div class="fs-modal-overlay" [style.height]="overlayHeight" [style.top]="overlayTop">
   <div #fullscreenDialog class="fs-modal" role="dialog" aria-modal="true"
-       [attr.aria-label]="'Fullscreen ' + mode + ' view'" tabindex="-1"
+       aria-label="Full-screen conversation" tabindex="-1"
        (keydown)="onDialogKeydown($event)">
 
     <!-- Top toolbar: close, level meter, WPM pills, clear, kebab menu -->
     <app-fs-toolbar
-      [mode]="mode"
+      [inputMode]="inputMode"
       (closeRequest)="close()"
+      (inputModeChange)="setInputMode($event)"
       (helpRequested)="requestHelp()"
       (symbolsRefRequested)="requestSymbolsRef()">
     </app-fs-toolbar>
@@ -18,11 +19,9 @@
          [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'"
          [style.lineHeight]="1.15 + settings.modalDisplay().lineSpacing">
 
-      @if (mode === 'decoder') {
-        <app-fs-decoder-view [viewportKeyboardOpen]="viewportKeyboardOpen"></app-fs-decoder-view>
-      } @else {
-        <app-fs-encoder-view [viewportKeyboardOpen]="viewportKeyboardOpen"></app-fs-encoder-view>
-      }
+      <app-fs-conversation-view [viewportKeyboardOpen]="viewportKeyboardOpen"
+                           [inputMode]="inputMode"
+                           (inputModeChange)="setInputMode($event)"></app-fs-conversation-view>
 
     </div>
   </div>

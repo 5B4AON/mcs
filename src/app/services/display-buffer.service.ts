@@ -186,7 +186,7 @@ export class DisplayBuffer {
 }
 
 /**
- * Display Buffer Service — three independent FIFO display buffers.
+ * Display Buffer Service — two independent FIFO display buffers.
  *
  * Each buffer receives characters from the same data sources but can
  * be cleared independently. Buffers survive component destruction
@@ -195,19 +195,17 @@ export class DisplayBuffer {
  *
  * Buffers:
  *  - mainOutput:        Main screen output panel (flat text with conversation newlines)
- *  - fullscreenDecoder: Fullscreen decoder conversation log
- *  - fullscreenEncoder: Fullscreen encoder conversation log
+ *  - fullscreenConversation: Fullscreen receive/send conversation log
  */
 @Injectable({ providedIn: 'root' })
 export class DisplayBufferService {
   readonly mainOutput = new DisplayBuffer(DEFAULT_CAPACITY, true);
-  readonly fullscreenDecoder = new DisplayBuffer();
-  readonly fullscreenEncoder = new DisplayBuffer();
+  readonly fullscreenConversation = new DisplayBuffer();
 
   constructor(private settings: SettingsService) {}
 
   /**
-   * When true, the next whitespace character pushed to fullscreen buffers
+   * When true, the next whitespace character pushed to the fullscreen buffer
    * is suppressed. Set after a prosign action so the decoder's word-gap
    * space doesn't appear at the start of a new line.
    */
@@ -215,7 +213,7 @@ export class DisplayBufferService {
 
   /**
    * Push a decoded character to all relevant buffers.
-   * Both fullscreen modes and main panel show decoded text.
+   * The fullscreen conversation and main panel show decoded text.
    * If the character is a prosign with an enabled action, the action
    * is applied to all buffers instead of the raw text.
    */
@@ -231,20 +229,18 @@ export class DisplayBufferService {
     if (resolved) {
       const label = resolved.prosignKey;
       this.mainOutput.applyProsignAction(resolved.action, type, name, label, color);
-      this.fullscreenDecoder.applyProsignAction(resolved.action, type, name, label, color);
-      this.fullscreenEncoder.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenConversation.applyProsignAction(resolved.action, type, name, label, color);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
       this.mainOutput.push(type, char, name, color);
-      this.fullscreenDecoder.push(type, char, name, color);
-      this.fullscreenEncoder.push(type, char, name, color);
+      this.fullscreenConversation.push(type, char, name, color);
     }
   }
 
   /**
    * Push a sent (encoder) character to all relevant buffers.
-   * Both fullscreen modes and main panel show sent text.
+   * The fullscreen conversation and main panel show sent text.
    * If the character is a prosign with an enabled action, the action
    * is applied to all buffers instead of the raw text.
    */
@@ -260,14 +256,12 @@ export class DisplayBufferService {
     if (resolved) {
       const label = resolved.prosignKey;
       this.mainOutput.applyProsignAction(resolved.action, type, name, label, color);
-      this.fullscreenDecoder.applyProsignAction(resolved.action, type, name, label, color);
-      this.fullscreenEncoder.applyProsignAction(resolved.action, type, name, label, color);
+      this.fullscreenConversation.applyProsignAction(resolved.action, type, name, label, color);
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
       this.mainOutput.push(type, char, name, color);
-      this.fullscreenDecoder.push(type, char, name, color);
-      this.fullscreenEncoder.push(type, char, name, color);
+      this.fullscreenConversation.push(type, char, name, color);
     }
   }
 
@@ -300,10 +294,9 @@ export class DisplayBufferService {
     return null;
   }
 
-  /** Clear all three display buffers at once. */
+  /** Clear both display buffers at once. */
   clearAll(): void {
     this.mainOutput.clear();
-    this.fullscreenDecoder.clear();
-    this.fullscreenEncoder.clear();
+    this.fullscreenConversation.clear();
   }
 }

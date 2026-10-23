@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0] - 2026-10-24
+
+### Changed
+
+- **Single full-screen conversation (WP13)** — The separate full-screen
+  Decoder and Encoder views are merged into one persistent conversation that
+  opens directly from the ⛶ button. A Key/Type toggle beside Close switches
+  between mapped-key keying and inline typing without changing saved settings.
+  Type mode focuses the conversation immediately (raising the on-screen
+  keyboard on phones), with Tab cycling conversation, play/transmit button,
+  toolbar.
+- **Practice in full screen** — Practice runs in Type mode; the brief, results
+  and Type-Along text appear at the top of the conversation with typing under
+  the challenge characters. Switching to Key stops practice and removes blur.
+  Clear actions now remove the practice brief and results.
+- **Practice on the main screen** — Keyboard keyer, mouse keyer and the
+  straight-key sprite are disabled while Practice is selected; only typing is
+  accepted.
+
+### Fixed
+
+- **Presets saved before v1.12.0** are loaded again (missing newer settings
+  get defaults) instead of being reported as damaged, and a recovery option
+  can download or remove unreadable preset data.
+
 ## [1.12.0] - 2026-10-23
 
 ### Added

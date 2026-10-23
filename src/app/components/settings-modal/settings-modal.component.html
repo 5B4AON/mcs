@@ -205,6 +205,24 @@ This cannot be undone."
         @if (!transferReview) {
           @if (presets.loadError()) {
             <p class="transfer-error" role="alert">{{ presets.loadError() }}</p>
+            @if (presets.damagedRawStore() !== null) {
+              <section class="preset-recovery" aria-labelledby="preset-recovery-title">
+                <h3 id="preset-recovery-title">Recover preset access</h3>
+                <p>Your live settings and device profiles still work. You can download the unreadable data for safekeeping, then remove only the damaged saved presets to save or import presets again.</p>
+                @if (confirmDiscardDamagedPresets) {
+                  <div class="preset-delete-confirm" role="alert">
+                    <span>Remove the unreadable saved presets? This cannot be undone. Download a backup first if you may need the data.</span>
+                    <button type="button" class="transfer-apply-btn" (click)="discardDamagedPresets()">Remove damaged presets</button>
+                    <button type="button" class="transfer-cancel-btn" (click)="cancelDiscardDamagedPresets()">Keep data</button>
+                  </div>
+                } @else {
+                  <div class="transfer-actions">
+                    <button type="button" class="transfer-action-btn" (click)="downloadDamagedPresetStore()">Download unreadable data</button>
+                    <button type="button" class="transfer-action-btn" (click)="requestDiscardDamagedPresets()">Remove damaged presets</button>
+                  </div>
+                }
+              </section>
+            }
           }
 
           <div class="transfer-actions">

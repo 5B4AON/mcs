@@ -1,24 +1,10 @@
 /* ============================================================
-   FULLSCREEN MODAL — Shared styles for conversation views
-   Used by both decoder-view and encoder-view children.
+   CONVERSATION VIEW — conversation area, typing, practice and touch keyer overlay
    ============================================================ */
 
-/* Practice summary */
-.fs-practice-guide {
-  display: grid;
-  gap: .2rem;
-  flex: 0 0 auto;
-  padding: .45rem .6rem;
-  border: 1px solid rgba(140, 204, 255, .45);
-  border-radius: 5px;
-  background: rgba(29, 43, 58, .92);
-  color: #d5e8f5;
-  font-family: system-ui, sans-serif;
-  font-size: 13px;
-  line-height: 1.3;
-}
-.fs-practice-guide strong {
-  color: #8cf;
+/* Host fills the parent flex container */
+:host {
+  display: contents;
 }
 
 /* Conversation area (scrollable) */
@@ -44,9 +30,6 @@
 /* Line rendering */
 .fs-line {
   margin-bottom: 0;
-}
-.fs-line-inline {
-  display: inline;
 }
 
 /* Blinking cursor for active decoding pattern */
@@ -145,40 +128,183 @@
   filter: blur(0) !important;
 }
 
-/* ---- Reveal button (eye icon) ---- */
-.blur-reveal-btn {
+.fs-type-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.fs-encoder-inline {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.fs-encoder-inline span {
+  display: inline;
+  min-width: .6em;
+}
+
+.touch-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  gap: 2px;
+  padding: 0 2px 2px;
+  pointer-events: none;
+  z-index: 10;
+}
+.touch-btn {
+  appearance: none;
+  -webkit-appearance: none;
+  pointer-events: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 90px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: rgba(255, 255, 255, 0.5);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+  cursor: pointer;
+  transition: background 0.1s;
+  font: inherit;
+}
+.touch-btn:active {
+  background: rgba(255, 255, 255, 0.22);
+  border-color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.85);
+}
+.touch-btn-straight {
+  max-width: 100%;
+}
+.touch-btn-icon {
+  font-size: 1.8rem;
+  line-height: 1;
+}
+.touch-btn-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 4px;
+  opacity: 0.7;
+}
+
+/* ---- Practice floating button ---- */
+.fs-btn-stack {
   position: absolute;
   bottom: 12px;
   right: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 25;
+}
+.fs-btn-stack-above-touch {
+  bottom: 106px;
+}
+.fs-float-btn {
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(60, 60, 80, 0.75);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  color: rgba(255, 255, 255, 0.55);
+  background: rgba(60, 60, 80, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.65);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  z-index: 25;
   padding: 0;
   min-height: unset;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
-  transition: background 0.15s, color 0.15s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
 }
-.blur-reveal-btn:hover {
-  background: rgba(80, 80, 110, 0.85);
-  color: rgba(255, 255, 255, 0.8);
+.fs-float-btn:hover {
+  background: rgba(80, 80, 110, 0.9);
+  color: rgba(255, 255, 255, 0.85);
 }
-.blur-reveal-btn:active,
-.blur-reveal-btn.revealing {
-  background: rgba(50, 110, 180, 0.8);
-  color: #fff;
-}
-.blur-reveal-btn svg {
+.fs-float-btn svg {
   display: block;
   pointer-events: none;
+}
+.fs-float-play {
+  background: rgba(30, 140, 70, 0.85);
+  color: #fff;
+  border-color: rgba(50, 180, 90, 0.5);
+}
+.fs-float-play:hover {
+  background: rgba(40, 160, 80, 0.9);
+}
+.fs-float-pause {
+  background: rgba(160, 120, 30, 0.85);
+  color: #fff;
+  border-color: rgba(140, 100, 20, 0.5);
+}
+.fs-float-pause:hover {
+  background: rgba(180, 140, 40, 0.9);
+}
+
+.fs-float-tx-ready {
+  background: rgba(30, 100, 50, 0.85);
+  color: #4f4;
+}
+.fs-float-tx-active {
+  background: rgba(200, 60, 60, 0.85);
+  color: #fff;
+}
+
+/* ---- Practice feedback results ---- */
+.fb-results {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+.fb-correct {
+  color: #4caf50;
+  text-shadow: 0 0 6px rgba(76, 175, 80, 0.6), 0 0 12px rgba(76, 175, 80, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.fb-incorrect {
+  color: #ff1744;
+  text-shadow: 0 0 6px rgba(255, 23, 68, 0.6), 0 0 12px rgba(255, 23, 68, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.fb-missed {
+  color: #777;
+  text-shadow: 0 0 6px rgba(119, 119, 119, 0.4), 0 0 12px rgba(119, 119, 119, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+.fb-accuracy {
+  margin-top: 8px;
+  font-size: 0.8em;
+  color: rgba(255, 255, 255, 0.7);
+}
+.practice-session-summary {
+  display: grid;
+  gap: .25em;
+  font-family: system-ui, sans-serif;
+  font-size: .8em;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+
+.fs-typed-text {
+  font-family: 'Courier New', monospace;
+  color: rgba(255, 255, 255, 0.7);
+  white-space: pre-wrap;
+  overflow-wrap: break-word;
+  min-height: 1.5em;
+}
+
+.fs-float-btn.revealing {
+  background: rgba(50, 110, 180, 0.8);
+  color: #fff;
 }
