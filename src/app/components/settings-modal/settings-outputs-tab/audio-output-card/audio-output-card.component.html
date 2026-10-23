@@ -1,11 +1,11 @@
 <!-- Audio Key Output (Optocoupler) -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().optoEnabled">
+<div class="settings-card" id="settings-card-audio-output-card" [class.disabled-card]="!settings.settings().optoEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-audio-output-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Audio Key Output</span>
       <span class="source-badge" [class.source-rx]="settings.settings().optoForward === 'rx'" [class.source-tx]="settings.settings().optoForward === 'tx'" [class.source-both]="settings.settings().optoForward === 'both'">{{ settings.settings().optoForward === 'rx' ? 'RX' : settings.settings().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().optoEnabled"
              (change)="onBoolChange('optoEnabled', $event)">

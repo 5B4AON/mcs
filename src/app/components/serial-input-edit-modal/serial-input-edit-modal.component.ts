@@ -2,13 +2,16 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import {
   SerialInputMapping, KeyInputMode, SerialInputPin,
   DecoderSource, PaddleMode,
 } from '../../services/settings.service';
 import { SerialKeyInputService } from '../../services/serial-key-input.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a serial input mapping.
@@ -43,7 +46,12 @@ export interface SerialInputEditSaveEvent {
   templateUrl: './serial-input-edit-modal.component.html',
   styleUrls: ['./serial-input-edit-modal.component.css'],
 })
-export class SerialInputEditModalComponent implements OnInit, OnDestroy {
+export class SerialInputEditModalComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: SerialInputMapping = {
     enabled: true, mode: 'straightKey', pin: 'dsr', dahPin: 'cts',
@@ -104,6 +112,15 @@ export class SerialInputEditModalComponent implements OnInit, OnDestroy {
     { value: 'ri', label: 'RI (Ring Indicator)' },
   ];
 
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  /** Keep keyboard focus inside the serial input editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
+
   ngOnInit(): void {
     this.editMode = this.mapping.mode;
     this.editPin = this.mapping.pin;
@@ -129,6 +146,7 @@ export class SerialInputEditModalComponent implements OnInit, OnDestroy {
       clearInterval(this.signalRefreshTimer);
       this.signalRefreshTimer = null;
     }
+    restoreDialogFocus(this.focusReturnTarget);
   }
 
   /** Whether the selected port is currently connected */

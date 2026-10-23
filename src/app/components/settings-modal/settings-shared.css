@@ -49,6 +49,13 @@
   gap: .5rem;
   flex: 1;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .settings-card-chevron {
   font-size: .7rem;
@@ -174,6 +181,10 @@
   background: #888;
   border-radius: 50%;
   transition: transform .2s, background .2s;
+}
+.toggle-switch input:focus-visible + .toggle-slider {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
 }
 .toggle-switch input:checked + .toggle-slider {
   background: #2a6;

@@ -1,5 +1,7 @@
 <div class="fs-modal-overlay" [style.height]="overlayHeight" [style.top]="overlayTop">
-  <div class="fs-modal">
+  <div #fullscreenDialog class="fs-modal" role="dialog" aria-modal="true"
+       [attr.aria-label]="'Fullscreen ' + mode + ' view'" tabindex="-1"
+       (keydown)="onDialogKeydown($event)">
 
     <!-- Top toolbar: close, level meter, WPM pills, clear, kebab menu -->
     <app-fs-toolbar

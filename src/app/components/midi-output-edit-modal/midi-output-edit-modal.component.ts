@@ -2,10 +2,13 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MidiOutputMapping, MidiOutputMode, MidiInputMapping, OutputForward } from '../../services/settings.service';
 import { MidiOutputService, midiOutputNoteName } from '../../services/midi-output.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a MIDI output mapping.
@@ -38,7 +41,12 @@ export interface MidiOutputEditSaveEvent {
   templateUrl: './midi-output-edit-modal.component.html',
   styleUrls: ['./midi-output-edit-modal.component.css'],
 })
-export class MidiOutputEditModalComponent implements OnInit {
+export class MidiOutputEditModalComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: MidiOutputMapping = {
     enabled: true, deviceId: '', channel: 1,
@@ -107,6 +115,19 @@ export class MidiOutputEditModalComponent implements OnInit {
   readonly midiChannels = Array.from({ length: 16 }, (_, i) => i + 1);
 
   constructor(public midiOutput: MidiOutputService) {}
+
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
+
+  /** Keep keyboard focus inside the MIDI output editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
 
   ngOnInit(): void {
     this.editDeviceId = this.mapping.deviceId;

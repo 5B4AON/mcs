@@ -1,5 +1,6 @@
 <div class="emoji-edit-overlay" (click)="cancel()">
-  <div class="emoji-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+  <div #dialog class="emoji-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+       aria-modal="true" tabindex="-1" (keydown)="onDialogKeydown($event)"
        aria-label="Edit Emoji Mapping">
 
     <!-- Header -->
@@ -17,7 +18,7 @@
         <label class="emoji-edit-label" for="emojiEditMatch">Trigger</label>
         <input id="emojiEditMatch" type="text" class="emoji-edit-input mono"
                [(ngModel)]="editMatch" placeholder="e.g. 73, <AR>, CQ"
-               maxlength="20" (keydown.enter)="save()" (keydown.escape)="cancel()">
+               maxlength="20" (keydown.enter)="save()">
         <span class="emoji-edit-hint">Character sequence or prosign that triggers replacement</span>
       </div>
 
@@ -27,7 +28,7 @@
         <div class="emoji-edit-input-group">
           <input #emojiInput id="emojiEditEmoji" type="text" class="emoji-edit-input emoji-text"
                  [(ngModel)]="editEmoji" placeholder="😊 or any text"
-                 maxlength="40" (keydown.enter)="save()" (keydown.escape)="cancel()">
+                 maxlength="40" (keydown.enter)="save()">
           <button type="button" class="picker-btn" (click)="openPicker()" title="Pick emoji">
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
           </button>
@@ -40,7 +41,7 @@
         <label class="emoji-edit-label" for="emojiEditMeaning">Description <span class="optional">(optional)</span></label>
         <input id="emojiEditMeaning" type="text" class="emoji-edit-input"
                [(ngModel)]="editMeaning" placeholder="e.g. Best regards"
-               maxlength="40" (keydown.enter)="save()" (keydown.escape)="cancel()">
+               maxlength="40" (keydown.enter)="save()">
       </div>
 
       <!-- Error -->

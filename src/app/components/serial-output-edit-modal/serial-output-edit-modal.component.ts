@@ -2,10 +2,13 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SerialOutputMapping, SerialInputMapping, SerialPin, OutputForward } from '../../services/settings.service';
 import { SerialKeyOutputService } from '../../services/serial-key-output.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a serial output mapping.
@@ -33,7 +36,12 @@ export interface SerialOutputEditSaveEvent {
   templateUrl: './serial-output-edit-modal.component.html',
   styleUrls: ['./serial-output-edit-modal.component.css'],
 })
-export class SerialOutputEditModalComponent implements OnInit {
+export class SerialOutputEditModalComponent implements OnInit, AfterViewInit, OnDestroy {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: SerialOutputMapping = {
     enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx', relayInputIndices: [],
@@ -84,6 +92,19 @@ export class SerialOutputEditModalComponent implements OnInit {
     { value: 'dtr', label: 'DTR (Data Terminal Ready)' },
     { value: 'rts', label: 'RTS (Request To Send)' },
   ];
+
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
+
+  /** Keep keyboard focus inside the serial output editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
 
   ngOnInit(): void {
     this.editPortIndex = this.mapping.portIndex;

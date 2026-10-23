@@ -2,8 +2,11 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Output } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /** A named group of emojis displayed as a tab in the picker */
 interface EmojiCategory {
@@ -24,12 +27,25 @@ interface EmojiCategory {
   templateUrl: './emoji-picker.component.html',
   styleUrls: ['./emoji-picker.component.css']
 })
-export class EmojiPickerComponent {
+export class EmojiPickerComponent implements AfterViewInit, OnDestroy {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** Emitted when the user selects an emoji from the grid */
   @Output() emojiSelected = new EventEmitter<string>();
 
   /** Emitted when the user closes the picker without selecting */
   @Output() closed = new EventEmitter<void>();
+
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget);
+  }
 
   /** Current search text — when non-empty, all categories are searched */
   searchQuery = '';
@@ -109,6 +125,17 @@ export class EmojiPickerComponent {
   /** Emit the selected emoji to the parent component */
   selectEmoji(emoji: string): void {
     this.emojiSelected.emit(emoji);
+  }
+
+  /** Close only the emoji picker when it is the topmost open view. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      event.stopPropagation();
+      this.close();
+    } else if (this.dialog) {
+      trapDialogTabKey(event, this.dialog.nativeElement);
+    }
   }
 
   /** Close the picker without selecting an emoji */

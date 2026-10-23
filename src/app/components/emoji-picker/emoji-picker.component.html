@@ -1,7 +1,9 @@
 <div class="emoji-picker-overlay" (click)="close()">
-  <div class="emoji-picker-modal" (click)="$event.stopPropagation()">
+  <div #dialog class="emoji-picker-modal" (click)="$event.stopPropagation()" role="dialog"
+       aria-modal="true" aria-labelledby="emoji-picker-title" tabindex="-1"
+       (keydown)="onDialogKeydown($event)">
     <div class="emoji-picker-header">
-      <h3>Select Emoji</h3>
+      <h3 id="emoji-picker-title">Select Emoji</h3>
       <button type="button" class="close-btn" (click)="close()" title="Close">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <line x1="18" y1="6" x2="6" y2="18"></line>

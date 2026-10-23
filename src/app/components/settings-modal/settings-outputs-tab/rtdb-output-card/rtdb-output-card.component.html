@@ -1,11 +1,11 @@
 <!-- Firebase RTDB Output -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().rtdbOutputEnabled">
+<div class="settings-card" id="settings-card-rtdb-output-card" [class.disabled-card]="!settings.settings().rtdbOutputEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-rtdb-output-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Firebase RTDB</span>
       <span class="source-badge" [class.source-rx]="settings.settings().rtdbOutputForward === 'rx'" [class.source-tx]="settings.settings().rtdbOutputForward === 'tx'" [class.source-both]="settings.settings().rtdbOutputForward === 'both'">{{ settings.settings().rtdbOutputForward === 'rx' ? 'RX' : settings.settings().rtdbOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
-    </div>
+    </button>
     <span class="connectivity-badge" [class.connected]="rtdbService.outputActive()" [class.disconnected]="!rtdbService.outputActive()">
       @if (rtdbService.outputActive()) {
         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>

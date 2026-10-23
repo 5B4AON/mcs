@@ -1,11 +1,11 @@
 <!-- Straight Key via Mic (Pilot Tone) -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().micInputEnabled">
+<div class="settings-card" id="settings-card-mic-card" [class.disabled-card]="!settings.settings().micInputEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-mic-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Straight Key via Mic</span>
       <span class="source-badge" [class.source-rx]="settings.settings().micInputSource === 'rx'" [class.source-tx]="settings.settings().micInputSource === 'tx'">{{ settings.settings().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().micInputEnabled"
              (change)="onMicEnabledChange($event)">

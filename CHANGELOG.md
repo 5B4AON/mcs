@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-10-23
+
+### Added
+
+- **Keyboard and Screen-Reader Access** — Every dialog (Settings, Presets,
+  Help, Symbols Reference, fullscreen views, mapping editors, emoji editor and
+  picker, confirmations) now moves focus inside when opened, keeps Tab within
+  it, and returns focus to the control that opened it.
+- **Escape closes views** — Escape closes the top dialog and any open Clear,
+  Fullscreen or menu popup. In the fullscreen Encoder, Escape first stops an
+  active transmission; pressing it again closes the view.
+- **Keyboard Settings navigation** — Settings tabs work with Left/Right,
+  Home and End. Each card heading is a real button announcing expanded or
+  collapsed, separate from its enable switch, which now shows a visible focus
+  outline.
+- **Fullscreen touch keyer by keyboard** — Hold Space or Enter to key; release
+  to stop.
+- Descriptive names for icon-only buttons and a visible focus outline across
+  the app.
+
+### Changed
+
+- Opening the Clear, Fullscreen or main menu now closes the other two.
+- Help documents Escape and the keyboard keyer.
+
 ## [1.10.0] - 2026-10-22
 
 ### Added

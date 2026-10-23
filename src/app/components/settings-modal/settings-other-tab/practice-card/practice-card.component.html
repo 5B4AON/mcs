@@ -1,10 +1,10 @@
 <!-- Copy Practice -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().practiceEnabled">
+<div class="settings-card" id="settings-card-practice-card" [class.disabled-card]="!settings.settings().practiceEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-practice-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Copy Practice</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().practiceEnabled"
              (change)="onEnabledChange($event)">

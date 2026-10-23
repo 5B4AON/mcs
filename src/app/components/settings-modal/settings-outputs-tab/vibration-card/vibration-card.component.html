@@ -1,11 +1,11 @@
 <!-- Vibration (Haptic) -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().vibrateEnabled">
+<div class="settings-card" id="settings-card-vibration-card" [class.disabled-card]="!settings.settings().vibrateEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-vibration-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Vibration</span>
       <span class="source-badge" [class.source-rx]="settings.settings().vibrateForward === 'rx'" [class.source-tx]="settings.settings().vibrateForward === 'tx'" [class.source-both]="settings.settings().vibrateForward === 'both'">{{ settings.settings().vibrateForward === 'rx' ? 'RX' : settings.settings().vibrateForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().vibrateEnabled"
              (change)="onBoolChange('vibrateEnabled', $event)">

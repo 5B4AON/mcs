@@ -1,10 +1,10 @@
 <!-- Farnsworth / Wordsworth Timing -->
-<div class="settings-card" [class.disabled-card]="!settings.settings().farnsworthEnabled">
+<div class="settings-card" id="settings-card-farnsworth-card" [class.disabled-card]="!settings.settings().farnsworthEnabled">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-farnsworth-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Farnsworth Timing</span>
-    </div>
+    </button>
     <label class="toggle-switch" (click)="$event.stopPropagation()">
       <input type="checkbox" [checked]="settings.settings().farnsworthEnabled"
              (change)="onEnabledChange($event)">

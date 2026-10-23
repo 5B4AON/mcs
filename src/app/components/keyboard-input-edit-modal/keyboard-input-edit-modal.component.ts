@@ -2,9 +2,12 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { KeyboardInputMapping, KeyInputMode, DecoderSource, PaddleMode } from '../../services/settings.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a keyboard input mapping.
@@ -34,7 +37,12 @@ export interface KeyboardInputEditSaveEvent {
   templateUrl: './keyboard-input-edit-modal.component.html',
   styleUrls: ['./keyboard-input-edit-modal.component.css'],
 })
-export class KeyboardInputEditModalComponent implements OnInit, OnDestroy {
+export class KeyboardInputEditModalComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: KeyboardInputMapping = {
     enabled: true, mode: 'straightKey', keyCode: '', dahKeyCode: '',
@@ -76,6 +84,15 @@ export class KeyboardInputEditModalComponent implements OnInit, OnDestroy {
   /** Key event handlers for capture mode */
   private boundKeyHandler: ((e: KeyboardEvent) => void) | null = null;
 
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  /** Keep keyboard focus inside the keyboard mapping editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
+
   ngOnInit(): void {
     this.editMode = this.mapping.mode;
     this.editKeyCode = this.mapping.keyCode;
@@ -90,6 +107,7 @@ export class KeyboardInputEditModalComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopCapture();
+    restoreDialogFocus(this.focusReturnTarget);
   }
 
   /** Format a key code for display (make it more human-readable) */
@@ -123,6 +141,10 @@ export class KeyboardInputEditModalComponent implements OnInit, OnDestroy {
     this.stopCapture();
     this.capturing = field;
     this.boundKeyHandler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        this.stopCapture();
+        return;
+      }
       e.preventDefault();
       e.stopPropagation();
       const code = e.code;

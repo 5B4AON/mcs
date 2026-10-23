@@ -1,5 +1,6 @@
 <div class="kb-edit-overlay" (click)="cancel()">
-  <div class="kb-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+  <div #dialog class="kb-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
+       aria-modal="true" tabindex="-1" (keydown)="onDialogKeydown($event)"
        aria-label="Edit Keyboard Input Mapping">
 
     <!-- Header -->

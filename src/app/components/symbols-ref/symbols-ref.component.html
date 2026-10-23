@@ -1,5 +1,5 @@
 <!-- Close button -->
-<button class="ref-close-btn" (click)="closed.emit()" title="Close Symbols Reference">
+<button class="ref-close-btn" (click)="closed.emit()" title="Close Symbols Reference" aria-label="Close Symbols Reference">
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
 </button>
 
@@ -14,41 +14,41 @@
   <div class="ref-container">
 
     <!-- ====== TITLE ====== -->
-    <h1 class="ref-title" id="ref-top">Symbols Reference</h1>
+    <h1 class="ref-title" id="symbols-ref-title">Symbols Reference</h1>
 
     <!-- ====== TABLE OF CONTENTS ====== -->
     <nav class="toc">
       <h2 class="toc-heading">Contents</h2>
 
       <div class="toc-chapter">
-        <a class="toc-ch" (click)="scrollTo('ch1')">1. International Morse Code</a>
-        <a (click)="scrollTo('s1-1')">1.1 Letters</a>
-        <a (click)="scrollTo('s1-2')">1.2 Numbers</a>
-        <a (click)="scrollTo('s1-3')">1.3 Punctuation &amp; Special Characters</a>
+        <button type="button" class="toc-ch" (click)="scrollTo('ch1')">1. International Morse Code</button>
+        <button type="button" (click)="scrollTo('s1-1')">1.1 Letters</button>
+        <button type="button" (click)="scrollTo('s1-2')">1.2 Numbers</button>
+        <button type="button" (click)="scrollTo('s1-3')">1.3 Punctuation &amp; Special Characters</button>
       </div>
 
       <div class="toc-chapter">
-        <a class="toc-ch" (click)="scrollTo('ch2')">2. Prosigns</a>
-        <a (click)="scrollTo('s2-1')">2.1 What Are Prosigns?</a>
-        <a (click)="scrollTo('s2-2')">2.2 Prosign Table</a>
+        <button type="button" class="toc-ch" (click)="scrollTo('ch2')">2. Prosigns</button>
+        <button type="button" (click)="scrollTo('s2-1')">2.1 What Are Prosigns?</button>
+        <button type="button" (click)="scrollTo('s2-2')">2.2 Prosign Table</button>
       </div>
 
       <div class="toc-chapter">
-        <a class="toc-ch" (click)="scrollTo('ch3')">3. Common CW Abbreviations</a>
-        <a (click)="scrollTo('s3-1')">3.1 Operating Abbreviations</a>
-        <a (click)="scrollTo('s3-2')">3.2 Conversational Abbreviations</a>
+        <button type="button" class="toc-ch" (click)="scrollTo('ch3')">3. Common CW Abbreviations</button>
+        <button type="button" (click)="scrollTo('s3-1')">3.1 Operating Abbreviations</button>
+        <button type="button" (click)="scrollTo('s3-2')">3.2 Conversational Abbreviations</button>
       </div>
 
       <div class="toc-chapter">
-        <a class="toc-ch" (click)="scrollTo('ch4')">4. Q-Codes</a>
-        <a (click)="scrollTo('s4-1')">4.1 What Are Q-Codes?</a>
-        <a (click)="scrollTo('s4-2')">4.2 Commonly Used Q-Codes</a>
+        <button type="button" class="toc-ch" (click)="scrollTo('ch4')">4. Q-Codes</button>
+        <button type="button" (click)="scrollTo('s4-1')">4.1 What Are Q-Codes?</button>
+        <button type="button" (click)="scrollTo('s4-2')">4.2 Commonly Used Q-Codes</button>
       </div>
 
       <div class="toc-chapter">
-        <a class="toc-ch" (click)="scrollTo('ch5')">5. 92 Code (Numbered Codes)</a>
-        <a (click)="scrollTo('s5-1')">5.1 What Is the 92 Code?</a>
-        <a (click)="scrollTo('s5-2')">5.2 Common 92 Codes</a>
+        <button type="button" class="toc-ch" (click)="scrollTo('ch5')">5. 92 Code (Numbered Codes)</button>
+        <button type="button" (click)="scrollTo('s5-1')">5.1 What Is the 92 Code?</button>
+        <button type="button" (click)="scrollTo('s5-2')">5.2 Common 92 Codes</button>
       </div>
     </nav>
 

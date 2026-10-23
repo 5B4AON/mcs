@@ -2,10 +2,13 @@
  * Morse Code Studio
  */
 
-import { Component, EventEmitter, Input, Output, OnInit, OnDestroy } from '@angular/core';
+import {
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MidiInputMapping, MidiInputMode, DecoderSource } from '../../services/settings.service';
 import { MidiInputService, MidiLearnResult, midiNoteName } from '../../services/midi-input.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a MIDI input mapping.
@@ -38,7 +41,12 @@ export interface MidiInputEditSaveEvent {
   templateUrl: './midi-input-edit-modal.component.html',
   styleUrls: ['./midi-input-edit-modal.component.css'],
 })
-export class MidiInputEditModalComponent implements OnInit, OnDestroy {
+export class MidiInputEditModalComponent implements OnInit, OnDestroy, AfterViewInit {
+  @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
+
+  private readonly focusReturnTarget =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
   /** The mapping being edited (used to populate initial values) */
   @Input() mapping: MidiInputMapping = {
     enabled: true, deviceId: '', channel: 0, source: 'rx',
@@ -102,6 +110,15 @@ export class MidiInputEditModalComponent implements OnInit, OnDestroy {
 
   constructor(private midiInput: MidiInputService) {}
 
+  ngAfterViewInit(): void {
+    if (this.dialog) focusDialog(this.dialog.nativeElement, '.close-btn');
+  }
+
+  /** Keep keyboard focus inside the MIDI input editor. */
+  onDialogKeydown(event: KeyboardEvent): void {
+    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
+
   ngOnInit(): void {
     this.editDeviceId = this.mapping.deviceId;
     this.editChannel = this.mapping.channel;
@@ -126,6 +143,7 @@ export class MidiInputEditModalComponent implements OnInit, OnDestroy {
       this.midiInput.cancelLearn();
       this.capturing = null;
     }
+    restoreDialogFocus(this.focusReturnTarget);
   }
 
   /** Get the note name component (0-11) from a MIDI note number */

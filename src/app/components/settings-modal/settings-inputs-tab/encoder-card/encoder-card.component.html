@@ -1,11 +1,11 @@
 <!-- Keyboard Encoder -->
-<div class="settings-card">
+<div class="settings-card" id="settings-card-encoder-card">
   <div class="settings-card-header" (click)="expanded = !expanded">
-    <div class="settings-card-title">
+    <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-encoder-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
       <span class="settings-card-name">Keyboard Encoder</span>
       <span class="source-badge" [class.source-rx]="settings.settings().encoderSource === 'rx'" [class.source-tx]="settings.settings().encoderSource === 'tx'">{{ settings.settings().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
-    </div>
+    </button>
   </div>
   @if (expanded) {
     <div class="settings-card-body">
