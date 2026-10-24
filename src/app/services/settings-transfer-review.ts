@@ -14,19 +14,16 @@ import {
   PortableAppSettings,
   SETTINGS_TRANSFER_FIELDS,
 } from './settings-transfer';
+import { compareExternalRoutes, ExternalRouteChange } from './output-change-checker';
+
+export { compareExternalRoutes } from './output-change-checker';
+export type { ExternalRouteChange } from './output-change-checker';
 
 export interface SettingChange {
   field: keyof PortableAppSettings;
   group: 'Inputs' | 'Outputs' | 'Keying and encoder' | 'Other';
   before: unknown;
   after: unknown;
-}
-
-export interface ExternalRouteChange {
-  id: string;
-  type: string;
-  change: 'newly enabled' | 'redirected';
-  target: string;
 }
 
 export interface SettingsImportReview {
@@ -250,124 +247,7 @@ export function listSettingChanges(before: AppSettings, after: AppSettings): Set
   });
 }
 
-/**
- * Compare active radio-keying and RTDB routes without opening or using them.
- */
-export function compareExternalRoutes(
-  before: AppSettings,
-  after: AppSettings,
-): ExternalRouteChange[] {
-  const beforeRoutes = activeExternalRoutes(before);
-  const changes: ExternalRouteChange[] = [];
-  for (const route of activeExternalRoutes(after)) {
-    const previous = beforeRoutes.find(item => item.id === route.id);
-    if (!previous) {
-      changes.push({ ...route, change: 'newly enabled' });
-    } else if (previous.target !== route.target) {
-      changes.push({ ...route, change: 'redirected' });
-    }
-  }
-  return changes;
-}
-
 const PORTABLE_FIELDS = SETTINGS_TRANSFER_FIELDS;
-
-function activeExternalRoutes(settings: AppSettings): Omit<ExternalRouteChange, 'change'>[] {
-  const routes: Omit<ExternalRouteChange, 'change'>[] = [];
-  if (settings.optoEnabled) {
-    routes.push({
-      id: 'opto',
-      type: 'Radio keying through audio optocoupler',
-      target: JSON.stringify([settings.optoOutputDeviceId, settings.optoOutputChannel, settings.optoForward]),
-    });
-  }
-  if (settings.serialEnabled) {
-    settings.serialOutputMappings.forEach((mapping, index) => {
-      if (!mapping.enabled) return;
-      routes.push({
-        id: `serial-${index}`,
-        type: 'Serial radio keying',
-        target: JSON.stringify([
-          mapping.portIndex, mapping.pin, mapping.invert, mapping.forward,
-          mapping.relayInputIndices, mapping.relaySuppressOtherInputs,
-        ]),
-      });
-    });
-  }
-  if (settings.serialInputEnabled) {
-    settings.serialInputMappings.forEach((mapping, index) => {
-      if (!mapping.enabled) return;
-      routes.push({
-        id: `serial-input-${index}`,
-        type: 'Serial key/paddle input',
-        target: JSON.stringify([
-          mapping.portIndex,
-          mapping.mode,
-          mapping.pin,
-          mapping.dahPin,
-          mapping.invert,
-          mapping.source,
-        ]),
-      });
-    });
-  }
-  if (settings.winkeyerEnabled) {
-    routes.push({
-      id: 'winkeyer',
-      type: 'WinKeyer radio keying',
-      target: JSON.stringify([settings.winkeyerPortIndex, settings.winkeyerForward]),
-    });
-  }
-  if (settings.midiOutputEnabled) {
-    settings.midiOutputMappings.forEach((mapping, index) => {
-      if (!mapping.enabled) return;
-      routes.push({
-        id: `midi-${index}`,
-        type: 'MIDI radio keying',
-        target: JSON.stringify([
-          mapping.deviceId, mapping.channel, mapping.mode, mapping.value, mapping.dahValue,
-          mapping.forward, mapping.relayInputIndices, mapping.relaySuppressOtherInputs,
-        ]),
-      });
-    });
-  }
-  if (settings.midiInputEnabled) {
-    settings.midiInputMappings.forEach((mapping, index) => {
-      if (!mapping.enabled) return;
-      routes.push({
-        id: `midi-input-${index}`,
-        type: 'MIDI key/paddle input',
-        target: JSON.stringify([
-          mapping.deviceId,
-          mapping.channel,
-          mapping.mode,
-          mapping.value,
-          mapping.dahValue,
-        ]),
-      });
-    });
-  }
-  if (settings.rtdbInputEnabled) {
-    routes.push({
-      id: 'rtdb-input',
-      type: 'Firebase RTDB input',
-      target: JSON.stringify([settings.rtdbInputChannelName, settings.rtdbInputSource]),
-    });
-  }
-  if (settings.rtdbOutputEnabled) {
-    routes.push({
-      id: 'rtdb-output',
-      type: 'Firebase RTDB output',
-      target: JSON.stringify([
-        settings.rtdbOutputChannelName,
-        settings.rtdbOutputForward,
-        settings.rtdbAllowInputRelay,
-        settings.rtdbRelaySuppressOtherInputs,
-      ]),
-    });
-  }
-  return routes;
-}
 
 function prepareAudioTarget(
   proposed: AppSettings,

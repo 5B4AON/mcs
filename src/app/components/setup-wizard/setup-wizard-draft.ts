@@ -7,6 +7,8 @@ import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 
 export type TeachScenario = 'sending' | 'copying' | 'mobile';
 export type TeachInputType = 'keyboard' | 'mouse' | 'touch' | 'midi' | 'serial';
+export type SendInputMethod = 'keyboard' | 'mouse' | 'touch';
+export type HardwareOutputMethod = 'opto' | 'serial' | 'winkeyer' | 'midi';
 
 export interface TeachParticipantDraft {
   role: 'teacher' | 'student' | 'additional';
@@ -28,18 +30,24 @@ export interface TeachParticipantDraft {
 /** Steps of the guided setup. Review, preset and apply are shared by every goal. */
 export type WizardStepId =
   | 'speed' | 'sidetone' | 'content' | 'timing' | 'feedback' | 'before' | 'tone'
+  | 'sendInput' | 'midiInput' | 'relay' | 'hardware'
   | 'teachScenarios' | 'teachParticipants' | 'teachInputs' | 'teachCopy'
   | 'teachMobile' | 'teachOutputs' | 'teachTiming' | 'teachDisplay' | 'teachExtras'
   | 'review' | 'preset' | 'apply' | 'done';
 
 type WizardDraftKey = DraftKey | 'teachScenarios' | 'teachStudentCount' | 'teachParticipants'
   | 'teachRtdbChannelName' | 'teachRtdbChannelSecret' | 'teachRouteReconfigureConfirmed'
-  | 'teachRtdbReconfigureConfirmed';
+  | 'teachRtdbReconfigureConfirmed' | 'sendMethods' | 'hardwareMethods'
+  | 'relayChannelName' | 'relayChannelSecret' | 'relayReceive' | 'relaySend';
 
 /** Ordered steps for each wizard goal. */
 export const WIZARD_STEPS: Record<WizardGoalId, WizardStepId[]> = {
+  send: ['sendInput', 'review', 'done'],
   type: ['speed', 'timing', 'sidetone', 'review', 'done'],
   practice: ['content', 'timing', 'feedback', 'review', 'done'],
+  midi: ['midiInput', 'review', 'done'],
+  relay: ['relay', 'review', 'done'],
+  hardware: ['hardware', 'review', 'done'],
   decode: ['before', 'tone', 'review', 'done'],
   teach: ['teachScenarios', 'teachParticipants', 'teachInputs', 'review', 'preset', 'apply', 'done'],
 };
@@ -62,6 +70,12 @@ export type DraftKey =
   | 'rtdbInputChannelName' | 'rtdbOutputChannelName' | 'rtdbInputChannelSecret'
   | 'rtdbOutputChannelSecret' | 'rtdbInputName' | 'rtdbInputColor' | 'rtdbOutputName'
   | 'rtdbOutputColor' | 'rtdbOutputOverrideName' | 'rtdbOutputOverrideColor'
+  | 'midiInputEnabled' | 'rtdbInputEnabled' | 'rtdbOutputEnabled'
+  | 'rtdbInputSource' | 'rtdbOutputForward'
+  | 'optoEnabled' | 'optoOutputDeviceId' | 'optoOutputChannel' | 'optoForward'
+  | 'serialEnabled' | 'serialOutputMappings'
+  | 'winkeyerEnabled' | 'winkeyerPortIndex' | 'winkeyerForward'
+  | 'midiOutputEnabled' | 'midiOutputMappings'
   | 'textBlurEnabled' | 'textBlurAppliesTo' | 'showProsigns' | 'prosignActionsEnabled'
   | 'prosignActions' | 'emojisEnabled' | 'emojiMappings';
 
@@ -69,6 +83,12 @@ export type DraftKey =
 type ForcedKey = 'practiceEnabled' | 'practicePipeline';
 
 export interface DraftValues extends Partial<Pick<AppSettings, DraftKey | ForcedKey>> {
+  sendMethods?: SendInputMethod[];
+  hardwareMethods?: HardwareOutputMethod[];
+  relayChannelName?: string;
+  relayChannelSecret?: string;
+  relayReceive?: boolean;
+  relaySend?: boolean;
   teachScenarios?: TeachScenario[];
   teachStudentCount?: number;
   teachParticipants?: TeachParticipantDraft[];
@@ -80,6 +100,10 @@ export interface DraftValues extends Partial<Pick<AppSettings, DraftKey | Forced
 
 /** Which settings each step asks about; Skip restores exactly these to their current values. */
 export const STEP_FIELDS: Partial<Record<WizardStepId, WizardDraftKey[]>> = {
+  sendInput: ['sendMethods'],
+  midiInput: ['midiInputEnabled', 'midiInputMappings'],
+  relay: ['relayChannelName', 'relayChannelSecret', 'relayReceive', 'relaySend'],
+  hardware: ['hardwareMethods'],
   speed: ['encoderWpm'],
   sidetone: ['sidetoneEnabled', 'sidetoneFrequency'],
   content: [
@@ -108,6 +132,7 @@ export const STEP_FIELDS: Partial<Record<WizardStepId, WizardDraftKey[]>> = {
 
 /** Every setting a goal's wizard can touch, in review order. */
 export const GOAL_FIELDS: Record<WizardGoalId, (DraftKey | ForcedKey)[]> = {
+  send: ['keyboardKeyerEnabled', 'keyboardInputMappings', 'mouseKeyerEnabled', 'touchKeyerEnabled'],
   type: [
     'encoderWpm', 'farnsworthEnabled', 'farnsworthInputMode', 'farnsworthEffectiveWpm', 'farnsworthMultiplier',
     'farnsworthWordsworth', 'farnsworthAppliesTo', 'sidetoneEnabled', 'sidetoneFrequency',
@@ -118,6 +143,17 @@ export const GOAL_FIELDS: Record<WizardGoalId, (DraftKey | ForcedKey)[]> = {
     'farnsworthEnabled', 'farnsworthInputMode', 'farnsworthEffectiveWpm', 'farnsworthMultiplier',
     'farnsworthWordsworth', 'farnsworthAppliesTo',
     'practiceFeedbackMode', 'practiceRounds', 'practicePipeline',
+  ],
+  midi: ['midiInputEnabled', 'midiInputMappings'],
+  relay: [
+    'rtdbInputEnabled', 'rtdbInputChannelName', 'rtdbInputChannelSecret', 'rtdbInputSource',
+    'rtdbOutputEnabled', 'rtdbOutputChannelName', 'rtdbOutputChannelSecret', 'rtdbOutputForward',
+  ],
+  hardware: [
+    'optoEnabled', 'optoOutputDeviceId', 'optoOutputChannel', 'optoForward',
+    'serialEnabled', 'serialOutputMappings',
+    'winkeyerEnabled', 'winkeyerPortIndex', 'winkeyerForward',
+    'midiOutputEnabled', 'midiOutputMappings',
   ],
   decode: ['cwInputSource', 'cwInputFrequency', 'cwInputBandwidth', 'cwInputAutoThreshold'],
   teach: [
@@ -218,11 +254,27 @@ const LABELS: Partial<Record<DraftKey | ForcedKey, string>> = {
   touchKeyerSource: 'Touch key source',
   touchKeyerName: 'Touch participant name',
   touchKeyerColor: 'Touch participant color',
+  midiInputEnabled: 'MIDI key/paddle input',
   midiInputMappings: 'MIDI participant mappings',
   serialInputMappings: 'Serial participant mappings',
   practiceSource: 'Practice direction',
+  rtdbInputEnabled: 'Online relay input',
+  rtdbOutputEnabled: 'Online relay output',
   rtdbInputChannelName: 'Shared RTDB channel',
   rtdbOutputChannelName: 'Shared RTDB channel',
+  rtdbInputSource: 'Relay input direction',
+  rtdbOutputForward: 'Relay output direction',
+  optoEnabled: 'Radio keying through audio optocoupler',
+  optoOutputDeviceId: 'Optocoupler audio device',
+  optoOutputChannel: 'Optocoupler channel',
+  optoForward: 'Optocoupler forwarding',
+  serialEnabled: 'Serial radio keying',
+  serialOutputMappings: 'Serial output mappings',
+  winkeyerEnabled: 'WinKeyer radio keying',
+  winkeyerPortIndex: 'WinKeyer serial port',
+  winkeyerForward: 'WinKeyer forwarding',
+  midiOutputEnabled: 'MIDI radio keying',
+  midiOutputMappings: 'MIDI output mappings',
   rtdbOutputName: 'Teacher display name',
   rtdbInputChannelSecret: 'Shared RTDB secret',
   rtdbOutputChannelSecret: 'Shared RTDB secret',
@@ -255,7 +307,10 @@ export function formatValue(key: DraftKey | ForcedKey, value: unknown): string {
     case 'practiceContentMode': return CONTENT_NAMES[String(value)] ?? String(value);
     case 'practiceFeedbackMode': return FEEDBACK_NAMES[String(value)] ?? String(value);
     case 'practicePipeline': return value === 'local' ? 'This device only (local audio and vibration)' : 'Full pipeline (all enabled outputs)';
-    case 'cwInputSource': return value === 'tx' ? 'TX (transmitted)' : 'RX (received)';
+    case 'cwInputSource': case 'rtdbInputSource':
+      return value === 'tx' ? 'TX (transmitted)' : 'RX (received)';
+    case 'optoForward': case 'winkeyerForward': case 'rtdbOutputForward':
+      return value === 'both' ? 'RX and TX' : value === 'tx' ? 'TX only' : 'RX only';
     case 'practiceWordLengths': return (value as number[]).join(', ') + ' letters';
     case 'farnsworthInputMode': return value === 'multiplier' ? 'Gap multiplier' : 'Effective WPM';
     case 'farnsworthMultiplier': return `${Number(value).toFixed(2)}\u00d7`;
@@ -264,6 +319,8 @@ export function formatValue(key: DraftKey | ForcedKey, value: unknown): string {
     case 'sidetoneEnabled': case 'practiceEnabled': case 'keyboardKeyerEnabled':
     case 'mouseKeyerEnabled': case 'touchKeyerEnabled': case 'textBlurEnabled':
     case 'showProsigns': case 'prosignActionsEnabled': case 'emojisEnabled':
+    case 'midiInputEnabled': case 'rtdbInputEnabled': case 'rtdbOutputEnabled':
+    case 'optoEnabled': case 'serialEnabled': case 'winkeyerEnabled': case 'midiOutputEnabled':
       return value ? 'On' : 'Off';
     case 'practiceIncludeLetters': case 'practiceIncludeNumbers': case 'practiceIncludePunctuation':
     case 'cwInputAutoThreshold': case 'rtdbOutputOverrideName': case 'rtdbOutputOverrideColor':
@@ -275,6 +332,14 @@ export function formatValue(key: DraftKey | ForcedKey, value: unknown): string {
     case 'midiInputMappings': {
       const mappings = value as AppSettings['midiInputMappings'];
       return mappings.map(mapping => `${mapping.name || 'Unnamed'} (${mapping.deviceId || 'any device'}, note ${mapping.value})`).join(', ') || 'None';
+    }
+    case 'serialOutputMappings': {
+      const mappings = value as AppSettings['serialOutputMappings'];
+      return mappings.map(mapping => `${mapping.enabled ? 'On' : 'Off'} (port ${mapping.portIndex + 1}, ${mapping.pin.toUpperCase()}, ${mapping.forward.toUpperCase()})`).join('; ') || 'None';
+    }
+    case 'midiOutputMappings': {
+      const mappings = value as AppSettings['midiOutputMappings'];
+      return mappings.map(mapping => `${mapping.enabled ? 'On' : 'Off'} (${mapping.deviceId || 'no device'}, channel ${mapping.channel}, note ${mapping.value}, ${mapping.forward.toUpperCase()})`).join('; ') || 'None';
     }
     case 'serialInputMappings': {
       const mappings = value as AppSettings['serialInputMappings'];
@@ -330,11 +395,67 @@ export function initialDraft(goal: WizardGoalId, base: AppSettings): DraftValues
     draft['teachRouteReconfigureConfirmed'] = false;
     draft['teachRtdbReconfigureConfirmed'] = false;
   }
+  if (goal === 'send') {
+    draft['sendMethods'] = [
+      ...(base.keyboardKeyerEnabled ? ['keyboard' as const] : []),
+      ...(base.mouseKeyerEnabled ? ['mouse' as const] : []),
+      ...(base.touchKeyerEnabled ? ['touch' as const] : []),
+    ];
+  }
+  if (goal === 'hardware') {
+    draft['hardwareMethods'] = [
+      ...(base.optoEnabled ? ['opto' as const] : []),
+      ...(base.serialEnabled ? ['serial' as const] : []),
+      ...(base.winkeyerEnabled ? ['winkeyer' as const] : []),
+      ...(base.midiOutputEnabled ? ['midi' as const] : []),
+    ];
+  }
+  if (goal === 'relay') {
+    draft['relayChannelName'] = base.rtdbInputChannelName || base.rtdbOutputChannelName;
+    draft['relayChannelSecret'] = base.rtdbInputChannelSecret || base.rtdbOutputChannelSecret;
+    draft['relayReceive'] = base.rtdbInputEnabled;
+    draft['relaySend'] = base.rtdbOutputEnabled;
+  }
   return draft as DraftValues;
 }
 
 /** What the goal will actually apply: the answers plus fixed, safe values. */
 export function proposedValues(goal: WizardGoalId, draft: DraftValues, base: AppSettings): DraftValues {
+  if (goal === 'send') {
+    const methods = draft.sendMethods ?? [];
+    return {
+      ...draft,
+      keyboardKeyerEnabled: base.keyboardKeyerEnabled || methods.includes('keyboard'),
+      mouseKeyerEnabled: base.mouseKeyerEnabled || methods.includes('mouse'),
+      touchKeyerEnabled: base.touchKeyerEnabled || methods.includes('touch'),
+    };
+  }
+  if (goal === 'midi') {
+    return { ...draft, midiInputEnabled: true };
+  }
+  if (goal === 'relay') {
+    const channel = draft.relayChannelName?.trim() ?? '';
+    const secret = draft.relayChannelSecret ?? '';
+    return {
+      ...draft,
+      rtdbInputEnabled: base.rtdbInputEnabled || !!draft.relayReceive,
+      rtdbOutputEnabled: base.rtdbOutputEnabled || !!draft.relaySend,
+      rtdbInputChannelName: channel,
+      rtdbOutputChannelName: channel,
+      rtdbInputChannelSecret: secret,
+      rtdbOutputChannelSecret: secret,
+    };
+  }
+  if (goal === 'hardware') {
+    const methods = draft.hardwareMethods ?? [];
+    return {
+      ...draft,
+      optoEnabled: base.optoEnabled || methods.includes('opto'),
+      serialEnabled: base.serialEnabled || methods.includes('serial'),
+      winkeyerEnabled: base.winkeyerEnabled || methods.includes('winkeyer'),
+      midiOutputEnabled: base.midiOutputEnabled || methods.includes('midi'),
+    };
+  }
   if (goal === 'practice') {
     return { ...draft, practiceEnabled: true, practicePipeline: 'local' };
   }
@@ -524,7 +645,9 @@ export function hasAnswerChanges(goal: WizardGoalId, base: AppSettings, draft: D
       || GOAL_FIELDS[goal].some(key => JSON.stringify(base[key]) !== JSON.stringify(draft[key]));
   }
   const start = initialDraft(goal, base);
-  return GOAL_FIELDS[goal].some(key => JSON.stringify(start[key]) !== JSON.stringify(draft[key]));
+  const initialValues = proposedValues(goal, start, base);
+  const currentValues = proposedValues(goal, draft, base);
+  return GOAL_FIELDS[goal].some(key => JSON.stringify(initialValues[key]) !== JSON.stringify(currentValues[key]));
 }
 
 /** Validation problems for one step, in plain language; empty when the step is fine. */
@@ -563,6 +686,64 @@ export function validateStep(step: WizardStepId, draft: DraftValues, base: AppSe
     }
     if (!inRange(draft.cwInputBandwidth, LIMITS.cwBandwidth.min, LIMITS.cwBandwidth.max)) {
       problems.push(`Enter a bandwidth from ${LIMITS.cwBandwidth.min} to ${LIMITS.cwBandwidth.max} Hz.`);
+    }
+  }
+  if (step === 'sendInput') {
+    const methods = draft.sendMethods ?? [];
+    if (!methods.length) problems.push('Choose a keyboard, mouse or touch keyer.');
+    if (methods.includes('keyboard') && !draft.keyboardInputMappings?.some(mapping => mapping.enabled)) {
+      problems.push('No keyboard key or paddle mapping is enabled. Configure a mapping in Keyboard Keyer settings.');
+    }
+    if (methods.includes('mouse') && base.mouseLeftAction === 'none'
+      && base.mouseMiddleAction === 'none' && base.mouseRightAction === 'none') {
+      problems.push('Choose a mouse button action in Mouse Keyer settings before enabling mouse keying.');
+    }
+  }
+  if (step === 'midiInput') {
+    const mappings = draft.midiInputMappings ?? [];
+    if (!mappings.some(mapping => mapping.enabled)) {
+      problems.push('Enable and configure at least one MIDI key or paddle mapping in MIDI Input settings.');
+    } else if (mappings.some(mapping => mapping.enabled && !mapping.deviceId.trim())) {
+      problems.push('Select an exact MIDI input device for every enabled mapping; an any-device mapping is not specific enough.');
+    }
+  }
+  if (step === 'relay') {
+    if (!draft.relayReceive && !draft.relaySend
+      && !base.rtdbInputEnabled && !base.rtdbOutputEnabled) {
+      problems.push('Choose whether to receive from or send to the shared channel.');
+    }
+    const channel = draft.relayChannelName?.trim() ?? '';
+    if (!channel) {
+      problems.push('Enter the shared channel name.');
+    } else if (/[.#$\[\]\/]/.test(channel)) {
+      problems.push('Use a channel name without periods, slashes, brackets, or dollar signs.');
+    }
+    if (!(draft.relayChannelSecret ?? '').trim()) {
+      problems.push('Enter the shared channel secret.');
+    }
+  }
+  if (step === 'hardware') {
+    const methods = draft.hardwareMethods ?? [];
+    if (!methods.length && !base.optoEnabled && !base.serialEnabled && !base.winkeyerEnabled && !base.midiOutputEnabled) {
+      problems.push('Choose at least one radio-keying output.');
+    }
+    if (methods.includes('opto') && (!draft.optoOutputDeviceId || draft.optoOutputDeviceId === 'default')) {
+      problems.push('Choose a specific audio device for the optocoupler in Audio Output settings; System Default is not accepted.');
+    }
+    if (methods.includes('serial') && !(draft.serialOutputMappings ?? []).some(mapping =>
+      mapping.enabled && mapping.portIndex >= 0)) {
+      problems.push('Assign an exact serial port and DTR/RTS pin in Serial Output settings.');
+    }
+    if (methods.includes('winkeyer') && (draft.winkeyerPortIndex ?? -1) < 0) {
+      problems.push('Choose an exact WinKeyer serial port in WinKeyer settings.');
+    }
+    if (methods.includes('midi')) {
+      const mappings = draft.midiOutputMappings ?? [];
+      if (!mappings.some(mapping => mapping.enabled)) {
+        problems.push('Enable and configure at least one MIDI output mapping in MIDI Output settings.');
+      } else if (mappings.some(mapping => mapping.enabled && !mapping.deviceId.trim())) {
+        problems.push('Select an exact MIDI output device for every enabled mapping; an any-device mapping is not specific enough.');
+      }
     }
   }
   if (step === 'teachScenarios' && !(draft.teachScenarios?.length)) {

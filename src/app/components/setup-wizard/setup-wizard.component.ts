@@ -15,25 +15,32 @@ import {
   ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { AudioDeviceService } from '../../services/audio-device.service';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { MidiInputService, MidiLearnResult } from '../../services/midi-input.service';
+import { MidiOutputService } from '../../services/midi-output.service';
+import { compareExternalRoutes, ExternalRouteChange } from '../../services/output-change-checker';
 import { PresetService } from '../../services/preset.service';
 import { createSettingsSnapshot } from '../../services/settings-transfer';
 import { SerialKeyInputService } from '../../services/serial-key-input.service';
+import { SerialKeyOutputService } from '../../services/serial-key-output.service';
+import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { WizardGoalId, goalForWizard } from '../settings-modal/goal-navigator/setup-goals';
 import {
   DraftKey,
   DraftValues,
+  HardwareOutputMethod,
   KEYBOARD_KEY_CODES,
   LIMITS,
   STEP_FIELDS,
   TeachInputType,
   TeachParticipantDraft,
   TeachScenario,
+  SendInputMethod,
   WizardStepId,
   buildReview,
   buildTeachSettingsPatch,
@@ -83,6 +90,12 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Emitted when the educator starts the existing full-screen conversation. */
   @Output() readonly openFullscreenRequested = new EventEmitter<void>();
 
+  /** Emitted to open an existing Settings card after discarding any draft answers. */
+  @Output() readonly settingsRequested = new EventEmitter<string>();
+
+  /** Emitted to open Help after the wizard closes. */
+  @Output() readonly helpRequested = new EventEmitter<string>();
+
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
 
   readonly limits = LIMITS;
@@ -101,8 +114,12 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   midiNotice = '';
   serialNotice = '';
   rtdbNotice = '';
+  deviceCheckNotice = '';
+  routeAcknowledgements: Record<string, boolean> = {};
   midiCapture: { participantIndex: number; field: 'midiNote' | 'midiDahNote' } | null = null;
   private midiStartedForDraft = false;
+  private pendingSettingsLanding: string | null = null;
+  private pendingHelpSection: string | null = null;
 
   /** Whether Apply has been pressed */
   applied = false;
@@ -114,6 +131,8 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly serialSupported = typeof navigator !== 'undefined' && 'serial' in navigator;
   readonly audioInputSupported =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof AudioWorkletNode !== 'undefined';
+  readonly audioOutputSupported =
+    typeof navigator !== 'undefined' && !!navigator.mediaDevices?.enumerateDevices;
 
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -125,6 +144,10 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     public midiInput: MidiInputService,
     public serialInput: SerialKeyInputService,
     public rtdb: FirebaseRtdbService,
+    public audioDevices: AudioDeviceService,
+    public midiOutput: MidiOutputService,
+    public serialOutput: SerialKeyOutputService,
+    public winkeyerOutput: WinkeyerOutputService,
   ) {}
 
   ngOnInit(): void {
@@ -154,8 +177,12 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get startLabel(): string {
     switch (this.goal) {
+      case 'send': return 'Start sending practice';
       case 'type': return 'Start typing';
       case 'practice': return 'Start practicing';
+      case 'midi': return 'Start keying';
+      case 'relay': return 'Open the conversation';
+      case 'hardware': return 'Try the configured route';
       case 'decode': return 'Start decoding';
       case 'teach':
         return this.teachScenarios.includes('copying') && !this.teachScenarios.includes('sending')
@@ -167,6 +194,14 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get teachScenarios(): TeachScenario[] {
     return this.draft.teachScenarios ?? [];
+  }
+
+  get sendMethods(): SendInputMethod[] {
+    return this.draft.sendMethods ?? [];
+  }
+
+  get hardwareMethods(): HardwareOutputMethod[] {
+    return this.draft.hardwareMethods ?? [];
   }
 
   get teachParticipants(): TeachParticipantDraft[] {
@@ -224,6 +259,55 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     return buildReview(this.goal, this.base, this.draft);
   }
 
+  get externalRouteChanges(): ExternalRouteChange[] {
+    return compareExternalRoutes(this.base, { ...this.base, ...this.patch });
+  }
+
+  get routeAvailabilityProblems(): string[] {
+    const proposed = { ...this.base, ...this.patch };
+    const problems: string[] = [];
+    for (const route of this.externalRouteChanges) {
+      if (route.id === 'opto' &&
+        !this.audioDevices.outputDevices().some(device => device.deviceId === proposed.optoOutputDeviceId)) {
+        problems.push(`${route.destination}: refresh audio devices and select an available, specific output.`);
+      } else if (route.id.startsWith('serial-input-')) {
+        const index = Number(route.id.slice('serial-input-'.length));
+        const mapping = proposed.serialInputMappings[index];
+        if (!mapping || mapping.portIndex < 0 || mapping.portIndex >= this.serialInput.ports().length) {
+          problems.push(`${route.destination}: the selected serial input port is not available.`);
+        }
+      } else if (route.id.startsWith('serial-')) {
+        const index = Number(route.id.slice('serial-'.length));
+        const mapping = proposed.serialOutputMappings[index];
+        if (!mapping || mapping.portIndex < 0 || mapping.portIndex >= this.serialOutput.ports().length) {
+          problems.push(`${route.destination}: the selected serial output port is not available.`);
+        }
+      } else if (route.id === 'winkeyer' &&
+        (proposed.winkeyerPortIndex < 0 || proposed.winkeyerPortIndex >= this.winkeyerOutput.ports().length)) {
+        problems.push(`${route.destination}: the selected WinKeyer port is not available.`);
+      } else if (route.id.startsWith('midi-input-')) {
+        const index = Number(route.id.slice('midi-input-'.length));
+        const mapping = proposed.midiInputMappings[index];
+        if (!mapping || !this.midiInput.midiInputs().some(device => device.id === mapping.deviceId)) {
+          problems.push(`${route.destination}: the selected MIDI input device is not available.`);
+        }
+      } else if (route.id.startsWith('midi-')) {
+        const index = Number(route.id.slice('midi-'.length));
+        const mapping = proposed.midiOutputMappings[index];
+        if (!mapping || !this.midiOutput.midiOutputs().some(device => device.id === mapping.deviceId)) {
+          problems.push(`${route.destination}: the selected MIDI output device is not available.`);
+        }
+      } else if (route.id === 'rtdb-output' &&
+        (!proposed.rtdbOutputChannelName.trim() || !proposed.rtdbOutputChannelSecret.trim())) {
+        problems.push('RTDB output needs a channel name and secret before it can be enabled.');
+      } else if (route.id === 'rtdb-input' &&
+        (!proposed.rtdbInputChannelName.trim() || !proposed.rtdbInputChannelSecret.trim())) {
+        problems.push('RTDB input needs a channel name and secret before it can be enabled.');
+      }
+    }
+    return problems;
+  }
+
   /** Conflicts the proposal would newly cause on shared stereo audio devices */
   get newConflicts(): string[] {
     return newChannelConflicts(this.base, this.patch);
@@ -248,7 +332,10 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   get canApply(): boolean {
     return (this.review.changes.length > 0 || this.goal === 'teach') &&
       validateDraft(this.goal, this.draft, this.base).length === 0 &&
-      this.newConflicts.length === 0;
+      this.newConflicts.length === 0 &&
+      this.routeAvailabilityProblems.length === 0 &&
+      this.externalRouteChanges.every(route =>
+        !route.acknowledgementRequired || this.routeAcknowledgements[this.acknowledgementKey(route)] === true);
   }
 
   /** Only the settings shown as changed in the review. */
@@ -284,6 +371,150 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setBool(key: DraftKey, event: Event): void {
     (this.draft as Record<string, unknown>)[key] = (event.target as HTMLInputElement).checked;
+  }
+
+  toggleSendMethod(method: SendInputMethod, event: Event): void {
+    const selected = new Set(this.sendMethods);
+    if ((event.target as HTMLInputElement).checked) selected.add(method);
+    else selected.delete(method);
+    this.draft.sendMethods = [...selected];
+  }
+
+  toggleHardwareMethod(method: HardwareOutputMethod, event: Event): void {
+    const selected = new Set(this.hardwareMethods);
+    if ((event.target as HTMLInputElement).checked) selected.add(method);
+    else selected.delete(method);
+    this.draft.hardwareMethods = [...selected];
+  }
+
+  setRelayChannelName(event: Event): void {
+    this.draft.relayChannelName = (event.target as HTMLInputElement).value;
+  }
+
+  setRelayChannelSecret(event: Event): void {
+    this.draft.relayChannelSecret = (event.target as HTMLInputElement).value;
+  }
+
+  setRelayDirection(direction: 'relayReceive' | 'relaySend', event: Event): void {
+    this.draft[direction] = (event.target as HTMLInputElement).checked;
+  }
+
+  acknowledgeRoute(route: ExternalRouteChange, event: Event): void {
+    this.routeAcknowledgements[this.acknowledgementKey(route)] =
+      (event.target as HTMLInputElement).checked;
+  }
+
+  private acknowledgementKey(route: ExternalRouteChange): string {
+    return `${route.id}:${route.target}`;
+  }
+
+  routeAckKey(route: ExternalRouteChange): string {
+    return this.acknowledgementKey(route);
+  }
+
+  describeRouteTarget(route: ExternalRouteChange): string {
+    const proposed = { ...this.base, ...this.patch };
+    const serialInput = /^serial-input-(\d+)$/.exec(route.id);
+    if (serialInput) {
+      const mapping = proposed.serialInputMappings[Number(serialInput[1])];
+      const port = mapping && this.serialInput.ports()[mapping.portIndex];
+      return port ? `${route.destination} (${this.serialInput.portLabel(port)})` : route.destination;
+    }
+    const serialOutput = /^serial-(\d+)$/.exec(route.id);
+    if (serialOutput) {
+      const mapping = proposed.serialOutputMappings[Number(serialOutput[1])];
+      const port = mapping && this.serialOutput.ports()[mapping.portIndex];
+      return port ? `${route.destination} (${this.serialOutput.portLabel(port)})` : route.destination;
+    }
+    if (route.id === 'winkeyer') {
+      const port = this.winkeyerOutput.ports()[proposed.winkeyerPortIndex];
+      return port ? `${route.destination} (${this.winkeyerOutput.portLabel(port)})` : route.destination;
+    }
+    const midiInput = /^midi-input-(\d+)$/.exec(route.id);
+    if (midiInput) {
+      const mapping = proposed.midiInputMappings[Number(midiInput[1])];
+      const device = this.midiInput.midiInputs().find(item => item.id === mapping?.deviceId);
+      return device ? `${route.destination} (${device.name})` : route.destination;
+    }
+    const midiOutput = /^midi-(\d+)$/.exec(route.id);
+    if (midiOutput) {
+      const mapping = proposed.midiOutputMappings[Number(midiOutput[1])];
+      const device = this.midiOutput.midiOutputs().find(item => item.id === mapping?.deviceId);
+      return device ? `${route.destination} (${device.name})` : route.destination;
+    }
+    if (route.id === 'opto') {
+      const device = this.audioDevices.outputDevices().find(item =>
+        item.deviceId === proposed.optoOutputDeviceId);
+      return device ? `${route.destination} (${device.label})` : route.destination;
+    }
+    return route.destination;
+  }
+
+  routeAcknowledgementText(route: ExternalRouteChange): string {
+    if (route.id === 'rtdb-output') {
+      return `I understand Morse I send will be published to the configured shared channel ${this.describeRouteTarget(route)}.`;
+    }
+    if (route.type.toLowerCase().includes('radio keying')) {
+      return `I understand this route can key a radio or connected device through ${this.describeRouteTarget(route)}.`;
+    }
+    return `I understand this external route will use ${this.describeRouteTarget(route)}.`;
+  }
+
+  async refreshAudioDevices(): Promise<void> {
+    await this.audioDevices.enumerate();
+    this.deviceCheckNotice = this.audioDevices.outputDevices().length
+      ? 'Available audio outputs refreshed. The optocoupler route must name one of these devices; System Default is not accepted.'
+      : 'No audio output devices are available to this browser.';
+  }
+
+  async refreshSerialDevices(): Promise<void> {
+    await Promise.all([
+      this.serialInput.refreshPorts(),
+      this.serialOutput.refreshPorts(),
+      this.winkeyerOutput.refreshPorts(),
+    ]);
+    const available = Math.max(
+      this.serialInput.ports().length,
+      this.serialOutput.ports().length,
+      this.winkeyerOutput.ports().length,
+    );
+    this.deviceCheckNotice = available
+      ? `${available} previously authorized serial port${available === 1 ? '' : 's'} available. No port was opened.`
+      : 'No previously authorized serial ports are available. Choose a port in the relevant Settings card.';
+  }
+
+  async refreshMidiInputs(): Promise<void> {
+    await this.midiInput.enumerateDevices();
+    this.deviceCheckNotice = this.midiInput.lastError()
+      || `${this.midiInput.midiInputs().length} MIDI input device${this.midiInput.midiInputs().length === 1 ? '' : 's'} available. No keying route was enabled.`;
+  }
+
+  async refreshMidiOutputs(): Promise<void> {
+    await this.midiOutput.enumerateDevices();
+    this.deviceCheckNotice = this.midiOutput.lastError()
+      || `${this.midiOutput.midiOutputs().length} MIDI output device${this.midiOutput.midiOutputs().length === 1 ? '' : 's'} available. No keying route was enabled.`;
+  }
+
+  requestSettings(landing: string): void {
+    this.pendingSettingsLanding = landing;
+    this.pendingHelpSection = null;
+    if (this.hasDraft()) {
+      this.confirmDiscard = true;
+      return;
+    }
+    this.pendingSettingsLanding = null;
+    this.settingsRequested.emit(landing);
+  }
+
+  requestHelp(sectionId: string): void {
+    this.pendingHelpSection = sectionId;
+    this.pendingSettingsLanding = null;
+    if (this.hasDraft()) {
+      this.confirmDiscard = true;
+      return;
+    }
+    this.pendingHelpSection = null;
+    this.helpRequested.emit(sectionId);
   }
 
   toggleTeachScenario(scenario: TeachScenario, event: Event): void {
@@ -535,13 +766,25 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get canSkip(): boolean {
-    return !!STEP_FIELDS[this.step] && this.goal !== 'decode';
+    return !!STEP_FIELDS[this.step] && !['decode', 'midi', 'relay', 'hardware'].includes(this.goal);
   }
 
   /** Apply only the reviewed changes; the running app is otherwise untouched. */
   apply(): void {
     if (!this.canApply) return;
-    this.settings.update(this.patch);
+    const patch = { ...this.patch };
+    if (this.goal === 'midi') delete patch.midiInputEnabled;
+    if (this.goal === 'relay') {
+      delete patch.rtdbInputEnabled;
+      delete patch.rtdbOutputEnabled;
+    }
+    if (this.goal === 'hardware') {
+      delete patch.optoEnabled;
+      delete patch.serialEnabled;
+      delete patch.winkeyerEnabled;
+      delete patch.midiOutputEnabled;
+    }
+    this.settings.update(patch);
     if (this.goal === 'decode') this.cwInput.updateParams();
     this.applied = true;
     this.stepIndex = this.steps.length - 1;
@@ -564,7 +807,18 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onDiscardAnswer(discard: boolean): void {
     this.confirmDiscard = false;
-    if (discard) this.closed.emit();
+    if (!discard) {
+      this.pendingSettingsLanding = null;
+      this.pendingHelpSection = null;
+      return;
+    }
+    const landing = this.pendingSettingsLanding;
+    const sectionId = this.pendingHelpSection;
+    this.pendingSettingsLanding = null;
+    this.pendingHelpSection = null;
+    if (landing) this.settingsRequested.emit(landing);
+    else if (sectionId) this.helpRequested.emit(sectionId);
+    else this.closed.emit();
   }
 
   /** Turn off the audio outputs that could feed the detector; the one change made outside Apply, and only on this click. */
@@ -630,6 +884,34 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.midiNotice = this.midiInput.lastError() || 'MIDI input is enabled. Check the connection status before keying.';
   }
 
+  async connectHardwareRoute(method: HardwareOutputMethod): Promise<void> {
+    if (!this.applied || !this.hardwareMethods.includes(method)) return;
+    if (this.routeAvailabilityProblems.length > 0) {
+      this.deviceCheckNotice = this.routeAvailabilityProblems.join(' ');
+      return;
+    }
+    if (method === 'opto') {
+      this.settings.update({ optoEnabled: true });
+      this.deviceCheckNotice = 'Optocoupler keying is enabled for the reviewed audio device and channel.';
+    } else if (method === 'serial') {
+      this.settings.update({ serialEnabled: true });
+      this.deviceCheckNotice = 'Serial keying is enabled for the reviewed port and pin mapping.';
+    } else if (method === 'winkeyer') {
+      this.settings.update({ winkeyerEnabled: true });
+      this.deviceCheckNotice = 'WinKeyer keying is enabled for the reviewed serial port.';
+    } else {
+      if (!this.midiOutput.supported) {
+        this.deviceCheckNotice = 'MIDI output is not supported in this browser.';
+        return;
+      }
+      this.settings.update({ midiOutputEnabled: true });
+      await this.midiOutput.start();
+      this.midiOutput.reattach();
+      this.deviceCheckNotice = this.midiOutput.lastError()
+        || 'MIDI output is enabled for the reviewed device and mapping.';
+    }
+  }
+
   /** Explicitly enable the already-reviewed serial key mappings. */
   connectSerialInput(): void {
     if (!this.serialSupported) {
@@ -651,7 +933,12 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.rtdbNotice = 'Apply a channel name and secret before connecting.';
       return;
     }
-    this.settings.update({ rtdbInputEnabled: true, rtdbOutputEnabled: true });
+    this.settings.update(this.goal === 'relay'
+      ? {
+        rtdbInputEnabled: this.base.rtdbInputEnabled || !!this.draft.relayReceive,
+        rtdbOutputEnabled: this.base.rtdbOutputEnabled || !!this.draft.relaySend,
+      }
+      : { rtdbInputEnabled: true, rtdbOutputEnabled: true });
     this.rtdbNotice = `Connecting to shared channel "${this.settings.settings().rtdbInputChannelName}".`;
   }
 

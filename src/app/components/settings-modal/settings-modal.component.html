@@ -104,13 +104,6 @@
 </div>
 }
 
-@if (hintLanding) {
-  <app-confirm-dialog title="Setup Wizard" [message]="hintMessage"
-                      [confirmLabel]="hintNext ? hintNext.label : 'OK'" cancelLabel="Close"
-                      [singleAction]="!hintNext" (confirmed)="onHintAnswer($event)">
-  </app-confirm-dialog>
-}
-
 @if (showResetConfirm) {
   <app-confirm-dialog
     title="Reset Settings"

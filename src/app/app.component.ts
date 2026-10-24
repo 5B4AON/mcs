@@ -616,6 +616,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
   private openFullscreenAfterWizardClose = false;
+  private openHelpAfterWizardClose: string | null = null;
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
@@ -665,6 +666,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.openFullscreenAfterWizardClose) {
         this.openFullscreenAfterWizardClose = false;
         this.openModal(this.fullscreenFocusFallback);
+      }
+      if (this.openHelpAfterWizardClose) {
+        const sectionId = this.openHelpAfterWizardClose;
+        this.openHelpAfterWizardClose = null;
+        this.openHelp(sectionId);
       }
       return;
     }
@@ -1412,6 +1418,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.wizardGoal = goal;
     this.showWizard = true;
     this.pushModalState('wizard');
+  }
+
+  /** Swap the goal wizard for the selected Settings card. */
+  onWizardSettingsRequested(landing: string): void {
+    this.closeWizard();
+    this.goalsToSettings(landing);
+  }
+
+  /** Close the wizard and goal list before opening its requested Help section. */
+  onWizardHelpRequested(sectionId: string): void {
+    const steps = Math.min(
+      this.modalHistoryDepth,
+      (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0),
+    );
+    this.showWizard = false;
+    this.showSettings = false;
+    this.showGoals = false;
+    if (steps > 0) {
+      this.modalHistoryDepth -= steps;
+      this.ignoringPopState = true;
+      this.openHelpAfterWizardClose = sectionId;
+      history.go(-steps);
+    } else {
+      this.openHelp(sectionId);
+    }
   }
 
   /** Close the guided setup, leaving Settings as it was */
