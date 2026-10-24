@@ -46,8 +46,7 @@ import {
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
-import { GoalNavigatorComponent } from './goal-navigator/goal-navigator.component';
-import { GoalTarget, WizardGoalId } from './goal-navigator/setup-goals';
+import { GoalTarget, LANDINGS, goalTargetForLanding } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
@@ -77,7 +76,6 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
     SettingsInputsTabComponent,
     SettingsOutputsTabComponent,
     SettingsOtherTabComponent,
-    GoalNavigatorComponent,
   ],
   templateUrl: './settings-modal.component.html',
   styleUrls: ['./settings-modal.component.css'],
@@ -98,11 +96,20 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Emitted with the Help section ID requested by a settings card. */
   @Output() helpRequested = new EventEmitter<string>();
 
-  /** Open the goal list on entry, as when Settings is reached from "Setup Wizard" */
-  @Input() startWithGoalPanel = false;
+  /** Landing key chosen in the Setup Wizard; opens its card and shows its hint on entry */
+  @Input() startLanding: string | null = null;
 
-  /** Emitted when the user asks for the guided setup of a goal */
-  @Output() wizardRequested = new EventEmitter<WizardGoalId>();
+  /** Show only the Presets dialog (opened from the Setup Wizard), without the Settings dialog */
+  @Input() presetsOnly = false;
+
+  /** Emitted when the user asks to go to the Setup Wizard */
+  @Output() wizardOpenRequested = new EventEmitter<void>();
+
+  /** Emitted when the Presets dialog closes in presets-only mode */
+  @Output() presetsDismissed = new EventEmitter<void>();
+
+  /** Landing whose hint is showing, if any */
+  hintLanding: string | null = null;
 
   // ---- UI state ----
 
@@ -110,7 +117,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
 
   @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
-  @ViewChild(GoalNavigatorComponent) private goalNavigator?: GoalNavigatorComponent;
   @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
 
   private readonly focusReturnTarget =
@@ -202,6 +208,14 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   ) {}
 
   ngAfterViewInit(): void {
+    if (this.presetsOnly) {
+      window.setTimeout(() => this.openSettingsTransfer());
+      return;
+    }
+    if (this.startLanding) {
+      const landing = this.startLanding;
+      window.setTimeout(() => this.openLanding(landing));
+    }
     if (this.settingsDialog) {
       focusDialog(this.settingsDialog.nativeElement, '.settings-close-btn');
     }
@@ -301,13 +315,34 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
    */
   openGoalTarget(target: GoalTarget): void {
     this.settingsTab = target.tab;
+    const cardId = target.cardId;
+    if (!cardId) return;
     // Only the selected tab is rendered, so wait for it before locating the card.
-    window.setTimeout(() => window.requestAnimationFrame(() => this.revealCard(target.cardId)));
+    window.setTimeout(() => window.requestAnimationFrame(() => this.revealCard(cardId)));
   }
 
-  /** Open a goal's card as if it was chosen in the goal list (used when a wizard hands over to Settings). */
-  openGoalLanding(landing: string): void {
-    this.goalNavigator?.select(landing);
+  /** Open a Setup Wizard landing: its card, plus its hint dialog when it has one. */
+  openLanding(key: string): void {
+    this.openGoalTarget(goalTargetForLanding(key));
+    const landing = LANDINGS[key];
+    this.hintLanding = landing.hint || landing.next ? key : null;
+  }
+
+  /** Message of the open hint dialog */
+  get hintMessage(): string {
+    return this.hintLanding ? LANDINGS[this.hintLanding].hint ?? '' : '';
+  }
+
+  /** Follow-up link of the open hint dialog */
+  get hintNext(): { label: string; landing: string } | undefined {
+    return this.hintLanding ? LANDINGS[this.hintLanding].next : undefined;
+  }
+
+  /** Close the hint dialog; the confirm button follows the "Next" link when there is one. */
+  onHintAnswer(confirmed: boolean): void {
+    const next = this.hintNext;
+    this.hintLanding = null;
+    if (confirmed && next) this.openLanding(next.landing);
   }
 
   private revealCard(cardId: string, attemptsLeft = 20): void {
@@ -437,8 +472,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Open the presets dialog */
-  openSettingsTransfer(event: Event): void {
-    this.settingsTransferTrigger = event.currentTarget as HTMLButtonElement;
+  openSettingsTransfer(event?: Event): void {
+    this.settingsTransferTrigger = event ? event.currentTarget as HTMLButtonElement : null;
     this.presets.reload();
     this.resetPresetState();
     this.showPresets = true;
@@ -450,6 +485,10 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.showPresets = false;
     this.closePresetMenu();
     this.resetPresetState();
+    if (this.presetsOnly) {
+      this.presetsDismissed.emit();
+      return;
+    }
     window.setTimeout(() => this.settingsTransferTrigger?.focus(), 0);
   }
 

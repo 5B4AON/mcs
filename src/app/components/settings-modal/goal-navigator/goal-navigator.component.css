@@ -1,29 +1,6 @@
-:host {
-  display: block;
-  flex-shrink: 0;
-}
+
 .goal-nav {
-  padding: .35rem 1.25rem;
-  border-bottom: 1px solid #333;
-}
-.goal-next-link {
-  background: none;
-  border: none;
-  color: #8cf;
-  font-size: .85rem;
-  font-weight: 600;
-  cursor: pointer;
-  padding: .3rem 0;
-  text-align: left;
-}
-.goal-next-link:hover {
-  text-decoration: underline;
-}
-.goal-nav-panel {
-  padding: .25rem 0;
-  max-height: 55dvh;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  padding: .5rem 1.25rem;
 }
 .goal-list {
   list-style: none;
@@ -57,9 +34,6 @@
   background: #2d3660;
   border-color: #5a6ca0;
 }
-.goal-btn[aria-current='true'] {
-  box-shadow: inset 4px 0 0 #fc6;
-}
 .goal-arrow {
   color: #fc6;
   font-size: 1.2rem;
@@ -70,10 +44,6 @@
   outline-offset: 2px;
 }
 
-.goal-hide-link {
-  display: block;
-  margin: .1rem 0 .3rem;
-}
 .goal-row {
   position: relative;
 }

@@ -212,8 +212,423 @@
           </label>
         }
 
+        @case ('teachScenarios') {
+          <h3 class="wizard-step-title" tabindex="-1">What would you like to teach?</h3>
+          <p class="wizard-hint">Choose any activities you want to combine. The next steps will ask only about the setup each activity needs.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="teachScenarios.includes('sending')"
+                   (change)="toggleTeachScenario('sending', $event)">
+            Take turns sending Morse
+          </label>
+          <p class="wizard-note">Set up local student key inputs and a shared conversation so each turn is identified by name and color.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="teachScenarios.includes('copying')"
+                   (change)="toggleTeachScenario('copying', $event)">
+            Practice copying Morse
+          </label>
+          <p class="wizard-note">Configure the existing individual copy-practice activity. Group averages and per-student scoring are not part of this wizard.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="teachScenarios.includes('mobile')"
+                   (change)="toggleTeachScenario('mobile', $event)">
+            Include students joining from their phones
+          </label>
+          <p class="wizard-note">Use the existing shared RTDB channel. Students configure their own Morse Code Studio apps with the same channel details; the number of remote participants is not capped here.</p>
+          <p class="wizard-warning" role="status">This teaching setup is for a classroom without live radio. Radio keying, WinKeyer, receiver audio decoding, and the experimental pilot-tone input are not offered.</p>
+        }
+
+        @case ('teachParticipants') {
+          <h3 class="wizard-step-title" tabindex="-1">How many local students?</h3>
+          <p class="wizard-hint">This classroom wizard supports up to four local students plus one teacher. Phone participants joining through RTDB are separate and are not counted here.</p>
+          <label class="wizard-field">Local students
+            <select [value]="draft.teachStudentCount" (change)="setTeachStudentCount($event)">
+              @for (count of [0, 1, 2, 3, 4]; track count) {
+                <option [value]="count" [selected]="draft.teachStudentCount === count">{{ count }}</option>
+              }
+            </select>
+          </label>
+          <p class="wizard-note">You can assign each local person an input in the next step. Choose only equipment you actually have.</p>
+        }
+
+        @case ('teachInputs') {
+          <h3 class="wizard-step-title" tabindex="-1">Plan each local input</h3>
+          <p class="wizard-hint">Give every person a display name or emoji and a text color. These become their identity in the full-screen conversation.</p>
+          @for (person of teachParticipants; track $index) {
+            <fieldset class="wizard-participant">
+              <legend>{{ person.role === 'teacher' ? 'Teacher' : person.role === 'additional' ? 'Additional input' : 'Student ' + $index }}</legend>
+              @if (person.role === 'additional') {
+                <button type="button" class="wizard-pill" (click)="removeTeachInput($index)">Remove this input</button>
+              }
+              <label class="wizard-field">Display name or emoji
+                <input type="text" maxlength="40" [ngModel]="person.name"
+                       (ngModelChange)="setParticipantName($index, $event)">
+              </label>
+              <label class="wizard-field">Conversation text color
+                <input type="color" [ngModel]="person.color"
+                       (ngModelChange)="setParticipantColor($index, $event)">
+              </label>
+              <label class="wizard-field">Available input
+                <select [ngModel]="person.inputType"
+                        (ngModelChange)="setParticipantInputType($index, $event)">
+                  <option value="keyboard">A key on the shared keyboard</option>
+                  <option value="mouse">Shared mouse</option>
+                  <option value="touch">Shared touch controls</option>
+                  <option value="midi" [disabled]="!midiInput.supported">MIDI straight key or paddle</option>
+                  <option value="serial" [disabled]="!serialSupported">Serial connected key or paddle</option>
+                </select>
+              </label>
+
+              @if (person.inputType === 'keyboard') {
+                <label class="wizard-field">Key type
+                  <select [ngModel]="person.mode" (ngModelChange)="setParticipantMode($index, $event)">
+                    <option value="straightKey">Straight key</option>
+                    <option value="paddle">Paddle (two keys)</option>
+                  </select>
+                </label>
+                <label class="wizard-field">{{ person.mode === 'paddle' ? 'Dit key' : 'Key' }}
+                  <select [ngModel]="person.keyCode" (ngModelChange)="setParticipantKey($index, $event)">
+                    @for (code of keyboardKeyCodes; track code) {
+                      <option [value]="code">{{ code === 'Space' ? 'Space bar' : code.slice(3) }}</option>
+                    }
+                  </select>
+                </label>
+                @if (person.mode === 'paddle') {
+                  <label class="wizard-field">Dah key
+                    <select [ngModel]="person.dahKeyCode" (ngModelChange)="setParticipantDahKey($index, $event)">
+                      @for (code of keyboardKeyCodes; track code) {
+                        <option [value]="code">{{ code === 'Space' ? 'Space bar' : code.slice(3) }}</option>
+                      }
+                    </select>
+                  </label>
+                }
+                <p class="wizard-note">The browser cannot tell which physical keyboard sent a key. Give each student a different key on the shared keyboard; do not assign a key already used by another mapping.</p>
+              }
+
+              @if (person.inputType === 'mouse' || person.inputType === 'touch') {
+                <p class="wizard-note">This browser has one shared {{ person.inputType }} input identity. Students can take turns using it, but each turn will have this same name and color.</p>
+              }
+              @if (person.inputType === 'touch') {
+                <label class="wizard-field">Touch key type
+                  <select [ngModel]="person.mode" (ngModelChange)="setParticipantMode($index, $event)">
+                    <option value="straightKey">Straight key</option><option value="paddle">Paddle</option>
+                  </select>
+                </label>
+              }
+
+              @if (person.inputType === 'midi') {
+                <label class="wizard-field">MIDI device
+                  <select [ngModel]="person.midiDeviceId"
+                          (ngModelChange)="setParticipantMidiDevice($index, $event)">
+                    <option value="">Any connected MIDI device</option>
+                    @for (device of midiInput.midiInputs(); track device.id) {
+                      <option [value]="device.id">{{ device.name }}</option>
+                    }
+                  </select>
+                </label>
+                <button type="button" class="wizard-pill" [disabled]="!midiInput.supported"
+                        (click)="connectMidiForSetup()">Connect MIDI devices</button>
+                @if (midiNotice) { <p class="wizard-note" role="status">{{ midiNotice }}</p> }
+                @if (midiInput.lastError()) { <p class="wizard-warning" role="alert">{{ midiInput.lastError() }}</p> }
+                <label class="wizard-field">MIDI channel (0 = any)
+                  <input type="number" min="0" max="16" [value]="person.midiChannel"
+                         (change)="setParticipantMidiNumber($index, 'midiChannel', $event)">
+                </label>
+                <label class="wizard-field">{{ person.mode === 'paddle' ? 'Dit note (0–127)' : 'Key note (0–127)' }}
+                  <input type="number" min="0" max="127" [value]="person.midiNote"
+                         (change)="setParticipantMidiNumber($index, 'midiNote', $event)">
+                </label>
+                <button type="button" class="wizard-pill"
+                        [disabled]="!midiInput.supported"
+                        (click)="detectMidiNote($index, 'midiNote')">
+                  {{ midiCapture?.participantIndex === $index && midiCapture?.field === 'midiNote' ? 'Press a MIDI key…' : 'Detect key' }}
+                </button>
+                <label class="wizard-field">Key type
+                  <select [ngModel]="person.mode" (ngModelChange)="setParticipantMode($index, $event)">
+                    <option value="straightKey">Straight key</option>
+                    <option value="paddle">Paddle (two notes)</option>
+                  </select>
+                </label>
+                @if (person.mode === 'paddle') {
+                  <label class="wizard-field">Dah note (0–127)
+                    <input type="number" min="0" max="127" [value]="person.midiDahNote"
+                           (change)="setParticipantMidiNumber($index, 'midiDahNote', $event)">
+                  </label>
+                  <button type="button" class="wizard-pill"
+                          [disabled]="!midiInput.supported"
+                          (click)="detectMidiNote($index, 'midiDahNote')">
+                    {{ midiCapture?.participantIndex === $index && midiCapture?.field === 'midiDahNote' ? 'Press a MIDI key…' : 'Detect dah note' }}
+                  </button>
+                }
+                <p class="wizard-note">The MIDI device will not connect until you explicitly choose Connect MIDI after applying this setup.</p>
+              }
+
+              @if (person.inputType === 'serial') {
+                <label class="wizard-field">Serial device
+                  <select [value]="person.serialPortIndex" (change)="setParticipantSerialPort($index, $event)">
+                    <option value="-1">Choose a connected device</option>
+                    @for (port of serialInput.ports(); track $index) {
+                      <option [value]="$index">{{ serialInput.portLabel(port) }}</option>
+                    }
+                  </select>
+                </label>
+                <button type="button" class="wizard-pill" (click)="requestSerialPort($index)">Choose serial device</button>
+                <label class="wizard-field">Key type
+                  <select [ngModel]="person.mode" (ngModelChange)="setParticipantMode($index, $event)">
+                    <option value="straightKey">Straight key</option>
+                    <option value="paddle">Paddle (two signal pins)</option>
+                  </select>
+                </label>
+                <label class="wizard-field">Key / dit signal
+                  <select [ngModel]="person.serialPin" (ngModelChange)="setParticipantSerialPin($index, 'serialPin', $event)">
+                    <option value="dsr">DSR</option><option value="cts">CTS</option>
+                    <option value="dcd">DCD</option><option value="ri">RI</option>
+                  </select>
+                </label>
+                @if (person.mode === 'paddle') {
+                  <label class="wizard-field">Dah signal
+                    <select [ngModel]="person.serialDahPin" (ngModelChange)="setParticipantSerialPin($index, 'serialDahPin', $event)">
+                      <option value="dsr">DSR</option><option value="cts">CTS</option>
+                      <option value="dcd">DCD</option><option value="ri">RI</option>
+                    </select>
+                  </label>
+                }
+                @if (serialNotice) { <p class="wizard-note" role="status">{{ serialNotice }}</p> }
+                <p class="wizard-note">Choose the serial device here to request browser access. It will not be opened for keying until you explicitly enable serial input after applying.</p>
+              }
+            </fieldset>
+          }
+          <button type="button" class="wizard-pill" (click)="addTeachInput()">Add another input</button>
+          <p class="wizard-note">If one person uses more than one input, give those inputs the same name or emoji and color. The shared keyboard requires a different key for each profile.</p>
+          @if ((base.midiInputEnabled && hasTeachMidi) || (base.serialInputEnabled && hasTeachSerial)) {
+            <div class="wizard-warning">
+              <p class="wizard-warning-text">A MIDI or serial input is already enabled. Applying these mappings will reconfigure that active input.</p>
+              <label class="wizard-check">
+                <input type="checkbox" [checked]="draft.teachRouteReconfigureConfirmed"
+                       (change)="setRouteReconfigureConfirmed($event)">
+                I reviewed the changes and want to reconfigure the active input
+              </label>
+            </div>
+          }
+        }
+
+        @case ('teachCopy') {
+          <h3 class="wizard-step-title" tabindex="-1">Set up copy practice</h3>
+          <p class="wizard-hint">This configures the existing individual copy-practice mode. It does not add class scoring or combine student results.</p>
+          <label class="wizard-field">Practice content
+            <select [value]="draft.practiceContentMode" (change)="setText('practiceContentMode', $event)">
+              <option value="characters">Random characters</option>
+              <option value="words">Random words</option>
+              <option value="callsigns">Random callsigns</option>
+            </select>
+          </label>
+          <label class="wizard-field">Groups per round
+            <select [value]="draft.practiceGroupCount" (change)="setSelectNumber('practiceGroupCount', $event)">
+              @for (count of [1,2,3,4,5,6,7,8,9,10]; track count) {
+                <option [value]="count">{{ count }}</option>
+              }
+            </select>
+          </label>
+          @if (draft.practiceContentMode === 'characters') {
+            <label class="wizard-field">Characters per group
+              <select [value]="draft.practiceCharGroupSize" (change)="setSelectNumber('practiceCharGroupSize', $event)">
+                @for (count of [1,2,3,4,5]; track count) {
+                  <option [value]="count">{{ count }}</option>
+                }
+              </select>
+            </label>
+            <fieldset class="wizard-fieldset">
+              <legend>Character pool</legend>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludeLetters" (change)="setBool('practiceIncludeLetters', $event)"> Letters</label>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludeNumbers" (change)="setBool('practiceIncludeNumbers', $event)"> Numbers</label>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludePunctuation" (change)="setBool('practiceIncludePunctuation', $event)"> Punctuation</label>
+            </fieldset>
+          }
+          @if (draft.practiceContentMode === 'words') {
+            <fieldset class="wizard-fieldset">
+              <legend>Word lengths</legend>
+              @for (length of [3,4,5]; track length) {
+                <label class="wizard-check"><input type="checkbox" [checked]="hasWordLength(length)" (change)="toggleWordLength(length, $event)"> {{ length }} letters</label>
+              }
+            </fieldset>
+          }
+          <label class="wizard-field">Feedback
+            <select [value]="draft.practiceFeedbackMode" (change)="setText('practiceFeedbackMode', $event)">
+              <option value="listen">Listen and reveal text</option>
+              <option value="blur">Blurred text with reveal button</option>
+              <option value="typealong">Type-along</option>
+            </select>
+          </label>
+          @if (draft.practiceFeedbackMode === 'typealong') {
+            <label class="wizard-field">Type-along rounds
+              <select [value]="draft.practiceRounds" (change)="setSelectNumber('practiceRounds', $event)">
+                @for (count of [1,2,3,4,5]; track count) {
+                  <option [value]="count">{{ count }}</option>
+                }
+              </select>
+            </label>
+          }
+          <p class="wizard-note">Practice uses local audio and vibration only. It will not send Morse through a radio or an external route.</p>
+        }
+
+        @case ('teachMobile') {
+          <h3 class="wizard-step-title" tabindex="-1">Set up the shared phone channel</h3>
+          <p class="wizard-hint">Each student joins from their own Morse Code Studio app using this shared RTDB channel. Remote participants are not capped by the local classroom limit.</p>
+          <label class="wizard-field">Channel name
+            <input type="text" [value]="draft.teachRtdbChannelName"
+                   (input)="setTeachRtdbChannelName($event)">
+          </label>
+          <label class="wizard-field">Shared channel secret
+            <input type="password" autocomplete="new-password" [value]="draft.teachRtdbChannelSecret"
+                   (input)="setTeachRtdbChannelSecret($event)">
+          </label>
+          <p class="wizard-note">Tell each student to configure their own app with the same channel name and secret, then choose a personal display name and color. This wizard stores the secret only in this browser; it is hidden from review and excluded from any preset.</p>
+          <p class="wizard-warning" role="status">Applying does not join the channel. You will get a separate, clearly labeled Join channel action after review.</p>
+          @if (rtdbChannelWillChange) {
+            <div class="wizard-warning">
+              <p class="wizard-warning-text">An RTDB route is already enabled. Applying will change its shared channel or secret; after applying, it will reconnect using the newly reviewed details.</p>
+              <label class="wizard-check">
+                <input type="checkbox" [checked]="draft.teachRtdbReconfigureConfirmed"
+                       (change)="setRtdbReconfigureConfirmed($event)">
+                I reviewed the channel change and want to move the active route
+              </label>
+            </div>
+          }
+        }
+
+        @case ('teachOutputs') {
+          <h3 class="wizard-step-title" tabindex="-1">Choose local sound feedback</h3>
+          <p class="wizard-hint">Sidetone is a local beep for the teacher or student who is sending. It does not require a radio.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.sidetoneEnabled" (change)="setBool('sidetoneEnabled', $event)">
+            Play local sidetone
+          </label>
+          @if (draft.sidetoneEnabled) {
+            <label class="wizard-field">Pitch (Hz)
+              <input type="number" [min]="limits.sidetoneHz.min" [max]="limits.sidetoneHz.max"
+                     [value]="draft.sidetoneFrequency" (input)="setNumber('sidetoneFrequency', $event)">
+            </label>
+          }
+          <p class="wizard-note">Radio keying and radio-dependent outputs are intentionally not offered in this classroom guide.</p>
+        }
+
+        @case ('teachTiming') {
+          <h3 class="wizard-step-title" tabindex="-1">Choose Morse timing</h3>
+          <p class="wizard-hint">Farnsworth timing keeps each character at full speed and stretches the gaps, giving learners more time to think. These settings can apply to sent and received Morse.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.farnsworthEnabled" (change)="setBool('farnsworthEnabled', $event)">
+            Use Farnsworth gap timing
+          </label>
+          @if (draft.farnsworthEnabled) {
+            <label class="wizard-field">Gap setting
+              <select [value]="draft.farnsworthInputMode" (change)="setText('farnsworthInputMode', $event)">
+                <option value="wpm">Effective speed</option>
+                <option value="multiplier">Gap multiplier</option>
+              </select>
+            </label>
+            @if (draft.farnsworthInputMode === 'wpm') {
+              <label class="wizard-field">Effective speed (WPM)
+                <input type="number" [min]="limits.farnsworthWpm.min" [max]="base.encoderWpm"
+                       [value]="draft.farnsworthEffectiveWpm" (input)="setNumber('farnsworthEffectiveWpm', $event)">
+              </label>
+            } @else {
+              <label class="wizard-field">Gap multiplier
+                <input type="number" step="0.1" [min]="limits.farnsworthMultiplier.min" [max]="limits.farnsworthMultiplier.max"
+                       [value]="draft.farnsworthMultiplier" (input)="setNumber('farnsworthMultiplier', $event)">
+              </label>
+            }
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.farnsworthWordsworth" (change)="setBool('farnsworthWordsworth', $event)">
+              Stretch only word gaps (Wordsworth)
+            </label>
+            <label class="wizard-field">Apply to
+              <select [value]="draft.farnsworthAppliesTo" (change)="setText('farnsworthAppliesTo', $event)">
+                <option value="rx">Received (RX)</option><option value="tx">Sent (TX)</option>
+                <option value="both">Received and sent</option>
+              </select>
+            </label>
+          }
+        }
+
+        @case ('teachDisplay') {
+          <h3 class="wizard-step-title" tabindex="-1">Make the conversation easy to follow</h3>
+          <p class="wizard-hint">You can show full prosign names or blur one direction to make a lesson more challenging.</p>
+          <label class="wizard-check"><input type="checkbox" [checked]="draft.showProsigns" (change)="setBool('showProsigns', $event)"> Show prosign names</label>
+          <label class="wizard-check"><input type="checkbox" [checked]="draft.textBlurEnabled" (change)="setBool('textBlurEnabled', $event)"> Blur conversation text</label>
+          @if (draft.textBlurEnabled) {
+            <label class="wizard-field">Blur
+              <select [value]="draft.textBlurAppliesTo" (change)="setText('textBlurAppliesTo', $event)">
+                <option value="rx">Received (RX) text</option><option value="tx">Sent (TX) text</option>
+                <option value="both">Both directions</option>
+              </select>
+            </label>
+          }
+          <label class="wizard-check"><input type="checkbox" [checked]="draft.emojisEnabled" (change)="setBool('emojisEnabled', $event)"> Use the configured emoji replacements</label>
+          <p class="wizard-note">Fullscreen text size, row spacing, and RX/TX/background colors are adjusted from More controls in the conversation toolbar. This wizard will not change those separate display settings.</p>
+        }
+
+        @case ('teachExtras') {
+          <h3 class="wizard-step-title" tabindex="-1">Choose optional prosign actions and emojis</h3>
+          <p class="wizard-hint">Prosign actions can clear or separate text in the shared conversation. Existing emoji replacements stay available and can be reviewed here.</p>
+          <label class="wizard-check"><input type="checkbox" [checked]="draft.prosignActionsEnabled" (change)="setBool('prosignActionsEnabled', $event)"> Enable configured prosign actions</label>
+          @if (draft.prosignActionsEnabled) {
+            <div class="wizard-mapping-list">
+              @for (entry of prosignEntries; track entry.key) {
+                <div class="wizard-mapping-row">
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="entry.enabled" (change)="updateProsignActionEnabled(entry.key, $event)">
+                    {{ entry.key }}
+                  </label>
+                  <select [value]="entry.action" (change)="updateProsignAction(entry.key, $event)">
+                    <option value="newLine">New line</option><option value="newParagraph">New paragraph</option>
+                    <option value="clearLastWord">Clear last word</option><option value="clearLine">Clear line</option>
+                    <option value="clearScreen">Clear screen</option>
+                  </select>
+                </div>
+              }
+            </div>
+          }
+          @if (draft.emojisEnabled && draft.emojiMappings?.length) {
+            <p class="wizard-note">Emoji replacement mappings</p>
+            <div class="wizard-mapping-list">
+              @for (mapping of draft.emojiMappings; track $index) {
+                <div class="wizard-mapping-row">
+                  <label class="wizard-check"><input type="checkbox" [checked]="mapping.enabled"
+                    (change)="setEmojiMappingEnabled($index, $event)">{{ mapping.match }}</label>
+                  <input aria-label="Emoji replacement" type="text" [value]="mapping.emoji"
+                         (input)="updateEmojiMapping($index, 'emoji', $event)">
+                </div>
+              }
+            </div>
+          }
+        }
+
         @case ('review') {
           <h3 class="wizard-step-title" tabindex="-1">Review before applying</h3>
+          @if (goal === 'teach') {
+            <section class="wizard-plan-summary" aria-label="Teaching plan">
+              <h4>Teaching plan</h4>
+              <ul>
+                @for (scenario of teachScenarios; track scenario) {
+                  <li>
+                    @switch (scenario) {
+                      @case ('sending') { Take turns sending Morse }
+                      @case ('copying') { Individual copy practice }
+                      @case ('mobile') { Shared RTDB phone conversation }
+                    }
+                  </li>
+                }
+              </ul>
+              @if (teachScenarios.includes('sending')) {
+                <ul>
+                  @for (person of teachParticipants; track $index) {
+                    <li>{{ person.name }} — {{ person.inputType }} input, {{ person.color }}</li>
+                  }
+                </ul>
+              }
+              @if (teachScenarios.includes('mobile')) {
+                <p>RTDB channel: {{ draft.teachRtdbChannelName }}. Students configure their own apps; the remote group has no participant cap.</p>
+              }
+            </section>
+          }
           @if (review.changes.length) {
             <p class="wizard-hint">Apply will change only these settings:</p>
             <ul class="wizard-changes">
@@ -222,8 +637,22 @@
                   <span class="wizard-change-values"><span class="wizard-from">{{ line.from }}</span> &rarr; <strong>{{ line.to }}</strong></span></li>
               }
             </ul>
+          } @else if (goal === 'teach') {
+            <p class="wizard-hint">Your choices match the current settings. Nothing needs to be changed.</p>
+            <div class="wizard-inline-actions">
+              <button type="button" class="wizard-pill wizard-primary" (click)="startGoal()">
+                <span>{{ startLabel }}</span>
+              </button>
+            </div>
           } @else {
             <p class="wizard-hint">Your answers match your current settings, so there is nothing to apply.</p>
+            @if (review.changes.length === 0) {
+              <div class="wizard-inline-actions">
+                <button type="button" class="wizard-pill wizard-primary" [disabled]="!canStartGoal" (click)="startGoal()">
+                  <span>{{ startLabel }}</span>
+                </button>
+              </div>
+            }
           }
           @if (review.unchanged.length) {
             <details class="wizard-unchanged">
@@ -235,14 +664,23 @@
               </ul>
             </details>
           }
-          <p class="wizard-note">Everything else stays exactly as it is, including your key and paddle mappings, outputs and routing, calibration and display preferences.</p>
-          <ul class="wizard-list">
-            <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
-            <li>It does not start audio, send Morse or turn on any output.</li>
-            @if (goal === 'decode') {
-              <li>The detector stays as it is now ({{ base.cwInputEnabled ? 'on' : 'off' }}) unless you choose &ldquo;Apply and turn on detector&rdquo;. Audio does not start; the browser asks for microphone access when you press Start Audio.</li>
-            }
-          </ul>
+          @if (goal === 'teach') {
+            <p class="wizard-note">Your other settings, radio routes, calibration and fullscreen display preferences stay unchanged. RTDB secrets are hidden here and will not be included in a preset.</p>
+            <ul class="wizard-list">
+              <li>Applying does not save the automatic device profile.</li>
+              <li>MIDI, serial and RTDB remain disconnected until you choose their separate Connect or Join action after applying.</li>
+              <li>No radio keying, audio decoding, pilot-tone input, audio startup or transmission is part of this classroom setup.</li>
+            </ul>
+          } @else {
+            <p class="wizard-note">Everything else stays exactly as it is, including your key and paddle mappings, outputs and routing, calibration and display preferences.</p>
+            <ul class="wizard-list">
+              <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
+              <li>It does not start audio, send Morse or turn on any output.</li>
+              @if (goal === 'decode') {
+                <li>The detector stays as it is now ({{ base.cwInputEnabled ? 'on' : 'off' }}) unless you choose &ldquo;Apply and turn on detector&rdquo;. Audio does not start; the browser asks for microphone access when you press Start Audio.</li>
+              }
+            </ul>
+          }
           @if (feedbackOutputs.length) {
             <div class="wizard-warning" role="status">
               <p class="wizard-warning-text">Audio output is on right now: {{ feedbackOutputs.join(', ') }}. Turn it off before enabling the detector to avoid a feedback loop.</p>
@@ -250,7 +688,7 @@
             </div>
           }
           @for (message of newConflicts; track message) {
-            <div class="wizard-error" role="alert">{{ message }} Go back and change the answer, or fix the audio channels in Settings.</div>
+            <div class="wizard-error" role="alert">{{ message }} Go back and adjust the setup, or resolve the existing channel conflict before applying.</div>
           }
           @if (goal === 'decode') {
           <div class="wizard-inline-actions">
@@ -262,36 +700,99 @@
           }
         }
 
+        @case ('preset') {
+          <h3 class="wizard-step-title" tabindex="-1">Save this setup as a preset?</h3>
+          <p class="wizard-hint">A preset keeps the reviewed classroom settings in this browser so you can reuse them later. Saving it does not apply the settings or save the automatic device profile.</p>
+          <label class="wizard-field">Preset name
+            <input type="text" maxlength="40" [ngModel]="presetName"
+                   (ngModelChange)="setPresetName($event)">
+          </label>
+          <p class="wizard-note">RTDB channel secrets are never stored in presets. Students need to configure their own apps with the channel details separately.</p>
+          @if (presetError) { <div class="wizard-error" role="alert">{{ presetError }}</div> }
+          @if (presetSaved) { <p class="wizard-note" role="status">Preset saved. Continue to review and apply this setup to the current browser.</p> }
+        }
+
+        @case ('apply') {
+          <h3 class="wizard-step-title" tabindex="-1">Apply this setup to this browser?</h3>
+          @if (presetSaved) {
+            <p class="wizard-hint">The preset is saved. Applying changes only the reviewed settings in this browser.</p>
+          } @else {
+            <p class="wizard-hint">No preset was saved. Applying changes only the reviewed settings in this browser.</p>
+          }
+          <p class="wizard-note">This does not save the automatic device profile or start an external input/output. You can explicitly connect MIDI or serial, or join the shared RTDB channel, after applying.</p>
+          @if (base.midiInputEnabled || base.serialInputEnabled || base.rtdbInputEnabled || base.rtdbOutputEnabled) {
+            <p class="wizard-warning" role="status">One or more routes are already active. Only the reviewed route changes will take effect; see the route warnings and confirmations you acknowledged earlier.</p>
+          }
+          @if (hasTeachMobile) {
+            <p class="wizard-warning" role="status">The RTDB secret stays in this browser and is omitted from the saved preset.</p>
+          }
+        }
+
         @case ('done') {
           <h3 class="wizard-step-title" tabindex="-1">Applied</h3>
-          <p class="wizard-hint">The settings are active now but not saved. Use Save in Settings to keep them for this device.</p>
-          <h4 class="wizard-next-title">What to do next</h4>
-          @switch (goal) {
-            @case ('type') {
-              <p>Type some text on the main screen and press Enter. @if (base.sidetoneEnabled || draft.sidetoneEnabled) { You will hear it as sidetone on this device. } @else { The sidetone is off, so it will be silent here. }</p>
+          <p class="wizard-hint">The setup is active in this browser but not saved to the automatic device profile.</p>
+          @if (goal === 'teach') {
+            <h4 class="wizard-next-title">Optional connections</h4>
+            @if (hasTeachMidi) {
+              <p>Connect the selected MIDI key or paddle. The browser may show a permission prompt.</p>
+              <button type="button" class="wizard-pill" (click)="connectMidiInput()">
+              {{ settings.settings().midiInputEnabled ? 'Retry MIDI connection' : 'Connect MIDI input' }}
+              </button>
+              @if (midiNotice) { <p class="wizard-note" role="status">{{ midiNotice }}</p> }
+              @if (midiInput.lastError()) { <p class="wizard-warning" role="alert">{{ midiInput.lastError() }}</p> }
             }
-            @case ('practice') {
-              <p>On the main screen choose &ldquo;Practice&rdquo; in the encoder mode dropdown, then press Start when you are ready. Nothing starts by itself.</p>
+            @if (hasTeachSerial) {
+              <p>Enable the serial key or paddle mappings you selected. Access was requested when you chose each serial device.</p>
+              <button type="button" class="wizard-pill" (click)="connectSerialInput()">
+              {{ settings.settings().serialInputEnabled ? 'Retry serial connection' : 'Enable serial input' }}
+              </button>
+              @if (serialNotice) { <p class="wizard-note" role="status">{{ serialNotice }}</p> }
+              @if (serialInput.lastError()) { <p class="wizard-warning" role="alert">{{ serialInput.lastError() }}</p> }
             }
-            @case ('decode') {
-              <ol class="wizard-list">
-                <li>Turn off the Sidetone and any audio Key Output.</li>
-                <li>Switch the CW Tone Detector on, using the button below or its Settings card.</li>
-                <li>Start audio from the main screen when you are ready to listen.</li>
-              </ol>
-              @if (feedbackOutputs.length) {
-                <div class="wizard-warning" role="status"><p class="wizard-warning-text">Audio output is on ({{ feedbackOutputs.join(', ') }}). Turn it off before turning on the detector.</p>
-                  <button type="button" class="wizard-pill wizard-inline-pill" (click)="turnOffAudioOutput()"><span>Turn audio output off</span></button>
-                </div>
-              } @else {
-                <p class="wizard-note">&ldquo;Turn on the detector&rdquo; switches it on and returns to the main screen. It does not start audio, so the browser asks for microphone access only when you press Start Audio.</p>
+            @if (hasTeachMobile) {
+              <p>When ready, join the shared RTDB channel. This connects the current browser; students still join from their own apps.</p>
+              <button type="button" class="wizard-pill" (click)="connectSharedChannel()">
+                {{ settings.settings().rtdbInputEnabled ? 'Retry shared channel' : 'Join shared channel' }}
+              </button>
+              @if (rtdbNotice) { <p class="wizard-note" role="status">{{ rtdbNotice }}</p> }
+              @if (rtdb.connectionWarning()) { <p class="wizard-warning" role="alert">{{ rtdb.connectionWarning() }}</p> }
+            }
+            @if (hasTeachCopy) {
+              <p>Copy practice is configured as an individual activity. It has no group average or student scoring.</p>
+              <button type="button" class="wizard-pill" (click)="startCopyPractice()">Start copy practice</button>
+            }
+            @if (teachScenarios.includes('sending') || hasTeachMobile) {
+              <p>Open one full-screen conversation for both received and sent text. It opens in Key mode; switch to Type in the toolbar if you want to type messages.</p>
+              <button type="button" class="wizard-pill" (click)="openConversation()">Open full-screen conversation</button>
+            }
+            <p class="wizard-note">The existing copy-practice mode is individual. Multi-student rounds, averages and student scoring are handled by a separate package.</p>
+          } @else {
+            <h4 class="wizard-next-title">What to do next</h4>
+            @switch (goal) {
+              @case ('type') {
+                <p>Type some text on the main screen and press Enter. Nothing sends until you choose the send action.</p>
               }
-          <div class="wizard-inline-actions">
-            <button type="button" class="wizard-pill wizard-primary" [disabled]="!canTurnOnDetector" (click)="turnOnDetector()">
-              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h3l2-6 4 12 3-9 2 3h6"/></svg>
-              <span>Turn on the detector</span>
-            </button>
-          </div>
+              @case ('practice') {
+                <p>The practice mode is ready. Press Start when you are ready; nothing plays by itself.</p>
+              }
+              @case ('decode') {
+                <ol class="wizard-list">
+                  <li>Switch the CW Tone Detector on.</li>
+                  <li>Start audio from the main screen when you are ready to listen.</li>
+                </ol>
+                @if (feedbackOutputs.length) {
+                  <div class="wizard-warning" role="status"><p class="wizard-warning-text">Audio output is on ({{ feedbackOutputs.join(', ') }}). Turn it off before turning on the detector.</p>
+                    <button type="button" class="wizard-pill wizard-inline-pill" (click)="turnOffAudioOutput()"><span>Turn audio output off</span></button>
+                  </div>
+                } @else {
+                  <p class="wizard-note">The browser asks for microphone permission only when you press Start Audio.</p>
+                }
+                <div class="wizard-inline-actions">
+                  <button type="button" class="wizard-pill wizard-primary" [disabled]="!canTurnOnDetector" (click)="turnOnDetector()">
+                    <span>Turn on the detector</span>
+                  </button>
+                </div>
+              }
             }
           }
         }
@@ -310,10 +811,6 @@
           <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16" fill="currentColor"/></svg>
           <span>Try without saving</span>
         </button>
-        <button type="button" class="wizard-pill" (click)="openSettings()">
-          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#3a4858"/><circle cx="15" cy="17" r="2.4" fill="#3a4858"/></svg>
-          <span>Open settings</span>
-        </button>
       } @else {
         @if (stepIndex > 0) {
           <button type="button" class="wizard-pill" (click)="back()">
@@ -327,10 +824,27 @@
             <span>Skip</span>
           </button>
         }
-        @if (step === 'review') {
+        @if (step === 'review' && goal !== 'teach') {
+          @if (review.changes.length > 0) {
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="apply()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
+              <span>Apply</span>
+            </button>
+          }
+        } @else if (step === 'review' && review.changes.length > 0) {
+          <button type="button" class="wizard-pill wizard-primary" [disabled]="problems.length > 0" (click)="next()">
+            <span>Continue to preset</span>
+          </button>
+        } @else if (step === 'preset') {
+          <button type="button" class="wizard-pill wizard-primary" [disabled]="!canSavePreset" (click)="savePreset()">
+            <span>Save preset</span>
+          </button>
+          <button type="button" class="wizard-pill" (click)="skipPreset()">
+            <span>Skip saving</span>
+          </button>
+        } @else if (step === 'apply') {
           <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="apply()">
-            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
-            <span>Apply</span>
+            <span>Apply to this browser</span>
           </button>
         } @else {
           <button type="button" class="wizard-pill wizard-primary" [disabled]="problems.length > 0" (click)="next()">

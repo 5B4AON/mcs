@@ -6,7 +6,7 @@
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
       <span class="rtdb-label">RTDB</span>
     </span>
-        <button class="audio-toggle-btn" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
+        <button #audioToggleButton class="audio-toggle-btn" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
           [attr.aria-label]="audioState === 'starting' ? 'Starting audio' : audioState === 'stopping' ? 'Stopping audio' : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete; retry stopping audio' : audioRunning ? 'Stop audio; audio is running' : 'Start audio; audio is stopped'"
           [attr.aria-pressed]="audioRunning"
           [title]="audioStarting ? audioStatusMessage : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete. Retry stopping audio' : audioRunning ? 'Audio is running. Stop Audio' : 'Audio is stopped. Start Audio'">
@@ -66,8 +66,8 @@
           <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16" fill="currentColor"/></svg>
           <span>Try Morse</span>
         </button>
-        <button class="kebab-help-btn" (click)="openSettings(true); controlsKebabOpen = false" title="Setup Wizard" aria-label="Setup Wizard">
-          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
+        <button class="kebab-help-btn" (click)="openGoals(); controlsKebabOpen = false" title="Setup Wizard" aria-label="Setup Wizard">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-.9 2.100-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
           <span>Setup Wizard</span>
         </button>
         <button class="kebab-help-btn" (click)="openHelp(); controlsKebabOpen = false" title="Help &amp; Documentation" aria-label="Help &amp; Documentation">
@@ -228,7 +228,6 @@
         <div class="try-morse-guide-heading">
           <h2 id="try-morse-title">Try Morse</h2>
           <button class="kebab-help-btn try-morse-dismiss" (click)="dismissTryMorseGuide()" aria-label="Dismiss Try Morse guide">
-            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
             <span>Close</span>
           </button>
         </div>
@@ -236,11 +235,9 @@
         <div class="try-morse-actions">
           <button class="kebab-help-btn try-morse-load" (click)="loadTryMorseExample()"
                   [disabled]="encoder.isSending()">
-            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9l5 5v11H5z"/><polyline points="14 4 14 9 19 9"/><line x1="8.5" y1="13.5" x2="15.5" y2="13.5"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>
             <span>Load example</span>
           </button>
-          <button class="kebab-help-btn try-morse-setup" (click)="openSettings(true)">
-            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
+          <button class="kebab-help-btn try-morse-setup" (click)="openGoals()">
             <span>Setup Wizard</span>
           </button>
         </div>
@@ -291,27 +288,27 @@
       @if (settings.settings().encoderMode === 'practice') {
         <!-- Practice control: single button like TX -->
         @if (practice.state() === 'idle') {
-          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
+          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
                   [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'"
                   [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0 && !practice.isSessionSummary()) {
-          <button class="tx-icon-btn practice-results" (click)="practiceStartOrNext(encoderInput)" [title]="practice.typeAlongActionLabel()" [attr.aria-label]="practice.typeAlongActionLabel()">
+          <button #practiceActionButton class="tx-icon-btn practice-results" (click)="practiceStartOrNext(encoderInput)" [title]="practice.typeAlongActionLabel()" [attr.aria-label]="practice.typeAlongActionLabel()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         } @else if (practice.state() === 'finished') {
-          <button class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
+          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
                   [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'"
                   [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         } @else if (practice.state() === 'playing') {
-          <button class="tx-icon-btn practice-pause" (click)="practicePause()" title="Pause" aria-label="Pause">
+          <button #practiceActionButton class="tx-icon-btn practice-pause" (click)="practicePause()" title="Pause" aria-label="Pause">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
         } @else if (practice.state() === 'paused') {
-          <button class="tx-icon-btn tx-ready" (click)="practiceResume()" title="Resume" aria-label="Resume">
+          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceResume()" title="Resume" aria-label="Resume">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         }
@@ -366,8 +363,21 @@
   <app-settings-modal [audioRunning]="audioRunning" (defaultsReset)="onSettingsDefaultsReset()"
                       (saved)="onSettingsSaved()" (closed)="closeSettings()"
                       (helpRequested)="onSettingsHelpRequested($event)"
-                      [startWithGoalPanel]="settingsGoalPanelOpen"
-                      (wizardRequested)="openWizard($event)"></app-settings-modal>
+                      [startLanding]="settingsStartLanding"
+                      (wizardOpenRequested)="settingsToGoals()"></app-settings-modal>
+}
+
+<!-- ========== SETUP WIZARD GOALS ========== -->
+@if (showGoals) {
+  <app-goal-navigator-modal (closed)="closeGoals()" (settingsRequested)="goalsToSettings()"
+                            (presetsRequested)="openGoalPresets()"
+                            (goalSelected)="goalsToSettings($event)"
+                            (wizardRequested)="openWizard($event)"></app-goal-navigator-modal>
+}
+
+@if (showGoalPresets) {
+  <app-settings-modal [presetsOnly]="true" (presetsDismissed)="dismissGoalPresets()"
+                      (closed)="dismissGoalPresets()"></app-settings-modal>
 }
 
 <!-- ========== GUIDED SETUP ========== -->
@@ -375,7 +385,7 @@
   <app-setup-wizard [goal]="wizardGoal" (closed)="closeWizard()"
                     (tryRequested)="onWizardTry()"
                     (detectorEnabled)="onWizardDetectorEnabled()"
-    (openSettingsRequested)="onWizardOpenSettings($event)"></app-setup-wizard>
+                    (openFullscreenRequested)="onWizardOpenFullscreen()"></app-setup-wizard>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->

@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.16.0] - 2026-10-24
+
+### Added
+
+- **Teach or demonstrate Morse (WP09)** — A new classroom guide in the Setup
+  Wizard (graduation-cap goal). Pick any of: take turns sending, copy practice,
+  and students joining from phones over a shared RTDB channel. It asks for up
+  to four local students plus the teacher, which input devices you have, and a
+  name, emoji and colour for each person, with MIDI device choice and "Detect
+  key". It also covers Farnsworth timing, prosign display and actions, emojis
+  and text blurring, each with its reasoning, then offers an optional preset
+  and an explicit Apply. Radio paths (WinKeyer, radio keying, audio decoding)
+  and the experimental pilot tone are not offered. Group scoring is not
+  included.
+- Wizards with nothing to apply show a Start button under the text (start
+  typing, practicing, sending or decoding) that returns to the main screen;
+  copy practice also selects Practice mode and focuses the input. "Try without
+  saving" does the same.
+- A wizard button in the Settings toolbar, and a Settings button in the Setup
+  Wizard, switch between the two windows.
+
+### Changed
+
+- The Setup Wizard is now its own window, the same size as Settings, instead
+  of a panel above the Settings tabs. Main goals are always visible; only
+  "More goals" expands. Goals have one action and no longer show an arrow.
+  Presets can be opened from the wizard window.
+- The Settings Save button is now a rounded pill like the other buttons.
+- Try Morse pills are narrower and have no icons.
+- MIDI input device listing reports unsupported browsers and denied access.
+
 ## [1.15.0] - 2026-10-24
 
 ### Added
