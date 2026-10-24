@@ -102,13 +102,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Currently active settings tab */
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
 
-  /** One-sentence description of what each tab contains */
-  readonly tabDescriptions: Record<'inputs' | 'outputs' | 'other', string> = {
-    inputs: 'Ways of sending Morse into the app: keys, paddles, microphone, and online channels.',
-    outputs: 'Where Morse goes out: speaker, radio keying, MIDI devices, and online channels.',
-    other: 'Practice, timing, display, and other app-wide options.',
-  };
-
   @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
   @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
 

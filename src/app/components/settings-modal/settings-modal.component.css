@@ -106,13 +106,6 @@
   transform: scale(0.88);
 }
 
-.settings-tab-desc {
-  margin: 0;
-  padding: .35rem 1.25rem .6rem;
-  font-size: .8rem;
-  color: #fc6;
-  flex-shrink: 0;
-}
 
 /* Tabs */
 .settings-tabs {

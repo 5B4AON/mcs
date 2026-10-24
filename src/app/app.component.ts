@@ -1015,15 +1015,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissTryMorseGuide(): void {
     this.showTryMorseGuide = false;
     try { localStorage.setItem('mcsTryMorseGuideDismissed', '1'); } catch { }
-    // The guide changes the panel height, so re-measure once the DOM settles
-    requestAnimationFrame(() => this.checkSpriteSpace());
+    // The guide changes the panel height; with coalesced change detection the
+    // DOM updates after the first frame, so measure on the following one.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Reopen the guide and remember that it is wanted on the next visit. */
   reopenTryMorseGuide(): void {
     this.showTryMorseGuide = true;
     try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
-    requestAnimationFrame(() => this.checkSpriteSpace());
+    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Load a supported sample into the text field without invoking live input. */
