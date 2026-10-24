@@ -1,0 +1,93 @@
+/**
+ * Morse Code Studio
+ */
+
+/** Settings tab that hosts a goal's target card. */
+export type GoalTab = 'inputs' | 'outputs' | 'other';
+
+/** Goals that also have a guided setup wizard. */
+export type WizardGoalId = 'type' | 'practice' | 'decode';
+
+/** Where a goal lands: an existing settings card, with the guidance shown while it is open. */
+export interface GoalLanding {
+  /** Tab that hosts the card */
+  tab: GoalTab;
+  /** DOM id of the existing card (`settings-card-<name>-card`) */
+  cardId: string;
+  /** One-sentence guidance for this goal */
+  hint?: string;
+  /** Optional follow-up link to another landing */
+  next?: { label: string; landing: string };
+}
+
+/** Target of a navigation request emitted to the settings modal. */
+export interface GoalTarget {
+  tab: GoalTab;
+  cardId: string;
+}
+
+export type GoalIcon = 'keyboard' | 'speaker' | 'headphones' | 'midi' | 'globe' | 'radio' | 'waveform';
+
+/** One entry of the shared goal list used by the navigator and the setup wizard. */
+export interface SetupGoal {
+  /** Plain-language label, reused verbatim by the wizard */
+  label: string;
+  /** Key into `LANDINGS` */
+  landing: string;
+  /** Icon id drawn by the navigator */
+  icon: GoalIcon;
+  /** Present when a guided wizard exists for this goal */
+  wizard?: WizardGoalId;
+}
+
+export const LANDINGS: Record<string, GoalLanding> = {
+  'keyboard-keyer': {
+    tab: 'inputs', cardId: 'settings-card-keyboard-keyer-card',
+    hint: 'Mouse and touch keyers are further down this tab.',
+  },
+  'encoder': {
+    tab: 'inputs', cardId: 'settings-card-encoder-card',
+  },
+  'practice': {
+    tab: 'other', cardId: 'settings-card-practice-card',
+  },
+  'midi-input': {
+    tab: 'inputs', cardId: 'settings-card-midi-input-card',
+    hint: 'To send Morse on to a radio or other device, see \u201cConnect a radio or other hardware\u201d under More goals.',
+  },
+  'rtdb-input': {
+    tab: 'inputs', cardId: 'settings-card-rtdb-input-card',
+    hint: 'To talk, use the same channel name and secret on both the input and the output.',
+    next: { label: 'Next: Firebase RTDB output', landing: 'rtdb-output' },
+  },
+  'rtdb-output': {
+    tab: 'outputs', cardId: 'settings-card-rtdb-output-card',
+    hint: 'Use the same channel name and secret as your Firebase RTDB input. Anything you send goes to that channel.',
+  },
+  'midi-output': {
+    tab: 'outputs', cardId: 'settings-card-midi-output-card',
+    hint: 'Radio keyed by a serial port or WinKeyer? Those cards are further down this tab. Using a serial key or paddle as an input? See Serial Input on the Inputs tab.',
+  },
+  'cw-detector': {
+    tab: 'inputs', cardId: 'settings-card-cw-detector-card',
+    hint: 'Works best with clean, strong tones. For reliable results use a key or paddle input.',
+  },
+};
+
+export const MAIN_GOALS: SetupGoal[] = [
+  { label: 'Practice sending Morse with keyboard, mouse or touch', landing: 'keyboard-keyer', icon: 'keyboard' },
+  { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'speaker', wizard: 'type' },
+  { label: 'Practice receiving (copy practice)', landing: 'practice', icon: 'headphones', wizard: 'practice' },
+  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe' },
+];
+
+export const MORE_GOALS: SetupGoal[] = [
+  { label: 'Use my paddle or key through MIDI', landing: 'midi-input', icon: 'midi' },
+  { label: 'Connect a radio or other hardware', landing: 'midi-output', icon: 'radio' },
+  { label: 'Decode Morse from sound', landing: 'cw-detector', icon: 'waveform', wizard: 'decode' },
+];
+
+/** Look up the goal that owns a wizard. */
+export function goalForWizard(id: WizardGoalId): SetupGoal {
+  return [...MAIN_GOALS, ...MORE_GOALS].find(goal => goal.wizard === id)!;
+}

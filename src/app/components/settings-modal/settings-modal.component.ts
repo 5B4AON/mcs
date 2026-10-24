@@ -46,7 +46,8 @@ import {
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
-import { GoalNavigatorComponent, GoalTarget } from './goal-navigator/goal-navigator.component';
+import { GoalNavigatorComponent } from './goal-navigator/goal-navigator.component';
+import { GoalTarget, WizardGoalId } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
@@ -97,12 +98,19 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Emitted with the Help section ID requested by a settings card. */
   @Output() helpRequested = new EventEmitter<string>();
 
+  /** Open the goal list on entry, as when Settings is reached from "Setup Wizard" */
+  @Input() startWithGoalPanel = false;
+
+  /** Emitted when the user asks for the guided setup of a goal */
+  @Output() wizardRequested = new EventEmitter<WizardGoalId>();
+
   // ---- UI state ----
 
   /** Currently active settings tab */
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
 
   @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
+  @ViewChild(GoalNavigatorComponent) private goalNavigator?: GoalNavigatorComponent;
   @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
 
   private readonly focusReturnTarget =
@@ -287,7 +295,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Open the tab and existing card chosen from "Set up by goal".
+   * Open the tab and existing card chosen from "Setup Wizard".
    * Navigation only: the card is expanded, outlined, scrolled into view and its
    * title focused; no toggle, device or setting is touched.
    */
@@ -295,6 +303,11 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.settingsTab = target.tab;
     // Only the selected tab is rendered, so wait for it before locating the card.
     window.setTimeout(() => window.requestAnimationFrame(() => this.revealCard(target.cardId)));
+  }
+
+  /** Open a goal's card as if it was chosen in the goal list (used when a wizard hands over to Settings). */
+  openGoalLanding(landing: string): void {
+    this.goalNavigator?.select(landing);
   }
 
   private revealCard(cardId: string, attemptsLeft = 20): void {

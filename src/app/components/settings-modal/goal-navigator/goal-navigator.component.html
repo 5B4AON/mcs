@@ -1,57 +1,65 @@
-<section class="goal-nav" aria-label="Set up by goal">
-  <button type="button" class="goal-nav-toggle" id="goal-nav-toggle"
-          [attr.aria-expanded]="panelOpen" aria-controls="goal-nav-panel"
-          (click)="togglePanel()">
-    <span aria-hidden="true">{{ panelOpen ? '&#9660;' : '&#9654;' }}</span>
-    Set up by goal
-  </button>
-
-  @if (panelOpen) {
+<section class="goal-nav" aria-label="Setup Wizard">
+  @if (!panelOpen) {
+    <button type="button" class="goal-btn" id="goal-nav-toggle" aria-expanded="false" aria-controls="goal-nav-panel"
+            (click)="togglePanel()">
+      <span class="goal-btn-main">
+        <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
+        <span>Setup Wizard</span>
+      </span>
+      <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
+    </button>
+  } @else {
     <div id="goal-nav-panel" class="goal-nav-panel">
-      <p class="goal-nav-intro" id="goal-nav-intro">Choose what you want to do. This opens the matching setting; nothing is turned on.</p>
-      <ul class="goal-list" aria-describedby="goal-nav-intro">
+      <ul class="goal-list" aria-label="Choose what you want to do">
         @for (goal of mainGoals; track goal.landing) {
+          <li><ng-container *ngTemplateOutlet="goalRow; context: { $implicit: goal }"></ng-container></li>
+        }
+        @if (!moreOpen) {
           <li>
-            <button type="button" class="goal-btn"
-                    [attr.aria-current]="isOpened(goal.landing) ? 'true' : null"
-                    (click)="select(goal.landing)">
-              <span>{{ goal.label }}</span>
+            <button type="button" class="goal-btn" aria-expanded="false" aria-controls="goal-nav-more" (click)="toggleMore()">
+              <span class="goal-btn-main">
+                <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.500"/><rect x="14" y="3" width="7" height="7" rx="1.500"/><rect x="3" y="14" width="7" height="7" rx="1.500"/><line x1="17.500" y1="14" x2="17.500" y2="21"/><line x1="14" y1="17.500" x2="21" y2="17.500"/></svg>
+                <span>More goals</span>
+              </span>
               <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
             </button>
           </li>
+        } @else {
+          @for (goal of moreGoals; track goal.landing) {
+            <li><ng-container *ngTemplateOutlet="goalRow; context: { $implicit: goal }"></ng-container></li>
+          }
         }
       </ul>
-      <button type="button" class="goal-more-toggle" [attr.aria-expanded]="moreOpen"
-              aria-controls="goal-nav-more" (click)="toggleMore()">
-        <span aria-hidden="true">{{ moreOpen ? '&#9660;' : '&#9654;' }}</span> More goals
-      </button>
-      @if (moreOpen) {
-        <ul id="goal-nav-more" class="goal-list">
-          @for (goal of moreGoals; track goal.landing) {
-            <li>
-              <button type="button" class="goal-btn"
-                      [attr.aria-current]="isOpened(goal.landing) ? 'true' : null"
-                      (click)="select(goal.landing)">
-                <span>{{ goal.label }}</span>
-                <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
-              </button>
-            </li>
-          }
-        </ul>
-      }
+      <button type="button" class="goal-next-link goal-hide-link" (click)="togglePanel()">Hide goals</button>
     </div>
   }
 
-  <div role="status">
-    @if (!panelOpen && activeLanding; as landing) {
-      <div class="goal-nav-hint">
-        @if (landing.hint) {
-          {{ landing.hint }}
-        }
-        @if (landing.next; as next) {
-          <button type="button" class="goal-next-link" (click)="followNext()">{{ next.label }} &rarr;</button>
-        }
-      </div>
-    }
-  </div>
+  @if (hintOpen && opened; as landing) {
+    <app-confirm-dialog [title]="openedLabel" [message]="hintMessage"
+                        [confirmLabel]="opened.next ? opened.next.label : 'OK'" cancelLabel="Close"
+                        [singleAction]="!opened.next" (confirmed)="onHintAnswer($event)">
+    </app-confirm-dialog>
+  }
 </section>
+
+<ng-template #goalRow let-goal>
+  <div class="goal-row">
+    <button type="button" class="goal-btn"
+            [attr.aria-current]="isOpened(goal.landing) ? 'true' : null"
+            (click)="goal.wizard ? guide(goal) : select(goal.landing)">
+      <span class="goal-btn-main">
+    @switch (goal.icon) {
+      @case ('keyboard') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2.2"/><line x1="6" y1="10" x2="6.01" y2="10"/><line x1="10" y1="10" x2="10.01" y2="10"/><line x1="14" y1="10" x2="14.01" y2="10"/><line x1="18" y1="10" x2="18.01" y2="10"/><line x1="7" y1="14.5" x2="17" y2="14.5"/></svg> }
+      @case ('speaker') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor" fill-opacity=".25"/><path d="M15.5 9a4 4 0 0 1 0 6"/><path d="M18.3 6.5a8 8 0 0 1 0 11"/></svg> }
+      @case ('headphones') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4.5" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".25"/><rect x="16.5" y="14" width="4.5" height="6.5" rx="1.6" fill="currentColor" fill-opacity=".25"/></svg> }
+      @case ('midi') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><circle cx="7" cy="10" r="1" fill="currentColor"/><circle cx="17" cy="10" r="1" fill="currentColor"/><circle cx="12" cy="6.8" r="1" fill="currentColor"/><circle cx="8.8" cy="15.5" r="1" fill="currentColor"/><circle cx="15.2" cy="15.5" r="1" fill="currentColor"/></svg> }
+      @case ('globe') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><ellipse cx="12" cy="12" rx="4" ry="9.5"/><line x1="2.5" y1="12" x2="21.5" y2="12"/><path d="M4 7.5h16M4 16.5h16"/></svg> }
+      @case ('radio') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="9" width="18" height="11" rx="2.2"/><line x1="16" y1="9" x2="20" y2="3.5"/><circle cx="9" cy="14.5" r="3"/><line x1="15" y1="13" x2="18" y2="13"/><line x1="15" y1="16" x2="18" y2="16"/></svg> }
+      @case ('waveform') { <svg class="goal-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="3" y1="12" x2="3" y2="12.01"/><line x1="6.5" y1="8" x2="6.5" y2="16"/><line x1="10" y1="4" x2="10" y2="20"/><line x1="13.5" y1="7" x2="13.5" y2="17"/><line x1="17" y1="10" x2="17" y2="14"/><line x1="21" y1="12" x2="21" y2="12.01"/></svg> }
+    }
+        <span>{{ goal.label }}</span>
+      </span>
+      <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
+    </button>
+  </div>
+</ng-template>

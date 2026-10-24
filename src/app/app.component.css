@@ -376,7 +376,6 @@
   display: block;
 }
 
-/* Help / Symbols Ref buttons inside kebab menu */
 .kebab-help-btn {
   display: block;
   border: none;
@@ -400,7 +399,6 @@
   width: 92%;
   text-align: center;
 }
-/* Tighter gap between consecutive kebab action buttons */
 .kebab-help-btn + .kebab-help-btn {
   margin-top: .35rem;
 }
@@ -952,18 +950,16 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  gap: 0 .5rem;
   margin-top: .65rem;
 }
 .try-morse-guide-heading .try-morse-dismiss {
   width: auto;
-  min-height: 40px;
   margin-top: 0;
   align-self: auto;
   flex-shrink: 0;
 }
-.try-morse-load {
-  max-width: 170px;
-}
+.try-morse-load,.try-morse-setup{max-width:200px;margin:0!important}
 .try-morse-load:disabled {
   opacity: .5;
   cursor: not-allowed;

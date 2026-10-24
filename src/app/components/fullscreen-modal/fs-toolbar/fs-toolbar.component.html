@@ -130,10 +130,12 @@
 
       </div>
       <button class="kebab-help-btn" (click)="symbolsRefRequested.emit(); fsKebabOpen = false" title="Symbols Reference" aria-label="Symbols Reference">
-        Symbols Ref
+        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><circle cx="9" cy="8.5" r="1" fill="currentColor"/><line x1="12" y1="8.5" x2="16.5" y2="8.5"/><line x1="8" y1="13" x2="11" y2="13"/><circle cx="14" cy="13" r="1" fill="currentColor"/></svg>
+        <span>Symbols Ref</span>
       </button>
       <button class="kebab-help-btn" (click)="helpRequested.emit(); fsKebabOpen = false" title="Help &amp; Documentation" aria-label="Help &amp; Documentation">
-        Help
+        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.7.4-1.1 1-1.1 1.8"/><circle cx="12" cy="17" r=".8" fill="currentColor"/></svg>
+        <span>Help</span>
       </button>
     </div>
   </div>

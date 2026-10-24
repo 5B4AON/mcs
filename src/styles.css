@@ -16,3 +16,29 @@ html, body {
   outline: 2px solid #8cf;
   outline-offset: 2px;
 }
+
+/* Kebab pills with an icon: icon at the left edge, label centred in the remaining space */
+button.kebab-help-btn.kebab-help-btn:has(.pill-icon) {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .5rem 1rem .5rem .9rem;
+  min-width: 11rem;
+}
+button.kebab-help-btn .pill-icon {
+  position: static;
+  flex-shrink: 0;
+  margin: 0;
+}
+button.kebab-help-btn:has(.pill-icon) > span {
+  flex: 1;
+  text-align: center;
+}
+button.kebab-help-btn:has(.pill-icon)::after {
+  content: '';
+  width: 18px;
+  flex-shrink: 0;
+}
+.try-morse-guide button.kebab-help-btn.kebab-help-btn:has(.pill-icon) {
+  min-width: 0;
+}

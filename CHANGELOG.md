@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-10-24
+
+### Added
+
+- **Setup Wizard (WP08)** — "Set up by goal" is now the **Setup Wizard**, with a
+  magic-wand pill in the main menu and the Try Morse box. Three goals open a
+  step-by-step guide directly: type text and hear it as Morse, copy practice,
+  and decode Morse from sound. Each guide keeps a draft, lets you go back or
+  skip a step, shows exactly what would change, and applies only what you
+  confirm. Typing and practice include Farnsworth timing. The decode guide can
+  turn audio output off and turn the detector on from its own buttons, never
+  starts audio or asks for the microphone, and warns about feedback loops.
+  The last screen offers "Try without saving" and "Open settings".
+
+### Changed
+
+- The goal list uses a larger icon per goal, scrolls inside its panel, and
+  "More goals" is a row that is replaced by its goals. Other goals show their
+  hint in a dismissible dialog instead of a yellow line under the list.
+- The decode goal is now called "Decode Morse from sound", and the MIDI paddle
+  or key goal moved to More goals.
+- Icons on the main and fullscreen menu pills and on the Try Morse buttons;
+  the Try Morse text is shorter and Escape closes it.
+
 ## [1.14.0] - 2026-10-24
 
 ### Added
