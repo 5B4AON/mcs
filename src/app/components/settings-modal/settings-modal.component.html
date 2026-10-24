@@ -37,8 +37,9 @@
       <div class="conflict-warning">{{ warn }}</div>
     }
 
-    <app-goal-navigator [currentTab]="settingsTab"
-                        (goalSelected)="openGoalTarget($event)"></app-goal-navigator>
+    <app-goal-navigator [currentTab]="settingsTab" [startOpen]="startWithGoalPanel"
+                        (goalSelected)="openGoalTarget($event)"
+                        (wizardRequested)="wizardRequested.emit($event)"></app-goal-navigator>
 
     <!-- Tab navigation -->
     <div class="settings-tabs" role="tablist" aria-label="Settings categories">
@@ -70,7 +71,6 @@
         Other
       </button>
     </div>
-    <p class="settings-tab-desc">{{ tabDescriptions[settingsTab] }}</p>
 
     <!-- Tab content — delegates to child components -->
     <div id="settings-tab-panel" class="settings-tab-content" role="tabpanel"

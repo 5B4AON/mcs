@@ -1,0 +1,359 @@
+<div class="wizard-overlay" (click)="requestClose()">
+  <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="wizard-title" tabindex="-1"
+       (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
+
+    <header class="wizard-header">
+      <h2 id="wizard-title">{{ title }}</h2>
+      <button type="button" class="wizard-close-btn" (click)="requestClose()"
+              title="Close guided setup" aria-label="Close guided setup">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    @if (step !== 'done') {
+      <p class="wizard-progress" role="status">
+        Step {{ stepIndex + 1 }} of {{ progressSteps.length }}
+        <span class="wizard-draft-note">&mdash; nothing changes until you press Apply</span>
+      </p>
+    }
+
+    <div class="wizard-body">
+      @switch (step) {
+
+        @case ('speed') {
+          <h3 class="wizard-step-title" tabindex="-1">How fast should typed text play?</h3>
+          <p class="wizard-hint">Text you type is sent as Morse at this speed. You can change it later with the speed buttons on the main screen.</p>
+          <label class="wizard-field">Speed (WPM)
+            <input type="number" inputmode="numeric" [min]="limits.wpm.min" [max]="limits.wpm.max"
+                   [value]="draft.encoderWpm" (input)="setNumber('encoderWpm', $event)">
+          </label>
+          <p class="wizard-note">Currently {{ base.encoderWpm }} WPM. Allowed: {{ limits.wpm.min }}&ndash;{{ limits.wpm.max }}.</p>
+        }
+
+        @case ('sidetone') {
+          <h3 class="wizard-step-title" tabindex="-1">Hear it on this device</h3>
+          <p class="wizard-hint">The sidetone is the beep you hear while Morse plays. It only plays on this device. Radio, serial, MIDI and online outputs are not touched.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.sidetoneEnabled" (change)="setBool('sidetoneEnabled', $event)">
+            Play the sidetone
+          </label>
+          @if (draft.sidetoneEnabled) {
+            <label class="wizard-field">Pitch (Hz)
+              <input type="number" inputmode="numeric" [min]="limits.sidetoneHz.min" [max]="limits.sidetoneHz.max"
+                     [value]="draft.sidetoneFrequency" (input)="setNumber('sidetoneFrequency', $event)">
+            </label>
+            <p class="wizard-note">Allowed: {{ limits.sidetoneHz.min }}&ndash;{{ limits.sidetoneHz.max }} Hz.</p>
+          }
+          <p class="wizard-note">Want to practise sending with a keyboard, mouse or touch instead? That needs no setup here; use &ldquo;Practice sending Morse&rdquo; under Setup Wizard.</p>
+        }
+
+        @case ('content') {
+          <h3 class="wizard-step-title" tabindex="-1">What do you want to copy?</h3>
+          <p class="wizard-hint">Copy practice plays random Morse for you to decode by ear.</p>
+          <label class="wizard-field">Content
+            <select [value]="draft.practiceContentMode" (change)="setText('practiceContentMode', $event)">
+              <option value="characters" [selected]="draft.practiceContentMode === 'characters'">Random characters</option>
+              <option value="words" [selected]="draft.practiceContentMode === 'words'">Random words</option>
+              <option value="callsigns" [selected]="draft.practiceContentMode === 'callsigns'">Random callsigns</option>
+            </select>
+          </label>
+          <label class="wizard-field">Items per sequence
+            <select (change)="setSelectNumber('practiceGroupCount', $event)">
+              @for (n of [1,2,3,4,5,6,7,8,9,10]; track n) {
+                <option [value]="n" [selected]="draft.practiceGroupCount === n">{{ n }}</option>
+              }
+            </select>
+          </label>
+          @if (draft.practiceContentMode === 'characters') {
+            <label class="wizard-field">Characters per group
+              <select (change)="setSelectNumber('practiceCharGroupSize', $event)">
+                @for (n of [1,2,3,4,5]; track n) {
+                  <option [value]="n" [selected]="draft.practiceCharGroupSize === n">{{ n }}</option>
+                }
+              </select>
+            </label>
+            <fieldset class="wizard-fieldset">
+              <legend>Character pool</legend>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludeLetters" (change)="setBool('practiceIncludeLetters', $event)"> Letters</label>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludeNumbers" (change)="setBool('practiceIncludeNumbers', $event)"> Numbers</label>
+              <label class="wizard-check"><input type="checkbox" [checked]="draft.practiceIncludePunctuation" (change)="setBool('practiceIncludePunctuation', $event)"> Punctuation</label>
+            </fieldset>
+          }
+          @if (draft.practiceContentMode === 'words') {
+            <fieldset class="wizard-fieldset">
+              <legend>Word lengths</legend>
+              @for (n of [3,4,5]; track n) {
+                <label class="wizard-check"><input type="checkbox" [checked]="hasWordLength(n)" (change)="toggleWordLength(n, $event)"> {{ n }} letters</label>
+              }
+            </fieldset>
+          }
+        }
+
+        @case ('timing') {
+          <h3 class="wizard-step-title" tabindex="-1">{{ goal === 'type' ? 'Make the Morse easier to follow?' : 'Give yourself more time between characters?' }}</h3>
+          <p class="wizard-hint">Farnsworth timing plays each character at full speed ({{ base.encoderWpm }} WPM) but stretches the gaps between characters and words. {{ goal === 'type' ? 'The Morse you hear is easier to follow while each character keeps its real sound.' : 'You learn to recognise characters at real speed and get extra time to think.' }} Skip it to keep your current timing.</p>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.farnsworthEnabled" (change)="setBool('farnsworthEnabled', $event)">
+            Stretch the gaps (Farnsworth timing)
+          </label>
+          @if (draft.farnsworthEnabled) {
+            <label class="wizard-field">Gap setting
+              <select [value]="draft.farnsworthInputMode" (change)="setText('farnsworthInputMode', $event)">
+                <option value="wpm" [selected]="draft.farnsworthInputMode === 'wpm'">Effective WPM</option>
+                <option value="multiplier" [selected]="draft.farnsworthInputMode === 'multiplier'">Gap multiplier</option>
+              </select>
+            </label>
+            @if (draft.farnsworthInputMode === 'multiplier') {
+              <label class="wizard-field">Gap multiplier
+                <input type="number" inputmode="decimal" step="0.1" [min]="limits.farnsworthMultiplier.min" [max]="limits.farnsworthMultiplier.max"
+                       [value]="draft.farnsworthMultiplier" (input)="setNumber('farnsworthMultiplier', $event)">
+              </label>
+              <p class="wizard-note">Gaps are this many times longer. Allowed: {{ limits.farnsworthMultiplier.min }}&ndash;{{ limits.farnsworthMultiplier.max }}.</p>
+            } @else {
+              <label class="wizard-field">Effective speed (WPM)
+                <input type="number" inputmode="numeric" [min]="limits.farnsworthWpm.min" [max]="base.encoderWpm"
+                       [value]="draft.farnsworthEffectiveWpm" (input)="setNumber('farnsworthEffectiveWpm', $event)">
+              </label>
+              <p class="wizard-note">Overall speed after stretching. Allowed: {{ limits.farnsworthWpm.min }}&ndash;{{ base.encoderWpm }} WPM.</p>
+            }
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.farnsworthWordsworth" (change)="setBool('farnsworthWordsworth', $event)">
+              Wordsworth: stretch only the gaps between words
+            </label>
+            <label class="wizard-field">Applies to
+              <select [value]="draft.farnsworthAppliesTo" (change)="setText('farnsworthAppliesTo', $event)">
+                <option value="rx" [selected]="draft.farnsworthAppliesTo === 'rx'">Received (RX) Morse only</option>
+                <option value="tx" [selected]="draft.farnsworthAppliesTo === 'tx'">Sent (TX) Morse only</option>
+                <option value="both" [selected]="draft.farnsworthAppliesTo === 'both'">Received and sent Morse</option>
+              </select>
+            </label>
+            <p class="wizard-hint">This is a general timing setting, not only for this goal. It also changes how any other Morse of that kind plays, including MIDI output. WinKeyer uses its own hardware timing and is not affected.</p>
+            @if (farnsworthSkipsGoal) {
+              <div class="wizard-warning" role="status">{{ goal === 'type' ? 'Text you type' : 'Your practice' }} plays as {{ timingDirection === 'rx' ? 'received (RX)' : 'sent (TX)' }} Morse, so this choice would not stretch the gaps you hear. Pick &ldquo;Received and sent Morse&rdquo; or the matching direction.</div>
+            }
+          }
+        }
+
+        @case ('feedback') {
+          <h3 class="wizard-step-title" tabindex="-1">How do you want to check your copy?</h3>
+          <label class="wizard-field">Feedback
+            <select [value]="draft.practiceFeedbackMode" (change)="setText('practiceFeedbackMode', $event)">
+              <option value="listen" [selected]="draft.practiceFeedbackMode === 'listen'">Listen only</option>
+              <option value="blur" [selected]="draft.practiceFeedbackMode === 'blur'">Blurred (reveal button)</option>
+              <option value="typealong" [selected]="draft.practiceFeedbackMode === 'typealong'">Type-along</option>
+            </select>
+          </label>
+          <p class="wizard-note">
+            @if (draft.practiceFeedbackMode === 'listen') {
+              Audio plays and the decoded text appears. Typing is off so the answer stays visible only as text.
+            } @else if (draft.practiceFeedbackMode === 'blur') {
+              Audio plays and the text is blurred. Use the reveal button to peek.
+            } @else {
+              Audio plays with the text blurred. Type what you hear, then check your answer when the sequence ends.
+            }
+          </p>
+          @if (draft.practiceFeedbackMode === 'typealong') {
+            <label class="wizard-field">Rounds
+              <select (change)="setSelectNumber('practiceRounds', $event)">
+                @for (n of [1,2,3,4,5]; track n) {
+                  <option [value]="n" [selected]="draft.practiceRounds === n">{{ n }}</option>
+                }
+              </select>
+            </label>
+          }
+          <p class="wizard-hint">Practice stays on this device: it plays local audio and vibration only. Serial, MIDI, WinKeyer and online relay outputs are not driven. Changing that is an advanced choice in the Copy Practice card.</p>
+        }
+
+        @case ('before') {
+          <h3 class="wizard-step-title" tabindex="-1">Before you decode audio</h3>
+          <p class="wizard-hint">The CW Tone Detector listens to {{ detectorInputLabel }}. If your speakers play Morse from this app while it listens, the sound can loop back into the microphone and feed itself.</p>
+          <ul class="wizard-list">
+            <li><strong>Turn audio output off first.</strong> Switch off the Sidetone (and any Key Output on an audio channel) before you turn the detector on.</li>
+            <li><strong>This guide does not start listening.</strong> It never turns the detector on, never asks for microphone access and never lists your devices.</li>
+            <li>Your browser may ask for microphone permission later, when you turn the detector on and audio starts.</li>
+          </ul>
+          @if (feedbackOutputs.length) {
+            <div class="wizard-warning" role="status">
+            <p class="wizard-warning-text">Audio output is on right now: {{ feedbackOutputs.join(', ') }}. Turn it off before enabling the detector.</p>
+            <button type="button" class="wizard-pill wizard-inline-pill" (click)="turnOffAudioOutput()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="4 9 8 9 13 5 13 19 8 15 4 15" fill="currentColor"/><line x1="17" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="17" y2="15"/></svg>
+              <span>Turn audio output off</span>
+            </button>
+          </div>
+          } @else {
+            <p class="wizard-note">No audio output that could feed back is on right now.</p>
+          }
+          @if (!audioInputSupported) {
+            <div class="wizard-warning" role="status">This browser does not offer the audio input features the detector needs. You can still choose settings, but listening may not work here.</div>
+          }
+        }
+
+        @case ('tone') {
+          <h3 class="wizard-step-title" tabindex="-1">Tune the detector</h3>
+          <p class="wizard-hint">Match these to the tone you hear from your radio. Typical CW pitch is 500&ndash;700 Hz.</p>
+          <label class="wizard-field">Detected signal is tagged as
+            <select [value]="draft.cwInputSource" (change)="setText('cwInputSource', $event)">
+              <option value="rx" [selected]="draft.cwInputSource === 'rx'">RX &mdash; received</option>
+              <option value="tx" [selected]="draft.cwInputSource === 'tx'">TX &mdash; transmitted</option>
+            </select>
+          </label>
+          <label class="wizard-field">Tone frequency (Hz)
+            <input type="number" inputmode="numeric" step="10" [min]="limits.cwHz.min" [max]="limits.cwHz.max"
+                   [value]="draft.cwInputFrequency" (input)="setNumber('cwInputFrequency', $event)">
+          </label>
+          <label class="wizard-field">Bandwidth (Hz)
+            <input type="number" inputmode="numeric" step="10" [min]="limits.cwBandwidth.min" [max]="limits.cwBandwidth.max"
+                   [value]="draft.cwInputBandwidth" (input)="setNumber('cwInputBandwidth', $event)">
+          </label>
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.cwInputAutoThreshold" (change)="setBool('cwInputAutoThreshold', $event)">
+            Set the signal threshold automatically
+          </label>
+        }
+
+        @case ('review') {
+          <h3 class="wizard-step-title" tabindex="-1">Review before applying</h3>
+          @if (review.changes.length) {
+            <p class="wizard-hint">Apply will change only these settings:</p>
+            <ul class="wizard-changes">
+              @for (line of review.changes; track line.key) {
+                <li><span class="wizard-change-label">{{ line.label }}</span>
+                  <span class="wizard-change-values"><span class="wizard-from">{{ line.from }}</span> &rarr; <strong>{{ line.to }}</strong></span></li>
+              }
+            </ul>
+          } @else {
+            <p class="wizard-hint">Your answers match your current settings, so there is nothing to apply.</p>
+          }
+          @if (review.unchanged.length) {
+            <details class="wizard-unchanged">
+              <summary>Stays as it is ({{ review.unchanged.length }})</summary>
+              <ul>
+                @for (item of review.unchanged; track item.label) {
+                  <li>{{ item.label }}: {{ item.value }}</li>
+                }
+              </ul>
+            </details>
+          }
+          <p class="wizard-note">Everything else stays exactly as it is, including your key and paddle mappings, outputs and routing, calibration and display preferences.</p>
+          <ul class="wizard-list">
+            <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
+            <li>It does not start audio, send Morse or turn on any output.</li>
+            @if (goal === 'decode') {
+              <li>The detector stays as it is now ({{ base.cwInputEnabled ? 'on' : 'off' }}) unless you choose &ldquo;Apply and turn on detector&rdquo;. Audio does not start; the browser asks for microphone access when you press Start Audio.</li>
+            }
+          </ul>
+          @if (feedbackOutputs.length) {
+            <div class="wizard-warning" role="status">
+              <p class="wizard-warning-text">Audio output is on right now: {{ feedbackOutputs.join(', ') }}. Turn it off before enabling the detector to avoid a feedback loop.</p>
+              <button type="button" class="wizard-pill wizard-inline-pill" (click)="turnOffAudioOutput()"><span>Turn audio output off</span></button>
+            </div>
+          }
+          @for (message of newConflicts; track message) {
+            <div class="wizard-error" role="alert">{{ message }} Go back and change the answer, or fix the audio channels in Settings.</div>
+          }
+          @if (goal === 'decode') {
+          <div class="wizard-inline-actions">
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="!canTurnOnDetector" (click)="turnOnDetector()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h3l2-6 4 12 3-9 2 3h6"/></svg>
+              <span>Apply and turn on detector</span>
+            </button>
+          </div>
+          }
+        }
+
+        @case ('done') {
+          <h3 class="wizard-step-title" tabindex="-1">Applied</h3>
+          <p class="wizard-hint">The settings are active now but not saved. Use Save in Settings to keep them for this device.</p>
+          <h4 class="wizard-next-title">What to do next</h4>
+          @switch (goal) {
+            @case ('type') {
+              <p>Type some text on the main screen and press Enter. @if (base.sidetoneEnabled || draft.sidetoneEnabled) { You will hear it as sidetone on this device. } @else { The sidetone is off, so it will be silent here. }</p>
+            }
+            @case ('practice') {
+              <p>On the main screen choose &ldquo;Practice&rdquo; in the encoder mode dropdown, then press Start when you are ready. Nothing starts by itself.</p>
+            }
+            @case ('decode') {
+              <ol class="wizard-list">
+                <li>Turn off the Sidetone and any audio Key Output.</li>
+                <li>Switch the CW Tone Detector on, using the button below or its Settings card.</li>
+                <li>Start audio from the main screen when you are ready to listen.</li>
+              </ol>
+              @if (feedbackOutputs.length) {
+                <div class="wizard-warning" role="status"><p class="wizard-warning-text">Audio output is on ({{ feedbackOutputs.join(', ') }}). Turn it off before turning on the detector.</p>
+                  <button type="button" class="wizard-pill wizard-inline-pill" (click)="turnOffAudioOutput()"><span>Turn audio output off</span></button>
+                </div>
+              } @else {
+                <p class="wizard-note">&ldquo;Turn on the detector&rdquo; switches it on and returns to the main screen. It does not start audio, so the browser asks for microphone access only when you press Start Audio.</p>
+              }
+          <div class="wizard-inline-actions">
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="!canTurnOnDetector" (click)="turnOnDetector()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12h3l2-6 4 12 3-9 2 3h6"/></svg>
+              <span>Turn on the detector</span>
+            </button>
+          </div>
+            }
+          }
+        }
+      }
+
+      @if (problems.length && step !== 'review') {
+        <div class="wizard-error" role="alert">
+          @for (problem of problems; track problem) { <div>{{ problem }}</div> }
+        </div>
+      }
+    </div>
+
+    <footer class="wizard-footer">
+      @if (step === 'done') {
+        <button type="button" class="wizard-pill" [class.wizard-primary]="goal !== 'decode'" (click)="tryNow()">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16" fill="currentColor"/></svg>
+          <span>Try without saving</span>
+        </button>
+        <button type="button" class="wizard-pill" (click)="openSettings()">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.4" fill="#3a4858"/><circle cx="15" cy="17" r="2.4" fill="#3a4858"/></svg>
+          <span>Open settings</span>
+        </button>
+      } @else {
+        @if (stepIndex > 0) {
+          <button type="button" class="wizard-pill" (click)="back()">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 5 8 12 15 19"/></svg>
+            <span>Back</span>
+          </button>
+        }
+        @if (canSkip) {
+          <button type="button" class="wizard-pill" (click)="skip()">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 5 13 12 6 19"/><line x1="18" y1="5" x2="18" y2="19"/></svg>
+            <span>Skip</span>
+          </button>
+        }
+        @if (step === 'review') {
+          <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="apply()">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
+            <span>Apply</span>
+          </button>
+        } @else {
+          <button type="button" class="wizard-pill wizard-primary" [disabled]="problems.length > 0" (click)="next()">
+            <span>Next</span>
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 5 16 12 9 19"/></svg>
+          </button>
+        }
+        <button type="button" class="wizard-pill" (click)="requestClose()">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          <span>Cancel</span>
+        </button>
+      }
+    </footer>
+  </div>
+</div>
+
+@if (confirmDiscard) {
+  <app-confirm-dialog
+    title="Discard your answers?"
+    message="Leaving now discards the choices you made in this guide. Nothing has been changed in the app."
+    confirmLabel="Discard"
+    cancelLabel="Keep editing"
+    [danger]="true"
+    (confirmed)="onDiscardAnswer($event)">
+  </app-confirm-dialog>
+}

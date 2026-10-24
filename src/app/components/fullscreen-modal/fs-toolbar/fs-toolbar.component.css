@@ -503,7 +503,10 @@
 
 /* ---- Help button inside kebab ---- */
 .kebab-help-btn {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .4rem;
   border: none;
   cursor: pointer;
   font-size: .78rem;

@@ -59,13 +59,20 @@
           <button class="wpm-btn" aria-label="Increase keyer speed" (click)="adjustWpm('keyerWpm', 1)">+</button>
         </span>
         <button class="kebab-help-btn" (click)="openSymbolsRef(); controlsKebabOpen = false" title="Symbols Reference" aria-label="Symbols Reference">
-          Symbols Ref
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/><circle cx="9" cy="8.5" r="1" fill="currentColor"/><line x1="12" y1="8.5" x2="16.5" y2="8.5"/><line x1="8" y1="13" x2="11" y2="13"/><circle cx="14" cy="13" r="1" fill="currentColor"/></svg>
+          <span>Symbols Ref</span>
         </button>
         <button class="kebab-help-btn" (click)="reopenTryMorseGuide(); controlsKebabOpen = false" title="Try Morse" aria-label="Try Morse">
-          Try Morse
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16" fill="currentColor"/></svg>
+          <span>Try Morse</span>
+        </button>
+        <button class="kebab-help-btn" (click)="openSettings(true); controlsKebabOpen = false" title="Setup Wizard" aria-label="Setup Wizard">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
+          <span>Setup Wizard</span>
         </button>
         <button class="kebab-help-btn" (click)="openHelp(); controlsKebabOpen = false" title="Help &amp; Documentation" aria-label="Help &amp; Documentation">
-          Help
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.2a2.6 2.6 0 1 1 3.6 2.4c-.7.4-1.1 1-1.1 1.8"/><circle cx="12" cy="17" r=".8" fill="currentColor"/></svg>
+          <span>Help</span>
         </button>
       </div>
     </div>
@@ -220,19 +227,21 @@
       <section class="try-morse-guide" aria-labelledby="try-morse-title">
         <div class="try-morse-guide-heading">
           <h2 id="try-morse-title">Try Morse</h2>
-          <button class="kebab-help-btn try-morse-dismiss" (click)="dismissTryMorseGuide()" aria-label="Dismiss Try Morse guide">Close</button>
+          <button class="kebab-help-btn try-morse-dismiss" (click)="dismissTryMorseGuide()" aria-label="Dismiss Try Morse guide">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
+            <span>Close</span>
+          </button>
         </div>
-        <p>Type below to turn text into Morse. Received and sent Morse appear in the conversation above. Load the example, then choose the send control. Live mode sends as you type after any destination confirmation.</p>
-        @if (audioState === 'stopped') {
-          <p>To hear Morse played out, turn on Start Audio. If you still hear nothing, check that audio output is enabled in Settings. Start Audio does not send the text in this box by itself.</p>
-        }
-        @if (settings.settings().encoderMode === 'practice') {
-          <p class="try-morse-note">Copy Practice uses its own controls. Choose Send on Enter or Live to try this example.</p>
-        }
+        <p>Type below to turn text into Morse. Load the example, then choose the send control. Live mode sends as you type. Setup Wizard helps you choose the right settings.</p>
         <div class="try-morse-actions">
           <button class="kebab-help-btn try-morse-load" (click)="loadTryMorseExample()"
                   [disabled]="encoder.isSending()">
-            Load example
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4h9l5 5v11H5z"/><polyline points="14 4 14 9 19 9"/><line x1="8.5" y1="13.5" x2="15.5" y2="13.5"/><line x1="8.5" y1="17" x2="13" y2="17"/></svg>
+            <span>Load example</span>
+          </button>
+          <button class="kebab-help-btn try-morse-setup" (click)="openSettings(true)">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
+            <span>Setup Wizard</span>
           </button>
         </div>
       </section>
@@ -356,7 +365,17 @@
 @if (showSettings) {
   <app-settings-modal [audioRunning]="audioRunning" (defaultsReset)="onSettingsDefaultsReset()"
                       (saved)="onSettingsSaved()" (closed)="closeSettings()"
-                      (helpRequested)="onSettingsHelpRequested($event)"></app-settings-modal>
+                      (helpRequested)="onSettingsHelpRequested($event)"
+                      [startWithGoalPanel]="settingsGoalPanelOpen"
+                      (wizardRequested)="openWizard($event)"></app-settings-modal>
+}
+
+<!-- ========== GUIDED SETUP ========== -->
+@if (showWizard) {
+  <app-setup-wizard [goal]="wizardGoal" (closed)="closeWizard()"
+                    (tryRequested)="onWizardTry()"
+                    (detectorEnabled)="onWizardDetectorEnabled()"
+    (openSettingsRequested)="onWizardOpenSettings($event)"></app-setup-wizard>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->

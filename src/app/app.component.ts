@@ -25,6 +25,8 @@ import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
 import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
+import { SetupWizardComponent } from './components/setup-wizard/setup-wizard.component';
+import { WizardGoalId, goalForWizard } from './components/settings-modal/goal-navigator/setup-goals';
 import * as practiceUi from './practice-ui.utils';
 
 /**
@@ -52,7 +54,7 @@ import * as practiceUi from './practice-ui.utils';
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent],
+  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -74,6 +76,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   micKeyDown = false;
   /** Whether the settings modal is open */
   showSettings = false;
+  /** Open the "Setup Wizard" list as soon as Settings opens */
+  settingsGoalPanelOpen = false;
+  /** Guided setup state */
+  showWizard = false;
+  wizardGoal: WizardGoalId = 'type';
   /** Whether the Help modal is visible */
   showHelp = false;
   /** Visible control to focus if the Help trigger is hidden when Help closes */
@@ -128,6 +135,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Visible control to focus if the fullscreen menu item is hidden when the view closes */
   fullscreenFocusFallback: HTMLElement | null = null;
 
+  @ViewChild(SettingsModalComponent) private settingsModalRef?: SettingsModalComponent;
+  @ViewChild(SetupWizardComponent) private wizardRef?: SetupWizardComponent;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('panelSection') panelSectionRef?: ElementRef<HTMLElement>;
@@ -618,7 +627,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Close the topmost modal — called by popstate (back button) */
   private closeActiveModal(): void {
-    if (this.showHelp) {
+    if (this.showWizard) {
+      if (this.wizardRef?.hasDraft()) {
+        // Back was pressed with unapplied answers: keep the wizard and ask first.
+        this.pushModalState('wizard');
+        this.wizardRef.askDiscard();
+      } else {
+        this.showWizard = false;
+      }
+    } else if (this.showHelp) {
       this.showHelp = false;
     } else if (this.showSymbolsRef) {
       this.showSymbolsRef = false;
@@ -734,7 +751,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         : this.controlsKebabOpen
           ? { open: true, selector: '.kebab-btn' }
           : null;
-      if (!menu?.open) return;
+      if (!menu?.open) {
+        if (this.showTryMorseGuide) {
+          event.preventDefault();
+          this.dismissTryMorseGuide();
+        }
+        return;
+      }
 
       event.preventDefault();
       this.clearMenuOpen = false;
@@ -1015,15 +1038,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissTryMorseGuide(): void {
     this.showTryMorseGuide = false;
     try { localStorage.setItem('mcsTryMorseGuideDismissed', '1'); } catch { }
-    // The guide changes the panel height, so re-measure once the DOM settles
-    requestAnimationFrame(() => this.checkSpriteSpace());
+    // The guide changes the panel height; with coalesced change detection the
+    // DOM updates after the first frame, so measure on the following one.
+    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Reopen the guide and remember that it is wanted on the next visit. */
   reopenTryMorseGuide(): void {
     this.showTryMorseGuide = true;
     try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
-    requestAnimationFrame(() => this.checkSpriteSpace());
+    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Load a supported sample into the text field without invoking live input. */
@@ -1321,9 +1345,48 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Settings handlers ----
 
   /** Open settings modal */
-  openSettings(): void {
+  openSettings(showGoalList = false): void {
+    this.settingsGoalPanelOpen = showGoalList;
     this.showSettings = true;
     this.pushModalState('settings');
+  }
+
+  /** Open the guided setup for a goal, on top of Settings */
+  openWizard(goal: WizardGoalId): void {
+    this.wizardGoal = goal;
+    this.showWizard = true;
+    this.pushModalState('wizard');
+  }
+
+  /** Close the guided setup, leaving Settings as it was */
+  closeWizard(): void {
+    this.showWizard = false;
+    this.popModalState();
+  }
+
+  /** Leave the guided setup and open its goal's card in Settings */
+  onWizardOpenSettings(goal: WizardGoalId): void {
+    this.closeWizard();
+    this.settingsModalRef?.openGoalLanding(goalForWizard(goal).landing);
+  }
+
+  /** Start the detector right away when audio is already running, as the Settings toggle does */
+  async onWizardDetectorEnabled(): Promise<void> {
+    if (this.audioRunning) await this.cwInput.start();
+  }
+
+  /** Leave the guided setup and Settings together, back to the main screen, keeping the applied settings unsaved */
+  onWizardTry(): void {
+    const steps = Math.min(this.modalHistoryDepth, (this.showWizard ? 1 : 0) + (this.showSettings ? 1 : 0));
+    this.showWizard = false;
+    this.showSettings = false;
+    this.defaultsResetInSettings = false;
+    this.defaultsResetSaved = false;
+    if (steps > 0) {
+      this.modalHistoryDepth -= steps;
+      this.ignoringPopState = true;
+      history.go(-steps);
+    }
   }
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */
