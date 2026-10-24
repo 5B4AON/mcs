@@ -6,8 +6,8 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KeyboardInputMapping, KeyInputMode, DecoderSource, PaddleMode } from '../../services/settings.service';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { KeyboardInputMapping, KeyInputMode, DecoderSource, PaddleMode } from '../../../services/settings.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a keyboard input mapping.

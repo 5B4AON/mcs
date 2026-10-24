@@ -6,7 +6,7 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, Output, ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /** A named group of emojis displayed as a tab in the picker */
 interface EmojiCategory {

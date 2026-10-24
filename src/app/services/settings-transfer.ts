@@ -177,7 +177,7 @@ const ENUM_VALUES: Record<string, readonly string[]> = {
   optoForward: ['rx', 'tx', 'both'],
   winkeyerForward: ['rx', 'tx', 'both'],
   rtdbOutputForward: ['rx', 'tx', 'both'],
-  sidetoneOutputChannel: ['left', 'right'],
+  sidetoneOutputChannel: ['left', 'right', 'both'],
   sidetoneForward: ['rx', 'tx', 'both'],
   vibrateForward: ['rx', 'tx', 'both'],
   encoderMode: ['enter', 'live', 'practice'],

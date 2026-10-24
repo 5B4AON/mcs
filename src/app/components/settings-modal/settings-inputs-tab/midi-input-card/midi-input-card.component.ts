@@ -6,7 +6,7 @@ import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, MidiInputMapping, DecoderSource } from '../../../../services/settings.service';
 import { MidiInputService, midiNoteName } from '../../../../services/midi-input.service';
-import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../../midi-input-edit-modal/midi-input-edit-modal.component';
+import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../midi-input-edit-modal/midi-input-edit-modal.component';
 
 /**
  * Settings card — MIDI Input.
