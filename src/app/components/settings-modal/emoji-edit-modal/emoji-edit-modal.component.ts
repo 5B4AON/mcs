@@ -7,8 +7,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
-import { EmojiMapping } from '../../services/settings.service';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { EmojiMapping } from '../../../services/settings.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves an emoji mapping.

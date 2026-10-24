@@ -5,7 +5,7 @@
 import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AppSettings, KeyboardInputMapping, DecoderSource, PaddleMode } from '../../../../services/settings.service';
-import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../../keyboard-input-edit-modal/keyboard-input-edit-modal.component';
+import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../keyboard-input-edit-modal/keyboard-input-edit-modal.component';
 
 /**
  * Settings card — Keyboard Keyer.

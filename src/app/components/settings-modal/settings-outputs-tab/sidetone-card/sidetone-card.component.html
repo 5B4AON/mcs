@@ -36,6 +36,7 @@
         <select [value]="settings.settings().sidetoneOutputChannel" (change)="onSettingChange('sidetoneOutputChannel', $event)">
           <option value="left" [selected]="settings.settings().sidetoneOutputChannel === 'left'">Left</option>
           <option value="right" [selected]="settings.settings().sidetoneOutputChannel === 'right'">Right</option>
+          <option value="both" [selected]="settings.settings().sidetoneOutputChannel === 'both'">Both (stereo)</option>
         </select>
       </label>
 

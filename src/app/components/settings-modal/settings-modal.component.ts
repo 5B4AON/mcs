@@ -46,6 +46,7 @@ import {
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
+import { GoalNavigatorComponent, GoalTarget } from './goal-navigator/goal-navigator.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
@@ -75,6 +76,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
     SettingsInputsTabComponent,
     SettingsOutputsTabComponent,
     SettingsOtherTabComponent,
+    GoalNavigatorComponent,
   ],
   templateUrl: './settings-modal.component.html',
   styleUrls: ['./settings-modal.component.css'],
@@ -99,6 +101,13 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Currently active settings tab */
   settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
+
+  /** One-sentence description of what each tab contains */
+  readonly tabDescriptions: Record<'inputs' | 'outputs' | 'other', string> = {
+    inputs: 'Ways of sending Morse into the app: keys, paddles, microphone, and online channels.',
+    outputs: 'Where Morse goes out: speaker, radio keying, MIDI devices, and online channels.',
+    other: 'Practice, timing, display, and other app-wide options.',
+  };
 
   @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
   @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
@@ -281,6 +290,43 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.settingsTab = this.tabOrder[nextIndex];
     window.requestAnimationFrame(() => {
       document.getElementById(`settings-tab-${this.settingsTab}`)?.focus();
+    });
+  }
+
+  /**
+   * Open the tab and existing card chosen from "Set up by goal".
+   * Navigation only: the card is expanded, outlined, scrolled into view and its
+   * title focused; no toggle, device or setting is touched.
+   */
+  openGoalTarget(target: GoalTarget): void {
+    this.settingsTab = target.tab;
+    // Only the selected tab is rendered, so wait for it before locating the card.
+    window.setTimeout(() => window.requestAnimationFrame(() => this.revealCard(target.cardId)));
+  }
+
+  private revealCard(cardId: string, attemptsLeft = 20): void {
+    const card = document.getElementById(cardId);
+    const title = card?.querySelector<HTMLElement>('.settings-card-title');
+    if (!card || !title) {
+      if (attemptsLeft > 0) {
+        window.requestAnimationFrame(() => this.revealCard(cardId, attemptsLeft - 1));
+      }
+      return;
+    }
+    document.querySelectorAll('.settings-card.goal-opened')
+      .forEach(el => el.classList.remove('goal-opened'));
+    // Collapse every other open card so only the chosen one is expanded.
+    document.querySelectorAll<HTMLElement>('.settings-tab-content .settings-card-title[aria-expanded="true"]')
+      .forEach(other => {
+        if (other !== title) other.click();
+      });
+    if (title.getAttribute('aria-expanded') === 'false') {
+      title.click();
+    }
+    card.classList.add('goal-opened');
+    window.requestAnimationFrame(() => {
+      card.scrollIntoView({ block: 'start' });
+      title.focus({ preventScroll: true });
     });
   }
 

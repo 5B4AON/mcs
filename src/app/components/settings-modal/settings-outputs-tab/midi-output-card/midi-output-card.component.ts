@@ -6,7 +6,7 @@ import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AppSettings, MidiOutputMapping } from '../../../../services/settings.service';
 import { MidiOutputService, midiOutputNoteName } from '../../../../services/midi-output.service';
-import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../../midi-output-edit-modal/midi-output-edit-modal.component';
+import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../midi-output-edit-modal/midi-output-edit-modal.component';
 
 /**
  * Settings card — MIDI Output (key events as MIDI note-on/off).

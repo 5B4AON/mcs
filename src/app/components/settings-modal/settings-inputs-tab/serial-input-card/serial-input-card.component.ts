@@ -6,7 +6,7 @@ import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, SerialInputMapping, DecoderSource, SerialInputPin } from '../../../../services/settings.service';
 import { SerialKeyInputService } from '../../../../services/serial-key-input.service';
-import { SerialInputEditModalComponent, SerialInputEditSaveEvent } from '../../../serial-input-edit-modal/serial-input-edit-modal.component';
+import { SerialInputEditModalComponent, SerialInputEditSaveEvent } from '../../serial-input-edit-modal/serial-input-edit-modal.component';
 
 /** Human-readable labels for serial input pins */
 const PIN_LABELS: Record<SerialInputPin, string> = {

@@ -9,9 +9,9 @@ import { FormsModule } from '@angular/forms';
 import {
   SerialInputMapping, KeyInputMode, SerialInputPin,
   DecoderSource, PaddleMode,
-} from '../../services/settings.service';
-import { SerialKeyInputService } from '../../services/serial-key-input.service';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+} from '../../../services/settings.service';
+import { SerialKeyInputService } from '../../../services/serial-key-input.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a serial input mapping.

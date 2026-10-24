@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-10-24
+
+### Added
+
+- **Set up by goal (WP07)** — A collapsible "Set up by goal" entry above the
+  Settings tabs lists what people want to do (practice sending, type text,
+  copy practice, paddle through MIDI, talk over the internet, plus more goals
+  for radio/hardware and audio decoding). Choosing a goal switches to the
+  right tab, collapses the other cards and opens the matching card with a
+  short yellow hint and, where useful, a "Next" link. It only navigates and
+  never changes settings or starts audio. Each tab also shows a one-sentence
+  description, and the Help chapter on inputs explains the feature.
+
+### Changed
+
+- **Sidetone defaults and stereo** — The sidetone now defaults to 650 Hz at
+  amplitude 1 on both stereo channels (Key Output and Pilot are off by default,
+  so nothing overlaps). The Channel setting gains a "Both (stereo)" option; when Both is
+  chosen and Key Output or the Pilot tone uses a channel on the same device,
+  the existing channel-conflict warning explains which channel overlaps.
+- **RTDB required fields stay visible** — In the Firebase RTDB input and
+  output cards, empty required fields (channel name, secret, sender name) are no
+  longer dimmed while the channel is disabled, so it is clear what to fill in
+  before enabling it.
+- The settings edit modals and the emoji picker now live under
+  `components/settings-modal/`.
+
 ## [1.13.0] - 2026-10-24
 
 ### Changed

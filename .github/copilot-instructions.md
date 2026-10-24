@@ -70,6 +70,14 @@ src/app/
 └── components/
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
+    │   ├── goal-navigator/              — "Set up by goal" panel (navigation-only shortcuts to existing cards)
+    │   ├── emoji-edit-modal/            — emoji mapping editor modal (opened by emojis-card)
+    │   ├── emoji-picker/                — emoji selection popup (used by emoji-edit-modal)
+    │   ├── keyboard-input-edit-modal/   — keyboard key mapping editor modal
+    │   ├── midi-input-edit-modal/       — MIDI input mapping editor modal
+    │   ├── midi-output-edit-modal/      — MIDI output mapping editor modal
+    │   ├── serial-input-edit-modal/     — serial input mapping editor modal
+    │   ├── serial-output-edit-modal/    — serial output mapping editor modal
     │   ├── settings-shared.css          — shared card styles (loaded globally via angular.json)
     │   ├── settings-inputs-tab/         — thin shell hosting 8 input card components
     │   │   ├── mic-card/
@@ -105,13 +113,6 @@ src/app/
     │   ├── help-ch-*.component.*        — individual chapter components (HTML-only content)
     │   └── diagrams/                    — SVG wiring diagrams
     ├── confirm-dialog/      — reusable confirmation dialog
-    ├── emoji-picker/        — emoji selection popup
-    ├── emoji-edit-modal/    — emoji mapping editor modal
-    ├── keyboard-input-edit-modal/ — keyboard key mapping editor modal
-    ├── midi-input-edit-modal/     — MIDI input mapping editor modal
-    ├── midi-output-edit-modal/    — MIDI output mapping editor modal
-    ├── serial-input-edit-modal/   — serial input mapping editor modal
-    ├── serial-output-edit-modal/  — serial output mapping editor modal
     └── symbols-ref/         — Morse code symbol reference panel
 ```
 
@@ -119,7 +120,7 @@ src/app/
 ```
 AppComponent
 ├── SettingsModalComponent
-│   ├── SettingsInputsTabComponent → 8 *-card components
+│   ├── GoalNavigatorComponent (Set up by goal)│   ├── SettingsInputsTabComponent → 8 *-card components
 │   ├── SettingsOutputsTabComponent → 7 *-card components
 │   ├── SettingsOtherTabComponent → 7 *-card components
 │   └── ConfirmDialogComponent (reset confirmation)
@@ -146,6 +147,7 @@ AppComponent
 - **MIDI output mappings pipeline**: `MidiOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.midiOutputMappings`, UI in `midi-output-card` + `MidiOutputEditModalComponent`, runtime in `MidiOutputService`.
 - **Serial input mappings pipeline**: `SerialInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialInputMappings`, UI in `serial-input-card` + `SerialInputEditModalComponent`, runtime in `SerialKeyInputService` (per-mapping independent iambic keyer, similar to MIDI input). Each mapping has optional `name`/`color` for multi-user fullscreen conversation views.
 - **Serial output mappings pipeline**: `SerialOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialOutputMappings`, UI in `serial-output-card` + `SerialOutputEditModalComponent`, runtime in `SerialKeyOutputService`. Each mapping specifies `portIndex`, `pin` (DTR/RTS), `invert`, and `forward` (OutputForward). Multiple mappings can target different ports or different pins on the same port.
+- **Set up by goal pipeline**: `GoalNavigatorComponent` (collapsed line above the settings tabs) holds a typed goal → `{tab, cardId, hint}` table and emits `goalSelected`; `SettingsModalComponent.openGoalTarget()` selects the tab, then `revealCard()` finds the existing card by its stable `settings-card-*` id, collapses the other expanded cards, expands it via its own title button, adds the `goal-opened` outline (in `settings-shared.css`), scrolls and focuses it. The yellow hint renders inside the navigator (no "Opened:" label) and the panel pushes the tabs down without its own scrollbar. Navigation only — it must never change settings, flip enable toggles, start audio or open device/permission prompts. Goal labels should be reused verbatim by the later setup wizards (WP08–WP10). Tab one-sentence descriptions live in `tabDescriptions`.
 - **Presets pipeline**: the Presets dialog (header button in `settings-modal`) saves/updates (overwrites with current settings)/renames/duplicates/deletes/exports/imports named presets via `PresetService` (key `morsePresets`, separate from `morseProfiles`, max 40-char case-insensitive names). Files use the `mcs-settings` v1 format from `settings-transfer.ts` (no RTDB secrets). Import only adds a preset; apply goes through `prepareSettingsImport` review with per-route acknowledgements, then `SettingsService.update()` without saving the profile.
 - **Settings card CSS** (`settings-shared.css`, `settings-outputs-tab.component.css`, `settings-other-tab.component.css`) is loaded **globally** via `angular.json` `styles` array — not via component `styleUrls`. Card components use `styles: [':host { display: contents; }']` only. Do NOT add these CSS files back into component `styleUrls` or the bundle will bloat.
 - **Fullscreen modal CSS** lives in each component's own stylesheet (`fs-conversation-view` owns the conversation, practice and touch-overlay styles). The fullscreen toolbar owns the compact temporary Key/Type toggle beside Close; it defaults to Key and neither saves a setting nor activates an output. Type uses a hidden native input to support physical and mobile keyboards while text renders inline; only mapped physical keyboard keying is suspended, while mouse/touch and other inputs remain active.
@@ -189,6 +191,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 
 ## Work Package Workflow
 - Trigger this workflow whenever the project owner asks to implement, work on, or execute a work package identified as `WPxx` (for example, WP01). Treat the matching GitHub issue and its parent issue as the approved source for scope, constraints, dependencies, and acceptance checks.
+- Before starting implementation, ask the owner whether the work should be done on a new branch (and its name). Do not create or switch branches without that answer; never commit to `main` directly unless the owner says so.
 - Before editing, inspect the issue and relevant local implementation, then prepare a concise implementation plan in plain developer language. Explain the user-visible outcome, proposed changes, files or behavior likely affected, what must remain unchanged, unresolved decisions, and how the change will be verified. Ask the owner to approve the plan and resolve open product decisions. Do not edit code or post the plan comment until approval is explicit.
 - After approval, add the approved plan as a comment to the matching work-package issue. Use the GitHub Pull Requests integration to retrieve and verify issue details and to comment when its write actions are available. If the integration is read-only or cannot post comments, use the authenticated GitHub CLI (`gh issue comment <number> --body ...`) without exposing credentials, then fetch the issue again to verify the comment. Never claim an issue was updated unless the posted comment has been verified.
 - Implement only the approved package scope. Preserve user changes and follow the issue's safety boundaries. Keep the owner informed at meaningful checkpoints, especially before the first edit, after the first focused validation, before owner-operated hardware or permission checks, and when a blocker changes the plan. For a running app, keep the existing development server alive unless the owner approves otherwise; state its URL and any action that could request permission, send output, or affect connected hardware before asking the owner to perform it.
@@ -222,7 +225,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
   - **Modal sizing**: every dialog on the settings scale (settings, presets) uses the same box: `max-width: 640px`, `height: 92vh`, 12px radius, and full-screen (`100dvh`, no radius, no overlay padding) at 480px and below. Do not let a dialog size itself to its content.
   - **Closing dialogs**: a dialog with a header close icon does not also get a redundant footer "Close" button. Footers hold only task actions.
 - Preserve the established responsive scale. The main application shell is currently capped at 940 CSS pixels; common toolbar controls are 40 by 40 CSS pixels; and the settings dialog is capped at 640 CSS pixels wide. Do not shrink existing text, controls, or touch targets to fit new content. Do not add persistent toolbar space just to fit it. Prefer reflow, vertical scrolling, and progressive disclosure, and avoid clipping, overlap, hidden controls, and unintended horizontal scrolling.
-- Treat viewport sizes as CSS pixels, not device-model names or screenshot image dimensions. The current layout uses 768-pixel and 480-pixel width breakpoints, plus a short-landscape rule at 500 pixels high. When changing layout, test at 320 pixels wide; at 479, 480, and 481 pixels; at 767, 768, and 769 pixels; at 499, 500, and 501 pixels high in landscape; and at 200% browser zoom. Also check a representative phone at its owner-confirmed portrait CSS viewport. If that reference viewport is not known, ask the owner to confirm it rather than inferring it from a device model or screenshot.
+- Treat viewport sizes as CSS pixels, not device-model names or screenshot image dimensions. The current layout uses 768-pixel and 480-pixel width breakpoints, plus a short-landscape rule at 500 pixels high. When changing layout, test at 320 pixels wide; at 479, 480, and 481 pixels; at 767, 768, and 769 pixels; at 499, 500, and 501 pixels high in landscape; and at 200% browser zoom. Also check a representative phone at its owner-confirmed portrait CSS viewport, which is **360 × 800 CSS pixels** (confirmed by the owner; no need to ask again). Do not infer a different reference viewport from a device model or screenshot.
 - Use semantic controls with accessible names, visible keyboard focus, and usable keyboard operation. Keep instructions and status understandable without relying on color alone, and ensure added motion or animation does not obstruct use.
 - For UI changes, run `npm run build` and relevant existing tests, then provide the owner a short list of high-level manual checks of the affected flows (no viewport-size matrices). If layout verification across viewport sizes, keyboard, or touch is deemed necessary, ask the owner's permission to run it yourself with the integrated browser. A successful build or unit test does not establish that a UI change is usable. Do not add or run automated browser, DOM, visual-regression, or end-to-end UI tests; use the existing test setup for applicable non-UI logic tests.
 - Write issues and implementation plans in plain language for developers. State the user problem, intended outcome, what must remain unchanged, dependencies, and how the result will be checked. Keep proposed work focused and independently reviewable, and do not imply that the work is intended for a particular kind of implementer.

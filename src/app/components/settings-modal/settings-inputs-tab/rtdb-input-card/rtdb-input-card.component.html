@@ -1,5 +1,6 @@
 <!-- Firebase RTDB Input -->
-<div class="settings-card" id="settings-card-rtdb-input-card" [class.disabled-card]="!settings.settings().rtdbInputEnabled">
+<div class="settings-card" id="settings-card-rtdb-input-card" [class.disabled-card]="!settings.settings().rtdbInputEnabled"
+     [class.show-required]="!settings.settings().rtdbInputEnabled && (!settings.settings().rtdbInputChannelName.trim() || !settings.settings().rtdbInputChannelSecret.trim())">
   <div class="settings-card-header" (click)="expanded = !expanded">
     <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" aria-controls="settings-card-rtdb-input-card">
       <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>

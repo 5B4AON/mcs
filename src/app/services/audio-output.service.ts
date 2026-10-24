@@ -168,8 +168,9 @@ export class AudioOutputService {
     this.sidetoneGain.gain.value = 0;
     this.sidetoneOsc.connect(this.sidetoneGain);
     this.sidetoneMerger = this.sidetoneCtx.createChannelMerger(2);
-    const sideChIdx = s.sidetoneOutputChannel === 'left' ? 0 : 1;
-    this.sidetoneGain.connect(this.sidetoneMerger, 0, sideChIdx);
+    for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
+      this.sidetoneGain.connect(this.sidetoneMerger, 0, idx);
+    }
     this.sidetoneMerger.connect(this.sidetoneCtx.destination);
     this.sidetoneOsc.start();
 
@@ -464,16 +465,22 @@ export class AudioOutputService {
     }
   }
 
+  /** Merger input indexes for the sidetone channel choice (0 = left, 1 = right). */
+  private sidetoneChannelIndexes(channel: string): number[] {
+    return channel === 'both' ? [0, 1] : [channel === 'left' ? 0 : 1];
+  }
+
   private routeShared(s: ReturnType<typeof this.settings.settings>): void {
     if (!this.merger) return;
     this.sidetoneGain?.disconnect();
     this.optoGain?.disconnect();
 
     // merger input 0 = left, 1 = right
-    const sideIdx = s.sidetoneOutputChannel === 'left' ? 0 : 1;
     const optoIdx = s.optoOutputChannel === 'left' ? 0 : 1;
 
-    this.sidetoneGain?.connect(this.merger, 0, sideIdx);
+    for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
+      this.sidetoneGain?.connect(this.merger, 0, idx);
+    }
     this.optoGain?.connect(this.merger, 0, optoIdx);
   }
 

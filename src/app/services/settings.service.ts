@@ -34,6 +34,20 @@ export type TouchKeyerMode = 'straight' | 'paddle';
 export type PaddleElement = 'dit' | 'dah';
 /** Stereo channel selection */
 export type AudioChannel = 'left' | 'right';
+
+/** Sidetone can also play on both stereo channels. */
+export type SidetoneChannel = AudioChannel | 'both';
+
+/** True when the sidetone channel choice shares a channel with another output. */
+function sidetoneOverlaps(sidetone: SidetoneChannel, other: AudioChannel): boolean {
+  return sidetone === 'both' || sidetone === other;
+}
+
+function sidetoneConflictMessage(other: string, sidetone: SidetoneChannel, otherChannel: AudioChannel): string {
+  return sidetone === 'both'
+    ? `Sidetone is set to play on both channels, which includes the ${otherChannel} channel used by ${other} on the same device. Set the Sidetone channel to ${otherChannel === 'left' ? 'Right' : 'Left'} or use a different device.`
+    : `Sidetone and ${other} both use ${sidetone} channel on the same device.`;
+}
 /** Decoder source assignment — determines which calibration pool an input feeds */
 export type DecoderSource = 'rx' | 'tx';
 /** Opto-coupler drive mode: 'dc' = constant voltage, 'ac' = oscillator tone */
@@ -298,7 +312,7 @@ export interface AppSettings {
 
   // --- 3. Audio Output (sidetone / headphone / speaker) ---
   sidetoneOutputDeviceId: string;
-  sidetoneOutputChannel: AudioChannel;
+  sidetoneOutputChannel: SidetoneChannel;
   sidetoneFrequency: number;
   sidetoneAmplitude: number;
   sidetoneEnabled: boolean;
@@ -600,9 +614,9 @@ const DEFAULT_SETTINGS: AppSettings = {
   rtdbRelaySuppressOtherInputs: false,
 
   sidetoneOutputDeviceId: 'default',
-  sidetoneOutputChannel: 'left',
-  sidetoneFrequency: 600,
-  sidetoneAmplitude: 0.5,
+  sidetoneOutputChannel: 'both',
+  sidetoneFrequency: 650,
+  sidetoneAmplitude: 1,
   sidetoneEnabled: true,
   sidetoneForward: 'both',
 
@@ -908,16 +922,16 @@ export class SettingsService {
     }
 
     if (sidetoneActive && optoActive && sideId === optoId &&
-      s.sidetoneOutputChannel === s.optoOutputChannel) {
-      warnings.push(`Sidetone and Key Output both use ${s.sidetoneOutputChannel} channel on the same device.`);
+      sidetoneOverlaps(s.sidetoneOutputChannel, s.optoOutputChannel)) {
+      warnings.push(sidetoneConflictMessage('Key Output', s.sidetoneOutputChannel, s.optoOutputChannel));
     }
     if (pilotActive && optoActive && pilotId === optoId &&
       s.pilotOutputChannel === s.optoOutputChannel) {
       warnings.push(`Pilot and Key Output both use ${s.pilotOutputChannel} channel on the same device.`);
     }
     if (pilotActive && sidetoneActive && pilotId === sideId &&
-      s.pilotOutputChannel === s.sidetoneOutputChannel) {
-      warnings.push(`Pilot and Sidetone both use ${s.pilotOutputChannel} channel on the same device.`);
+      sidetoneOverlaps(s.sidetoneOutputChannel, s.pilotOutputChannel)) {
+      warnings.push(sidetoneConflictMessage('Pilot', s.sidetoneOutputChannel, s.pilotOutputChannel));
     }
     return warnings.length ? warnings : null;
   });

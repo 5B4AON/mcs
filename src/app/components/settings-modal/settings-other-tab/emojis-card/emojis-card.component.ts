@@ -5,7 +5,7 @@
 import { Component } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, EmojiMapping } from '../../../../services/settings.service';
-import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../../emoji-edit-modal/emoji-edit-modal.component';
+import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../emoji-edit-modal/emoji-edit-modal.component';
 
 /**
  * Settings card — Emojis.

@@ -6,7 +6,7 @@ import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, SerialOutputMapping, OutputForward } from '../../../../services/settings.service';
 import { SerialKeyOutputService } from '../../../../services/serial-key-output.service';
-import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../../serial-output-edit-modal/serial-output-edit-modal.component';
+import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../serial-output-edit-modal/serial-output-edit-modal.component';
 
 /**
  * Settings card — Serial Output (DTR/RTS keying via USB-serial adapter).

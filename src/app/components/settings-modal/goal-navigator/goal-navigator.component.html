@@ -1,0 +1,57 @@
+<section class="goal-nav" aria-label="Set up by goal">
+  <button type="button" class="goal-nav-toggle" id="goal-nav-toggle"
+          [attr.aria-expanded]="panelOpen" aria-controls="goal-nav-panel"
+          (click)="togglePanel()">
+    <span aria-hidden="true">{{ panelOpen ? '&#9660;' : '&#9654;' }}</span>
+    Set up by goal
+  </button>
+
+  @if (panelOpen) {
+    <div id="goal-nav-panel" class="goal-nav-panel">
+      <p class="goal-nav-intro" id="goal-nav-intro">Choose what you want to do. This opens the matching setting; nothing is turned on.</p>
+      <ul class="goal-list" aria-describedby="goal-nav-intro">
+        @for (goal of mainGoals; track goal.landing) {
+          <li>
+            <button type="button" class="goal-btn"
+                    [attr.aria-current]="isOpened(goal.landing) ? 'true' : null"
+                    (click)="select(goal.landing)">
+              <span>{{ goal.label }}</span>
+              <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
+            </button>
+          </li>
+        }
+      </ul>
+      <button type="button" class="goal-more-toggle" [attr.aria-expanded]="moreOpen"
+              aria-controls="goal-nav-more" (click)="toggleMore()">
+        <span aria-hidden="true">{{ moreOpen ? '&#9660;' : '&#9654;' }}</span> More goals
+      </button>
+      @if (moreOpen) {
+        <ul id="goal-nav-more" class="goal-list">
+          @for (goal of moreGoals; track goal.landing) {
+            <li>
+              <button type="button" class="goal-btn"
+                      [attr.aria-current]="isOpened(goal.landing) ? 'true' : null"
+                      (click)="select(goal.landing)">
+                <span>{{ goal.label }}</span>
+                <span class="goal-arrow" aria-hidden="true">&rsaquo;</span>
+              </button>
+            </li>
+          }
+        </ul>
+      }
+    </div>
+  }
+
+  <div role="status">
+    @if (!panelOpen && activeLanding; as landing) {
+      <div class="goal-nav-hint">
+        @if (landing.hint) {
+          {{ landing.hint }}
+        }
+        @if (landing.next; as next) {
+          <button type="button" class="goal-next-link" (click)="followNext()">{{ next.label }} &rarr;</button>
+        }
+      </div>
+    }
+  </div>
+</section>

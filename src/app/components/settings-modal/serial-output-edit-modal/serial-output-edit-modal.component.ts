@@ -6,9 +6,9 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SerialOutputMapping, SerialInputMapping, SerialPin, OutputForward } from '../../services/settings.service';
-import { SerialKeyOutputService } from '../../services/serial-key-output.service';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { SerialOutputMapping, SerialInputMapping, SerialPin, OutputForward } from '../../../services/settings.service';
+import { SerialKeyOutputService } from '../../../services/serial-key-output.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a serial output mapping.

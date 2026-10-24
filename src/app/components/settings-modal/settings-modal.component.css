@@ -106,6 +106,14 @@
   transform: scale(0.88);
 }
 
+.settings-tab-desc {
+  margin: 0;
+  padding: .35rem 1.25rem .6rem;
+  font-size: .8rem;
+  color: #fc6;
+  flex-shrink: 0;
+}
+
 /* Tabs */
 .settings-tabs {
   display: flex;
@@ -559,6 +567,23 @@
     inset 0 -2px 4px rgba(0,0,0,.25);
   transition: transform .1s, box-shadow .15s, filter .15s;
   user-select: none;
+}
+
+.transfer-actions .transfer-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+}
+
+.transfer-btn-icon {
+  flex-shrink: 0;
+}
+
+/* Equal label width keeps the icons of stacked buttons aligned */
+.transfer-btn-label {
+  min-width: 9.6em;
+  text-align: left;
 }
 
 .transfer-actions .transfer-action-btn:hover:not(:disabled) {

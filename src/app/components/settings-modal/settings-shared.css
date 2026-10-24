@@ -22,8 +22,26 @@
   opacity: .45;
   border-color: #2a2a35;
 }
+/* Disabled card with empty required fields: dim everything except those fields */
+.settings-card.disabled-card.show-required {
+  opacity: 1;
+}
+.settings-card.disabled-card.show-required > .settings-card-header,
+.settings-card.disabled-card.show-required > .settings-card-body > :not(.field-invalid) {
+  opacity: .45;
+}
+.settings-card.disabled-card.show-required > .settings-card-body > .field-invalid {
+  font-weight: 600;
+}
+
+/* Card opened from "Set up by goal" */
+.settings-card.goal-opened {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
+  scroll-margin-top: 6px;
+}
 .settings-card.disabled-card .settings-card-header:hover {
-  background: #182838;
+  background: #232a45;
 }
 
 /* Card header (always visible — click to expand/collapse) */
@@ -35,13 +53,15 @@
   user-select: none;
   border-radius: 8px;
   transition: background .12s;
-  background: #1f5080;
+  background: #2c3e6b;
+  border: 1px solid #4a5c91;
 }
 .settings-card-header:hover {
-  background: #2a6090;
+  background: #374c82;
 }
 .settings-card.disabled-card .settings-card-header {
-  background: #1a2a38;
+  background: #1b2036;
+  border-color: #2a3050;
 }
 .settings-card-title {
   display: flex;
@@ -59,7 +79,7 @@
 }
 .settings-card-chevron {
   font-size: .7rem;
-  color: #668;
+  color: #fc6;
   width: 1rem;
   text-align: center;
   flex-shrink: 0;

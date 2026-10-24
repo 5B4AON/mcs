@@ -6,9 +6,9 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MidiOutputMapping, MidiOutputMode, MidiInputMapping, OutputForward } from '../../services/settings.service';
-import { MidiOutputService, midiOutputNoteName } from '../../services/midi-output.service';
-import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { MidiOutputMapping, MidiOutputMode, MidiInputMapping, OutputForward } from '../../../services/settings.service';
+import { MidiOutputService, midiOutputNoteName } from '../../../services/midi-output.service';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 
 /**
  * Result payload emitted when the user saves a MIDI output mapping.
