@@ -6,14 +6,14 @@
 export type GoalTab = 'inputs' | 'outputs' | 'other';
 
 /** Goals that also have a guided setup wizard. */
-export type WizardGoalId = 'type' | 'practice' | 'decode';
+export type WizardGoalId = 'type' | 'practice' | 'decode' | 'teach';
 
 /** Where a goal lands: an existing settings card, with the guidance shown while it is open. */
 export interface GoalLanding {
   /** Tab that hosts the card */
   tab: GoalTab;
   /** DOM id of the existing card (`settings-card-<name>-card`) */
-  cardId: string;
+  cardId?: string;
   /** One-sentence guidance for this goal */
   hint?: string;
   /** Optional follow-up link to another landing */
@@ -23,10 +23,10 @@ export interface GoalLanding {
 /** Target of a navigation request emitted to the settings modal. */
 export interface GoalTarget {
   tab: GoalTab;
-  cardId: string;
+  cardId?: string;
 }
 
-export type GoalIcon = 'keyboard' | 'speaker' | 'headphones' | 'midi' | 'globe' | 'radio' | 'waveform';
+export type GoalIcon = 'keyboard' | 'speaker' | 'headphones' | 'midi' | 'globe' | 'radio' | 'waveform' | 'graduationCap';
 
 /** One entry of the shared goal list used by the navigator and the setup wizard. */
 export interface SetupGoal {
@@ -45,6 +45,15 @@ export const LANDINGS: Record<string, GoalLanding> = {
     tab: 'inputs', cardId: 'settings-card-keyboard-keyer-card',
     hint: 'Mouse and touch keyers are further down this tab.',
   },
+  'mouse-keyer': {
+    tab: 'inputs', cardId: 'settings-card-mouse-keyer-card',
+  },
+  'touch-keyer': {
+    tab: 'inputs', cardId: 'settings-card-touch-keyer-card',
+  },
+  'mic': {
+    tab: 'inputs', cardId: 'settings-card-mic-card',
+  },
   'encoder': {
     tab: 'inputs', cardId: 'settings-card-encoder-card',
   },
@@ -54,6 +63,9 @@ export const LANDINGS: Record<string, GoalLanding> = {
   'midi-input': {
     tab: 'inputs', cardId: 'settings-card-midi-input-card',
     hint: 'To send Morse on to a radio or other device, see \u201cConnect a radio or other hardware\u201d under More goals.',
+  },
+  'serial-input': {
+    tab: 'inputs', cardId: 'settings-card-serial-input-card',
   },
   'rtdb-input': {
     tab: 'inputs', cardId: 'settings-card-rtdb-input-card',
@@ -72,12 +84,16 @@ export const LANDINGS: Record<string, GoalLanding> = {
     tab: 'inputs', cardId: 'settings-card-cw-detector-card',
     hint: 'Works best with clean, strong tones. For reliable results use a key or paddle input.',
   },
+  'teach': {
+    tab: 'inputs',
+  },
 };
 
 export const MAIN_GOALS: SetupGoal[] = [
   { label: 'Practice sending Morse with keyboard, mouse or touch', landing: 'keyboard-keyer', icon: 'keyboard' },
   { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'speaker', wizard: 'type' },
   { label: 'Practice receiving (copy practice)', landing: 'practice', icon: 'headphones', wizard: 'practice' },
+  { label: 'Teach or demonstrate Morse', landing: 'teach', icon: 'graduationCap', wizard: 'teach' },
   { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe' },
 ];
 
@@ -90,4 +106,11 @@ export const MORE_GOALS: SetupGoal[] = [
 /** Look up the goal that owns a wizard. */
 export function goalForWizard(id: WizardGoalId): SetupGoal {
   return [...MAIN_GOALS, ...MORE_GOALS].find(goal => goal.wizard === id)!;
+}
+
+/** Convert a shared landing into a target for the settings modal. */
+export function goalTargetForLanding(id: string): GoalTarget {
+  const landing = LANDINGS[id];
+  if (!landing) throw new Error(`Unknown settings landing: ${id}`);
+  return landing.cardId ? { tab: landing.tab, cardId: landing.cardId } : { tab: landing.tab };
 }

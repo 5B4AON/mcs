@@ -285,7 +285,10 @@ export class MidiInputService implements OnDestroy {
    * dropdowns even when MIDI input is disabled.
    */
   async enumerateDevices(): Promise<void> {
-    if (!this.supported) return;
+    if (!this.supported) {
+      this.lastError.set('Web MIDI API is not supported in this browser. Use Chrome or Edge.');
+      return;
+    }
     // If already started, devices are already populated
     if (this.started && this.midiAccess) {
       this.refreshInputs();
@@ -299,9 +302,13 @@ export class MidiInputService implements OnDestroy {
           inputs.push({ id: input.id, name: input.name || `MIDI Input ${input.id}` });
         }
       }
-      this.zone.run(() => this.midiInputs.set(inputs));
-    } catch {
-      // Silently ignore — the dropdown will just be empty
+      this.zone.run(() => {
+        this.midiInputs.set(inputs);
+        this.lastError.set('');
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      this.zone.run(() => this.lastError.set(`MIDI access denied: ${message}`));
     }
   }
 

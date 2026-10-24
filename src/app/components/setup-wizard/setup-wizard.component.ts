@@ -17,17 +17,27 @@ import {
 import { FormsModule } from '@angular/forms';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { CwInputService } from '../../services/cw-input.service';
+import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
+import { MidiInputService, MidiLearnResult } from '../../services/midi-input.service';
+import { PresetService } from '../../services/preset.service';
+import { createSettingsSnapshot } from '../../services/settings-transfer';
+import { SerialKeyInputService } from '../../services/serial-key-input.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { WizardGoalId, goalForWizard } from '../settings-modal/goal-navigator/setup-goals';
 import {
   DraftKey,
   DraftValues,
+  KEYBOARD_KEY_CODES,
   LIMITS,
   STEP_FIELDS,
-  WIZARD_STEPS,
+  TeachInputType,
+  TeachParticipantDraft,
+  TeachScenario,
   WizardStepId,
   buildReview,
+  buildTeachSettingsPatch,
+  createTeachParticipant,
   feedbackRiskOutputs,
   hasAnswerChanges,
   initialDraft,
@@ -35,6 +45,7 @@ import {
   proposedValues,
   validateDraft,
   validateStep,
+  wizardSteps,
 } from './setup-wizard-draft';
 
 /**
@@ -69,11 +80,13 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Emitted after the wizard switched the detector on, so the app can start it when audio is already running. */
   @Output() readonly detectorEnabled = new EventEmitter<void>();
 
-  @Output() readonly openSettingsRequested = new EventEmitter<WizardGoalId>();
+  /** Emitted when the educator starts the existing full-screen conversation. */
+  @Output() readonly openFullscreenRequested = new EventEmitter<void>();
 
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
 
   readonly limits = LIMITS;
+  readonly keyboardKeyCodes = KEYBOARD_KEY_CODES;
 
   /** Settings as they were when the wizard opened */
   base!: AppSettings;
@@ -81,8 +94,15 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Temporary answers; never live until Apply */
   draft: DraftValues = {};
 
-  steps: WizardStepId[] = [];
   stepIndex = 0;
+  presetName = 'Classroom setup';
+  presetError = '';
+  presetSaved = false;
+  midiNotice = '';
+  serialNotice = '';
+  rtdbNotice = '';
+  midiCapture: { participantIndex: number; field: 'midiNote' | 'midiDahNote' } | null = null;
+  private midiStartedForDraft = false;
 
   /** Whether Apply has been pressed */
   applied = false;
@@ -91,17 +111,24 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   confirmDiscard = false;
 
   /** Whether this browser exposes what the detector needs */
+  readonly serialSupported = typeof navigator !== 'undefined' && 'serial' in navigator;
   readonly audioInputSupported =
     typeof navigator !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && typeof AudioWorkletNode !== 'undefined';
 
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
 
-  constructor(private settings: SettingsService, private cwInput: CwInputService) {}
+  constructor(
+    public settings: SettingsService,
+    private cwInput: CwInputService,
+    private presets: PresetService,
+    public midiInput: MidiInputService,
+    public serialInput: SerialKeyInputService,
+    public rtdb: FirebaseRtdbService,
+  ) {}
 
   ngOnInit(): void {
     this.base = { ...this.settings.settings() };
-    this.steps = WIZARD_STEPS[this.goal];
     this.draft = initialDraft(this.goal, this.base);
   }
 
@@ -110,11 +137,74 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.midiCapture) this.midiInput.cancelLearn();
+    if (this.midiStartedForDraft && !this.settings.settings().midiInputEnabled) {
+      this.midiInput.shutdown();
+    }
     restoreDialogFocus(this.focusReturnTarget, this.focusReturnFallback);
   }
 
   get title(): string {
     return goalForWizard(this.goal).label;
+  }
+
+  get steps(): WizardStepId[] {
+    return wizardSteps(this.goal, this.draft);
+  }
+
+  get startLabel(): string {
+    switch (this.goal) {
+      case 'type': return 'Start typing';
+      case 'practice': return 'Start practicing';
+      case 'decode': return 'Start decoding';
+      case 'teach':
+        return this.teachScenarios.includes('copying') && !this.teachScenarios.includes('sending')
+          && !this.teachScenarios.includes('mobile')
+          ? 'Start copy practice'
+          : 'Open full-screen conversation';
+    }
+  }
+
+  get teachScenarios(): TeachScenario[] {
+    return this.draft.teachScenarios ?? [];
+  }
+
+  get teachParticipants(): TeachParticipantDraft[] {
+    return this.draft.teachParticipants ?? [];
+  }
+
+  get isTeachGoal(): boolean {
+    return this.goal === 'teach';
+  }
+
+  get hasTeachMidi(): boolean {
+    return this.teachScenarios.includes('sending')
+      && this.teachParticipants.some(person => person.inputType === 'midi');
+  }
+
+  get hasTeachSerial(): boolean {
+    return this.teachScenarios.includes('sending')
+      && this.teachParticipants.some(person => person.inputType === 'serial');
+  }
+
+  get hasTeachMobile(): boolean {
+    return this.teachScenarios.includes('mobile');
+  }
+
+  get hasTeachCopy(): boolean {
+    return this.teachScenarios.includes('copying');
+  }
+
+  get rtdbChannelWillChange(): boolean {
+    return (this.base.rtdbInputEnabled || this.base.rtdbOutputEnabled)
+      && (this.base.rtdbInputChannelName !== this.draft.teachRtdbChannelName
+        || this.base.rtdbOutputChannelName !== this.draft.teachRtdbChannelName
+        || this.base.rtdbInputChannelSecret !== this.draft.teachRtdbChannelSecret
+        || this.base.rtdbOutputChannelSecret !== this.draft.teachRtdbChannelSecret);
+  }
+
+  get hasUnassignedSerialPort(): boolean {
+    return this.teachParticipants.some(person => person.inputType === 'serial' && person.serialPortIndex < 0);
   }
 
   get step(): WizardStepId {
@@ -156,17 +246,18 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   get canApply(): boolean {
-    return this.review.changes.length > 0 &&
+    return (this.review.changes.length > 0 || this.goal === 'teach') &&
       validateDraft(this.goal, this.draft, this.base).length === 0 &&
       this.newConflicts.length === 0;
   }
 
   /** Only the settings shown as changed in the review. */
-  private get patch(): DraftValues {
-    const proposed = proposedValues(this.goal, this.draft);
+  private get patch(): Partial<AppSettings> {
+    if (this.goal === 'teach') return buildTeachSettingsPatch(this.base, this.draft);
+    const proposed = proposedValues(this.goal, this.draft, this.base);
     const patch: Record<string, unknown> = {};
     for (const line of this.review.changes) patch[line.key] = proposed[line.key];
-    return patch as DraftValues;
+    return patch as Partial<AppSettings>;
   }
 
   get detectorInputLabel(): string {
@@ -193,6 +284,210 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setBool(key: DraftKey, event: Event): void {
     (this.draft as Record<string, unknown>)[key] = (event.target as HTMLInputElement).checked;
+  }
+
+  toggleTeachScenario(scenario: TeachScenario, event: Event): void {
+    const selected = new Set(this.teachScenarios);
+    if ((event.target as HTMLInputElement).checked) selected.add(scenario);
+    else selected.delete(scenario);
+    this.draft.teachScenarios = [...selected];
+  }
+
+  setTeachStudentCount(event: Event): void {
+    const count = Number((event.target as HTMLInputElement).value);
+    if (!Number.isInteger(count) || count < 0 || count > 4) {
+      this.draft.teachStudentCount = count;
+      return;
+    }
+    const people = [...this.teachParticipants];
+    const teacher = people.find(person => person.role === 'teacher')
+      ?? createTeachParticipant('teacher', 0, this.base);
+    const students = people.filter(person => person.role === 'student').slice(0, count);
+    const additional = people.filter(person => person.role === 'additional');
+    while (students.length < count) {
+      students.push(createTeachParticipant('student', students.length + 1, this.base));
+    }
+    this.draft.teachStudentCount = count;
+    this.draft.teachParticipants = [teacher, ...students, ...additional];
+  }
+
+  addTeachInput(): void {
+    const extraCount = this.teachParticipants.filter(person => person.role === 'additional').length;
+    this.draft.teachParticipants = [
+      ...this.teachParticipants,
+      createTeachParticipant('additional', extraCount + 1, this.base),
+    ];
+  }
+
+  removeTeachInput(index: number): void {
+    this.draft.teachParticipants = this.teachParticipants.filter((_, personIndex) => personIndex !== index);
+  }
+
+  setParticipantName(index: number, event: Event): void {
+    this.updateParticipant(index, { name: (event.target as HTMLInputElement).value });
+  }
+
+  setParticipantColor(index: number, value: string): void {
+    this.updateParticipant(index, { color: value });
+  }
+
+  setParticipantInputType(index: number, inputType: string): void {
+    if (inputType === 'keyboard' || inputType === 'mouse' || inputType === 'touch'
+      || inputType === 'midi' || inputType === 'serial') {
+      this.updateParticipant(index, { inputType: inputType as TeachInputType });
+    }
+  }
+
+  setParticipantMode(index: number, mode: string): void {
+    if (mode === 'straightKey' || mode === 'paddle') {
+      this.updateParticipant(index, { mode });
+    }
+  }
+
+  setParticipantKey(index: number, keyCode: string): void {
+    this.updateParticipant(index, { keyCode });
+  }
+
+  setParticipantDahKey(index: number, dahKeyCode: string): void {
+    this.updateParticipant(index, { dahKeyCode });
+  }
+
+  setParticipantMidiNumber(index: number, key: 'midiChannel' | 'midiNote' | 'midiDahNote', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    const number = value === '' ? NaN : Number(value);
+    if (key === 'midiChannel') this.updateParticipant(index, { midiChannel: number });
+    else if (key === 'midiNote') this.updateParticipant(index, { midiNote: number });
+    else this.updateParticipant(index, { midiDahNote: number });
+  }
+
+  setParticipantMidiDevice(index: number, deviceId: string): void {
+    this.updateParticipant(index, { midiDeviceId: deviceId });
+  }
+
+  async connectMidiForSetup(): Promise<void> {
+    if (!this.midiInput.supported) {
+      this.midiNotice = 'MIDI input is not available in this browser.';
+      return;
+    }
+    await this.midiInput.enumerateDevices();
+    if (this.midiInput.lastError()) {
+      this.midiNotice = this.midiInput.lastError();
+      return;
+    }
+    this.midiNotice = this.midiInput.midiInputs().length
+      ? 'MIDI access is ready. Select the device for each profile.'
+      : 'MIDI access is ready, but no device is connected yet.';
+  }
+
+  async detectMidiNote(index: number, field: 'midiNote' | 'midiDahNote'): Promise<void> {
+    if (this.midiCapture?.participantIndex === index && this.midiCapture.field === field) {
+      this.midiInput.cancelLearn();
+      this.midiCapture = null;
+      return;
+    }
+    await this.connectMidiForSetup();
+    if (this.midiInput.lastError()) return;
+    if (!this.base.midiInputEnabled) this.midiStartedForDraft = true;
+    this.midiCapture = { participantIndex: index, field };
+    await this.midiInput.startLearn((result: MidiLearnResult) => {
+      const participant = this.teachParticipants[index];
+      if (!participant) return;
+      if (participant.midiDeviceId && participant.midiDeviceId !== result.deviceId) {
+        this.midiNotice = `A note came from ${result.deviceName}, not the selected MIDI device. Select that device or try again.`;
+        this.midiCapture = null;
+        return;
+      }
+      this.updateParticipant(index, {
+        [field]: result.note,
+        midiChannel: result.channel,
+        midiDeviceId: participant.midiDeviceId || result.deviceId,
+      });
+      this.midiNotice = `Detected ${result.deviceName}, channel ${result.channel}, note ${result.note}.`;
+      this.midiCapture = null;
+    });
+    if (this.midiInput.lastError()) {
+      this.midiInput.cancelLearn();
+      this.midiCapture = null;
+      this.midiNotice = this.midiInput.lastError();
+    }
+  }
+
+  setParticipantSerialPin(index: number, key: 'serialPin' | 'serialDahPin', value: string): void {
+    if (value === 'dsr' || value === 'cts' || value === 'dcd' || value === 'ri') {
+      if (key === 'serialPin') this.updateParticipant(index, { serialPin: value });
+      else this.updateParticipant(index, { serialDahPin: value });
+    }
+  }
+
+  setParticipantSerialPort(index: number, event: Event): void {
+    this.updateParticipant(index, { serialPortIndex: Number((event.target as HTMLSelectElement).value) });
+  }
+
+  setTeachRtdbChannelName(event: Event): void {
+    this.draft.teachRtdbChannelName = (event.target as HTMLInputElement).value;
+  }
+
+  setTeachRtdbChannelSecret(event: Event): void {
+    this.draft.teachRtdbChannelSecret = (event.target as HTMLInputElement).value;
+  }
+
+  setRouteReconfigureConfirmed(event: Event): void {
+    this.draft.teachRouteReconfigureConfirmed = (event.target as HTMLInputElement).checked;
+  }
+
+  setRtdbReconfigureConfirmed(event: Event): void {
+    this.draft.teachRtdbReconfigureConfirmed = (event.target as HTMLInputElement).checked;
+  }
+
+  setEmojiMappingEnabled(index: number, event: Event): void {
+    const mappings = structuredClone(this.draft.emojiMappings ?? this.base.emojiMappings);
+    mappings[index] = { ...mappings[index], enabled: (event.target as HTMLInputElement).checked };
+    this.draft.emojiMappings = mappings;
+  }
+
+  async requestSerialPort(index: number): Promise<void> {
+    if (!this.serialSupported) {
+      this.serialNotice = 'Web Serial is not available in this browser.';
+      return;
+    }
+    await this.serialInput.refreshPorts();
+    const previousPorts = new Set(this.serialInput.ports());
+    await this.serialInput.requestPort();
+    const ports = this.serialInput.ports();
+    const selectedIndex = ports.findIndex(port => !previousPorts.has(port));
+    if (selectedIndex >= 0) {
+      this.updateParticipant(index, { serialPortIndex: selectedIndex });
+      this.serialNotice = 'Serial access granted. Review the selected device before applying.';
+    } else if (ports.length === 1) {
+      this.updateParticipant(index, { serialPortIndex: 0 });
+      this.serialNotice = 'Serial access granted. Review the selected device before applying.';
+    } else {
+      this.serialNotice = this.serialInput.lastError() ?? 'No new serial device was selected.';
+    }
+  }
+
+  updateProsignActionEnabled(key: string, event: Event): void {
+    const current = this.draft.prosignActions ?? this.base.prosignActions;
+    const actions = { ...current, [key]: { ...current[key], enabled: (event.target as HTMLInputElement).checked } };
+    this.draft.prosignActions = actions;
+  }
+
+  updateProsignAction(key: string, event: Event): void {
+    const current = this.draft.prosignActions ?? this.base.prosignActions;
+    const action = (event.target as HTMLSelectElement).value as AppSettings['prosignActions'][string]['action'];
+    this.draft.prosignActions = { ...current, [key]: { ...current[key], action } };
+  }
+
+  get prosignEntries(): { key: string; enabled: boolean; action: string }[] {
+    return Object.entries(this.draft.prosignActions ?? this.base.prosignActions)
+      .map(([key, value]) => ({ key, ...value }));
+  }
+
+  updateEmojiMapping(index: number, key: 'match' | 'emoji' | 'meaning', event: Event): void {
+    const mappings = structuredClone(this.draft.emojiMappings ?? this.base.emojiMappings);
+    const value = (event.target as HTMLInputElement).value;
+    mappings[index] = { ...mappings[index], [key]: value };
+    this.draft.emojiMappings = mappings;
   }
 
   /** Select-based numeric answers keep their numeric type. */
@@ -231,12 +526,16 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   skip(): void {
     const keys = STEP_FIELDS[this.step] ?? [];
     const start = initialDraft(this.goal, this.base) as Record<string, unknown>;
-    for (const key of keys) (this.draft as Record<string, unknown>)[key] = start[key];
+    const draft = this.draft as Record<string, unknown>;
+    for (const key of keys) {
+      const value = start[key];
+      draft[key] = Array.isArray(value) ? structuredClone(value) : value;
+    }
     this.next();
   }
 
   get canSkip(): boolean {
-    return !!STEP_FIELDS[this.step];
+    return !!STEP_FIELDS[this.step] && this.goal !== 'decode';
   }
 
   /** Apply only the reviewed changes; the running app is otherwise untouched. */
@@ -283,6 +582,79 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     return this.applied || validateDraft(this.goal, this.draft, this.base).length === 0;
   }
 
+  get canStartGoal(): boolean {
+    return this.goal !== 'decode' || this.detectorOn || this.canTurnOnDetector;
+  }
+
+  get canSavePreset(): boolean {
+    return !!this.presetName.trim();
+  }
+
+  setPresetName(value: string): void {
+    this.presetName = value;
+    this.presetError = '';
+  }
+
+  /** Save a secret-free copy of the staged settings in this browser. */
+  savePreset(): void {
+    const snapshot = createSettingsSnapshot({ ...this.base, ...this.patch });
+    const checked = this.presets.checkName(this.presetName);
+    if (!checked.valid) {
+      this.presetError = checked.error;
+      return;
+    }
+    const result = this.presets.add(checked.name, snapshot.settings);
+    if (!result.ok) {
+      this.presetError = result.error;
+      return;
+    }
+    this.presetError = '';
+    this.presetSaved = true;
+    this.next();
+  }
+
+  skipPreset(): void {
+    this.presetError = '';
+    this.next();
+  }
+
+  /** Explicitly enable an already-reviewed MIDI input configuration. */
+  async connectMidiInput(): Promise<void> {
+    if (!this.midiInput.supported) {
+      this.midiNotice = 'MIDI input is not available in this browser.';
+      return;
+    }
+    this.settings.update({ midiInputEnabled: true });
+    await this.midiInput.start();
+    this.midiInput.reattach();
+    this.midiNotice = this.midiInput.lastError() || 'MIDI input is enabled. Check the connection status before keying.';
+  }
+
+  /** Explicitly enable the already-reviewed serial key mappings. */
+  connectSerialInput(): void {
+    if (!this.serialSupported) {
+      this.serialNotice = 'Web Serial is not available in this browser.';
+      return;
+    }
+    if (this.hasUnassignedSerialPort) {
+      this.serialNotice = 'Assign a connected serial device to each serial input before enabling it.';
+      return;
+    }
+    this.settings.update({ serialInputEnabled: true });
+    this.serialNotice = 'Serial input is enabled. Check the device connection status before keying.';
+  }
+
+  /** Explicitly join the shared RTDB channel configured in the reviewed draft. */
+  connectSharedChannel(): void {
+    if (!this.settings.settings().rtdbInputChannelName.trim()
+      || !this.settings.settings().rtdbInputChannelSecret.trim()) {
+      this.rtdbNotice = 'Apply a channel name and secret before connecting.';
+      return;
+    }
+    this.settings.update({ rtdbInputEnabled: true, rtdbOutputEnabled: true });
+    this.rtdbNotice = `Connecting to shared channel "${this.settings.settings().rtdbInputChannelName}".`;
+  }
+
   /** Apply any reviewed changes, switch the detector on and return to the main screen; audio is not started. */
   turnOnDetector(): void {
     if (!this.canTurnOnDetector) return;
@@ -292,12 +664,33 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.tryRequested.emit();
   }
 
+  startGoal(): void {
+    if (this.goal === 'teach' && this.teachScenarios.includes('copying')
+      && !this.teachScenarios.includes('sending') && !this.teachScenarios.includes('mobile')) {
+      this.startCopyPractice();
+    } else if (this.goal === 'teach') {
+      this.openConversation();
+    } else if (this.goal === 'practice') {
+      this.settings.update({ encoderMode: 'practice' });
+      this.tryRequested.emit();
+    } else if (this.goal === 'decode' && !this.detectorOn && this.canTurnOnDetector) {
+      this.turnOnDetector();
+    } else {
+      this.tryRequested.emit();
+    }
+  }
+
   tryNow(): void {
+    this.startGoal();
+  }
+
+  startCopyPractice(): void {
+    this.settings.update({ encoderMode: 'practice' });
     this.tryRequested.emit();
   }
 
-  openSettings(): void {
-    this.openSettingsRequested.emit(this.goal);
+  openConversation(): void {
+    this.openFullscreenRequested.emit();
   }
 
   @HostListener('document:keydown.escape', ['$event'])
@@ -317,5 +710,12 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
       body?.focus();
       body?.scrollIntoView({ block: 'nearest' });
     });
+  }
+
+  private updateParticipant(index: number, patch: Partial<TeachParticipantDraft>): void {
+    const participants = [...this.teachParticipants];
+    if (!participants[index]) return;
+    participants[index] = { ...participants[index], ...patch };
+    this.draft.teachParticipants = participants;
   }
 }

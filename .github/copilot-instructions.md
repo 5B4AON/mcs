@@ -70,7 +70,7 @@ src/app/
 └── components/
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
-    │   ├── goal-navigator/              — "Setup Wizard" panel; `setup-goals.ts` is the shared goal table (labels, landings, icons, wizard ids)
+    │   ├── goal-navigator/              — plain goal list hosted by the Setup Wizard modal; `setup-goals.ts` is the shared goal table (labels, landings, icons, wizard ids)
     │   ├── emoji-edit-modal/            — emoji mapping editor modal (opened by emojis-card)
     │   ├── emoji-picker/                — emoji selection popup (used by emoji-edit-modal)
     │   ├── keyboard-input-edit-modal/   — keyboard key mapping editor modal
@@ -113,6 +113,7 @@ src/app/
     │   ├── help-ch-*.component.*        — individual chapter components (HTML-only content)
     │   └── diagrams/                    — SVG wiring diagrams
     ├── confirm-dialog/      — reusable confirmation dialog
+    ├── goal-navigator-modal/ — standalone "Setup Wizard" modal (Settings-sized): goal list, toolbar buttons for Presets, Settings and Close
     ├── setup-wizard/        — guided setup dialog (draft-only; `setup-wizard-draft.ts` holds steps, fields, limits, review and validation as pure functions)
     └── symbols-ref/         — Morse code symbol reference panel
 ```
@@ -121,12 +122,12 @@ src/app/
 ```
 AppComponent
 ├── SettingsModalComponent
-│   ├── GoalNavigatorComponent (Setup Wizard)
 │   ├── SettingsInputsTabComponent → 8 *-card components
 │   ├── SettingsOutputsTabComponent → 7 *-card components
 │   ├── SettingsOtherTabComponent → 7 *-card components
 │   └── ConfirmDialogComponent (reset confirmation)
-├── SetupWizardComponent (opened from the goal navigator, above Settings)
+├── GoalNavigatorModalComponent (Setup Wizard) → GoalNavigatorComponent
+├── SetupWizardComponent (opened from the goal navigator modal, above it)
 ├── FullscreenModalComponent
 │   ├── FsToolbarComponent
 │   └── FsConversationViewComponent (unified conversation)
@@ -150,7 +151,7 @@ AppComponent
 - **MIDI output mappings pipeline**: `MidiOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.midiOutputMappings`, UI in `midi-output-card` + `MidiOutputEditModalComponent`, runtime in `MidiOutputService`.
 - **Serial input mappings pipeline**: `SerialInputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialInputMappings`, UI in `serial-input-card` + `SerialInputEditModalComponent`, runtime in `SerialKeyInputService` (per-mapping independent iambic keyer, similar to MIDI input). Each mapping has optional `name`/`color` for multi-user fullscreen conversation views.
 - **Serial output mappings pipeline**: `SerialOutputMapping[]` in `AppSettings`, defaults in `DEFAULT_SETTINGS.serialOutputMappings`, UI in `serial-output-card` + `SerialOutputEditModalComponent`, runtime in `SerialKeyOutputService`. Each mapping specifies `portIndex`, `pin` (DTR/RTS), `invert`, and `forward` (OutputForward). Multiple mappings can target different ports or different pins on the same port.
-- **Setup Wizard pipeline**: `setup-goals.ts` is the single goal table (`MAIN_GOALS`, `MORE_GOALS`, `LANDINGS`, `goalForWizard()`); WP09/WP10 add rows and wizards there. `GoalNavigatorComponent` shows a "Setup Wizard" row (also a pill in the main kebab menu and the Try Morse dialog, via `AppComponent.openSettings(true)`) that expands into the goal list; "More goals" is a row that is replaced by its goals. A goal with a `wizard` id opens `SetupWizardComponent` directly via `wizardRequested`; other goals emit `goalSelected`, `SettingsModalComponent.openGoalTarget()` reveals the existing card (`revealCard()`, `goal-opened` outline in `settings-shared.css`) and a dismissible hint dialog shows the `hint`/`next` text (a stopgap until every goal has a wizard). Navigation never changes settings.
+- **Setup Wizard pipeline**: `setup-goals.ts` is the single goal table (`MAIN_GOALS`, `MORE_GOALS`, `LANDINGS`, `goalForWizard()`); WP09/WP10 add rows and wizards there. `GoalNavigatorModalComponent` is its own modal (same box as Settings, `showGoals` in `AppComponent`), opened by `AppComponent.openGoals()` from the kebab menu, the Try Morse dialog and a wand button in the Settings toolbar. Main goals are always visible; only "More goals" expands. A goal with a `wizard` id opens `SetupWizardComponent` via `wizardRequested`; other goals emit `goalSelected(landing)`, and `AppComponent.goalsToSettings(landing)` swaps to Settings with `startLanding`, which reveals the card (`revealCard()`, `goal-opened` outline in `settings-shared.css`) and shows a dismissible hint dialog with the `hint`/`next` text. Goals and Settings swap (`goalsToSettings`/`settingsToGoals`) while keeping one history entry. Presets opens from the goals modal through `SettingsModalComponent` in `presetsOnly` mode (no Settings behind it; `presetsDismissed` returns to the goals). Navigation never changes settings.
 - **Setup wizard (WP08)**: wizards for `type`, `practice` and `decode` keep a draft separate from live settings; Skip restores a step's fields, Apply calls `SettingsService.update()` with only the reviewed changed keys (the practice wizard also forces `practiceEnabled` and the `'local'` pipeline), and the wizard never changes encoder mode or enables an output route. `findChannelConflicts()` (exported from `settings.service.ts`) blocks new audio-channel conflicts. Two deliberate exceptions, each only on an explicit click: "Turn audio output off" (sidetone and opto) and "Turn on the detector" / "Apply and turn on detector" (the app then starts the detector only if audio is already running; audio and microphone access are never started by the wizard). Wizard `z-index` 8500: above Settings, below the confirm dialog. The wizard closes with Back/Escape through `AppComponent.closeActiveModal` and asks before discarding answers; `onWizardTry()` leaves wizard and Settings together to the main screen.
 - **Icon pills**: kebab and dialog pills with a `.pill-icon` get their layout from `src/styles.css` (icon at the left, label centred) because `app.component.css` is at its size budget.
 - **Presets pipeline**: the Presets dialog (header button in `settings-modal`) saves/updates (overwrites with current settings)/renames/duplicates/deletes/exports/imports named presets via `PresetService` (key `morsePresets`, separate from `morseProfiles`, max 40-char case-insensitive names). Files use the `mcs-settings` v1 format from `settings-transfer.ts` (no RTDB secrets). Import only adds a preset; apply goes through `prepareSettingsImport` review with per-route acknowledgements, then `SettingsService.update()` without saving the profile.
@@ -237,3 +238,4 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 
 ## Forbidden Operations
 - **NEVER run `firebase deploy` or any Firebase CLI deployment commands** (`firebase deploy`, `firebase hosting:channel:deploy`, `firebase functions:deploy`, etc.). Deployment is handled outside this repository; only the project owner deploys to production.
+- **Teach wizard (WP09)**: goal `teach` (graduation-cap icon) is a classroom wizard with no radio paths (no WinKeyer, radio keying, audio decoding or pilot tone). Path from `wizardSteps`: `teachScenarios`, `teachParticipants` (max 4 local students plus teacher), `teachInputs`, `teachCopy`, `teachMobile`, `teachOutputs`, `teachTiming`, `teachDisplay`, `teachExtras`, `review`, `preset`, `apply`, `done`. Device actions (MIDI Detect key, serial `requestPort`) happen only on explicit buttons; RTDB is joined only in `done`. Apply calls `settings.update()` without saving the device profile; the preset step saves a secret-free snapshot. Group scoring is a separate package.

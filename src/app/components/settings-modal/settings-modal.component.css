@@ -212,15 +212,17 @@
 
 /* Save button */
 .save-btn {
-  background: #2a6;
+  background: linear-gradient(180deg, #3d8f84 0%, #2b6a62 100%);
   color: #fff;
   border: none;
   font-weight: 600;
   padding: .4rem 1.2rem;
   font-size: .9rem;
+  min-height: 40px;
+  border-radius: 20px;
 }
 .save-btn:hover:not(:disabled) {
-  background: #3b7;
+  filter: brightness(1.15);
 }
 .save-btn:disabled {
   background: #2a4a2a;
@@ -235,6 +237,12 @@
 @media (max-width: 768px) {
   .settings-modal {
     max-height: 95vh;
+  }
+}
+
+@media (pointer: coarse) {
+  .settings-modal-footer .save-btn {
+    min-height: 44px;
   }
 }
 

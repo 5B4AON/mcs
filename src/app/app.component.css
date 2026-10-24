@@ -948,9 +948,9 @@
 }
 .try-morse-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: center;
-  gap: 0 .5rem;
+  gap: 0 .35rem;
   margin-top: .65rem;
 }
 .try-morse-guide-heading .try-morse-dismiss {
@@ -959,7 +959,11 @@
   align-self: auto;
   flex-shrink: 0;
 }
-.try-morse-load,.try-morse-setup{max-width:200px;margin:0!important}
+.try-morse-load,.try-morse-setup {
+  flex: 0 1 120px;
+  padding-inline: .4rem;
+  margin: 0!important;
+}
 .try-morse-load:disabled {
   opacity: .5;
   cursor: not-allowed;
