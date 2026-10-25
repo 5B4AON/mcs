@@ -1412,7 +1412,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   closeGoals(): void {
     this.showGoals = false;
     this.popModalState();
-    window.requestAnimationFrame(() => this.encoderInputRef?.nativeElement.focus());
   }
 
   /** Swap the goal list for Settings (or a goal's card), keeping one history entry */
