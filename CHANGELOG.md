@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-10-25
+
+### Fixed
+
+- **Presets dialog** — The Save and Import buttons are narrower, so they sit side by side on phones.
+- **Phone dialogs** — The Setup Wizard goals list and the wizard steps open as inset, rounded dialogs like Presets instead of full-screen.
+- **Wizard Revert** — Every step with answers now shows Revert when something on that step changes, and it restores only that step. This includes the decode, MIDI, relay, hardware and teach wizards. In the decode wizard, Revert also turns back on any audio output the wizard switched off, until the detector is on.
+- **On-screen keyboard** — Pressing the sprite key, or keying from a non-keyboard input, removes focus from the main text box so the phone keyboard no longer pops up.
+- **Closing the goals list** — Closing the Setup Wizard goals list no longer moves focus to the main text box.
+
 ## [2.0.0] - 2026-10-25
 
 ### Added

@@ -49,7 +49,9 @@ import {
   HardwareOutputMethod,
   KEYBOARD_KEY_CODES,
   LIMITS,
-  STEP_FIELDS,
+  revertStepDraft,
+  resizeTeachStudents,
+  stepHasChanges,
   TeachInputType,
   TeachParticipantDraft,
   TeachScenario,
@@ -790,16 +792,8 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
       this.draft.teachStudentCount = count;
       return;
     }
-    const people = [...this.teachParticipants];
-    const teacher = people.find(person => person.role === 'teacher')
-      ?? createTeachParticipant('teacher', 0, this.base);
-    const students = people.filter(person => person.role === 'student').slice(0, count);
-    const additional = people.filter(person => person.role === 'additional');
-    while (students.length < count) {
-      students.push(createTeachParticipant('student', students.length + 1, this.base));
-    }
     this.draft.teachStudentCount = count;
-    this.draft.teachParticipants = [teacher, ...students, ...additional];
+    this.draft.teachParticipants = resizeTeachStudents(this.teachParticipants, count, this.base);
   }
 
   addTeachInput(): void {
@@ -1035,22 +1029,27 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Put this step's questions back to the current settings and stay on the step. */
   revert(): void {
-    const keys = STEP_FIELDS[this.step] ?? [];
-    const start = initialDraft(this.goal, this.base) as Record<string, unknown>;
-    const draft = this.draft as Record<string, unknown>;
-    for (const key of keys) {
-      const value = start[key];
-      draft[key] = Array.isArray(value) ? structuredClone(value) : value;
+    if (this.midiCapture) {
+      this.midiInput.cancelLearn();
+      this.midiCapture = null;
+    }
+    revertStepDraft(this.goal, this.step, this.base, this.draft);
+    if (this.canRestoreAudioOutput) {
+      this.settings.update(this.audioOutputBackup!);
+      this.audioOutputBackup = null;
     }
   }
 
-  /** True only when this step has answers that differ from the current settings. */
+  /** True only when this step has answers that differ from where they started. */
   get canRevert(): boolean {
-    const keys = STEP_FIELDS[this.step];
-    if (!keys || ['decode', 'midi', 'relay', 'hardware'].includes(this.goal)) return false;
-    const start = initialDraft(this.goal, this.base) as Record<string, unknown>;
-    const draft = this.draft as Record<string, unknown>;
-    return keys.some(key => JSON.stringify(draft[key]) !== JSON.stringify(start[key]));
+    return this.canRestoreAudioOutput || stepHasChanges(this.goal, this.step, this.base, this.draft);
+  }
+
+  /** Audio outputs this wizard switched off, so Revert can put them back (never once the detector is on). */
+  private audioOutputBackup: { sidetoneEnabled: boolean; optoEnabled: boolean } | null = null;
+
+  private get canRestoreAudioOutput(): boolean {
+    return !!this.audioOutputBackup && !this.detectorOn && (this.step === 'before' || this.step === 'review');
   }
 
   /** Apply only the reviewed changes; the running app is otherwise untouched. */
@@ -1096,6 +1095,8 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   /** Turn off the audio outputs that could feed the detector; the one change made outside Apply, and only on this click. */
   turnOffAudioOutput(): void {
+    const current = this.settings.settings();
+    this.audioOutputBackup ??= { sidetoneEnabled: current.sidetoneEnabled, optoEnabled: current.optoEnabled };
     this.settings.update({ sidetoneEnabled: false, optoEnabled: false });
   }
 
