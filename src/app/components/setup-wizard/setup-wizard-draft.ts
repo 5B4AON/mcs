@@ -154,6 +154,10 @@ export const STEP_FIELDS: Partial<Record<WizardStepId, WizardDraftKey[]>> = {
     'farnsworthWordsworth', 'farnsworthAppliesTo',
   ],
   teachDisplay: ['textBlurEnabled', 'textBlurAppliesTo', 'showProsigns', 'emojisEnabled', 'prosignActionsEnabled'],
+  teachScenarios: ['teachScenarios'],
+  teachParticipants: ['teachStudentCount'],
+  teachInputs: ['teachParticipants'],
+  teachExtras: ['prosignActionsEnabled', 'prosignActions', 'emojisEnabled', 'emojiMappings'],
 };
 
 /** Every setting a goal's wizard can touch, in review order. */
@@ -489,6 +493,63 @@ export function initialDraft(goal: WizardGoalId, base: AppSettings): DraftValues
     draft['relaySend'] = base.rtdbOutputEnabled;
   }
   return draft as DraftValues;
+}
+
+/** Teacher plus the given number of students, as the wizard first offers them. */
+export function defaultTeachParticipants(studentCount: number, base: AppSettings): TeachParticipantDraft[] {
+  return [
+    createTeachParticipant('teacher', 0, base),
+    ...Array.from({ length: studentCount }, (_, i) => createTeachParticipant('student', i + 1, base)),
+  ];
+}
+
+/** Keep the teacher, extra inputs and existing students; add or drop students to reach the count. */
+export function resizeTeachStudents(
+  people: TeachParticipantDraft[], count: number, base: AppSettings,
+): TeachParticipantDraft[] {
+  const teacher = people.find(person => person.role === 'teacher') ?? createTeachParticipant('teacher', 0, base);
+  const students = people.filter(person => person.role === 'student').slice(0, count);
+  const additional = people.filter(person => person.role === 'additional');
+  while (students.length < count) {
+    students.push(createTeachParticipant('student', students.length + 1, base));
+  }
+  return [teacher, ...students, ...additional];
+}
+
+/** What a step's Revert would restore for one key; the people list keeps the chosen student count. */
+function stepStartValue(step: WizardStepId, key: WizardDraftKey, start: DraftValues, base: AppSettings, draft: DraftValues): unknown {
+  if (step === 'teachInputs' && key === 'teachParticipants') {
+    return defaultTeachParticipants(draft.teachStudentCount ?? 1, base);
+  }
+  return (start as Record<string, unknown>)[key];
+}
+
+/** True when this step's own answers differ from where they started; other steps never count. */
+export function stepHasChanges(
+  goal: WizardGoalId, step: WizardStepId, base: AppSettings, draft: DraftValues,
+): boolean {
+  const keys = STEP_FIELDS[step];
+  if (!keys) return false;
+  const start = initialDraft(goal, base);
+  const current = draft as Record<string, unknown>;
+  return keys.some(key =>
+    JSON.stringify(current[key]) !== JSON.stringify(stepStartValue(step, key, start, base, draft)));
+}
+
+/** Put only this step's answers back to where they started. Live settings are never touched. */
+export function revertStepDraft(
+  goal: WizardGoalId, step: WizardStepId, base: AppSettings, draft: DraftValues,
+): void {
+  const keys = STEP_FIELDS[step] ?? [];
+  const start = initialDraft(goal, base);
+  const target = draft as Record<string, unknown>;
+  for (const key of keys) {
+    const value = stepStartValue(step, key, start, base, draft);
+    target[key] = Array.isArray(value) ? structuredClone(value) : value;
+  }
+  if (step === 'teachParticipants') {
+    draft.teachParticipants = resizeTeachStudents(draft.teachParticipants ?? [], draft.teachStudentCount ?? 1, base);
+  }
 }
 
 /** What the goal will actually apply: the answers plus fixed, safe values. */

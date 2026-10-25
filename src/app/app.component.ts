@@ -533,6 +533,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.keyer.straightKeyEvent$.subscribe(evt => {
         const s = this.settings.settings();
+        if (evt.down && !evt.inputPath?.startsWith('keyboard')) this.releaseTextFocus();
         if (!s.spriteButtonEnabled) return;
         const animate =
           (evt.inputPath === 'keyboardStraightKey' && s.spriteAnimateKeyboard) ||
@@ -558,6 +559,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Sprite button animation — react to mic straight key events
     this.subs.push(
       this.audioInput.keyEvent$.subscribe(evt => {
+        if (evt.down) this.releaseTextFocus();
         const s = this.settings.settings();
         if (s.spriteButtonEnabled && s.spriteAnimateMic) {
           this.spriteKeyDown = evt.down;
@@ -568,6 +570,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Sprite button animation — react to serial straight key events
     this.subs.push(
       this.serialInput.straightKeyEvent$.subscribe(evt => {
+        if (evt.down) this.releaseTextFocus();
         const s = this.settings.settings();
         if (s.spriteButtonEnabled && s.spriteAnimateSerial) {
           this.spriteKeyDown = evt.down;
@@ -1645,6 +1648,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ---- Straight-key sprite button ----
 
+  /** Drop focus from the main text box so keying from a non-keyboard input does not raise the on-screen keyboard. */
+  private releaseTextFocus(): void {
+    const textarea = this.encoderInputRef?.nativeElement;
+    if (textarea && document.activeElement === textarea) textarea.blur();
+  }
+
   /** Visual pressed state for the straight-key sprite */
   spriteKeyDown = false;
   /** Guard to prevent duplicate mouse events when touch already active */
@@ -1653,6 +1662,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Handle touch events on the sprite key button */
   onSpriteTouch(down: boolean, event: TouchEvent): void {
     event.preventDefault();
+    if (down) this.releaseTextFocus();
     this.spriteKeyDown = down;
     const s = this.settings.settings();
     this.keyer.straightKeyInput(down, s.spriteSource, false, 'touchStraightKey',
@@ -1663,6 +1673,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onSpriteMouse(down: boolean, event: MouseEvent): void {
     event.preventDefault();
     event.stopPropagation();
+    if (down) this.releaseTextFocus();
     if (down) {
       if (this.spriteMouseActive) return;
       this.spriteMouseActive = true;

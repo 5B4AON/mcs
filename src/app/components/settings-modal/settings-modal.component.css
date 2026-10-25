@@ -552,7 +552,8 @@
 }
 
 .transfer-actions .transfer-action-btn {
-  flex: 0 1 240px;
+  flex: 0 1 auto;
+  min-width: 7.5rem;
   max-width: 240px;
   min-height: 40px;
   padding: .6rem 1.1rem;
