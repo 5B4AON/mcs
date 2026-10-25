@@ -327,8 +327,46 @@
 
 .wizard-inline-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: center;
+  gap: .5rem;
   margin: .8rem 0 .2rem;
+}
+
+.wizard-preset-start,
+.wizard-preset-save {
+  margin: 0 0 .9rem;
+  padding: .65rem .75rem;
+  border: 1px solid #3f4d78;
+  border-radius: 8px;
+  background: rgba(35, 42, 69, .45);
+}
+.wizard-preset-start h3,
+.wizard-preset-save h4 {
+  margin: 0 0 .4rem;
+  color: #8cf;
+  font-size: .95rem;
+}
+.wizard-preset-save-form {
+  margin-top: .6rem;
+}
+.wizard-preset-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .5rem;
+  margin-top: .5rem;
+}
+.wizard-preset-save-form input {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: .45rem .6rem;
+  font: inherit;
+  color: #eef;
+  background: #232a45;
+  border: 1px solid #3f4d78;
+  border-radius: 6px;
 }
 
 .wizard-participant {

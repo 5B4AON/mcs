@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-10-25
+
+### Added
+
+- **UX revamp complete** — Made it easier to start Morse, configure and save
+  setups, and move from beginner tasks to advanced tools:
+  - Safe first-use audio, an interactive Morse example, and clear live-versus-saved settings.
+  - Named presets that can be saved, transferred, reviewed, and applied; wizards can load or save presets without conflating drafts and live settings.
+  - Clearer practice and goal-based Settings discovery, with accessible keyboard, touch, and assistive-technology controls.
+  - One fullscreen RX/TX conversation with explicit Key/Type input, plus guided setup for decoding, teaching, hardware, and relay.
+  - Clear relay privacy information and safer review of output targets before enabling routes.
+
 ## [1.17.0] - 2026-10-24
 
 ### Added

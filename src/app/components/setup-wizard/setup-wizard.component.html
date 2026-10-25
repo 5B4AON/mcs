@@ -19,6 +19,56 @@
     }
 
     <div class="wizard-body">
+      @if (stepIndex === 0) {
+        <section class="wizard-preset-start" aria-labelledby="wizard-preset-start-title">
+          @if (presetPickerOpen) {
+            <h3 id="wizard-preset-start-title">Start from a saved preset</h3>
+            <p class="wizard-note">Only settings covered by this guide are copied into its draft; other preset settings stay as they are. Choosing a different preset replaces this guide's draft answers, but never changes live settings or the saved preset.</p>
+            @if (presets.loadError()) {
+              <p class="wizard-error" role="alert">
+                {{ presets.loadError() }} Nothing was loaded. Close this guide, then use Presets in Settings to download or remove damaged saved preset data before reopening the guide.
+              </p>
+            } @else if (presets.presets().length === 0) {
+              <p class="wizard-note">There are no saved presets yet. You can create one from Presets in Settings.</p>
+            } @else {
+              <label class="wizard-field">Saved preset
+                <select [value]="selectedPresetId" (change)="selectPreset($event)">
+                  <option value="">Choose a preset</option>
+                  @for (preset of presets.presets(); track preset.id) {
+                    <option [value]="preset.id">{{ preset.name }}</option>
+                  }
+                </select>
+              </label>
+            }
+            @if (presetLoadError) {
+              <p class="wizard-error" role="alert">{{ presetLoadError }}</p>
+            }
+            @if (!presets.loadError() && presets.presets().length > 0) {
+              <div class="wizard-preset-actions">
+                <button type="button" class="wizard-pill wizard-primary"
+                        [disabled]="!selectedPresetId" (click)="seedDraftFromPreset()">
+                  Load preset
+                </button>
+                <button type="button" class="wizard-pill" (click)="closePresetPicker()">Cancel</button>
+              </div>
+            } @else {
+              <button type="button" class="wizard-pill" (click)="closePresetPicker()">Cancel</button>
+            }
+          } @else {
+            <button type="button" class="wizard-pill" (click)="openPresetPicker()">
+              Start from a saved preset
+            </button>
+          }
+          @if (presetLoadNotice) {
+            <p class="wizard-note" role="status">{{ presetLoadNotice }}</p>
+          }
+          @for (warning of presetLoadWarnings; track warning) {
+            <p class="wizard-warning" role="status">
+              {{ warning }} This target was not loaded; choose a verified target in the guide or Settings.
+            </p>
+          }
+        </section>
+      }
       @switch (step) {
 
         @case ('speed') {
@@ -1279,6 +1329,17 @@
 
         @case ('review') {
           <h3 class="wizard-step-title" tabindex="-1">Review before applying</h3>
+          @if (presetLoadWarnings.length) {
+            <section class="wizard-warning" aria-labelledby="wizard-preset-targets-title">
+              <h4 id="wizard-preset-targets-title">Some preset targets were not loaded</h4>
+              <p>The destination settings were left unchanged; this guide will not choose a substitute.</p>
+              <ul>
+                @for (warning of presetLoadWarnings; track warning) {
+                  <li>{{ warning }}</li>
+                }
+              </ul>
+            </section>
+          }
           @if (goal === 'teach') {
             <section class="wizard-plan-summary" aria-label="Teaching plan">
               <h4>Teaching plan</h4>
@@ -1400,6 +1461,39 @@
             </button>
           </div>
           }
+          <section class="wizard-preset-save" aria-labelledby="wizard-preset-save-title">
+            <h4 id="wizard-preset-save-title">Save this setup as a named preset</h4>
+            <p class="wizard-note">Saving stores your current settings plus the changes shown here. It does not apply them or save the device profile. RTDB secrets are never saved.</p>
+            @if (presets.loadError()) {
+              <p class="wizard-error" role="alert">
+                {{ presets.loadError() }} Presets are unavailable; close this guide, then use Presets in Settings to download or remove damaged saved preset data.
+              </p>
+            }
+            @if (presetSaveOpen) {
+              <form class="wizard-preset-save-form" (ngSubmit)="savePresetOnly()">
+                <label class="wizard-field" for="wizard-preset-name">Name for the new preset
+                  <input id="wizard-preset-name" name="presetName" type="text" autocomplete="off"
+                         [maxLength]="presetNameMaxLength" [(ngModel)]="presetSaveName">
+                </label>
+                <p class="wizard-note">{{ presetSaveName.trim().length }} / {{ presetNameMaxLength }} characters. Names are not case sensitive.</p>
+                <div class="wizard-inline-actions">
+                  <button type="submit" class="wizard-pill wizard-primary">Save preset</button>
+                  <button type="button" class="wizard-pill" (click)="cancelSavePresetOnly()">Cancel</button>
+                </div>
+              </form>
+            } @else {
+              <button type="button" class="wizard-pill" [disabled]="!!presets.loadError()"
+                      (click)="startSavePresetOnly()">
+                Save preset
+              </button>
+            }
+            @if (presetSaveError) {
+              <p class="wizard-error" role="alert">{{ presetSaveError }}</p>
+            }
+            @if (presetSaveNotice) {
+              <p class="wizard-note" role="status">{{ presetSaveNotice }}</p>
+            }
+          </section>
         }
 
         @case ('done') {

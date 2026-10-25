@@ -22,7 +22,13 @@ Connect a physical key or paddle, and decoded Morse code appears instantly in a 
 
 **Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. The channel name and secret together identify a database path; they are not user authentication or encryption. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
 
-**Setup Wizard** — Choose a goal to open its guided, draft-and-review flow. Configure local keyers, MIDI or serial inputs, an online relay, or a radio-keying output without leaving the wizard. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
+**Getting started** — Start audio safely, try an interactive Morse example, and use goal-based Settings to find the relevant controls. Settings distinguish live changes from the separate per-device **Save Settings** action.
+
+**Setup Wizard** — Choose a goal for a guided, draft-and-review flow covering sending, typing, copy practice, decoding, teaching, MIDI or serial input, relay, and radio-keying hardware. Start from a saved preset to seed only the relevant draft settings, or save the reviewed proposal as a named preset without applying it. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
+
+**Named Presets** — Save, rename, duplicate, export, import, and review before applying reusable setups. Importing only adds a preset; it never applies it. Presets omit RTDB secrets and remain separate from both live settings and per-device profiles.
+
+**Trustworthy, accessible controls** — Relay setup explains that channel details are not authentication or encryption. Core controls support keyboard, touch, and assistive-technology use; the fullscreen conversation combines RX/TX history with an explicit Key/Type choice.
 
 ## Connecting Your Key and Radio
 

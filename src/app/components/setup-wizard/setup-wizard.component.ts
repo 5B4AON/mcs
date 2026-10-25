@@ -33,8 +33,12 @@ import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { MidiInputService, MidiLearnResult } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
 import { compareExternalRoutes, ExternalRouteChange } from '../../services/output-change-checker';
+import { PresetService } from '../../services/preset.service';
 import { SerialKeyInputService } from '../../services/serial-key-input.service';
 import { SerialKeyOutputService } from '../../services/serial-key-output.service';
+import { prepareSettingsImport, SettingsTransferDevices } from '../../services/settings-transfer-review';
+import { createSettingsSnapshot } from '../../services/settings-transfer';
+import { PRESET_NAME_MAX_LENGTH, suggestPresetName } from '../../services/settings-presets';
 import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
@@ -113,6 +117,7 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly serialInputPins = ['dsr', 'cts', 'dcd', 'ri'] as const;
   readonly serialOutputPins = ['dtr', 'rts'] as const;
   readonly outputForwards: OutputForward[] = ['rx', 'tx', 'both'];
+  readonly presetNameMaxLength = PRESET_NAME_MAX_LENGTH;
 
   /** Settings as they were when the wizard opened */
   base!: AppSettings;
@@ -128,6 +133,15 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   routeAcknowledgements: Record<string, boolean> = {};
   midiCapture: { participantIndex: number; field: 'midiNote' | 'midiDahNote' } | null = null;
   private midiStartedForDraft = false;
+  presetPickerOpen = false;
+  selectedPresetId = '';
+  presetLoadNotice = '';
+  presetLoadError = '';
+  presetLoadWarnings: string[] = [];
+  presetSaveOpen = false;
+  presetSaveName = '';
+  presetSaveError = '';
+  presetSaveNotice = '';
 
   /** Whether Apply has been pressed */
   applied = false;
@@ -147,6 +161,7 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   constructor(
     public settings: SettingsService,
+    public presets: PresetService,
     private cwInput: CwInputService,
     public midiInput: MidiInputService,
     public serialInput: SerialKeyInputService,
@@ -354,6 +369,95 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     const patch: Record<string, unknown> = {};
     for (const line of this.review.changes) patch[line.key] = proposed[line.key];
     return patch as Partial<AppSettings>;
+  }
+
+  /** Reload saved presets before the user chooses a starting draft. */
+  openPresetPicker(): void {
+    this.presets.reload();
+    this.presetPickerOpen = true;
+    this.presetSaveOpen = false;
+    this.presetLoadNotice = '';
+    this.presetLoadWarnings = [];
+    this.presetLoadError = '';
+    this.selectedPresetId = this.presets.presets()[0]?.id ?? '';
+  }
+
+  /** Close the preset picker without changing the wizard draft. */
+  closePresetPicker(): void {
+    this.presetPickerOpen = false;
+  }
+
+  /** Remember the selected preset without loading it yet. */
+  selectPreset(event: Event): void {
+    this.selectedPresetId = (event.target as HTMLSelectElement).value;
+    this.presetLoadError = '';
+  }
+
+  /** Seed this goal's draft from a validated preset without changing live settings. */
+  seedDraftFromPreset(): void {
+    const preset = this.presets.presets().find(item => item.id === this.selectedPresetId);
+    if (!preset) {
+      this.presetLoadError = 'That preset is no longer available. Reload the saved preset list and try again.';
+      return;
+    }
+
+    const prepared = prepareSettingsImport(this.base, preset.settings, this.getTransferDevices());
+    this.draft = initialDraft(this.goal, prepared.settings);
+    this.routeAcknowledgements = {};
+    this.presetLoadWarnings = prepared.unresolvedTargets;
+    this.presetLoadNotice =
+      `Loaded "${preset.name}" into this guide's draft only. Live settings and the saved preset are unchanged.`;
+    this.presetLoadError = '';
+    this.presetPickerOpen = false;
+    this.stepIndex = 0;
+    this.focusStep();
+  }
+
+  /** Open the separate name form for saving the proposed setup without applying it. */
+  startSavePresetOnly(): void {
+    this.presets.reload();
+    this.presetSaveError = '';
+    this.presetSaveNotice = '';
+    this.presetSaveOpen = !this.presets.loadError();
+    this.presetSaveName = suggestPresetName('My setup', this.presets.presets());
+    if (this.presetSaveOpen) {
+      window.setTimeout(() => {
+        this.dialog?.nativeElement.querySelector<HTMLInputElement>('#wizard-preset-name')?.focus();
+      }, 0);
+    }
+  }
+
+  /** Cancel naming a preset without changing the draft or running settings. */
+  cancelSavePresetOnly(): void {
+    this.presetSaveOpen = false;
+    this.presetSaveError = '';
+  }
+
+  /** Save the current settings plus this wizard's proposal as a secret-free preset only. */
+  savePresetOnly(): void {
+    const snapshot = createSettingsSnapshot({ ...this.base, ...this.patch }).settings;
+    const result = this.presets.add(this.presetSaveName, snapshot);
+    if (!result.ok) {
+      this.presetSaveError = result.error;
+      return;
+    }
+    this.presetSaveOpen = false;
+    this.presetSaveError = '';
+    this.presetSaveNotice =
+      `Saved "${result.preset.name}" as a preset. Live settings and the device profile are unchanged.`;
+  }
+
+  private getTransferDevices(): SettingsTransferDevices {
+    return {
+      audioInputs: this.audioDevices.inputDevices(),
+      audioOutputs: this.audioDevices.outputDevices(),
+      audioLabelsAvailable: this.audioDevices.hasPermission(),
+      midiInputs: this.midiInput.midiInputs(),
+      midiOutputs: this.midiOutput.midiOutputs(),
+      serialInputPorts: this.serialInput.ports().map(port => this.serialInput.portLabel(port)),
+      serialOutputPorts: this.serialOutput.ports().map(port => this.serialOutput.portLabel(port)),
+      winkeyerPorts: this.winkeyerOutput.ports().map(port => this.winkeyerOutput.portLabel(port)),
+    };
   }
 
   get detectorInputLabel(): string {
