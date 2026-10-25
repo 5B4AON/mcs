@@ -283,6 +283,7 @@
   }
   .settings-modal-footer .save-btn {
     width: 100%;
+    max-width: 240px;
   }
 }
 
@@ -583,7 +584,7 @@
 
 /* Equal label width keeps the icons of stacked buttons aligned */
 .transfer-btn-label {
-  min-width: 9.6em;
+  min-width: 4.5em;
   text-align: left;
 }
 
@@ -967,14 +968,14 @@
 
 @media (max-width: 480px) {
   .settings-transfer-overlay {
-    padding: 0;
+    padding: .75rem;
   }
   .settings-transfer-dialog {
-    max-width: 100%;
-    height: 100vh;
-    height: 100dvh;
-    border: 0;
-    border-radius: 0;
+    max-width: 640px;
+    height: 92vh;
+    height: 92dvh;
+    border: 1px solid #556;
+    border-radius: 12px;
   }
   .settings-transfer-content {
     padding: .75rem;

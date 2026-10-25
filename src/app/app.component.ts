@@ -616,7 +616,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
   private openFullscreenAfterWizardClose = false;
-  private openHelpAfterWizardClose: string | null = null;
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
@@ -659,18 +658,46 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  private mouseDragStartX = 0;
+  private mouseDragLeft = false;
+  private mouseDragActive = false;
+  private mouseDragEndedAt = 0;
+
+  @HostListener('document:mousedown', ['$event'])
+  onDragStart(event: MouseEvent): void {
+    this.mouseDragStartX = event.clientX;
+    this.mouseDragLeft = false;
+    this.mouseDragActive = true;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDragMove(event: MouseEvent): void {
+    if (this.mouseDragActive && this.mouseDragStartX - event.clientX >= 30) this.mouseDragLeft = true;
+  }
+
+  @HostListener('document:mouseup')
+  onDragEnd(): void {
+    this.mouseDragActive = false;
+    this.mouseDragEndedAt = Date.now();
+  }
+
+  /** A leftward mouse drag (for example selecting text) that some desktop browsers read as Back. */
+  private get leftwardMouseDragRecent(): boolean {
+    return this.mouseDragLeft && (this.mouseDragActive || Date.now() - this.mouseDragEndedAt < 1000);
+  }
+
   @HostListener('window:popstate', ['$event'])
   onPopState(_event: PopStateEvent): void {
+    if (!this.ignoringPopState && this.modalHistoryDepth > 0 && this.leftwardMouseDragRecent) {
+      // Not a real Back press: restore the entry and leave the dialogs open.
+      history.pushState({ modal: 'restored' }, '');
+      return;
+    }
     if (this.ignoringPopState) {
       this.ignoringPopState = false;
       if (this.openFullscreenAfterWizardClose) {
         this.openFullscreenAfterWizardClose = false;
         this.openModal(this.fullscreenFocusFallback);
-      }
-      if (this.openHelpAfterWizardClose) {
-        const sectionId = this.openHelpAfterWizardClose;
-        this.openHelpAfterWizardClose = null;
-        this.openHelp(sectionId);
       }
       return;
     }
@@ -1418,31 +1445,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.wizardGoal = goal;
     this.showWizard = true;
     this.pushModalState('wizard');
-  }
-
-  /** Swap the goal wizard for the selected Settings card. */
-  onWizardSettingsRequested(landing: string): void {
-    this.closeWizard();
-    this.goalsToSettings(landing);
-  }
-
-  /** Close the wizard and goal list before opening its requested Help section. */
-  onWizardHelpRequested(sectionId: string): void {
-    const steps = Math.min(
-      this.modalHistoryDepth,
-      (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0),
-    );
-    this.showWizard = false;
-    this.showSettings = false;
-    this.showGoals = false;
-    if (steps > 0) {
-      this.modalHistoryDepth -= steps;
-      this.ignoringPopState = true;
-      this.openHelpAfterWizardClose = sectionId;
-      history.go(-steps);
-    } else {
-      this.openHelp(sectionId);
-    }
   }
 
   /** Close the guided setup, leaving Settings as it was */

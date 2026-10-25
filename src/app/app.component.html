@@ -382,9 +382,7 @@
   <app-setup-wizard [goal]="wizardGoal" (closed)="closeWizard()"
                     (tryRequested)="onWizardTry()"
                     (detectorEnabled)="onWizardDetectorEnabled()"
-                    (openFullscreenRequested)="onWizardOpenFullscreen()"
-                    (settingsRequested)="onWizardSettingsRequested($event)"
-                    (helpRequested)="onWizardHelpRequested($event)"></app-setup-wizard>
+                    (openFullscreenRequested)="onWizardOpenFullscreen()"></app-setup-wizard>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->

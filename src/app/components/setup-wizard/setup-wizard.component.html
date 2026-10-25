@@ -1,7 +1,7 @@
 <div class="wizard-overlay" (click)="requestClose()">
   <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
        aria-labelledby="wizard-title" tabindex="-1"
-       (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
+       (click)="$event.stopPropagation()">
 
     <header class="wizard-header">
       <h2 id="wizard-title">{{ title }}</h2>
@@ -92,7 +92,7 @@
 
         @case ('timing') {
           <h3 class="wizard-step-title" tabindex="-1">{{ goal === 'type' ? 'Make the Morse easier to follow?' : 'Give yourself more time between characters?' }}</h3>
-          <p class="wizard-hint">Farnsworth timing plays each character at full speed ({{ base.encoderWpm }} WPM) but stretches the gaps between characters and words. {{ goal === 'type' ? 'The Morse you hear is easier to follow while each character keeps its real sound.' : 'You learn to recognise characters at real speed and get extra time to think.' }} Skip it to keep your current timing.</p>
+          <p class="wizard-hint">Farnsworth timing plays each character at full speed ({{ base.encoderWpm }} WPM) but stretches the gaps between characters and words. {{ goal === 'type' ? 'The Morse you hear is easier to follow while each character keeps its real sound.' : 'You learn to recognise characters at real speed and get extra time to think.' }} Leave it off to keep your current timing.</p>
           <label class="wizard-check">
             <input type="checkbox" [checked]="draft.farnsworthEnabled" (change)="setBool('farnsworthEnabled', $event)">
             Stretch the gaps (Farnsworth timing)
@@ -230,23 +230,160 @@
               Touch keyer
             </label>
           </fieldset>
-          <p class="wizard-note">Existing mappings and keyer options stay unchanged. Applying only enables the local keyers you choose; you still have to key them yourself.</p>
           @if (sendMethods.includes('keyboard')) {
-            <button type="button" class="wizard-pill" (click)="requestSettings('keyboard-keyer')">Open Keyboard Keyer settings</button>
+            <h4 class="wizard-next-title">Keyboard mappings</h4>
+            @for (mapping of draft.keyboardInputMappings ?? []; track $index) {
+              <details class="wizard-group">
+                <summary>Mapping {{ $index + 1 }}{{ mapping.name ? ' — ' + mapping.name : '' }}</summary>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.enabled"
+                         (change)="updateKeyboardMapping($index, { enabled: $any($event.target).checked })">
+                  Enabled
+                </label>
+                <label class="wizard-field">Input mode
+                  <select [value]="mapping.mode" (change)="updateKeyboardMapping($index, { mode: $any($event.target).value })">
+                    <option value="straightKey">Straight key</option>
+                    <option value="paddle">Paddle</option>
+                  </select>
+                </label>
+                <label class="wizard-field">Key{{ mapping.mode === 'paddle' ? ' for dit' : '' }}
+                  <select [value]="mapping.keyCode" (change)="updateKeyboardMapping($index, { keyCode: $any($event.target).value })">
+                    <option value="">Choose a key</option>
+                    @for (code of keyboardKeyCodes; track code) {
+                      <option [value]="code">{{ code }}</option>
+                    }
+                  </select>
+                </label>
+                @if (mapping.mode === 'paddle') {
+                  <label class="wizard-field">Key for dah
+                    <select [value]="mapping.dahKeyCode" (change)="updateKeyboardMapping($index, { dahKeyCode: $any($event.target).value })">
+                      <option value="">Choose a key</option>
+                      @for (code of keyboardKeyCodes; track code) {
+                        <option [value]="code">{{ code }}</option>
+                      }
+                    </select>
+                  </label>
+                  <label class="wizard-field">Paddle mode
+                    <select [value]="mapping.paddleMode" (change)="updateKeyboardMapping($index, { paddleMode: $any($event.target).value })">
+                      @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                    </select>
+                  </label>
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="mapping.reversePaddles"
+                           (change)="updateKeyboardMapping($index, { reversePaddles: $any($event.target).checked })">
+                    Reverse dit and dah paddles
+                  </label>
+                }
+                <label class="wizard-field">Decoder source
+                  <select [value]="mapping.source" (change)="updateKeyboardMapping($index, { source: $any($event.target).value })">
+                    <option value="rx">Receive (RX)</option>
+                    <option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
+                <label class="wizard-field">Display name (optional)
+                  <input type="text" maxlength="20" [value]="mapping.name"
+                         (input)="updateKeyboardMapping($index, { name: $any($event.target).value })">
+                </label>
+                <label class="wizard-field">Text color (optional)
+                  <input type="text" [value]="mapping.color" placeholder="For example, #8cf"
+                         (input)="updateKeyboardMapping($index, { color: $any($event.target).value })">
+                </label>
+                <button type="button" class="wizard-pill" (click)="removeKeyboardMapping($index)">Remove mapping</button>
+              </details>
+            }
+            <button type="button" class="wizard-pill" (click)="addKeyboardMapping()">Add keyboard mapping</button>
+            <p class="wizard-note">Use a different key for each mapping. Keyboard input is shared across physical keyboards in this browser.</p>
           }
           @if (sendMethods.includes('mouse')) {
-            <button type="button" class="wizard-pill" (click)="requestSettings('mouse-keyer')">Open Mouse Keyer settings</button>
+            <details class="wizard-group">
+            <summary>Mouse keyer</summary>
+            <label class="wizard-field">Decoder source
+              <select [value]="draft.mouseKeyerSource" (change)="setText('mouseKeyerSource', $event)">
+                <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+              </select>
+            </label>
+            <label class="wizard-field">Left button action
+              <select [value]="draft.mouseLeftAction" (change)="setText('mouseLeftAction', $event)">
+                @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+              </select>
+            </label>
+            <label class="wizard-field">Middle button action
+              <select [value]="draft.mouseMiddleAction" (change)="setText('mouseMiddleAction', $event)">
+                @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+              </select>
+            </label>
+            <label class="wizard-field">Right button action
+              <select [value]="draft.mouseRightAction" (change)="setText('mouseRightAction', $event)">
+                @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+              </select>
+            </label>
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.mouseReversePaddles" (change)="setBool('mouseReversePaddles', $event)">
+              Reverse mouse paddle buttons
+            </label>
+            <label class="wizard-field">Paddle mode
+              <select [value]="draft.mousePaddleMode" (change)="setText('mousePaddleMode', $event)">
+                @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+              </select>
+            </label>
+            <label class="wizard-field">Display name (optional)
+              <input type="text" maxlength="20" [value]="draft.mouseKeyerName" (input)="setText('mouseKeyerName', $event)">
+            </label>
+            <label class="wizard-field">Text color (optional)
+              <input type="text" [value]="draft.mouseKeyerColor" placeholder="For example, #8cf" (input)="setText('mouseKeyerColor', $event)">
+            </label>
+            </details>
           }
           @if (sendMethods.includes('touch')) {
-            <button type="button" class="wizard-pill" (click)="requestSettings('touch-keyer')">Open Touch Keyer settings</button>
+            <details class="wizard-group">
+            <summary>Touch keyer</summary>
+            <label class="wizard-field">Keying mode
+              <select [value]="draft.touchKeyerMode" (change)="setText('touchKeyerMode', $event)">
+                <option value="straight">Straight key</option><option value="paddle">Paddle</option>
+              </select>
+            </label>
+            <label class="wizard-field">Decoder source
+              <select [value]="draft.touchKeyerSource" (change)="setText('touchKeyerSource', $event)">
+                <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+              </select>
+            </label>
+            @if (draft.touchKeyerMode === 'paddle') {
+              <label class="wizard-field">Left touch area
+                <select [value]="draft.touchLeftPaddle" (change)="setText('touchLeftPaddle', $event)">
+                  <option value="dit">Dit</option><option value="dah">Dah</option>
+                </select>
+              </label>
+              <label class="wizard-field">Right touch area
+                <select [value]="draft.touchRightPaddle" (change)="setText('touchRightPaddle', $event)">
+                  <option value="dit">Dit</option><option value="dah">Dah</option>
+                </select>
+              </label>
+              <label class="wizard-check">
+                <input type="checkbox" [checked]="draft.touchReversePaddles" (change)="setBool('touchReversePaddles', $event)">
+                Reverse touch paddles
+              </label>
+              <label class="wizard-field">Paddle mode
+                <select [value]="draft.touchPaddleMode" (change)="setText('touchPaddleMode', $event)">
+                  @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                </select>
+              </label>
+            }
+            <label class="wizard-field">Display name (optional)
+              <input type="text" maxlength="20" [value]="draft.touchKeyerName" (input)="setText('touchKeyerName', $event)">
+            </label>
+            <label class="wizard-field">Text color (optional)
+              <input type="text" [value]="draft.touchKeyerColor" placeholder="For example, #8cf" (input)="setText('touchKeyerColor', $event)">
+            </label>
+            </details>
           }
+          <p class="wizard-note">Applying updates the draft-reviewed local input choices only. You still have to key them yourself.</p>
         }
 
         @case ('midiInput') {
           <h3 class="wizard-step-title" tabindex="-1">Use a MIDI key or paddle</h3>
-          <p class="wizard-hint">The guide keeps every MIDI mapping and its channel, note, direction, paddle and source options. MIDI access is requested only when you press the button below.</p>
+          <p class="wizard-hint">Configure MIDI key and paddle mappings here. MIDI access is requested only when you press the device-check button below.</p>
           @if (!midiInput.supported) {
-            <div class="wizard-warning" role="status">This browser does not support Web MIDI. Use another input or open Settings to review the available choices.</div>
+            <div class="wizard-warning" role="status">This browser does not support Web MIDI. Choose another input method in its own setup goal.</div>
           }
           <button type="button" class="wizard-pill" [disabled]="!midiInput.supported" (click)="refreshMidiInputs()">Check MIDI input devices</button>
           @if (deviceCheckNotice) { <p class="wizard-note" role="status">{{ deviceCheckNotice }}</p> }
@@ -257,47 +394,173 @@
               }
             </ul>
           }
-          <h4 class="wizard-next-title">Current mappings</h4>
+          <h4 class="wizard-next-title">MIDI mappings</h4>
+          @for (mapping of draft.midiInputMappings ?? []; track $index) {
+            <details class="wizard-group">
+              <summary>Mapping {{ $index + 1 }}{{ mapping.name ? ' — ' + mapping.name : '' }}</summary>
+              <label class="wizard-check">
+                <input type="checkbox" [checked]="mapping.enabled"
+                       (change)="updateMidiInputMapping($index, { enabled: $any($event.target).checked })">
+                Enabled
+              </label>
+              <label class="wizard-field">Input device
+                <select [value]="mapping.deviceId" (change)="updateMidiInputMapping($index, { deviceId: $any($event.target).value })">
+                  <option value="">Choose a device</option>
+                  @for (device of midiInput.midiInputs(); track device.id) {
+                    <option [value]="device.id">{{ device.name }}</option>
+                  }
+                </select>
+              </label>
+              <label class="wizard-field">MIDI channel
+                <select [value]="mapping.channel" (change)="setMidiInputMappingNumber($index, 'channel', $event)">
+                  @for (channel of midiChannels; track channel) {
+                    <option [value]="channel">{{ channel === 0 ? 'Omni' : channel }}</option>
+                  }
+                </select>
+              </label>
+              <label class="wizard-field">Input mode
+                <select [value]="mapping.mode" (change)="updateMidiInputMapping($index, { mode: $any($event.target).value })">
+                  <option value="straightKey">Straight key</option><option value="paddle">Paddle</option>
+                </select>
+              </label>
+              <label class="wizard-field">{{ mapping.mode === 'paddle' ? 'Dit note' : 'Key note' }}
+                <select [value]="mapping.value" (change)="setMidiInputMappingNumber($index, 'value', $event)">
+                  @for (note of midiNotes; track note) { <option [value]="note">{{ note }}</option> }
+                </select>
+              </label>
+              @if (mapping.mode === 'paddle') {
+                <label class="wizard-field">Dah note
+                  <select [value]="mapping.dahValue" (change)="setMidiInputMappingNumber($index, 'dahValue', $event)">
+                    <option value="-1">Unassigned</option>
+                    @for (note of midiNotes; track note) { <option [value]="note">{{ note }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.reversePaddles"
+                         (change)="updateMidiInputMapping($index, { reversePaddles: $any($event.target).checked })">
+                  Reverse paddles
+                </label>
+              }
+              <label class="wizard-field">Decoder source
+                <select [value]="mapping.source" (change)="updateMidiInputMapping($index, { source: $any($event.target).value })">
+                  <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                </select>
+              </label>
+              <label class="wizard-field">Display name (optional)
+                <input type="text" maxlength="20" [value]="mapping.name"
+                       (input)="updateMidiInputMapping($index, { name: $any($event.target).value })">
+              </label>
+              <label class="wizard-field">Text color (optional)
+                <input type="text" [value]="mapping.color" placeholder="For example, #8cf"
+                       (input)="updateMidiInputMapping($index, { color: $any($event.target).value })">
+              </label>
+              <button type="button" class="wizard-pill" (click)="removeMidiInputMapping($index)">Remove mapping</button>
+            </details>
+          }
+          <button type="button" class="wizard-pill" (click)="addMidiInputMapping()">Add MIDI input mapping</button>
           <ul class="wizard-list">
             @for (mapping of draft.midiInputMappings ?? []; track $index) {
               <li>{{ mapping.enabled ? 'Enabled' : 'Disabled' }} — {{ mapping.deviceId || 'No specific device' }}, channel {{ mapping.channel }}, {{ mapping.mode }}, note {{ mapping.value }}{{ mapping.mode === 'paddle' ? ' / ' + mapping.dahValue : '' }}, {{ mapping.source.toUpperCase() }}</li>
             }
           </ul>
-          <p class="wizard-note">Choose an exact device and mappings in the full editor first. An any-device mapping is not safe to activate from this guide.</p>
-          <button type="button" class="wizard-pill" (click)="requestSettings('midi-input')">Open MIDI Input settings</button>
+          <p class="wizard-note">Choose a specific device and assigned, distinct notes for every enabled mapping.</p>
           <p class="wizard-note">After Apply, press Connect MIDI input to request access and begin listening. No device is opened during navigation or review.</p>
         }
 
         @case ('relay') {
           <h3 class="wizard-step-title" tabindex="-1">Set up an online Morse conversation</h3>
-          <p class="wizard-hint">Choose whether this browser receives, sends, or both on one shared Firebase RTDB channel.</p>
+          <p class="wizard-hint">Configure receive and send channels independently. Secrets remain in this browser and are never included in the review.</p>
           <label class="wizard-check">
             <input type="checkbox" [checked]="draft.relayReceive" (change)="setRelayDirection('relayReceive', $event)">
-            Receive characters from the shared channel
+            Receive characters
           </label>
           <label class="wizard-check">
             <input type="checkbox" [checked]="draft.relaySend" (change)="setRelayDirection('relaySend', $event)">
-            Send characters to the shared channel
+            Send characters
           </label>
-          <label class="wizard-field">Shared channel name
-            <input type="text" maxlength="80" [value]="draft.relayChannelName" (input)="setRelayChannelName($event)">
+          @if (draft.relayReceive) {
+            <details class="wizard-group">
+            <summary>Receive channel</summary>
+            <label class="wizard-field">Channel name
+              <input type="text" maxlength="50" [value]="draft.rtdbInputChannelName" (input)="setText('rtdbInputChannelName', $event)">
+            </label>
+            <label class="wizard-field">Channel secret
+              <input type="password" maxlength="50" autocomplete="new-password" [value]="draft.rtdbInputChannelSecret" (input)="setText('rtdbInputChannelSecret', $event)">
+            </label>
+            <label class="wizard-field">Decoder source
+              <select [value]="draft.rtdbInputSource" (change)="setText('rtdbInputSource', $event)">
+                <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+              </select>
+            </label>
+            <label class="wizard-field">Display name (optional)
+              <input type="text" maxlength="20" [value]="draft.rtdbInputName" (input)="setText('rtdbInputName', $event)">
+            </label>
+            <label class="wizard-field">Text color (optional)
+              <input type="color" [value]="draft.rtdbInputColor || '#ffffff'" (input)="setDraftText('rtdbInputColor', $any($event.target).value)">
+            </label>
+            @if (draft.rtdbInputColor) {
+              <button type="button" class="wizard-pill" (click)="setDraftText('rtdbInputColor', '')">Clear receive color</button>
+            }
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.rtdbInputOverrideWpm" (change)="setBool('rtdbInputOverrideWpm', $event)">
+              Use this device's speed instead of the shared channel speed
+            </label>
+            </details>
+          }
+          @if (draft.relaySend) {
+            <details class="wizard-group">
+            <summary>Send channel</summary>
+            <label class="wizard-field">Channel name
+              <input type="text" maxlength="50" [value]="draft.rtdbOutputChannelName" (input)="setText('rtdbOutputChannelName', $event)">
+            </label>
+            <label class="wizard-field">Channel secret
+              <input type="password" maxlength="50" autocomplete="new-password" [value]="draft.rtdbOutputChannelSecret" (input)="setText('rtdbOutputChannelSecret', $event)">
+            </label>
+            <label class="wizard-field">Forward
+              <select [value]="draft.rtdbOutputForward" (change)="setText('rtdbOutputForward', $event)">
+                <option value="tx">Transmit (TX)</option><option value="rx">Receive (RX)</option><option value="both">Both</option>
+              </select>
+            </label>
+            <label class="wizard-field">Display name
+              <input type="text" maxlength="20" [value]="draft.rtdbOutputName" (input)="setText('rtdbOutputName', $event)">
+            </label>
+            <label class="wizard-field">Text color (optional)
+              <input type="color" [value]="draft.rtdbOutputColor || '#ffffff'" (input)="setDraftText('rtdbOutputColor', $any($event.target).value)">
+            </label>
+            @if (draft.rtdbOutputColor) {
+              <button type="button" class="wizard-pill" (click)="setDraftText('rtdbOutputColor', '')">Clear send color</button>
+            }
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.rtdbOutputOverrideName" (change)="setBool('rtdbOutputOverrideName', $event)">
+              Always use this name instead of input-specific names
+            </label>
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.rtdbOutputOverrideColor" (change)="setBool('rtdbOutputOverrideColor', $event)">
+              Always use this color instead of input-specific colors
+            </label>
+            </details>
+          }
+          <label class="wizard-check">
+            <input type="checkbox" [checked]="draft.rtdbAllowInputRelay" (change)="setBool('rtdbAllowInputRelay', $event)">
+            Allow received input to relay to the send channel
           </label>
-          <label class="wizard-field">Shared channel secret
-            <input type="password" autocomplete="new-password" [value]="draft.relayChannelSecret" (input)="setRelayChannelSecret($event)">
-          </label>
+          @if (draft.rtdbAllowInputRelay) {
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.rtdbRelaySuppressOtherInputs" (change)="setBool('rtdbRelaySuppressOtherInputs', $event)">
+              Suppress other inputs while relaying
+            </label>
+          }
           @if (draft.relaySend) {
             <div class="wizard-warning" role="status">Morse you send will be published to the configured shared channel. Anyone with access to that channel may receive it. This is not private or encrypted messaging.</div>
           }
           <p class="wizard-note">Nothing connects or sends during setup. After Apply, use Join shared channel to connect. Channel secrets are kept in this browser and are not shown in the review.</p>
-          <button type="button" class="wizard-pill" (click)="requestHelp('s10-1')">Read Firebase relay and privacy guidance</button>
-          <button type="button" class="wizard-pill" (click)="requestSettings('rtdb-input')">Open RTDB settings</button>
         }
 
         @case ('hardware') {
           <h3 class="wizard-step-title" tabindex="-1">Choose a radio-keying route</h3>
           <p class="wizard-hint">Radio keying is different from hearing Morse through a speaker. An audio optocoupler, serial DTR/RTS, WinKeyer or MIDI output can key connected equipment. Never test on air unless you have confirmed a safe setup.</p>
           <fieldset class="wizard-fieldset">
-            <legend>Configured output routes to review</legend>
+            <legend>Output routes to configure</legend>
             <label class="wizard-check">
               <input type="checkbox" [checked]="hardwareMethods.includes('opto')" (change)="toggleHardwareMethod('opto', $event)">
               Audio optocoupler keying
@@ -316,28 +579,188 @@
             </label>
           </fieldset>
           @if (hardwareMethods.includes('opto')) {
-            <p class="wizard-note">Current target: {{ base.optoOutputDeviceId }}, channel {{ base.optoOutputChannel }}, forwarding {{ base.optoForward.toUpperCase() }}. The optocoupler converts the selected audio channel into radio keying; ordinary speaker audio does not do this.</p>
-            <button type="button" class="wizard-pill" (click)="requestSettings('opto-output')">Open optocoupler settings</button>
+            <details class="wizard-group">
+            <summary>Audio optocoupler</summary>
+            <label class="wizard-field">Audio output device
+              <select [value]="draft.optoOutputDeviceId" (change)="setText('optoOutputDeviceId', $event)">
+                <option value="default">System default (not accepted for a new route)</option>
+                @for (device of audioDevices.outputDevices(); track device.deviceId) {
+                  <option [value]="device.deviceId">{{ device.label }}</option>
+                }
+              </select>
+            </label>
+            <label class="wizard-field">Audio channel
+              <select [value]="draft.optoOutputChannel" (change)="setText('optoOutputChannel', $event)">
+                <option value="left">Left</option><option value="right">Right</option>
+              </select>
+            </label>
+            <label class="wizard-field">Optocoupler drive mode
+              <select [value]="draft.optoMode" (change)="setText('optoMode', $event)">
+                <option value="ac">AC (oscillator tone)</option><option value="dc">DC (constant voltage)</option>
+              </select>
+            </label>
+            @if (draft.optoMode === 'ac') {
+              <label class="wizard-field">Oscillator frequency (Hz)
+                <input type="number" min="100" max="20000" [value]="draft.optoFrequency" (input)="setNumber('optoFrequency', $event)">
+              </label>
+            }
+            <label class="wizard-field">Output level: {{ draft.optoAmplitude }}
+              <input type="range" min="0" max="1" step="0.05" [value]="draft.optoAmplitude" (input)="setNumber('optoAmplitude', $event)">
+            </label>
+            <label class="wizard-field">Forward
+              <select [value]="draft.optoForward" (change)="setText('optoForward', $event)">
+                @for (forward of outputForwards; track forward) { <option [value]="forward">{{ forward }}</option> }
+              </select>
+            </label>
+            <p class="wizard-note">The optocoupler converts the selected audio channel into radio keying; ordinary speaker audio does not do this.</p>
+            </details>
           }
           @if (hardwareMethods.includes('serial')) {
-            <ul class="wizard-list">
-              @for (mapping of base.serialOutputMappings; track $index) {
-                <li>{{ mapping.enabled ? 'Enabled' : 'Disabled' }} — port {{ mapping.portIndex + 1 }}, {{ mapping.pin.toUpperCase() }}, forwarding {{ mapping.forward.toUpperCase() }}</li>
-              }
-            </ul>
-            <button type="button" class="wizard-pill" (click)="requestSettings('serial-output')">Open Serial Output settings</button>
+            <h4 class="wizard-next-title">Serial DTR/RTS mappings</h4>
+            @for (mapping of draft.serialOutputMappings ?? []; track $index; let mappingIndex = $index) {
+              <details class="wizard-group">
+                <summary>Serial mapping {{ $index + 1 }} — {{ mapping.pin.toUpperCase() }}</summary>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.enabled"
+                         (change)="updateSerialOutputMapping(mappingIndex, { enabled: $any($event.target).checked })">
+                  Enabled
+                </label>
+                <label class="wizard-field">Serial port
+                  <select [value]="mapping.portIndex" (change)="setSerialOutputNumber(mappingIndex, 'portIndex', $event)">
+                    <option value="-1">Choose a port</option>
+                    @for (port of serialOutput.ports(); track $index) { <option [value]="$index">Serial port {{ $index + 1 }}</option> }
+                  </select>
+                </label>
+                <button type="button" class="wizard-pill" [disabled]="!serialSupported" (click)="requestSerialOutputPort(mappingIndex)">Choose a new serial port</button>
+                <label class="wizard-field">Output pin
+                  <select [value]="mapping.pin" (change)="updateSerialOutputMapping(mappingIndex, { pin: $any($event.target).value })">
+                    @for (pin of serialOutputPins; track pin) { <option [value]="pin">{{ pin.toUpperCase() }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.invert"
+                         (change)="updateSerialOutputMapping(mappingIndex, { invert: $any($event.target).checked })">
+                  Invert output signal
+                </label>
+                <label class="wizard-field">Forward
+                  <select [value]="mapping.forward" (change)="updateSerialOutputMapping(mappingIndex, { forward: $any($event.target).value })">
+                    @for (forward of outputForwards; track forward) { <option [value]="forward">{{ forward }}</option> }
+                  </select>
+                </label>
+                @if ((draft.serialInputMappings ?? []).length) {
+                  <fieldset class="wizard-fieldset">
+                    <legend>Allow relay from these serial inputs</legend>
+                    @for (inputMapping of draft.serialInputMappings ?? []; track $index) {
+                      <label class="wizard-check">
+                        <input type="checkbox" [checked]="mapping.relayInputIndices.includes($index)"
+                               (change)="toggleSerialOutputRelay(mappingIndex, $index, $event)">
+                        {{ inputMapping.name || 'Serial input ' + ($index + 1) }}
+                      </label>
+                    }
+                  </fieldset>
+                }
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.relaySuppressOtherInputs"
+                         (change)="updateSerialOutputMapping(mappingIndex, { relaySuppressOtherInputs: $any($event.target).checked })">
+                  Suppress non-relay inputs
+                </label>
+                <button type="button" class="wizard-pill" (click)="removeSerialOutputMapping(mappingIndex)">Remove mapping</button>
+              </details>
+            }
+            <button type="button" class="wizard-pill" (click)="addSerialOutputMapping()">Add serial output mapping</button>
           }
           @if (hardwareMethods.includes('winkeyer')) {
-            <p class="wizard-note">Current target: serial port {{ base.winkeyerPortIndex + 1 }}, forwarding {{ base.winkeyerForward.toUpperCase() }}.</p>
-            <button type="button" class="wizard-pill" (click)="requestSettings('winkeyer-output')">Open WinKeyer settings</button>
+            <details class="wizard-group">
+            <summary>WinKeyer</summary>
+            <label class="wizard-field">Serial port
+              <select [value]="draft.winkeyerPortIndex" (change)="setSelectNumber('winkeyerPortIndex', $event)">
+                <option value="-1">Choose a port</option>
+                @for (port of serialOutput.ports(); track $index) { <option [value]="$index">Serial port {{ $index + 1 }}</option> }
+              </select>
+            </label>
+            <button type="button" class="wizard-pill" [disabled]="!serialSupported" (click)="requestSerialOutputPort()">Choose a new serial port</button>
+            <label class="wizard-field">WinKeyer speed (WPM)
+              <input type="number" min="5" max="100" [value]="draft.winkeyerWpm" (input)="setNumber('winkeyerWpm', $event)">
+            </label>
+            <label class="wizard-field">Forward
+              <select [value]="draft.winkeyerForward" (change)="setText('winkeyerForward', $event)">
+                @for (forward of outputForwards; track forward) { <option [value]="forward">{{ forward }}</option> }
+              </select>
+            </label>
+            </details>
           }
           @if (hardwareMethods.includes('midi')) {
-            <ul class="wizard-list">
-              @for (mapping of base.midiOutputMappings; track $index) {
-                <li>{{ mapping.enabled ? 'Enabled' : 'Disabled' }} — {{ mapping.deviceId || 'No specific device' }}, channel {{ mapping.channel }}, note {{ mapping.value }}{{ mapping.mode === 'paddle' ? ' / ' + mapping.dahValue : '' }}, forwarding {{ mapping.forward.toUpperCase() }}</li>
-              }
-            </ul>
-            <button type="button" class="wizard-pill" (click)="requestSettings('midi-output')">Open MIDI Output settings</button>
+            <h4 class="wizard-next-title">MIDI output mappings</h4>
+            @for (mapping of draft.midiOutputMappings ?? []; track $index; let mappingIndex = $index) {
+              <details class="wizard-group">
+                <summary>MIDI mapping {{ $index + 1 }}</summary>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.enabled"
+                         (change)="updateMidiOutputMapping(mappingIndex, { enabled: $any($event.target).checked })">
+                  Enabled
+                </label>
+                <label class="wizard-field">Output device
+                  <select [value]="mapping.deviceId" (change)="updateMidiOutputMapping(mappingIndex, { deviceId: $any($event.target).value })">
+                    <option value="">Choose a device</option>
+                    @for (device of midiOutput.midiOutputs(); track device.id) {
+                      <option [value]="device.id">{{ device.name }}</option>
+                    }
+                  </select>
+                </label>
+                <label class="wizard-field">MIDI channel
+                  <select [value]="mapping.channel" (change)="setMidiOutputMappingNumber(mappingIndex, 'channel', $event)">
+                    @for (channel of midiOutputChannels; track channel) { <option [value]="channel">{{ channel }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-field">Output mode
+                  <select [value]="mapping.mode" (change)="updateMidiOutputMapping(mappingIndex, { mode: $any($event.target).value })">
+                    <option value="straightKey">Straight key</option><option value="paddle">Paddle</option>
+                  </select>
+                </label>
+                <label class="wizard-field">{{ mapping.mode === 'paddle' ? 'Dit note' : 'Key note' }}
+                  <select [value]="mapping.value" (change)="setMidiOutputMappingNumber(mappingIndex, 'value', $event)">
+                    @for (note of midiNotes; track note) { <option [value]="note">{{ note }}</option> }
+                  </select>
+                </label>
+                @if (mapping.mode === 'paddle') {
+                  <label class="wizard-field">Dah note
+                    <select [value]="mapping.dahValue" (change)="setMidiOutputMappingNumber(mappingIndex, 'dahValue', $event)">
+                      <option value="-1">Unassigned</option>
+                      @for (note of midiNotes; track note) { <option [value]="note">{{ note }}</option> }
+                    </select>
+                  </label>
+                }
+                <label class="wizard-field">Forward
+                  <select [value]="mapping.forward" (change)="updateMidiOutputMapping(mappingIndex, { forward: $any($event.target).value })">
+                    @for (forward of outputForwards; track forward) { <option [value]="forward">{{ forward }}</option> }
+                  </select>
+                </label>
+                @if ((draft.midiInputMappings ?? []).length) {
+                  <fieldset class="wizard-fieldset">
+                    <legend>Allow relay from these MIDI inputs</legend>
+                    @for (inputMapping of draft.midiInputMappings ?? []; track $index) {
+                      <label class="wizard-check">
+                        <input type="checkbox" [checked]="mapping.relayInputIndices.includes($index)"
+                               (change)="toggleMidiOutputRelay(mappingIndex, $index, $event)">
+                        {{ inputMapping.name || 'MIDI input ' + ($index + 1) }}
+                      </label>
+                    }
+                  </fieldset>
+                }
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="mapping.relaySuppressOtherInputs"
+                         (change)="updateMidiOutputMapping(mappingIndex, { relaySuppressOtherInputs: $any($event.target).checked })">
+                  Suppress non-relay inputs
+                </label>
+                <button type="button" class="wizard-pill" (click)="removeMidiOutputMapping(mappingIndex)">Remove mapping</button>
+              </details>
+            }
+            <button type="button" class="wizard-pill" (click)="addMidiOutputMapping()">Add MIDI output mapping</button>
+            <label class="wizard-check">
+              <input type="checkbox" [checked]="draft.midiOutputOverrideWpm"
+                     (change)="setBool('midiOutputOverrideWpm', $event)">
+              Override encoder speed with MIDI output speed
+            </label>
           }
           <h4 class="wizard-next-title">Check browser support and selected devices</h4>
           @if (!audioOutputSupported) { <p class="wizard-warning" role="status">Audio device enumeration is not available in this browser.</p> }
@@ -349,6 +772,8 @@
             <button type="button" class="wizard-pill" [disabled]="!midiOutput.supported" (click)="refreshMidiOutputs()">Check MIDI output devices</button>
           </div>
           @if (deviceCheckNotice) { <p class="wizard-note" role="status">{{ deviceCheckNotice }}</p> }
+          @if (serialNotice) { <p class="wizard-note" role="status">{{ serialNotice }}</p> }
+          @if (serialOutput.lastError()) { <p class="wizard-warning" role="status">{{ serialOutput.lastError() }}</p> }
           <p class="wizard-note">Applying records the reviewed configuration but does not enable a new hardware route. On the final screen, you must explicitly enable each selected route. No chooser, permission prompt, port opening or Morse transmission occurs while navigating.</p>
         }
 
@@ -393,13 +818,13 @@
           <h3 class="wizard-step-title" tabindex="-1">Plan each local input</h3>
           <p class="wizard-hint">Give every person a display name or emoji and a text color. These become their identity in the full-screen conversation.</p>
           @for (person of teachParticipants; track $index) {
-            <fieldset class="wizard-participant">
-              <legend>{{ person.role === 'teacher' ? 'Teacher' : person.role === 'additional' ? 'Additional input' : 'Student ' + $index }}</legend>
+            <details class="wizard-participant">
+              <summary>{{ person.role === 'teacher' ? 'Teacher' : person.role === 'additional' ? 'Additional input' : 'Student ' + $index }}{{ person.name ? ' — ' + person.name : '' }}</summary>
               @if (person.role === 'additional') {
                 <button type="button" class="wizard-pill" (click)="removeTeachInput($index)">Remove this input</button>
               }
               <label class="wizard-field">Display name or emoji
-                <input type="text" maxlength="40" [ngModel]="person.name"
+                <input type="text" maxlength="20" [ngModel]="person.name"
                        (ngModelChange)="setParticipantName($index, $event)">
               </label>
               <label class="wizard-field">Conversation text color
@@ -439,19 +864,90 @@
                       }
                     </select>
                   </label>
+                  <label class="wizard-field">Paddle mode
+                    <select [ngModel]="person.paddleMode" (ngModelChange)="setParticipantPaddleMode($index, $event)">
+                      @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                    </select>
+                  </label>
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="person.reversePaddles"
+                           (change)="setParticipantFlag($index, 'reversePaddles', $event)">
+                    Reverse paddles
+                  </label>
                 }
+                <label class="wizard-field">Decoder source
+                  <select [ngModel]="person.source" (ngModelChange)="setParticipantSource($index, $event)">
+                    <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
                 <p class="wizard-note">The browser cannot tell which physical keyboard sent a key. Give each student a different key on the shared keyboard; do not assign a key already used by another mapping.</p>
               }
 
-              @if (person.inputType === 'mouse' || person.inputType === 'touch') {
+              @if (person.inputType === 'mouse') {
                 <p class="wizard-note">This browser has one shared {{ person.inputType }} input identity. Students can take turns using it, but each turn will have this same name and color.</p>
+                <label class="wizard-field">Decoder source
+                  <select [value]="draft.mouseKeyerSource" (change)="setText('mouseKeyerSource', $event)">
+                    <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
+                <label class="wizard-field">Left button action
+                  <select [value]="draft.mouseLeftAction" (change)="setText('mouseLeftAction', $event)">
+                    @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-field">Middle button action
+                  <select [value]="draft.mouseMiddleAction" (change)="setText('mouseMiddleAction', $event)">
+                    @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-field">Right button action
+                  <select [value]="draft.mouseRightAction" (change)="setText('mouseRightAction', $event)">
+                    @for (action of mouseActions; track action) { <option [value]="action">{{ action }}</option> }
+                  </select>
+                </label>
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="draft.mouseReversePaddles" (change)="setBool('mouseReversePaddles', $event)">
+                  Reverse mouse paddles
+                </label>
+                <label class="wizard-field">Paddle mode
+                  <select [value]="draft.mousePaddleMode" (change)="setText('mousePaddleMode', $event)">
+                    @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                  </select>
+                </label>
               }
               @if (person.inputType === 'touch') {
+                <p class="wizard-note">This browser has one shared touch input identity. Students can take turns using it, but each turn will have this same name and color.</p>
                 <label class="wizard-field">Touch key type
                   <select [ngModel]="person.mode" (ngModelChange)="setParticipantMode($index, $event)">
                     <option value="straightKey">Straight key</option><option value="paddle">Paddle</option>
                   </select>
                 </label>
+                <label class="wizard-field">Decoder source
+                  <select [value]="draft.touchKeyerSource" (change)="setText('touchKeyerSource', $event)">
+                    <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
+                @if (person.mode === 'paddle') {
+                  <label class="wizard-field">Left touch area
+                    <select [value]="draft.touchLeftPaddle" (change)="setText('touchLeftPaddle', $event)">
+                      <option value="dit">Dit</option><option value="dah">Dah</option>
+                    </select>
+                  </label>
+                  <label class="wizard-field">Right touch area
+                    <select [value]="draft.touchRightPaddle" (change)="setText('touchRightPaddle', $event)">
+                      <option value="dit">Dit</option><option value="dah">Dah</option>
+                    </select>
+                  </label>
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="draft.touchReversePaddles" (change)="setBool('touchReversePaddles', $event)">
+                    Reverse touch paddles
+                  </label>
+                  <label class="wizard-field">Paddle mode
+                    <select [value]="draft.touchPaddleMode" (change)="setText('touchPaddleMode', $event)">
+                      @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                    </select>
+                  </label>
+                }
               }
 
               @if (person.inputType === 'midi') {
@@ -472,6 +968,11 @@
                   <input type="number" min="0" max="16" [value]="person.midiChannel"
                          (change)="setParticipantMidiNumber($index, 'midiChannel', $event)">
                 </label>
+                <label class="wizard-field">Decoder source
+                  <select [ngModel]="person.source" (ngModelChange)="setParticipantSource($index, $event)">
+                    <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
                 <label class="wizard-field">{{ person.mode === 'paddle' ? 'Dit note (0–127)' : 'Key note (0–127)' }}
                   <input type="number" min="0" max="127" [value]="person.midiNote"
                          (change)="setParticipantMidiNumber($index, 'midiNote', $event)">
@@ -488,6 +989,11 @@
                   </select>
                 </label>
                 @if (person.mode === 'paddle') {
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="person.reversePaddles"
+                           (change)="setParticipantFlag($index, 'reversePaddles', $event)">
+                    Reverse paddles
+                  </label>
                   <label class="wizard-field">Dah note (0–127)
                     <input type="number" min="0" max="127" [value]="person.midiDahNote"
                            (change)="setParticipantMidiNumber($index, 'midiDahNote', $event)">
@@ -531,10 +1037,40 @@
                     </select>
                   </label>
                 }
+                <label class="wizard-field">Decoder source
+                  <select [ngModel]="person.source" (ngModelChange)="setParticipantSource($index, $event)">
+                    <option value="rx">Receive (RX)</option><option value="tx">Transmit (TX)</option>
+                  </select>
+                </label>
+                @if (person.mode === 'paddle') {
+                  <label class="wizard-check">
+                    <input type="checkbox" [checked]="person.reversePaddles"
+                           (change)="setParticipantFlag($index, 'reversePaddles', $event)">
+                    Reverse paddles
+                  </label>
+                  <label class="wizard-field">Paddle mode
+                    <select [ngModel]="person.paddleMode" (ngModelChange)="setParticipantPaddleMode($index, $event)">
+                      @for (mode of paddleModes; track mode) { <option [value]="mode">{{ mode }}</option> }
+                    </select>
+                  </label>
+                }
+                <label class="wizard-check">
+                  <input type="checkbox" [checked]="person.serialInvert"
+                         (change)="setParticipantFlag($index, 'serialInvert', $event)">
+                  Invert signal
+                </label>
+                <label class="wizard-field">Polling interval (ms)
+                  <input type="number" min="5" max="50" [value]="person.serialPollInterval"
+                         (input)="setParticipantSerialTiming($index, 'serialPollInterval', $event)">
+                </label>
+                <label class="wizard-field">Debounce (ms)
+                  <input type="number" min="2" max="10" [value]="person.serialDebounceMs"
+                         (input)="setParticipantSerialTiming($index, 'serialDebounceMs', $event)">
+                </label>
                 @if (serialNotice) { <p class="wizard-note" role="status">{{ serialNotice }}</p> }
                 <p class="wizard-note">Choose the serial device here to request browser access. It will not be opened for keying until you explicitly enable serial input after applying.</p>
               }
-            </fieldset>
+            </details>
           }
           <button type="button" class="wizard-pill" (click)="addTeachInput()">Add another input</button>
           <p class="wizard-note">If one person uses more than one input, give those inputs the same name or emoji and color. The shared keyboard requires a different key for each profile.</p>
@@ -620,7 +1156,7 @@
             <input type="password" autocomplete="new-password" [value]="draft.teachRtdbChannelSecret"
                    (input)="setTeachRtdbChannelSecret($event)">
           </label>
-          <p class="wizard-note">Tell each student to configure their own app with the same channel name and secret, then choose a personal display name and color. This wizard stores the secret only in this browser; it is hidden from review and excluded from any preset.</p>
+          <p class="wizard-note">Tell each student to configure their own app with the same channel name and secret, then choose a personal display name and color. This wizard stores the secret only in this browser; it is hidden from review.</p>
           <p class="wizard-warning" role="status">Applying does not join the channel. You will get a separate, clearly labeled Join channel action after review.</p>
           @if (rtdbChannelWillChange) {
             <div class="wizard-warning">
@@ -818,7 +1354,7 @@
             </section>
           }
           @for (message of routeAvailabilityProblems; track message) {
-            <div class="wizard-error" role="alert">{{ message }} Refresh the device list or configure the exact target in Settings; this guide will not choose another device.</div>
+            <div class="wizard-error" role="alert">{{ message }} Refresh the device list and review the in-wizard target selection; this guide will not choose another device.</div>
           }
           @if (review.unchanged.length) {
             <details class="wizard-unchanged">
@@ -831,7 +1367,7 @@
             </details>
           }
           @if (goal === 'teach') {
-            <p class="wizard-note">Your other settings, radio routes, calibration and fullscreen display preferences stay unchanged. RTDB secrets are hidden here and will not be included in a preset.</p>
+            <p class="wizard-note">Your other settings, radio routes, calibration and fullscreen display preferences stay unchanged. RTDB secrets are hidden here and are never saved with presets.</p>
             <ul class="wizard-list">
               <li>Applying does not save the automatic device profile.</li>
               <li>MIDI, serial and RTDB remain disconnected until you choose their separate Connect or Join action after applying.</li>
@@ -866,37 +1402,9 @@
           }
         }
 
-        @case ('preset') {
-          <h3 class="wizard-step-title" tabindex="-1">Save this setup as a preset?</h3>
-          <p class="wizard-hint">A preset keeps the reviewed classroom settings in this browser so you can reuse them later. Saving it does not apply the settings or save the automatic device profile.</p>
-          <label class="wizard-field">Preset name
-            <input type="text" maxlength="40" [ngModel]="presetName"
-                   (ngModelChange)="setPresetName($event)">
-          </label>
-          <p class="wizard-note">RTDB channel secrets are never stored in presets. Students need to configure their own apps with the channel details separately.</p>
-          @if (presetError) { <div class="wizard-error" role="alert">{{ presetError }}</div> }
-          @if (presetSaved) { <p class="wizard-note" role="status">Preset saved. Continue to review and apply this setup to the current browser.</p> }
-        }
-
-        @case ('apply') {
-          <h3 class="wizard-step-title" tabindex="-1">Apply this setup to this browser?</h3>
-          @if (presetSaved) {
-            <p class="wizard-hint">The preset is saved. Applying changes only the reviewed settings in this browser.</p>
-          } @else {
-            <p class="wizard-hint">No preset was saved. Applying changes only the reviewed settings in this browser.</p>
-          }
-          <p class="wizard-note">This does not save the automatic device profile or start an external input/output. You can explicitly connect MIDI or serial, or join the shared RTDB channel, after applying.</p>
-          @if (base.midiInputEnabled || base.serialInputEnabled || base.rtdbInputEnabled || base.rtdbOutputEnabled) {
-            <p class="wizard-warning" role="status">One or more routes are already active. Only the reviewed route changes will take effect; see the route warnings and confirmations you acknowledged earlier.</p>
-          }
-          @if (hasTeachMobile) {
-            <p class="wizard-warning" role="status">The RTDB secret stays in this browser and is omitted from the saved preset.</p>
-          }
-        }
-
         @case ('done') {
           <h3 class="wizard-step-title" tabindex="-1">Applied</h3>
-          <p class="wizard-hint">The setup is active in this browser but not saved to the automatic device profile.</p>
+          <p class="wizard-hint">The setup is active but not saved to the automatic device profile.</p>
           @if (goal === 'teach') {
             <h4 class="wizard-next-title">Optional connections</h4>
             @if (hasTeachMidi) {
@@ -1031,34 +1539,19 @@
             <span>Back</span>
           </button>
         }
-        @if (canSkip) {
-          <button type="button" class="wizard-pill" (click)="skip()">
-            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 5 13 12 6 19"/><line x1="18" y1="5" x2="18" y2="19"/></svg>
-            <span>Skip</span>
+        @if (canRevert) {
+          <button type="button" class="wizard-pill" (click)="revert()">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>
+            <span>Revert</span>
           </button>
         }
-        @if (step === 'review' && goal !== 'teach') {
+        @if (step === 'review') {
           @if (review.changes.length > 0) {
             <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="apply()">
               <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
               <span>Apply</span>
             </button>
           }
-        } @else if (step === 'review' && review.changes.length > 0) {
-          <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="next()">
-            <span>Continue to preset</span>
-          </button>
-        } @else if (step === 'preset') {
-          <button type="button" class="wizard-pill wizard-primary" [disabled]="!canSavePreset" (click)="savePreset()">
-            <span>Save preset</span>
-          </button>
-          <button type="button" class="wizard-pill" (click)="skipPreset()">
-            <span>Skip saving</span>
-          </button>
-        } @else if (step === 'apply') {
-          <button type="button" class="wizard-pill wizard-primary" [disabled]="!canApply" (click)="apply()">
-            <span>Apply to this browser</span>
-          </button>
         } @else {
           <button type="button" class="wizard-pill wizard-primary" [disabled]="problems.length > 0" (click)="next()">
             <span>Next</span>

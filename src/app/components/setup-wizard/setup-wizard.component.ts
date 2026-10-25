@@ -16,14 +16,23 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AudioDeviceService } from '../../services/audio-device.service';
-import { AppSettings, SettingsService } from '../../services/settings.service';
+import {
+  AppSettings,
+  KeyboardInputMapping,
+  MidiInputMapping,
+  MidiOutputMapping,
+  MouseButtonAction,
+  OutputForward,
+  PaddleMode,
+  SerialInputMapping,
+  SerialOutputMapping,
+  SettingsService,
+} from '../../services/settings.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { MidiInputService, MidiLearnResult } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
 import { compareExternalRoutes, ExternalRouteChange } from '../../services/output-change-checker';
-import { PresetService } from '../../services/preset.service';
-import { createSettingsSnapshot } from '../../services/settings-transfer';
 import { SerialKeyInputService } from '../../services/serial-key-input.service';
 import { SerialKeyOutputService } from '../../services/serial-key-output.service';
 import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
@@ -61,7 +70,8 @@ import {
  * Collects answers in a temporary draft. Nothing changes in the running app
  * until the user presses Apply on the review step, and then only the listed
  * settings change, through `SettingsService.update()`. It never saves the
- * device profile, starts audio, asks for a device or microphone, or sends Morse.
+ * device profile, starts audio, enables an output route, or sends Morse.
+ * Device access is requested only after an explicit device-selection action.
  */
 @Component({
   selector: 'app-setup-wizard',
@@ -90,16 +100,19 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   /** Emitted when the educator starts the existing full-screen conversation. */
   @Output() readonly openFullscreenRequested = new EventEmitter<void>();
 
-  /** Emitted to open an existing Settings card after discarding any draft answers. */
-  @Output() readonly settingsRequested = new EventEmitter<string>();
-
-  /** Emitted to open Help after the wizard closes. */
-  @Output() readonly helpRequested = new EventEmitter<string>();
-
   @ViewChild('dialog') private dialog?: ElementRef<HTMLElement>;
 
   readonly limits = LIMITS;
   readonly keyboardKeyCodes = KEYBOARD_KEY_CODES;
+  readonly paddleModes: PaddleMode[] = ['iambic-b', 'iambic-a', 'ultimatic', 'single-lever'];
+  readonly decoderSources = ['rx', 'tx'] as const;
+  readonly mouseActions: MouseButtonAction[] = ['none', 'straightKey', 'dit', 'dah'];
+  readonly midiChannels = Array.from({ length: 17 }, (_, index) => index);
+  readonly midiOutputChannels = Array.from({ length: 16 }, (_, index) => index + 1);
+  readonly midiNotes = Array.from({ length: 128 }, (_, index) => index);
+  readonly serialInputPins = ['dsr', 'cts', 'dcd', 'ri'] as const;
+  readonly serialOutputPins = ['dtr', 'rts'] as const;
+  readonly outputForwards: OutputForward[] = ['rx', 'tx', 'both'];
 
   /** Settings as they were when the wizard opened */
   base!: AppSettings;
@@ -108,9 +121,6 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   draft: DraftValues = {};
 
   stepIndex = 0;
-  presetName = 'Classroom setup';
-  presetError = '';
-  presetSaved = false;
   midiNotice = '';
   serialNotice = '';
   rtdbNotice = '';
@@ -118,8 +128,6 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   routeAcknowledgements: Record<string, boolean> = {};
   midiCapture: { participantIndex: number; field: 'midiNote' | 'midiDahNote' } | null = null;
   private midiStartedForDraft = false;
-  private pendingSettingsLanding: string | null = null;
-  private pendingHelpSection: string | null = null;
 
   /** Whether Apply has been pressed */
   applied = false;
@@ -140,7 +148,6 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   constructor(
     public settings: SettingsService,
     private cwInput: CwInputService,
-    private presets: PresetService,
     public midiInput: MidiInputService,
     public serialInput: SerialKeyInputService,
     public rtdb: FirebaseRtdbService,
@@ -156,7 +163,9 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit(): void {
-    if (this.dialog) focusDialog(this.dialog.nativeElement, '.wizard-primary');
+    window.requestAnimationFrame(() => {
+      if (this.dialog) focusDialog(this.dialog.nativeElement, '.wizard-primary');
+    });
   }
 
   ngOnDestroy(): void {
@@ -369,6 +378,10 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     (this.draft as Record<string, unknown>)[key] = (event.target as HTMLSelectElement).value;
   }
 
+  setDraftText(key: DraftKey, value: string): void {
+    (this.draft as Record<string, unknown>)[key] = value;
+  }
+
   setBool(key: DraftKey, event: Event): void {
     (this.draft as Record<string, unknown>)[key] = (event.target as HTMLInputElement).checked;
   }
@@ -387,12 +400,177 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.draft.hardwareMethods = [...selected];
   }
 
-  setRelayChannelName(event: Event): void {
-    this.draft.relayChannelName = (event.target as HTMLInputElement).value;
+  addKeyboardMapping(): void {
+    const mappings = structuredClone(this.draft.keyboardInputMappings ?? []);
+    const occupied = new Set(mappings.flatMap(mapping =>
+      mapping.mode === 'paddle' ? [mapping.keyCode, mapping.dahKeyCode] : [mapping.keyCode]));
+    const keyCode = this.keyboardKeyCodes.find(code => !occupied.has(code)) ?? '';
+    mappings.push({
+      enabled: true,
+      mode: 'straightKey',
+      keyCode,
+      dahKeyCode: '',
+      source: 'tx',
+      reversePaddles: false,
+      paddleMode: 'iambic-b',
+      name: '',
+      color: '',
+    });
+    this.draft.keyboardInputMappings = mappings;
   }
 
-  setRelayChannelSecret(event: Event): void {
-    this.draft.relayChannelSecret = (event.target as HTMLInputElement).value;
+  removeKeyboardMapping(index: number): void {
+    this.draft.keyboardInputMappings =
+      (this.draft.keyboardInputMappings ?? []).filter((_, mappingIndex) => mappingIndex !== index);
+  }
+
+  updateKeyboardMapping(index: number, patch: Partial<KeyboardInputMapping>): void {
+    const mappings = structuredClone(this.draft.keyboardInputMappings ?? []);
+    if (!mappings[index]) return;
+    mappings[index] = { ...mappings[index], ...patch };
+    this.draft.keyboardInputMappings = mappings;
+  }
+
+  addMidiInputMapping(): void {
+    const mappings = structuredClone(this.draft.midiInputMappings ?? []);
+    mappings.push({
+      enabled: true,
+      deviceId: '',
+      channel: 0,
+      source: 'rx',
+      mode: 'straightKey',
+      value: 60,
+      dahValue: -1,
+      reversePaddles: false,
+      name: '',
+      color: '',
+    });
+    this.draft.midiInputMappings = mappings;
+  }
+
+  removeMidiInputMapping(index: number): void {
+    this.draft.midiInputMappings =
+      (this.draft.midiInputMappings ?? []).filter((_, mappingIndex) => mappingIndex !== index);
+  }
+
+  updateMidiInputMapping(index: number, patch: Partial<MidiInputMapping>): void {
+    const mappings = structuredClone(this.draft.midiInputMappings ?? []);
+    if (!mappings[index]) return;
+    mappings[index] = { ...mappings[index], ...patch };
+    this.draft.midiInputMappings = mappings;
+  }
+
+  updateSerialInputMapping(index: number, patch: Partial<SerialInputMapping>): void {
+    const mappings = structuredClone(this.draft.serialInputMappings ?? []);
+    if (!mappings[index]) return;
+    mappings[index] = { ...mappings[index], ...patch };
+    this.draft.serialInputMappings = mappings;
+  }
+
+  updateSerialOutputMapping(index: number, patch: Partial<SerialOutputMapping>): void {
+    const mappings = structuredClone(this.draft.serialOutputMappings ?? []);
+    if (!mappings[index]) return;
+    mappings[index] = { ...mappings[index], ...patch };
+    this.draft.serialOutputMappings = mappings;
+  }
+
+  setSerialOutputNumber(index: number, key: 'portIndex', event: Event): void {
+    this.updateSerialOutputMapping(index, { [key]: Number((event.target as HTMLSelectElement).value) });
+  }
+
+  toggleSerialOutputRelay(index: number, inputIndex: number, event: Event): void {
+    const mapping = this.draft.serialOutputMappings?.[index];
+    if (!mapping) return;
+    const relayInputIndices = new Set(mapping.relayInputIndices);
+    if ((event.target as HTMLInputElement).checked) relayInputIndices.add(inputIndex);
+    else relayInputIndices.delete(inputIndex);
+    this.updateSerialOutputMapping(index, { relayInputIndices: [...relayInputIndices] });
+  }
+
+  addSerialOutputMapping(): void {
+    const mappings = structuredClone(this.draft.serialOutputMappings ?? []);
+    mappings.push({
+      enabled: true,
+      portIndex: -1,
+      pin: 'dtr',
+      invert: false,
+      forward: 'tx',
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
+    });
+    this.draft.serialOutputMappings = mappings;
+  }
+
+  async requestSerialOutputPort(mappingIndex?: number): Promise<void> {
+    if (!this.serialSupported) {
+      this.serialNotice = 'Web Serial is not available in this browser.';
+      return;
+    }
+    await this.serialOutput.refreshPorts();
+    const previousPorts = new Set(this.serialOutput.ports());
+    await this.serialOutput.requestPort();
+    await this.serialOutput.refreshPorts();
+    const selectedIndex = this.serialOutput.ports().findIndex(port => !previousPorts.has(port));
+    if (selectedIndex >= 0) {
+      if (mappingIndex === undefined) this.draft.winkeyerPortIndex = selectedIndex;
+      else this.updateSerialOutputMapping(mappingIndex, { portIndex: selectedIndex });
+      this.serialNotice = 'Serial access granted. Review the selected port before applying.';
+    } else {
+      this.serialNotice = this.serialOutput.lastError()
+        ?? 'No new serial device was selected. Choose a previously authorized port from the list.';
+    }
+  }
+
+  removeSerialOutputMapping(index: number): void {
+    this.draft.serialOutputMappings =
+      (this.draft.serialOutputMappings ?? []).filter((_, mappingIndex) => mappingIndex !== index);
+  }
+
+  addMidiOutputMapping(): void {
+    const mappings = structuredClone(this.draft.midiOutputMappings ?? []);
+    mappings.push({
+      enabled: true,
+      deviceId: '',
+      channel: 1,
+      forward: 'tx',
+      mode: 'straightKey',
+      value: 80,
+      dahValue: -1,
+      relayInputIndices: [],
+      relaySuppressOtherInputs: false,
+    });
+    this.draft.midiOutputMappings = mappings;
+  }
+
+  removeMidiOutputMapping(index: number): void {
+    this.draft.midiOutputMappings =
+      (this.draft.midiOutputMappings ?? []).filter((_, mappingIndex) => mappingIndex !== index);
+  }
+
+  updateMidiOutputMapping(index: number, patch: Partial<MidiOutputMapping>): void {
+    const mappings = structuredClone(this.draft.midiOutputMappings ?? []);
+    if (!mappings[index]) return;
+    mappings[index] = { ...mappings[index], ...patch };
+    this.draft.midiOutputMappings = mappings;
+  }
+
+  toggleMidiOutputRelay(index: number, inputIndex: number, event: Event): void {
+    const mapping = this.draft.midiOutputMappings?.[index];
+    if (!mapping) return;
+    const relayInputIndices = new Set(mapping.relayInputIndices);
+    if ((event.target as HTMLInputElement).checked) relayInputIndices.add(inputIndex);
+    else relayInputIndices.delete(inputIndex);
+    this.updateMidiOutputMapping(index, { relayInputIndices: [...relayInputIndices] });
+  }
+
+  setMidiInputMappingNumber(index: number, key: 'channel' | 'value' | 'dahValue', event: Event): void {
+    const value = Number((event.target as HTMLInputElement | HTMLSelectElement).value);
+    this.updateMidiInputMapping(index, { [key]: value });
+  }
+
+  setMidiOutputMappingNumber(index: number, key: 'channel' | 'value' | 'dahValue', event: Event): void {
+    const value = Number((event.target as HTMLInputElement | HTMLSelectElement).value);
+    this.updateMidiOutputMapping(index, { [key]: value });
   }
 
   setRelayDirection(direction: 'relayReceive' | 'relaySend', event: Event): void {
@@ -495,28 +673,6 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
       || `${this.midiOutput.midiOutputs().length} MIDI output device${this.midiOutput.midiOutputs().length === 1 ? '' : 's'} available. No keying route was enabled.`;
   }
 
-  requestSettings(landing: string): void {
-    this.pendingSettingsLanding = landing;
-    this.pendingHelpSection = null;
-    if (this.hasDraft()) {
-      this.confirmDiscard = true;
-      return;
-    }
-    this.pendingSettingsLanding = null;
-    this.settingsRequested.emit(landing);
-  }
-
-  requestHelp(sectionId: string): void {
-    this.pendingHelpSection = sectionId;
-    this.pendingSettingsLanding = null;
-    if (this.hasDraft()) {
-      this.confirmDiscard = true;
-      return;
-    }
-    this.pendingHelpSection = null;
-    this.helpRequested.emit(sectionId);
-  }
-
   toggleTeachScenario(scenario: TeachScenario, event: Event): void {
     const selected = new Set(this.teachScenarios);
     if ((event.target as HTMLInputElement).checked) selected.add(scenario);
@@ -581,6 +737,26 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   setParticipantDahKey(index: number, dahKeyCode: string): void {
     this.updateParticipant(index, { dahKeyCode });
+  }
+
+  setParticipantSource(index: number, source: string): void {
+    if (source === 'rx' || source === 'tx') this.updateParticipant(index, { source });
+  }
+
+  setParticipantPaddleMode(index: number, paddleMode: string): void {
+    if (paddleMode === 'iambic-b' || paddleMode === 'iambic-a'
+      || paddleMode === 'ultimatic' || paddleMode === 'single-lever') {
+      this.updateParticipant(index, { paddleMode });
+    }
+  }
+
+  setParticipantFlag(index: number, key: 'reversePaddles' | 'serialInvert', event: Event): void {
+    this.updateParticipant(index, { [key]: (event.target as HTMLInputElement).checked });
+  }
+
+  setParticipantSerialTiming(index: number, key: 'serialPollInterval' | 'serialDebounceMs', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.updateParticipant(index, { [key]: value === '' ? NaN : Number(value) });
   }
 
   setParticipantMidiNumber(index: number, key: 'midiChannel' | 'midiNote' | 'midiDahNote', event: Event): void {
@@ -753,8 +929,8 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /** Leave this step's questions as they are now and move on. */
-  skip(): void {
+  /** Put this step's questions back to the current settings and stay on the step. */
+  revert(): void {
     const keys = STEP_FIELDS[this.step] ?? [];
     const start = initialDraft(this.goal, this.base) as Record<string, unknown>;
     const draft = this.draft as Record<string, unknown>;
@@ -762,11 +938,15 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
       const value = start[key];
       draft[key] = Array.isArray(value) ? structuredClone(value) : value;
     }
-    this.next();
   }
 
-  get canSkip(): boolean {
-    return !!STEP_FIELDS[this.step] && !['decode', 'midi', 'relay', 'hardware'].includes(this.goal);
+  /** True only when this step has answers that differ from the current settings. */
+  get canRevert(): boolean {
+    const keys = STEP_FIELDS[this.step];
+    if (!keys || ['decode', 'midi', 'relay', 'hardware'].includes(this.goal)) return false;
+    const start = initialDraft(this.goal, this.base) as Record<string, unknown>;
+    const draft = this.draft as Record<string, unknown>;
+    return keys.some(key => JSON.stringify(draft[key]) !== JSON.stringify(start[key]));
   }
 
   /** Apply only the reviewed changes; the running app is otherwise untouched. */
@@ -807,18 +987,7 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onDiscardAnswer(discard: boolean): void {
     this.confirmDiscard = false;
-    if (!discard) {
-      this.pendingSettingsLanding = null;
-      this.pendingHelpSection = null;
-      return;
-    }
-    const landing = this.pendingSettingsLanding;
-    const sectionId = this.pendingHelpSection;
-    this.pendingSettingsLanding = null;
-    this.pendingHelpSection = null;
-    if (landing) this.settingsRequested.emit(landing);
-    else if (sectionId) this.helpRequested.emit(sectionId);
-    else this.closed.emit();
+    if (discard) this.closed.emit();
   }
 
   /** Turn off the audio outputs that could feed the detector; the one change made outside Apply, and only on this click. */
@@ -838,38 +1007,6 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
 
   get canStartGoal(): boolean {
     return this.goal !== 'decode' || this.detectorOn || this.canTurnOnDetector;
-  }
-
-  get canSavePreset(): boolean {
-    return !!this.presetName.trim();
-  }
-
-  setPresetName(value: string): void {
-    this.presetName = value;
-    this.presetError = '';
-  }
-
-  /** Save a secret-free copy of the staged settings in this browser. */
-  savePreset(): void {
-    const snapshot = createSettingsSnapshot({ ...this.base, ...this.patch });
-    const checked = this.presets.checkName(this.presetName);
-    if (!checked.valid) {
-      this.presetError = checked.error;
-      return;
-    }
-    const result = this.presets.add(checked.name, snapshot.settings);
-    if (!result.ok) {
-      this.presetError = result.error;
-      return;
-    }
-    this.presetError = '';
-    this.presetSaved = true;
-    this.next();
-  }
-
-  skipPreset(): void {
-    this.presetError = '';
-    this.next();
   }
 
   /** Explicitly enable an already-reviewed MIDI input configuration. */
@@ -987,8 +1124,11 @@ export class SetupWizardComponent implements OnInit, AfterViewInit, OnDestroy {
     this.requestClose();
   }
 
-  onKeydown(event: KeyboardEvent): void {
-    if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  @HostListener('document:keydown', ['$event'])
+  onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && !this.confirmDiscard && this.dialog) {
+      trapDialogTabKey(event, this.dialog.nativeElement);
+    }
   }
 
   private focusStep(): void {
