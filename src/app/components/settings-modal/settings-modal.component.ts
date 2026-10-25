@@ -46,7 +46,7 @@ import {
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
-import { GoalTarget, LANDINGS, goalTargetForLanding } from './goal-navigator/setup-goals';
+import { GoalTarget, goalTargetForLanding } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 
 /**
@@ -107,9 +107,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Emitted when the Presets dialog closes in presets-only mode */
   @Output() presetsDismissed = new EventEmitter<void>();
-
-  /** Landing whose hint is showing, if any */
-  hintLanding: string | null = null;
 
   // ---- UI state ----
 
@@ -321,28 +318,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     window.setTimeout(() => window.requestAnimationFrame(() => this.revealCard(cardId)));
   }
 
-  /** Open a Setup Wizard landing: its card, plus its hint dialog when it has one. */
+  /** Open the Settings card selected from the goal navigator. */
   openLanding(key: string): void {
     this.openGoalTarget(goalTargetForLanding(key));
-    const landing = LANDINGS[key];
-    this.hintLanding = landing.hint || landing.next ? key : null;
-  }
-
-  /** Message of the open hint dialog */
-  get hintMessage(): string {
-    return this.hintLanding ? LANDINGS[this.hintLanding].hint ?? '' : '';
-  }
-
-  /** Follow-up link of the open hint dialog */
-  get hintNext(): { label: string; landing: string } | undefined {
-    return this.hintLanding ? LANDINGS[this.hintLanding].next : undefined;
-  }
-
-  /** Close the hint dialog; the confirm button follows the "Next" link when there is one. */
-  onHintAnswer(confirmed: boolean): void {
-    const next = this.hintNext;
-    this.hintLanding = null;
-    if (confirmed && next) this.openLanding(next.landing);
   }
 
   private revealCard(cardId: string, attemptsLeft = 20): void {

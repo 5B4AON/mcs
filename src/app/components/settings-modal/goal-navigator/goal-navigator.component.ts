@@ -23,10 +23,10 @@ export type { GoalTab, GoalTarget, GoalLanding, WizardGoalId } from './setup-goa
   styleUrls: ['./goal-navigator.component.css'],
 })
 export class GoalNavigatorComponent {
-  /** Emitted with the landing key of a goal that has no guided setup. */
+  /** Emitted when a goal has no guided setup and should open Settings directly. */
   @Output() readonly goalSelected = new EventEmitter<string>();
 
-  /** Emitted when the user asks for the guided setup of a goal. */
+  /** Emitted when the user selects a goal that has a guided setup. */
   @Output() readonly wizardRequested = new EventEmitter<WizardGoalId>();
 
   readonly mainGoals: SetupGoal[] = MAIN_GOALS;
@@ -40,7 +40,6 @@ export class GoalNavigatorComponent {
     this.moreOpen = !this.moreOpen;
   }
 
-  /** Start the guided setup for a goal, or open its settings card. */
   choose(goal: SetupGoal): void {
     if (goal.wizard) this.wizardRequested.emit(goal.wizard);
     else this.goalSelected.emit(goal.landing);

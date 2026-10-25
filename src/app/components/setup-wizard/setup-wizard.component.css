@@ -124,6 +124,32 @@
   border: 1px solid #3f4d78;
   border-radius: 6px;
 }
+.wizard-field input[type="color"] {
+  box-sizing: border-box;
+  width: 44px;
+  height: 44px;
+  min-height: 44px;
+  align-self: flex-start;
+  padding: 3px;
+  cursor: pointer;
+}
+.wizard-field input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.wizard-field input[type="color"]::-webkit-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+.wizard-field input[type="color"]::-moz-color-swatch {
+  border: 0;
+  border-radius: 4px;
+}
+.wizard-field input[type="range"] {
+  padding: 0;
+  height: 28px;
+  background: transparent;
+  border: 0;
+}
 
 .wizard-check {
   display: flex;
@@ -312,11 +338,29 @@
   border-radius: 8px;
   background: rgba(35, 42, 69, .45);
 }
-.wizard-participant legend {
+.wizard-participant legend,
+.wizard-participant summary,
+.wizard-group summary {
   padding: 0 .35rem;
   color: #8cf;
   font-size: .9rem;
   font-weight: 700;
+}
+.wizard-participant summary,
+.wizard-group summary {
+  cursor: pointer;
+  padding: .4rem .35rem;
+}
+.wizard-group {
+  margin: .9rem 0;
+  padding: .45rem .75rem;
+  border: 1px solid #3f4d78;
+  border-radius: 8px;
+  background: rgba(35, 42, 69, .45);
+}
+.wizard-group[open],
+.wizard-participant[open] {
+  padding-bottom: .6rem;
 }
 .wizard-plan-summary {
   margin: .65rem 0;

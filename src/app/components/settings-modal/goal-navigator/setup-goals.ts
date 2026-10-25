@@ -6,7 +6,7 @@
 export type GoalTab = 'inputs' | 'outputs' | 'other';
 
 /** Goals that also have a guided setup wizard. */
-export type WizardGoalId = 'type' | 'practice' | 'decode' | 'teach';
+export type WizardGoalId = 'send' | 'type' | 'practice' | 'midi' | 'relay' | 'hardware' | 'decode' | 'teach';
 
 /** Where a goal lands: an existing settings card, with the guidance shown while it is open. */
 export interface GoalLanding {
@@ -14,10 +14,6 @@ export interface GoalLanding {
   tab: GoalTab;
   /** DOM id of the existing card (`settings-card-<name>-card`) */
   cardId?: string;
-  /** One-sentence guidance for this goal */
-  hint?: string;
-  /** Optional follow-up link to another landing */
-  next?: { label: string; landing: string };
 }
 
 /** Target of a navigation request emitted to the settings modal. */
@@ -43,7 +39,6 @@ export interface SetupGoal {
 export const LANDINGS: Record<string, GoalLanding> = {
   'keyboard-keyer': {
     tab: 'inputs', cardId: 'settings-card-keyboard-keyer-card',
-    hint: 'Mouse and touch keyers are further down this tab.',
   },
   'mouse-keyer': {
     tab: 'inputs', cardId: 'settings-card-mouse-keyer-card',
@@ -62,27 +57,30 @@ export const LANDINGS: Record<string, GoalLanding> = {
   },
   'midi-input': {
     tab: 'inputs', cardId: 'settings-card-midi-input-card',
-    hint: 'To send Morse on to a radio or other device, see \u201cConnect a radio or other hardware\u201d under More goals.',
   },
   'serial-input': {
     tab: 'inputs', cardId: 'settings-card-serial-input-card',
   },
   'rtdb-input': {
     tab: 'inputs', cardId: 'settings-card-rtdb-input-card',
-    hint: 'To talk, use the same channel name and secret on both the input and the output.',
-    next: { label: 'Next: Firebase RTDB output', landing: 'rtdb-output' },
   },
   'rtdb-output': {
     tab: 'outputs', cardId: 'settings-card-rtdb-output-card',
-    hint: 'Use the same channel name and secret as your Firebase RTDB input. Anything you send goes to that channel.',
   },
   'midi-output': {
     tab: 'outputs', cardId: 'settings-card-midi-output-card',
-    hint: 'Radio keyed by a serial port or WinKeyer? Those cards are further down this tab. Using a serial key or paddle as an input? See Serial Input on the Inputs tab.',
+  },
+  'opto-output': {
+    tab: 'outputs', cardId: 'settings-card-audio-output-card',
+  },
+  'serial-output': {
+    tab: 'outputs', cardId: 'settings-card-serial-output-card',
+  },
+  'winkeyer-output': {
+    tab: 'outputs', cardId: 'settings-card-winkeyer-card',
   },
   'cw-detector': {
     tab: 'inputs', cardId: 'settings-card-cw-detector-card',
-    hint: 'Works best with clean, strong tones. For reliable results use a key or paddle input.',
   },
   'teach': {
     tab: 'inputs',
@@ -90,16 +88,16 @@ export const LANDINGS: Record<string, GoalLanding> = {
 };
 
 export const MAIN_GOALS: SetupGoal[] = [
-  { label: 'Practice sending Morse with keyboard, mouse or touch', landing: 'keyboard-keyer', icon: 'keyboard' },
+  { label: 'Practice sending Morse with keyboard, mouse or touch', landing: 'keyboard-keyer', icon: 'keyboard', wizard: 'send' },
   { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'speaker', wizard: 'type' },
   { label: 'Practice receiving (copy practice)', landing: 'practice', icon: 'headphones', wizard: 'practice' },
   { label: 'Teach or demonstrate Morse', landing: 'teach', icon: 'graduationCap', wizard: 'teach' },
-  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe' },
+  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe', wizard: 'relay' },
 ];
 
 export const MORE_GOALS: SetupGoal[] = [
-  { label: 'Use my paddle or key through MIDI', landing: 'midi-input', icon: 'midi' },
-  { label: 'Connect a radio or other hardware', landing: 'midi-output', icon: 'radio' },
+  { label: 'Use my paddle or key through MIDI', landing: 'midi-input', icon: 'midi', wizard: 'midi' },
+  { label: 'Connect a radio or other hardware', landing: 'midi-output', icon: 'radio', wizard: 'hardware' },
   { label: 'Decode Morse from sound', landing: 'cw-detector', icon: 'waveform', wizard: 'decode' },
 ];
 

@@ -658,8 +658,41 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  private mouseDragStartX = 0;
+  private mouseDragLeft = false;
+  private mouseDragActive = false;
+  private mouseDragEndedAt = 0;
+
+  @HostListener('document:mousedown', ['$event'])
+  onDragStart(event: MouseEvent): void {
+    this.mouseDragStartX = event.clientX;
+    this.mouseDragLeft = false;
+    this.mouseDragActive = true;
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  onDragMove(event: MouseEvent): void {
+    if (this.mouseDragActive && this.mouseDragStartX - event.clientX >= 30) this.mouseDragLeft = true;
+  }
+
+  @HostListener('document:mouseup')
+  onDragEnd(): void {
+    this.mouseDragActive = false;
+    this.mouseDragEndedAt = Date.now();
+  }
+
+  /** A leftward mouse drag (for example selecting text) that some desktop browsers read as Back. */
+  private get leftwardMouseDragRecent(): boolean {
+    return this.mouseDragLeft && (this.mouseDragActive || Date.now() - this.mouseDragEndedAt < 1000);
+  }
+
   @HostListener('window:popstate', ['$event'])
   onPopState(_event: PopStateEvent): void {
+    if (!this.ignoringPopState && this.modalHistoryDepth > 0 && this.leftwardMouseDragRecent) {
+      // Not a real Back press: restore the entry and leave the dialogs open.
+      history.pushState({ modal: 'restored' }, '');
+      return;
+    }
     if (this.ignoringPopState) {
       this.ignoringPopState = false;
       if (this.openFullscreenAfterWizardClose) {

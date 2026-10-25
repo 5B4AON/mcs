@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.17.0] - 2026-10-24
+
+### Added
+
+- **Guided hardware and relay setup (WP10)** — Every goal opens its own
+  draft-and-review wizard directly. The sending, MIDI input, online relay, and
+  hardware wizards include the relevant keyer and mapping controls without
+  leaving for Settings or Help. Relay secrets stay hidden from review; exact
+  output targets and route changes are checked before Apply, with a separate
+  explicit action required to enable a new hardware route.
+- The output-route change checker is shared by wizard review and settings
+  import, including target availability, routing changes, and acknowledgements.
+
+### Changed
+
+- Removed wizard Settings/Help navigation actions, kept the shared discard
+  confirmation and keyboard focus behavior, and made the final route actions
+  explicit.
+- Presets keeps visible rounded boundaries on mobile, and the Settings Save
+  button is width-capped on mobile.
+- The practice-mode play control no longer shows adjacent text, and wizards no
+  longer repeat the header close action with a footer Cancel button.
+
 ## [1.16.0] - 2026-10-24
 
 ### Added

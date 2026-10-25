@@ -998,12 +998,6 @@
 .practice-guide strong {
   color: #8cf;
 }
-.practice-action-label {
-  color: #d5e8f5;
-  font-size: .9rem;
-  font-weight: 600;
-}
-
 .encoder-mode-label {
   display: flex;
   align-items: center;

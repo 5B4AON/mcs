@@ -44,13 +44,14 @@
   outline-offset: 2px;
 }
 
-.goal-row {
-  position: relative;
-}
 .goal-btn-main {
   display: flex;
   align-items: center;
   gap: .75rem;
+  min-width: 0;
+}
+.goal-btn-main > span {
+  overflow-wrap: anywhere;
 }
 .goal-icon {
   flex-shrink: 0;

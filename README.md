@@ -22,6 +22,8 @@ Connect a physical key or paddle, and decoded Morse code appears instantly in a 
 
 **Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. The channel name and secret together identify a database path; they are not user authentication or encryption. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
 
+**Setup Wizard** — Choose a goal to open its guided, draft-and-review flow. Configure local keyers, MIDI or serial inputs, an online relay, or a radio-keying output without leaving the wizard. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
+
 ## Connecting Your Key and Radio
 
 The app supports several hardware interfaces for physical key input and transmitter keying output. Each has different trade-offs in responsiveness, background operation, and browser support.

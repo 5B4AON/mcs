@@ -23,19 +23,14 @@
 </section>
 
 <ng-template #goalRow let-goal>
-  <div class="goal-row">
-    <button type="button" class="goal-btn"
-        (click)="choose(goal)">
-      <ng-container *ngTemplateOutlet="goalLabel; context: { $implicit: goal }"></ng-container>
-    </button>
-  </div>
-</ng-template>
-
-<ng-template #goalLabel let-goal>
-  <span class="goal-btn-main">
-    <ng-container *ngTemplateOutlet="goalIcon; context: { $implicit: goal.icon }"></ng-container>
-    <span>{{ goal.label }}</span>
-  </span>
+  <button type="button" class="goal-btn" (click)="choose(goal)"
+          [attr.aria-label]="'Open guided setup: ' + goal.label">
+    <span class="goal-btn-main">
+      <ng-container *ngTemplateOutlet="goalIcon; context: { $implicit: goal.icon }"></ng-container>
+      <span>{{ goal.label }}</span>
+    </span>
+    <span class="goal-arrow" aria-hidden="true">›</span>
+  </button>
 </ng-template>
 
 <ng-template #goalIcon let-icon>
