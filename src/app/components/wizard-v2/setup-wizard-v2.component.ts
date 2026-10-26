@@ -35,7 +35,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
 import { ITEM_REGISTRY } from '../settings-items/item-registry';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
-import { StepQuestion, WizardFlow, WizardStep } from './engine/flow-types';
+import { StepItem, StepQuestion, WizardFlow, WizardStep } from './engine/flow-types';
 import { WizardEngine } from './engine/wizard-engine';
 import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
@@ -110,6 +110,16 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   readonly presetSaveName = signal('');
   readonly presetSaveNotice = signal('');
   readonly registry = ITEM_REGISTRY;
+
+  /** Inputs for a step item: its fixed registry inputs, look and audio state. */
+  itemInputs(it: StepItem, audioRunning: boolean): Record<string, unknown> {
+    const entry = ITEM_REGISTRY[it.item];
+    return {
+      ...entry.inputs,
+      mode: it.mode ?? 'embedded',
+      ...(entry.needsAudio ? { audioRunning } : {}),
+    };
+  }
 
   private readonly focusReturnTarget = document.activeElement as HTMLElement | null;
   private applied = false;

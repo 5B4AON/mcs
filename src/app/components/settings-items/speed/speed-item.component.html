@@ -1,0 +1,50 @@
+<!-- Morse speeds: one collapsible sub-item per speed (encoder, keyer, RX, TX) -->
+<app-item-shell cardId="speeds-card" title="Morse Speeds" [mode]="mode">
+  @if (mode === 'card') {
+    <div class="cw-hint">
+      The same speeds as in the main menu, in words per minute (WPM).
+      Open one for an explanation.
+    </div>
+  }
+
+  @for (kind of kinds; track kind) {
+    @if (show.includes(kind)) {
+      @let isOpen = mode === 'embedded' || open().has(kind);
+      <div class="speed-sub">
+        @if (mode === 'card') {
+          <button type="button" class="speed-sub-head" [attr.aria-expanded]="isOpen"
+                  (click)="toggle(kind)">
+            <span class="speed-sub-chevron">{{ isOpen ? '&#9660;' : '&#9654;' }}</span>
+            <span class="speed-sub-name">{{ info[kind].label }}</span>
+            <span class="speed-sub-value">{{ s()[info[kind].key] }}&thinsp;WPM</span>
+          </button>
+        } @else {
+          <div class="speed-sub-title">{{ info[kind].label }}: {{ s()[info[kind].key] }}&thinsp;WPM</div>
+        }
+        @if (isOpen) {
+          <div class="speed-sub-body">
+            <div class="cw-hint">{{ info[kind].hint }}</div>
+            <div class="speed-row">
+              <button type="button" class="speed-step-btn" (click)="step(kind, -1)"
+                      [disabled]="s()[info[kind].key] <= range.min"
+                      [attr.aria-label]="'Decrease ' + info[kind].label">-</button>
+              <input type="range" [min]="range.min" [max]="range.max" step="1"
+                     [value]="s()[info[kind].key]" (input)="onSpeed(kind, $event)"
+                     [attr.aria-label]="info[kind].label">
+              <button type="button" class="speed-step-btn" (click)="step(kind, 1)"
+                      [disabled]="s()[info[kind].key] >= range.max"
+                      [attr.aria-label]="'Increase ' + info[kind].label">+</button>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  }
+
+  @if (mode === 'card') {
+    <div class="cw-hint">
+      Changing an RX or TX start speed resets that decoder's calibration
+      straight away.
+    </div>
+  }
+</app-item-shell>

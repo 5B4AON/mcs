@@ -132,7 +132,7 @@
                 <p class="wizard-note">{{ it.hint }}</p>
               }
               <ng-container *ngComponentOutlet="registry[it.item].component;
-                inputs: { mode: it.mode ?? 'embedded', audioRunning: audioRunning }" />
+                inputs: itemInputs(it, audioRunning)" />
             }
 
             @if (step.page; as page) {

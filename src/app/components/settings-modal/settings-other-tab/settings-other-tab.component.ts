@@ -3,9 +3,10 @@
  */
 
 import { Component } from '@angular/core';
+import { SpeedItemComponent } from '../../settings-items/speed/speed-item.component';
 import { WakeLockCardComponent } from './wake-lock-card/wake-lock-card.component';
 import { TextBlurCardComponent } from './text-blur-card/text-blur-card.component';
-import { FarnsworthCardComponent } from './farnsworth-card/farnsworth-card.component';
+import { FarnsworthItemComponent } from '../../settings-items/farnsworth/farnsworth-item.component';
 import { PracticeCardComponent } from './practice-card/practice-card.component';
 import { ShowProsignsCardComponent } from './show-prosigns-card/show-prosigns-card.component';
 import { ProsignActionsCardComponent } from './prosign-actions-card/prosign-actions-card.component';
@@ -22,9 +23,10 @@ import { EmojisCardComponent } from './emojis-card/emojis-card.component';
   selector: 'app-settings-other-tab',
   standalone: true,
   imports: [
+    SpeedItemComponent,
     WakeLockCardComponent,
     TextBlurCardComponent,
-    FarnsworthCardComponent,
+    FarnsworthItemComponent,
     PracticeCardComponent,
     ShowProsignsCardComponent,
     ProsignActionsCardComponent,

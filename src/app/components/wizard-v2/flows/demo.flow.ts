@@ -4,6 +4,7 @@
 
 import { answerIs } from '../engine/conditions';
 import { WizardFlow } from '../engine/flow-types';
+import { farnsworthStep, speedStep } from './shared-steps';
 
 /**
  * Temporary demo flow that exercises the engine and the shell: one question
@@ -32,6 +33,8 @@ export const DEMO_FLOW: WizardFlow = {
       when: answerIs('wantSound', true),
       items: [{ item: 'sidetone', mode: 'embedded' }],
     },
+    speedStep({ encoder: true, keyer: true }),
+    farnsworthStep(),
     {
       id: 'keys',
       title: 'Keyboard keys',
