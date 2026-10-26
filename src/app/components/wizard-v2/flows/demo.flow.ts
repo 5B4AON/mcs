@@ -1,0 +1,36 @@
+/**
+ * Morse Code Studio
+ */
+
+import { answerIs } from '../engine/conditions';
+import { WizardFlow } from '../engine/flow-types';
+
+/**
+ * Temporary demo flow that exercises the engine and the shell: one question
+ * and one settings item. Removed when the real goals have been migrated.
+ */
+export const DEMO_FLOW: WizardFlow = {
+  id: 'demo',
+  title: 'Demo flow',
+  goal: 'type',
+  forced: [
+    { key: 'sidetoneEnabled', value: true, label: 'Turn the sidetone on', when: answerIs('wantSound', true) },
+  ],
+  steps: [
+    {
+      id: 'wantSound',
+      title: 'Do you want to hear Morse?',
+      intro: 'This question only decides whether the next step is shown.',
+      questions: [
+        { id: 'wantSound', label: 'Play Morse as sound', kind: 'boolean', default: false },
+      ],
+    },
+    {
+      id: 'sound',
+      title: 'Choose your sound',
+      intro: 'These are the same controls you find in Settings > Outputs.',
+      when: answerIs('wantSound', true),
+      items: [{ item: 'sidetone', mode: 'embedded' }],
+    },
+  ],
+};

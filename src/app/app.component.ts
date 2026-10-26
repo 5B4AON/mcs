@@ -26,6 +26,7 @@ import { SettingsModalComponent } from './components/settings-modal/settings-mod
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
 import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
 import { SetupWizardComponent } from './components/setup-wizard/setup-wizard.component';
+import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.component';
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
 import * as practiceUi from './practice-ui.utils';
@@ -55,7 +56,7 @@ import * as practiceUi from './practice-ui.utils';
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardComponent, GoalNavigatorModalComponent],
+  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -85,6 +86,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showGoalPresets = false;
   /** Guided setup state */
   showWizard = false;
+  /** Temporary: the new wizard, opened from the kebab menu until the cutover */
+  showWizardV2 = false;
   wizardGoal: WizardGoalId = 'type';
   /** Whether the Help modal is visible */
   showHelp = false;
@@ -141,6 +144,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   fullscreenFocusFallback: HTMLElement | null = null;
 
   @ViewChild(SetupWizardComponent) private wizardRef?: SetupWizardComponent;
+  @ViewChild(SetupWizardV2Component) private wizardV2Ref?: SetupWizardV2Component;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
@@ -639,6 +643,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private closeActiveModal(): void {
     if (this.showGoalPresets) {
       this.dismissGoalPresets(false);
+    } else if (this.showWizardV2) {
+      if (this.wizardV2Ref?.inFlow()) {
+        // Back inside a flow returns to the goal list (asking first when answers changed)
+        this.pushModalState('wizardV2');
+        this.wizardV2Ref.requestClose();
+      } else {
+        this.showWizardV2 = false;
+      }
     } else if (this.showWizard) {
       if (this.wizardRef?.hasDraft()) {
         // Back was pressed with unapplied answers: keep the wizard and ask first.
@@ -1447,6 +1459,27 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.wizardGoal = goal;
     this.showWizard = true;
     this.pushModalState('wizard');
+  }
+
+  /** Temporary: open the new wizard from the kebab menu */
+  openWizardV2(): void {
+    this.showWizardV2 = true;
+    this.pushModalState('wizardV2');
+  }
+
+  closeWizardV2(): void {
+    this.showWizardV2 = false;
+    this.popModalState();
+  }
+
+  /** Leave the new wizard for the main screen, keeping the applied settings unsaved */
+  onWizardV2Try(): void {
+    this.showWizardV2 = false;
+    if (this.modalHistoryDepth > 0) {
+      this.modalHistoryDepth -= 1;
+      this.ignoringPopState = true;
+      history.go(-1);
+    }
   }
 
   /** Close the guided setup, leaving Settings as it was */

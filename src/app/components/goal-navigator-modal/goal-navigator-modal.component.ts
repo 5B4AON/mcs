@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, Component, ElementRef, EventEmitter, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { GoalNavigatorComponent } from '../settings-modal/goal-navigator/goal-navigator.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import { focusDialog, trapDialogTabKey } from '../modal-accessibility';
@@ -20,6 +20,9 @@ import { focusDialog, trapDialogTabKey } from '../modal-accessibility';
   styleUrls: ['./goal-navigator-modal.component.css'],
 })
 export class GoalNavigatorModalComponent implements AfterViewInit {
+  /** Show the Presets and Settings buttons (the temporary new wizard hides them) */
+  @Input() showActions = true;
+
   @Output() readonly closed = new EventEmitter<void>();
 
   /** Open Settings in place of this dialog. */

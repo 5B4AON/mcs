@@ -1,0 +1,52 @@
+<!-- Sidetone / Speaker -->
+<app-item-shell cardId="sidetone-card" title="Sidetone" [mode]="mode"
+                [enabled]="s().sidetoneEnabled"
+                (enabledChange)="scope.update({ sidetoneEnabled: $event })">
+  <span item-badges class="source-badge" [class.source-rx]="s().sidetoneForward === 'rx'" [class.source-tx]="s().sidetoneForward === 'tx'" [class.source-both]="s().sidetoneForward === 'both'">{{ s().sidetoneForward === 'rx' ? 'RX' : s().sidetoneForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+
+  <label>Active on:
+    <select [value]="s().sidetoneForward"
+            (change)="onSettingChange('sidetoneForward', $event)">
+      <option value="both" [selected]="s().sidetoneForward === 'both'">Both RX and TX</option>
+      <option value="tx" [selected]="s().sidetoneForward === 'tx'">TX only &mdash; transmitted morse</option>
+      <option value="rx" [selected]="s().sidetoneForward === 'rx'">RX only &mdash; received morse</option>
+    </select>
+  </label>
+
+  <label>Audio Device:
+    <select [value]="s().sidetoneOutputDeviceId" (change)="onSettingChange('sidetoneOutputDeviceId', $event)">
+      <option value="default" [selected]="s().sidetoneOutputDeviceId === 'default'">System Default</option>
+      @for (dev of devices.outputDevices(); track dev.deviceId) {
+        <option [value]="dev.deviceId" [selected]="dev.deviceId === s().sidetoneOutputDeviceId">{{ dev.label }}</option>
+      }
+    </select>
+  </label>
+
+  <label>Channel:
+    <select [value]="s().sidetoneOutputChannel" (change)="onSettingChange('sidetoneOutputChannel', $event)">
+      <option value="left" [selected]="s().sidetoneOutputChannel === 'left'">Left</option>
+      <option value="right" [selected]="s().sidetoneOutputChannel === 'right'">Right</option>
+      <option value="both" [selected]="s().sidetoneOutputChannel === 'both'">Both (stereo)</option>
+    </select>
+  </label>
+
+  <label>Frequency (Hz):
+    <input type="number" min="500" max="800" [value]="s().sidetoneFrequency"
+           (change)="onSettingChange('sidetoneFrequency', $event)">
+  </label>
+
+  <label>Amplitude:
+    <input type="range" min="0" max="1" step="0.05" [value]="s().sidetoneAmplitude"
+           (input)="onSettingChange('sidetoneAmplitude', $event)">
+    {{ s().sidetoneAmplitude }}
+  </label>
+
+  @if (scope.isLive) {
+    <button [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="test-btn">
+      Test Output (1s)
+    </button>
+  } @else {
+    <button (click)="testDraft()" class="test-btn">Test Output (1s)</button>
+    <div class="keyer-hint">The test plays your choices above on their own; nothing is applied yet.</div>
+  }
+</app-item-shell>

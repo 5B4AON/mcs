@@ -8,7 +8,7 @@ import { SerialOutputCardComponent } from './serial-output-card/serial-output-ca
 import { WinkeyerCardComponent } from './winkeyer-card/winkeyer-card.component';
 import { RtdbOutputCardComponent } from './rtdb-output-card/rtdb-output-card.component';
 import { MidiOutputCardComponent } from './midi-output-card/midi-output-card.component';
-import { SidetoneCardComponent } from './sidetone-card/sidetone-card.component';
+import { SidetoneItemComponent } from '../../settings-items/sidetone/sidetone-item.component';
 import { VibrationCardComponent } from './vibration-card/vibration-card.component';
 
 /**
@@ -27,7 +27,7 @@ import { VibrationCardComponent } from './vibration-card/vibration-card.componen
     WinkeyerCardComponent,
     RtdbOutputCardComponent,
     MidiOutputCardComponent,
-    SidetoneCardComponent,
+    SidetoneItemComponent,
     VibrationCardComponent,
   ],
   templateUrl: './settings-outputs-tab.component.html',

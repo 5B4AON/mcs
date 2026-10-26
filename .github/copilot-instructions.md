@@ -68,6 +68,8 @@ src/app/
 │   ├── vibration-output.service.ts — Vibration API output
 │   └── practice.service.ts     — copy practice sequence generation + scoring
 └── components/
+    ├── settings-items/      — reusable settings items shared by Settings and setup wizards (Wizard v2 refactor, issue #57): `settings-scope.ts` (SETTINGS_SCOPE token), `live-settings-scope.ts`, `draft-settings-scope.ts`, `item-descriptor.ts` (conventions), `item-registry.ts`, `item-shell/` (card/embedded frame), `identity-field/` (name + colour picker), `sidetone/` (pilot item)
+    ├── wizard-v2/           — Wizard v2 (issue #57), built beside the old wizard: `engine/flow-types.ts` (declarative flow/step/question types), `engine/conditions.ts` (named step conditions), `engine/wizard-engine.ts` (pure state machine over a DraftSettingsScope: navigation, change detection, Revert, validation, review, apply patch, route/conflict checks), `flows/*.flow.ts` (one declarative file per goal; `demo.flow.ts` is temporary), `flows/flow-registry.ts` (start list; `MIGRATED` gets each goal's flow), `setup-wizard-v2.component.*` (dialog shell: goal list via the existing goal-navigator modal, step host with questions + registered items via `NgComponentOutlet`, shared Review/Done, presets; provides its own `DraftSettingsScope`; reuses the old wizard CSS)
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
     │   ├── goal-navigator/              — plain goal list hosted by the Setup Wizard modal; `setup-goals.ts` is the shared goal table (labels, landings, icons, wizard ids)
@@ -94,7 +96,7 @@ src/app/
     │   │   ├── winkeyer-card/
     │   │   ├── rtdb-output-card/
     │   │   ├── midi-output-card/
-    │   │   ├── sidetone-card/
+    │   │   ├── (sidetone moved to settings-items/sidetone/)
     │   │   └── vibration-card/
     │   └── settings-other-tab/          — thin shell hosting 6 card components
     │       ├── wake-lock-card/
@@ -128,6 +130,7 @@ AppComponent
 │   └── ConfirmDialogComponent (reset confirmation)
 ├── GoalNavigatorModalComponent (Setup Wizard) → GoalNavigatorComponent
 ├── SetupWizardComponent (opened from the goal navigator modal, above it)
+├── SetupWizardV2Component (temporary kebab entry; replaces the old wizard at cutover)
 ├── FullscreenModalComponent
 │   ├── FsToolbarComponent
 │   └── FsConversationViewComponent (unified conversation)
@@ -164,7 +167,7 @@ AppComponent
 - **Serial port sharing**: when serial input and output mappings use the same port index, `SerialKeyInputService` piggybacks on `SerialKeyOutputService.getOpenPort(portIndex)` instead of opening a second connection. The output service exposes an `openPorts` signal (Map<number, PortState>) and a `getOpenPort(portIndex)` method for this purpose.
 - **Copy practice pipeline**: settings (`practiceEnabled`, `practiceContentMode`, `practiceFeedbackMode`, `practicePipeline`, etc.) in `AppSettings` + `DEFAULT_SETTINGS`, UI in `practice-card`, sequence generation + scoring in `PracticeService`, playback via `MorseEncoderService.submitText()`. Practice characters are routed through `PracticeService.pushPracticeChar()` instead of `DisplayBufferService.pushSent()`. When `practicePipeline` is `'local'`, external outputs (serial, MIDI, RTDB, vibration) are skipped in `MorseEncoderService`. Practice and keying are exclusive: on the main screen `AppComponent.syncMainPracticeKeying()` disables mapped keyboard keying, the mouse keyer and the sprite while `encoderMode === 'practice'`; in fullscreen, practice UI exists only in Type mode and `FullscreenModalComponent.setInputMode('key')` aborts practice.
 - **Fullscreen focus model**: `FullscreenModalComponent` opens with focus on `.fs-conversation`, owns Tab order (`handleTab`: body controls, then toolbar, wrapping) and focuses the always-rendered hidden `typeInput` synchronously from the Key/Type toggle so mobile keyboards open; Key mode focuses the conversation instead.
-- **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone-card).
+- **`audioRunning` flag**: passed as `@Input()` from `AppComponent` → `SettingsModalComponent` → tab components → card components that have test/calibration buttons (mic-card, cw-detector-card, audio-output-card, sidetone item).
 
 ## Build and Test
 ```bash

@@ -302,6 +302,8 @@ export class KeyerService implements OnDestroy {
     if (!this.enabled || !this.keyboardMappingsEnabled) return;
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+    // A focused button inside a dialog must still react to Enter/Space even if that key is mapped
+    if (tag === 'BUTTON' && (e.target as HTMLElement).closest('[role="dialog"]')) return;
 
     const s = this.settings.settings();
     if (!s.keyboardKeyerEnabled) return;
@@ -337,6 +339,9 @@ export class KeyerService implements OnDestroy {
     if (!this.enabled || !this.keyboardMappingsEnabled) return;
     const s = this.settings.settings();
     if (!s.keyboardKeyerEnabled) return;
+    // Let Space/Enter click a focused dialog button: the click fires from the default keyup action
+    const target = e.target as HTMLElement;
+    const keepDefault = target?.tagName === 'BUTTON' && !!target.closest('[role="dialog"]');
 
     const mappings = s.keyboardInputMappings;
     let releasedIdx = -1;
@@ -344,7 +349,7 @@ export class KeyerService implements OnDestroy {
       const m = mappings[i];
       if (!m.enabled) continue;
       if (m.mode === 'straightKey' && e.code === m.keyCode) {
-        e.preventDefault();
+        if (!keepDefault) e.preventDefault();
         this.handleStraightKeyUp(i, m);
         releasedIdx = i;
         break;
@@ -352,14 +357,14 @@ export class KeyerService implements OnDestroy {
       if (m.mode === 'paddle') {
         const reverse = m.reversePaddles;
         if (e.code === m.keyCode) {
-          e.preventDefault();
+          if (!keepDefault) e.preventDefault();
           if (reverse) this.handlePaddleDahUp(i, m);
           else this.handlePaddleDitUp(i, m);
           releasedIdx = i;
           break;
         }
         if (e.code === m.dahKeyCode) {
-          e.preventDefault();
+          if (!keepDefault) e.preventDefault();
           if (reverse) this.handlePaddleDitUp(i, m);
           else this.handlePaddleDahUp(i, m);
           releasedIdx = i;

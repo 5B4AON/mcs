@@ -18,6 +18,8 @@ import { FormsModule } from '@angular/forms';
 import { AppSettings, SettingsSaveResult, SettingsService, isTouchDevice } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
+import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
+import { LiveSettingsScope } from '../settings-items/live-settings-scope';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { MidiInputService } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
@@ -79,6 +81,8 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
   ],
   templateUrl: './settings-modal.component.html',
   styleUrls: ['./settings-modal.component.css'],
+  // Items inside Settings edit the running settings; the scope snapshot is taken when the dialog opens
+  providers: [LiveSettingsScope, { provide: SETTINGS_SCOPE, useExisting: LiveSettingsScope }],
 })
 export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Whether audio contexts are running (passed to tab children for test buttons) */

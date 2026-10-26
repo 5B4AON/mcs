@@ -1,0 +1,20 @@
+<label>Name:
+  <input type="text" [value]="name" (input)="onName($event)"
+         [placeholder]="placeholder" maxlength="20">
+</label>
+@if (hint) {
+  <div class="keyer-hint">{{ hint }}</div>
+}
+
+<label>Color:
+  <div class="card-color-row">
+    <input type="color" class="card-color-picker"
+           [ngModel]="color || '#ffffff'"
+           (ngModelChange)="colorChange.emit($event)">
+    @if (color) {
+      <button type="button" class="card-color-clear"
+              (click)="colorChange.emit('')" title="Clear color">&#10005;</button>
+    }
+    <span class="card-color-preview" [style.color]="color || 'inherit'">Sample</span>
+  </div>
+</label>
