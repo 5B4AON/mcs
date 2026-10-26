@@ -66,11 +66,32 @@ export interface StepItem {
 }
 
 /**
- * Repeat a step once per entry of a mapping list (one page per mapping).
- * Reserved: the engine ignores it until the per-mapping steps work package.
+ * Repeat a step once per entry of a mapping list: one page per mapping, then a
+ * list page ("add another", open, delete). The engine expands the step, so a
+ * flow only declares this.
  */
 export interface StepRepeat {
-  list: string;
+  /** Settings list that holds the mappings, e.g. `keyboardInputMappings` */
+  list: keyof AppSettings;
+  /** Mapping kind id (see `mapping-registry.ts`) */
+  item: string;
+  /** Title of the list page; defaults to the step title */
+  listTitle?: string;
+  /** Text of the list page; has a plain default */
+  listIntro?: string;
+}
+
+/**
+ * Set by the engine on the pages it expands from a repeat step; flows never
+ * write it. `mapping` pages edit mapping `index`; the `list` page shows all.
+ */
+export interface StepPage {
+  kind: 'mapping' | 'list';
+  /** Mapping position (for `list` pages: the number of mappings) */
+  index: number;
+  /** Id of the step this page was expanded from */
+  baseId: string;
+  list: keyof AppSettings;
   item: string;
 }
 
@@ -91,6 +112,8 @@ export interface WizardStep {
   /** Extra checks on the answers (item values are checked by the items' own descriptors) */
   validate?: (ctx: ConditionContext) => string[];
   repeat?: StepRepeat;
+  /** Engine-set: this is one expanded page of a repeat step */
+  page?: StepPage;
 }
 
 /** A setting the goal always sets when applied, shown separately in the review. */

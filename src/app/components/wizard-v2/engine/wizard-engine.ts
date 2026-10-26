@@ -7,10 +7,14 @@ import { AppSettings, findChannelConflicts } from '../../../services/settings.se
 import { ExternalRouteChange, compareExternalRoutes } from '../../../services/output-change-checker';
 import { ItemDescriptor, ItemReviewLine } from '../../settings-items/item-descriptor';
 import { DraftSettingsScope } from '../../settings-items/draft-settings-scope';
-import { ConditionContext, ForcedSetting, WizardAnswers, WizardFlow, WizardStep } from './flow-types';
+import { ConditionContext, ForcedSetting, StepPage, WizardAnswers, WizardFlow, WizardStep } from './flow-types';
+import { MappingKind } from '../../settings-items/mapping/mapping-registry';
 
 /** Finds an item's descriptor by registry id (see `item-registry.ts`). */
 export type ItemDescriptorLookup = (itemId: string) => ItemDescriptor;
+
+/** Finds a mapping kind by id (see `mapping-registry.ts`). */
+export type MappingKindLookup = (kindId: string) => MappingKind;
 
 /** Review lines of one step. */
 export interface StepReview {
@@ -46,6 +50,12 @@ export class WizardEngine {
   /** Route acknowledgements ticked on the review step */
   private readonly acknowledged = signal<Readonly<Record<string, boolean>>>({});
 
+  /**
+   * How each mapping looked when the wizard started, per list and in step with
+   * the draft list (`null` = added in the wizard). Revert restores from here.
+   */
+  private origins: Record<string, (unknown | null)[]> = {};
+
   /** Defaults of every question in the flow */
   private readonly defaults: Record<string, unknown> = {};
 
@@ -64,16 +74,22 @@ export class WizardEngine {
     readonly flow: WizardFlow,
     readonly scope: DraftSettingsScope,
     private readonly descriptorFor: ItemDescriptorLookup,
+    private readonly kindFor: MappingKindLookup = id => { throw new Error(`No mapping kinds: ${id}`); },
   ) {
     for (const step of flow.steps) {
       for (const q of step.questions ?? []) this.defaults[q.id] = structuredClone(q.default);
     }
     this.answerState.set(structuredClone(this.defaults));
 
-    this.steps = computed(() => flow.steps.filter(step => !step.when || step.when(this.context())));
+    this.steps = computed(() => flow.steps
+      .filter(step => !step.when || step.when(this.context()))
+      .flatMap(step => this.expand(step)));
     this.step = computed(() => {
       const shown = this.steps();
-      return shown.find(step => step.id === this.currentId()) ?? shown[0];
+      const id = this.currentId();
+      // A page of a repeat step that no longer exists (mapping deleted) falls back to its list page
+      const fallback = id.includes('#') ? `${id.slice(0, id.lastIndexOf('#'))}#list` : '';
+      return shown.find(step => step.id === id) ?? shown.find(step => step.id === fallback) ?? shown[0];
     });
     this.index = computed(() => this.steps().indexOf(this.step()));
     this.currentId.set(flow.steps[0]?.id ?? '');
@@ -82,6 +98,86 @@ export class WizardEngine {
   /** What conditions see: the draft and the answers. */
   private context(): ConditionContext {
     return { settings: this.scope.value(), answers: this.answerState() };
+  }
+
+  /**
+   * A repeat step becomes one page per mapping plus a list page; any other
+   * step stays as it is. Recomputed whenever the draft list changes.
+   */
+  private expand(step: WizardStep): WizardStep[] {
+    const repeat = step.repeat;
+    if (!repeat) return [step];
+    const kind = this.kindFor(repeat.item);
+    const count = this.mappings(repeat.list).length;
+    const page = (type: StepPage['kind'], index: number): StepPage =>
+      ({ kind: type, index, baseId: step.id, list: repeat.list, item: repeat.item });
+    const pages: WizardStep[] = [];
+    for (let i = 0; i < count; i++) {
+      pages.push({
+        ...step, id: `${step.id}#${i}`, questions: undefined, items: undefined,
+        title: `${step.title} — ${capitalise(kind.noun)} ${i + 1} of ${count}`,
+        page: page('mapping', i),
+      });
+    }
+    pages.push({
+      ...step, id: `${step.id}#list`, questions: undefined, items: undefined,
+      title: repeat.listTitle ?? step.title,
+      intro: repeat.listIntro ?? (count
+        ? `Add another ${kind.noun}, open one to change it, or continue.`
+        : `You have no ${kind.noun}s yet. Add one, or continue without.`),
+      help: undefined,
+      page: page('list', count),
+    });
+    return pages;
+  }
+
+  // ---- Mapping lists ----
+
+  /** The draft's mappings of a list. */
+  mappings(list: keyof AppSettings): unknown[] {
+    return this.scope.value()[list] as unknown[];
+  }
+
+  /** Origins of a list, created from the starting settings on first use. */
+  private originsOf(list: keyof AppSettings): (unknown | null)[] {
+    return this.origins[list] ??= (this.scope.base()[list] as unknown[]).map(m => structuredClone(m));
+  }
+
+  /** Store an edited mapping in the draft. */
+  commitMapping(page: StepPage, mapping: unknown): void {
+    const list = [...this.mappings(page.list)];
+    if (page.index >= list.length) return;
+    list[page.index] = structuredClone(mapping);
+    this.scope.update({ [page.list]: list } as Partial<AppSettings>);
+  }
+
+  /** Change fields of one mapping, e.g. its enabled checkbox on the list page. */
+  patchMapping(list: keyof AppSettings, index: number, patch: Record<string, unknown>): void {
+    const items = this.mappings(list).map((m, i) => i === index ? { ...(m as object), ...patch } : m);
+    this.scope.update({ [list]: items } as Partial<AppSettings>);
+  }
+
+  /** Append a new mapping and go to its page. */
+  addMapping(step: WizardStep = this.step()): void {
+    const repeat = step.page ? step.page : null;
+    if (!repeat) return;
+    const kind = this.kindFor(repeat.item);
+    const list = [...this.mappings(repeat.list), kind.create()];
+    this.originsOf(repeat.list).push(null);
+    this.scope.update({ [repeat.list]: list } as Partial<AppSettings>);
+    this.goTo(`${repeat.baseId}#${list.length - 1}`);
+  }
+
+  /** Delete mapping `index`, with whatever else the kind must change; the wizard lands on the list page. */
+  removeMapping(page: StepPage, index: number): void {
+    const kind = this.kindFor(page.item);
+    const list = this.mappings(page.list).filter((_, i) => i !== index);
+    this.originsOf(page.list).splice(index, 1);
+    this.scope.update({
+      ...kind.onRemove?.(this.scope.value(), index),
+      [page.list]: list,
+    } as Partial<AppSettings>);
+    this.currentId.set(`${page.baseId}#list`);
   }
 
   // ---- Answers ----
@@ -123,6 +219,7 @@ export class WizardEngine {
   /** Settings keys the items on a step edit. */
   stepKeys(step: WizardStep): (keyof AppSettings)[] {
     const keys = new Set<keyof AppSettings>();
+    if (step.repeat) keys.add(step.repeat.list);
     for (const item of step.items ?? []) {
       for (const key of this.descriptorFor(item.item).keys) keys.add(key);
     }
@@ -131,6 +228,11 @@ export class WizardEngine {
 
   /** True when this step's own settings or answers differ from where they started. */
   stepHasChanges(step: WizardStep = this.step()): boolean {
+    const page = step.page;
+    if (page?.kind === 'mapping') {
+      const origin = this.originsOf(page.list)[page.index];
+      return origin == null || !sameJson(origin, this.mappings(page.list)[page.index]);
+    }
     const changed = new Set(this.scope.changedKeys());
     if (this.stepKeys(step).some(key => changed.has(key))) return true;
     const answers = this.answerState();
@@ -139,7 +241,21 @@ export class WizardEngine {
 
   /** Put this step's settings and answers back to where they started; the live app is untouched. */
   revertStep(step: WizardStep = this.step()): void {
-    this.scope.revert(this.stepKeys(step));
+    const page = step.page;
+    if (page?.kind === 'mapping') {
+      const origin = this.originsOf(page.list)[page.index];
+      if (origin == null) this.removeMapping(page, page.index);
+      else this.commitMapping(page, origin);
+      return;
+    }
+    const keys = this.stepKeys(step);
+    if (page?.kind === 'list') {
+      delete this.origins[page.list];
+      // Deleting a mapping can also fix up other settings (relay references); undo those too
+      const side = this.kindFor(page.item).onRemove?.(this.scope.value(), 0) ?? {};
+      keys.push(...(Object.keys(side) as (keyof AppSettings)[]));
+    }
+    this.scope.revert(keys);
     const answers = { ...this.answerState() };
     for (const q of step.questions ?? []) answers[q.id] = structuredClone(this.defaults[q.id]);
     this.answerState.set(answers);
@@ -161,6 +277,7 @@ export class WizardEngine {
       for (const key of this.stepKeys(step)) patch[key] = settings[key];
     }
     this.scope.update(patch as Partial<AppSettings>);
+    this.origins = {};
     this.answerState.set(structuredClone(this.defaults));
     this.acknowledged.set({});
     this.currentId.set(this.flow.steps[0]?.id ?? '');
@@ -171,7 +288,10 @@ export class WizardEngine {
   /** Plain-language problems on a step; empty means the user may continue. */
   validateStep(step: WizardStep): string[] {
     const settings = this.scope.value();
-    const problems = (step.items ?? []).flatMap(item => this.descriptorFor(item.item).validate(settings));
+    const descriptors = step.page
+      ? [this.kindFor(step.page.item).descriptor]
+      : (step.items ?? []).map(item => this.descriptorFor(item.item));
+    const problems = descriptors.flatMap(d => d.validate(settings));
     return [...problems, ...(step.validate?.(this.context()) ?? [])];
   }
 
@@ -210,8 +330,11 @@ export class WizardEngine {
     const steps: StepReview[] = [];
     for (const step of this.steps()) {
       const changes: ItemReviewLine[] = [];
-      for (const item of step.items ?? []) {
-        for (const line of this.descriptorFor(item.item).review(base, proposed)) {
+      const descriptors = step.page
+        ? [this.kindFor(step.page.item).descriptor]
+        : (step.items ?? []).map(item => this.descriptorFor(item.item));
+      for (const descriptor of descriptors) {
+        for (const line of descriptor.review(base, proposed)) {
           // A setting asked about on two steps is listed once, under the first
           if (!seen.has(line.key)) { seen.add(line.key); changes.push(line); }
         }
@@ -265,4 +388,9 @@ export class WizardEngine {
 /** Structural equality for plain JSON values. */
 function sameJson(a: unknown, b: unknown): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/** First letter in capitals, for titles built from a noun. */
+function capitalise(text: string): string {
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }

@@ -230,3 +230,64 @@
     padding: 0.4rem 0.8rem;
   }
 }
+
+/* Action buttons (Delete / Cancel / OK): the Settings popup footer and wizard mapping pages */
+.md-action-btn {
+  padding: 0.45rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 6px;
+  border: 1px solid #555;
+  cursor: pointer;
+  transition: background 0.12s, transform 0.08s;
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.md-action-btn:active {
+  transform: scale(0.96);
+}
+
+.md-cancel-btn {
+  background: #282c34;
+  color: #bbc;
+}
+
+.md-cancel-btn:hover {
+  background: #3a4050;
+}
+
+.md-save-btn {
+  background: #1e4a6e;
+  color: #cdf;
+  border-color: #3a6a9a;
+}
+
+.md-save-btn:hover {
+  background: #285a80;
+}
+
+.md-delete-btn {
+  background: #3a2020;
+  color: #faa;
+  border-color: #644;
+}
+
+.md-delete-btn:hover {
+  background: #4a2a2a;
+  color: #fcc;
+}
+
+.md-delete-btn svg {
+  display: block;
+}
+
+@media (pointer: coarse) {
+  .md-action-btn {
+    min-height: 44px;
+    padding: 0.55rem 1.3rem;
+    font-size: 0.92rem;
+  }
+}

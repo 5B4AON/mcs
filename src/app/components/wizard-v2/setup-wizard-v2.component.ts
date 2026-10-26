@@ -35,8 +35,11 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
 import { ITEM_REGISTRY } from '../settings-items/item-registry';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
-import { StepQuestion, WizardFlow } from './engine/flow-types';
+import { StepQuestion, WizardFlow, WizardStep } from './engine/flow-types';
 import { WizardEngine } from './engine/wizard-engine';
+import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
+import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
+import { MappingPageComponent } from './pages/mapping-page.component';
 import { GoalNavigatorModalComponent } from '../goal-navigator-modal/goal-navigator-modal.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import { DEMO_FLOW } from './flows/demo.flow';
@@ -56,7 +59,8 @@ type Stage = 'start' | 'steps' | 'review' | 'done';
 @Component({
   selector: 'app-setup-wizard-v2',
   standalone: true,
-  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, GoalNavigatorModalComponent],
+  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, GoalNavigatorModalComponent,
+    MappingPageComponent, MappingListComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['../setup-wizard/setup-wizard.component.css'],
   providers: [
@@ -77,6 +81,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   @Output() tryRequested = new EventEmitter<void>();
 
   @ViewChild('dialog') dialog?: ElementRef<HTMLElement>;
+  @ViewChild(MappingPageComponent) private mappingPage?: MappingPageComponent;
 
   readonly settings = inject(SettingsService);
   readonly presets = inject(PresetService);
@@ -153,7 +158,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   startFlow(flow: WizardFlow): void {
     this.startNotice.set('');
     this.scope.seed(this.settings.settings());
-    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor));
+    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind));
     this.flowTitle.set(flow.title);
     this.presetNotice.set('');
     this.presetWarnings.set([]);
@@ -195,7 +200,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   next(): void {
     const engine = this.engine();
-    if (!engine || this.problems().length) return;
+    if (!engine || this.problems().length || !this.commitMappingPage()) return;
     if (engine.isLast) this.stage.set('review');
     else engine.next();
     this.focusStep();
@@ -205,7 +210,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     const engine = this.engine();
     if (!engine) return;
     if (this.stage() === 'review') this.stage.set('steps');
-    else if (!engine.back()) {
+    else if (this.commitMappingPage(), !engine.back()) {
       this.requestClose();
       return;
     }
@@ -227,12 +232,57 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   }
 
   revert(): void {
+    this.mappingPage?.reset();
     this.engine()?.revertStep();
   }
 
   get canRevert(): boolean {
     const engine = this.engine();
-    return !!engine && this.stage() === 'steps' && engine.stepHasChanges();
+    return !!engine && this.stage() === 'steps' &&
+      (engine.stepHasChanges() || !!this.mappingPage?.isDirty());
+  }
+
+  // ---- Mapping pages (repeat steps) ----
+
+  /** Mapping kind of the current step when it is a page of a repeat step. */
+  kindOf(step: WizardStep): MappingKind | null {
+    return step.page ? mappingKind(step.page.item) : null;
+  }
+
+  /**
+   * Store the fields of the open mapping page in the draft. Returns false (the
+   * editor shows why) when they are not valid; true when there is nothing to store.
+   */
+  private commitMappingPage(): boolean {
+    const engine = this.engine();
+    const page = engine?.step().page;
+    if (!engine || page?.kind !== 'mapping' || !this.mappingPage) return true;
+    const mapping = this.mappingPage.commit();
+    if (mapping === null) return false;
+    engine.commitMapping(page, mapping);
+    return true;
+  }
+
+  /** Mappings as list rows (every mapping has an `enabled` flag). */
+  rows(mappings: unknown[]): MappingListRow[] {
+    return mappings as MappingListRow[];
+  }
+
+  addMapping(): void {
+    this.engine()?.addMapping();
+  }
+
+  /** Open mapping `index` from the list page. */
+  openMapping(step: WizardStep, index: number): void {
+    if (step.page) this.engine()?.goTo(`${step.page.baseId}#${index}`);
+  }
+
+  removeMapping(step: WizardStep, index: number): void {
+    if (step.page) this.engine()?.removeMapping(step.page, index);
+  }
+
+  setMappingEnabled(step: WizardStep, index: number, enabled: boolean): void {
+    if (step.page) this.engine()?.patchMapping(step.page.list, index, { enabled });
   }
 
   // ---- Presets ----

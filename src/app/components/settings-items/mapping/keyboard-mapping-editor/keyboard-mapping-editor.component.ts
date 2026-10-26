@@ -110,6 +110,21 @@ export class KeyboardMappingEditorComponent implements OnChanges, OnDestroy {
     this.error = '';
   }
 
+  /** The fields as they stand now (no validation), to tell whether anything was changed. */
+  fields(): KeyboardInputEditSaveEvent {
+    return {
+      mode: this.editMode, keyCode: this.editKeyCode, dahKeyCode: this.editDahKeyCode,
+      source: this.editSource, reversePaddles: this.editReversePaddles,
+      paddleMode: this.editPaddleMode, name: this.editName.trim(), color: this.editColor,
+    };
+  }
+
+  /** Put the fields back to the `mapping` input. */
+  reset(): void {
+    this.capture.cancel();
+    this.load();
+  }
+
   /** Wait for the next key press and store its code in `field`; Escape cancels. */
   startCapture(field: 'keyCode' | 'dahKeyCode'): void {
     this.capture.toggle(field, () => {

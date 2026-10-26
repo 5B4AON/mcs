@@ -32,5 +32,17 @@ export const DEMO_FLOW: WizardFlow = {
       when: answerIs('wantSound', true),
       items: [{ item: 'sidetone', mode: 'embedded' }],
     },
+    {
+      id: 'keys',
+      title: 'Keyboard keys',
+      intro: 'One page per keyboard mapping, with the same fields as Settings > Inputs.',
+      repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor' },
+    },
+    {
+      id: 'midiIn',
+      title: 'MIDI input',
+      intro: 'One page per MIDI input mapping.',
+      repeat: { list: 'midiInputMappings', item: 'midi-input-mapping-editor' },
+    },
   ],
 };

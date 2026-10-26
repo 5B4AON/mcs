@@ -140,6 +140,22 @@ export class MidiInputMappingEditorComponent implements OnChanges, OnDestroy {
     this.error = '';
   }
 
+  /** The fields as they stand now (no validation), to tell whether anything was changed. */
+  fields(): MidiInputEditSaveEvent {
+    const paddle = this.editMode === 'paddle';
+    return {
+      deviceId: this.editDeviceId, channel: this.editChannel, source: this.editSource,
+      mode: this.editMode, value: this.dit.value, dahValue: paddle ? this.dah.value : -1,
+      reversePaddles: this.editReversePaddles, name: this.editName.trim(), color: this.editColor,
+    };
+  }
+
+  /** Put the fields back to the `mapping` input. */
+  reset(): void {
+    this.capture.cancel();
+    this.load();
+  }
+
   /** Human-readable note, with the channel when one is selected. */
   noteDisplay(note: number): string {
     if (note < 0) return '(none)';
