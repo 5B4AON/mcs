@@ -3,13 +3,13 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { AudioOutputCardComponent } from './audio-output-card/audio-output-card.component';
+import { AudioOutputItemComponent } from '../../settings-items/audio-output/audio-output-item.component';
 import { SerialOutputCardComponent } from './serial-output-card/serial-output-card.component';
 import { WinkeyerCardComponent } from './winkeyer-card/winkeyer-card.component';
 import { RtdbOutputCardComponent } from './rtdb-output-card/rtdb-output-card.component';
 import { MidiOutputCardComponent } from './midi-output-card/midi-output-card.component';
 import { SidetoneItemComponent } from '../../settings-items/sidetone/sidetone-item.component';
-import { VibrationCardComponent } from './vibration-card/vibration-card.component';
+import { VibrationItemComponent } from '../../settings-items/vibration/vibration-item.component';
 
 /**
  * Settings — Outputs tab.
@@ -22,13 +22,13 @@ import { VibrationCardComponent } from './vibration-card/vibration-card.componen
   selector: 'app-settings-outputs-tab',
   standalone: true,
   imports: [
-    AudioOutputCardComponent,
+    AudioOutputItemComponent,
     SerialOutputCardComponent,
     WinkeyerCardComponent,
     RtdbOutputCardComponent,
     MidiOutputCardComponent,
     SidetoneItemComponent,
-    VibrationCardComponent,
+    VibrationItemComponent,
   ],
   templateUrl: './settings-outputs-tab.component.html',
 })

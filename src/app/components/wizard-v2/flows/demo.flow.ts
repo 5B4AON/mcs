@@ -36,6 +36,12 @@ export const DEMO_FLOW: WizardFlow = {
     speedStep({ encoder: true, keyer: true }),
     farnsworthStep(),
     {
+      id: 'moreItems',
+      title: 'Encoder, audio key output and vibration',
+      intro: 'The same controls as in Settings, shown flat. Tests that use hardware are only in Settings.',
+      items: [{ item: 'encoder' }, { item: 'audio-output' }, { item: 'vibration' }],
+    },
+    {
       id: 'keys',
       title: 'Keyboard keys',
       intro: 'One page per keyboard mapping, with the same fields as Settings > Inputs.',

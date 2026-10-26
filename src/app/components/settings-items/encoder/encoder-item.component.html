@@ -1,0 +1,43 @@
+<!-- Keyboard Encoder -->
+<app-item-shell cardId="encoder-card" title="Keyboard Encoder" [mode]="mode">
+  <span item-badges class="source-badge" [class.source-rx]="s().encoderSource === 'rx'" [class.source-tx]="s().encoderSource === 'tx'">{{ s().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
+
+  <div class="cw-hint">
+    Text typed via the keyboard is encoded into Morse code and played
+    through all enabled outputs. Use the source selector below to tag
+    this text as received (RX) or transmitted (TX) — this controls
+    which outputs carry the signal and how it appears in conversation
+    views.
+  </div>
+
+  <label>Used for:
+    <select [value]="s().encoderSource" (change)="onSettingChange('encoderSource', $event)">
+      <option value="rx">RX &mdash; received morse</option>
+      <option value="tx">TX &mdash; transmitted morse</option>
+    </select>
+  </label>
+
+  <div class="card-section-divider"></div>
+
+  <label>Name:
+    <input type="text" [value]="s().encoderName"
+           (input)="onSettingChange('encoderName', $event)"
+           placeholder="e.g. callsign (optional)"
+           maxlength="20">
+  </label>
+  <div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+  <label>Color:
+    <div class="card-color-row">
+      <input type="color" class="card-color-picker"
+             [ngModel]="s().encoderColor || '#ffffff'"
+             (ngModelChange)="scope.update({ encoderColor: $event })">
+      @if (s().encoderColor) {
+        <button type="button" class="card-color-clear"
+                (click)="scope.update({ encoderColor: '' })" title="Clear color">&#10005;</button>
+      }
+      <span class="card-color-preview" [style.color]="s().encoderColor || 'inherit'">Sample</span>
+    </div>
+  </label>
+  <div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+</app-item-shell>

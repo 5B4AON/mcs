@@ -1,9 +1,9 @@
 <!-- Outputs tab — 7 output destination settings cards -->
 
 <app-sidetone-item [audioRunning]="audioRunning"></app-sidetone-item>
-<app-vibration-card></app-vibration-card>
+<app-vibration-item></app-vibration-item>
 <app-midi-output-card></app-midi-output-card>
 <app-serial-output-card></app-serial-output-card>
 <app-rtdb-output-card (helpRequested)="helpRequested.emit($event)"></app-rtdb-output-card>
 <app-winkeyer-card></app-winkeyer-card>
-<app-audio-output-card [audioRunning]="audioRunning"></app-audio-output-card>
+<app-audio-output-item [audioRunning]="audioRunning"></app-audio-output-item>

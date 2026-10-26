@@ -6,7 +6,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { MicCardComponent } from './mic-card/mic-card.component';
 import { CwDetectorCardComponent } from './cw-detector-card/cw-detector-card.component';
 import { KeyboardKeyerCardComponent } from './keyboard-keyer-card/keyboard-keyer-card.component';
-import { EncoderCardComponent } from './encoder-card/encoder-card.component';
+import { EncoderItemComponent } from '../../settings-items/encoder/encoder-item.component';
 import { MouseKeyerCardComponent } from './mouse-keyer-card/mouse-keyer-card.component';
 import { TouchKeyerCardComponent } from './touch-keyer-card/touch-keyer-card.component';
 import { SpriteKeyCardComponent } from './sprite-key-card/sprite-key-card.component';
@@ -28,7 +28,7 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
     MicCardComponent,
     CwDetectorCardComponent,
     KeyboardKeyerCardComponent,
-    EncoderCardComponent,
+    EncoderItemComponent,
     MouseKeyerCardComponent,
     TouchKeyerCardComponent,
     SpriteKeyCardComponent,

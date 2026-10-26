@@ -10,6 +10,12 @@ import { FarnsworthItemComponent } from './farnsworth/farnsworth-item.component'
 import { FARNSWORTH_DESCRIPTOR } from './farnsworth/farnsworth-item.model';
 import { SpeedItemComponent } from './speed/speed-item.component';
 import { ENCODER_SPEED_DESCRIPTOR, KEYER_SPEED_DESCRIPTOR, RX_SPEED_DESCRIPTOR, TX_SPEED_DESCRIPTOR, SPEEDS_DESCRIPTOR } from './speed/speed-item.model';
+import { AudioOutputItemComponent } from './audio-output/audio-output-item.component';
+import { AUDIO_OUTPUT_DESCRIPTOR } from './audio-output/audio-output-item.model';
+import { VibrationItemComponent } from './vibration/vibration-item.component';
+import { VIBRATION_DESCRIPTOR } from './vibration/vibration-item.model';
+import { EncoderItemComponent } from './encoder/encoder-item.component';
+import { ENCODER_DESCRIPTOR } from './encoder/encoder-item.model';
 
 /** One registered item: how to draw it and what it edits. */
 export interface RegisteredItem {
@@ -24,6 +30,9 @@ export interface RegisteredItem {
 /** All settings items by id. Wizard flows refer to items by these ids. */
 export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   sidetone: { component: SidetoneItemComponent, descriptor: SIDETONE_DESCRIPTOR, needsAudio: true },
+  'audio-output': { component: AudioOutputItemComponent, descriptor: AUDIO_OUTPUT_DESCRIPTOR, needsAudio: true },
+  vibration: { component: VibrationItemComponent, descriptor: VIBRATION_DESCRIPTOR },
+  encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },
   'encoder-speed': { component: SpeedItemComponent, descriptor: ENCODER_SPEED_DESCRIPTOR, inputs: { show: ['encoder'] } },
   'keyer-speed': { component: SpeedItemComponent, descriptor: KEYER_SPEED_DESCRIPTOR, inputs: { show: ['keyer'] } },
