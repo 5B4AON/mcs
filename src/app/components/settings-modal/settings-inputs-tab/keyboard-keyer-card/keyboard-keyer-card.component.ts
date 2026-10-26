@@ -6,6 +6,7 @@ import { Component, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { SettingsService, AppSettings, KeyboardInputMapping, DecoderSource, PaddleMode } from '../../../../services/settings.service';
 import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../keyboard-input-edit-modal/keyboard-input-edit-modal.component';
+import { MappingListComponent } from '../../../settings-items/mapping/mapping-list/mapping-list.component';
 
 /**
  * Settings card — Keyboard Keyer.
@@ -18,7 +19,7 @@ import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../
 @Component({
   selector: 'app-keyboard-keyer-card',
   standalone: true,
-  imports: [FormsModule, KeyboardInputEditModalComponent],
+  imports: [FormsModule, MappingListComponent, KeyboardInputEditModalComponent],
   templateUrl: './keyboard-keyer-card.component.html',
   styles: [':host { display: contents; }'],
 })
@@ -58,8 +59,7 @@ export class KeyboardKeyerCardComponent {
   }
 
   /** Toggle an individual mapping on/off */
-  onMappingEnabledChange(index: number, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
+  onMappingEnabledChange(index: number, checked: boolean): void {
     const mappings = this.settings.settings().keyboardInputMappings.map((m, i) =>
       i === index ? { ...m, enabled: checked } : m
     );

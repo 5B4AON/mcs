@@ -17,33 +17,24 @@
   @if (expanded) {
     <div class="settings-card-body">
 
-      <div class="midi-mapping-list">
-        @for (mapping of settings.settings().keyboardInputMappings; track $index) {
-          <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
-            <label class="midi-mapping-enable">
-              <input type="checkbox" [checked]="mapping.enabled"
-                     (change)="onMappingEnabledChange($index, $event)">
-            </label>
-            @if (mapping.name) {
-              <span class="midi-mapping-name" (click)="startEdit($index)" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
-            }
-            <span class="midi-mapping-mode" (click)="startEdit($index)">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
-            <span class="midi-mapping-value" (click)="startEdit($index)">{{ keySummary(mapping) }}</span>
-            <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'" (click)="startEdit($index)">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
-            @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
-              <span class="midi-mapping-reverse" (click)="startEdit($index)" title="Paddles reversed">↔</span>
-            }
-            @if (mapping.mode === 'paddle') {
-              <span class="midi-mapping-mode-detail" (click)="startEdit($index)" title="Paddle mode">{{ paddleModeLabel(mapping.paddleMode) }}</span>
-            }
-            <span class="midi-mapping-spacer"></span>
-            <button class="midi-mapping-btn midi-mapping-btn-edit" (click)="startEdit($index)" title="Edit">
-              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
-            </button>
-          </div>
-        }
-      </div>
-      <button class="midi-mapping-add-btn" (click)="addMapping()">+ Add Mapping</button>
+      <app-mapping-list [mappings]="settings.settings().keyboardInputMappings"
+                        (add)="addMapping()" (edit)="startEdit($event)"
+                        (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
+        <ng-template let-mapping>
+          @if (mapping.name) {
+            <span class="midi-mapping-name" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
+          }
+          <span class="midi-mapping-mode">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+          <span class="midi-mapping-value">{{ keySummary(mapping) }}</span>
+          <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+          @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+            <span class="midi-mapping-reverse" title="Paddles reversed">↔</span>
+          }
+          @if (mapping.mode === 'paddle') {
+            <span class="midi-mapping-mode-detail" title="Paddle mode">{{ paddleModeLabel(mapping.paddleMode) }}</span>
+          }
+        </ng-template>
+      </app-mapping-list>
 
       <div class="keyer-hint">
         Map one or more keyboard keys as a straight key or paddle.

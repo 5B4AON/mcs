@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { SettingsService, MidiInputMapping, DecoderSource } from '../../../../services/settings.service';
 import { MidiInputService, midiNoteName } from '../../../../services/midi-input.service';
 import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../midi-input-edit-modal/midi-input-edit-modal.component';
+import { MappingListComponent } from '../../../settings-items/mapping/mapping-list/mapping-list.component';
 
 /**
  * Settings card — MIDI Input.
@@ -19,7 +20,7 @@ import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../midi-
 @Component({
   selector: 'app-midi-input-card',
   standalone: true,
-  imports: [FormsModule, MidiInputEditModalComponent],
+  imports: [FormsModule, MappingListComponent, MidiInputEditModalComponent],
   templateUrl: './midi-input-card.component.html',
   styles: [':host { display: contents; }'],
 })
@@ -71,8 +72,7 @@ export class MidiInputCardComponent {
   }
 
   /** Toggle an individual mapping on/off */
-  onMappingEnabledChange(index: number, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
+  onMappingEnabledChange(index: number, checked: boolean): void {
     const mappings = this.settings.settings().midiInputMappings.map((m, i) =>
       i === index ? { ...m, enabled: checked } : m
     );

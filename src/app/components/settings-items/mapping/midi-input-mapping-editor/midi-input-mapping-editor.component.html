@@ -1,0 +1,84 @@
+<div class="md-editor">
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Device'">MIDI Device</label>
+    <select [id]="idPrefix + 'Device'" class="md-select" [(ngModel)]="editDeviceId">
+      <option value="">Any (first available)</option>
+      @for (dev of midiDevices; track dev.id) {
+        <option [value]="dev.id">{{ dev.name }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Channel'">MIDI Channel</label>
+    <select [id]="idPrefix + 'Channel'" class="md-select" [(ngModel)]="editChannel">
+      <option [ngValue]="0">Omni (all channels)</option>
+      @for (ch of midiChannels; track ch) {
+        <option [ngValue]="ch">Channel {{ ch }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Source'">Used for</label>
+    <select [id]="idPrefix + 'Source'" class="md-select" [(ngModel)]="editSource">
+      <option value="rx">RX &mdash; received morse</option>
+      <option value="tx">TX &mdash; transmitted morse</option>
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Mode'">Mode</label>
+    <select [id]="idPrefix + 'Mode'" class="md-select" [(ngModel)]="editMode">
+      <option value="straightKey">Straight Key</option>
+      <option value="paddle">Paddle</option>
+    </select>
+  </div>
+
+  <!-- Note, octave, raw number and Detect for one note field -->
+  <ng-template #noteRow let-label="label" let-note="note" let-field="field">
+    <div class="md-field">
+      <label class="md-label">{{ label }}</label>
+      <div class="md-note-row">
+        <select class="md-note-select" [(ngModel)]="note.note" (ngModelChange)="note.fromPickers()">
+          @for (name of noteNames; track $index) {
+            <option [ngValue]="$index">{{ name }}</option>
+          }
+        </select>
+        <select class="md-octave-select" [(ngModel)]="note.octave" (ngModelChange)="note.fromPickers()">
+          @for (oct of octaves; track oct) {
+            <option [ngValue]="oct">{{ oct }}</option>
+          }
+        </select>
+        <span class="md-note-separator">or</span>
+        <input type="number" class="md-raw-input" min="0" max="127"
+               [(ngModel)]="note.raw" (ngModelChange)="note.fromRaw()" placeholder="0–127">
+        <app-detect-button variant="detect" [listening]="capture.active === field"
+                           label="Detect" listeningLabel="Press a key…"
+                           title="Auto-detect: press a MIDI key" (pressed)="detect(field)" />
+      </div>
+      <span class="md-hint">{{ noteDisplay(note.value) }}</span>
+    </div>
+  </ng-template>
+
+  <ng-container *ngTemplateOutlet="noteRow; context: { label: editMode === 'paddle' ? 'Dit Paddle Note' : 'Straight Key Note', note: dit, field: 'value' }" />
+
+  @if (editMode === 'paddle') {
+    <ng-container *ngTemplateOutlet="noteRow; context: { label: 'Dah Paddle Note', note: dah, field: 'dahValue' }" />
+
+    <div class="md-field md-checkbox-row">
+      <label>
+        <input type="checkbox" [(ngModel)]="editReversePaddles">
+        Reverse Paddles
+      </label>
+    </div>
+  }
+
+  @if (error) {
+    <div class="md-error">{{ error }}</div>
+  }
+
+  <app-mapping-identity-fields [idPrefix]="idPrefix"
+                               colorHint="Optional. Overrides the default RX/TX colour in fullscreen views. Leave unset to use the standard colours."
+                               [(name)]="editName" [(color)]="editColor" />
+</div>

@@ -68,15 +68,15 @@ src/app/
 │   ├── vibration-output.service.ts — Vibration API output
 │   └── practice.service.ts     — copy practice sequence generation + scoring
 └── components/
-    ├── settings-items/      — reusable settings items shared by Settings and setup wizards (Wizard v2 refactor, issue #57): `settings-scope.ts` (SETTINGS_SCOPE token), `live-settings-scope.ts`, `draft-settings-scope.ts`, `item-descriptor.ts` (conventions), `item-registry.ts`, `item-shell/` (card/embedded frame), `identity-field/` (name + colour picker), `sidetone/` (pilot item)
+    ├── settings-items/      — reusable settings items shared by Settings and setup wizards (Wizard v2 refactor, issue #57): `settings-scope.ts` (SETTINGS_SCOPE token), `live-settings-scope.ts`, `draft-settings-scope.ts`, `item-descriptor.ts` (conventions), `item-registry.ts`, `item-shell/` (card/embedded frame), `identity-field/` (name + colour picker), `sidetone/` (pilot item), `mapping/` (shared mapping pieces: `mapping-list/` rows + add, `mapping-edit-dialog/` Settings popup frame, `keyboard-mapping-editor/` and `midi-input-mapping-editor/` frameless field editors with `build()` validation, `identity-field`-style `identity-fields/`, `detect-button/`, `capture-slot.ts`, global `mapping-fields.css` with `md-*` classes). Settings opens an editor inside the popup; wizard pages show the same editor flat. The MIDI output and serial in/out cards adopt these in their own item issues
     ├── wizard-v2/           — Wizard v2 (issue #57), built beside the old wizard: `engine/flow-types.ts` (declarative flow/step/question types), `engine/conditions.ts` (named step conditions), `engine/wizard-engine.ts` (pure state machine over a DraftSettingsScope: navigation, change detection, Revert, validation, review, apply patch, route/conflict checks), `flows/*.flow.ts` (one declarative file per goal; `demo.flow.ts` is temporary), `flows/flow-registry.ts` (start list; `MIGRATED` gets each goal's flow), `setup-wizard-v2.component.*` (dialog shell: goal list via the existing goal-navigator modal, step host with questions + registered items via `NgComponentOutlet`, shared Review/Done, presets; provides its own `DraftSettingsScope`; reuses the old wizard CSS)
     ├── settings-modal/      — settings dialog (3 tab children, each with card children)
     │   ├── settings-modal.component.*   — tab container + reset/export/import buttons
     │   ├── goal-navigator/              — plain goal list hosted by the Setup Wizard modal; `setup-goals.ts` is the shared goal table (labels, landings, icons, wizard ids)
     │   ├── emoji-edit-modal/            — emoji mapping editor modal (opened by emojis-card)
     │   ├── emoji-picker/                — emoji selection popup (used by emoji-edit-modal)
-    │   ├── keyboard-input-edit-modal/   — keyboard key mapping editor modal
-    │   ├── midi-input-edit-modal/       — MIDI input mapping editor modal
+    │   ├── keyboard-input-edit-modal/   — keyboard key mapping popup (thin: `app-mapping-edit-dialog` + `app-keyboard-mapping-editor`)
+    │   ├── midi-input-edit-modal/       — MIDI input mapping popup (thin: `app-mapping-edit-dialog` + `app-midi-input-mapping-editor`)
     │   ├── midi-output-edit-modal/      — MIDI output mapping editor modal
     │   ├── serial-input-edit-modal/     — serial input mapping editor modal
     │   ├── serial-output-edit-modal/    — serial output mapping editor modal

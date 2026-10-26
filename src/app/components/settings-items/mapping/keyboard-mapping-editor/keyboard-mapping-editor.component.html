@@ -1,0 +1,63 @@
+<div class="md-editor">
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Mode'">Mode</label>
+    <select [id]="idPrefix + 'Mode'" class="md-select" [(ngModel)]="editMode">
+      <option value="straightKey">Straight Key</option>
+      <option value="paddle">Paddle</option>
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label">{{ editMode === 'paddle' ? 'Dit Paddle Key' : 'Straight Key' }}</label>
+    <div class="md-key-row">
+      <app-detect-button variant="capture" [listening]="capture.active === 'keyCode'"
+                         [label]="formatKeyCode(editKeyCode)" listeningLabel="Press a key…"
+                         (pressed)="startCapture('keyCode')" />
+    </div>
+    <span class="md-hint">Code: {{ editKeyCode || '(none)' }}</span>
+  </div>
+
+  @if (editMode === 'paddle') {
+    <div class="md-field">
+      <label class="md-label">Dah Paddle Key</label>
+      <div class="md-key-row">
+        <app-detect-button variant="capture" [listening]="capture.active === 'dahKeyCode'"
+                           [label]="formatKeyCode(editDahKeyCode)" listeningLabel="Press a key…"
+                           (pressed)="startCapture('dahKeyCode')" />
+      </div>
+      <span class="md-hint">Code: {{ editDahKeyCode || '(none)' }}</span>
+    </div>
+
+    <div class="md-field md-checkbox-row">
+      <label>
+        <input type="checkbox" [(ngModel)]="editReversePaddles">
+        Reverse Paddles
+      </label>
+    </div>
+
+    <div class="md-field">
+      <label class="md-label" [for]="idPrefix + 'PaddleMode'">Paddle Mode</label>
+      <select [id]="idPrefix + 'PaddleMode'" class="md-select" [(ngModel)]="editPaddleMode">
+        <option value="iambic-b">Iambic B</option>
+        <option value="iambic-a">Iambic A</option>
+        <option value="ultimatic">Ultimatic</option>
+        <option value="single-lever">Single Lever</option>
+      </select>
+    </div>
+  }
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Source'">Used for</label>
+    <select [id]="idPrefix + 'Source'" class="md-select" [(ngModel)]="editSource">
+      <option value="rx">RX &mdash; received morse</option>
+      <option value="tx">TX &mdash; transmitted morse</option>
+    </select>
+  </div>
+
+  @if (error) {
+    <div class="md-error">{{ error }}</div>
+  }
+
+  <app-mapping-identity-fields [idPrefix]="idPrefix"
+                               [(name)]="editName" [(color)]="editColor" />
+</div>
