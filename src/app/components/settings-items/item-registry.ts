@@ -42,6 +42,10 @@ import { RtdbInputItemComponent } from './rtdb-input/rtdb-input-item.component';
 import { RTDB_INPUT_DESCRIPTOR } from './rtdb-input/rtdb-input-item.model';
 import { RtdbOutputItemComponent } from './rtdb-output/rtdb-output-item.component';
 import { RTDB_OUTPUT_DESCRIPTOR } from './rtdb-output/rtdb-output-item.model';
+import { MicItemComponent } from './mic/mic-item.component';
+import { MIC_DESCRIPTOR } from './mic/mic-item.model';
+import { CwDetectorItemComponent } from './cw-detector/cw-detector-item.component';
+import { CW_DETECTOR_DESCRIPTOR } from './cw-detector/cw-detector-item.model';
 import { MidiOutputItemComponent } from './midi-output/midi-output-item.component';
 import { MIDI_OUTPUT_DESCRIPTOR } from './midi-output/midi-output-item.model';
 import { MidiInputItemComponent } from './midi-input/midi-input-item.component';
@@ -77,6 +81,8 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'serial-input': { component: SerialInputItemComponent, descriptor: SERIAL_INPUT_DESCRIPTOR },
   'serial-output': { component: SerialOutputItemComponent, descriptor: SERIAL_OUTPUT_DESCRIPTOR },
   'winkeyer': { component: WinkeyerItemComponent, descriptor: WINKEYER_DESCRIPTOR },
+  mic: { component: MicItemComponent, descriptor: MIC_DESCRIPTOR, needsAudio: true },
+  'cw-detector': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, needsAudio: true },
   'rtdb-input': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_DESCRIPTOR },
   'rtdb-output': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_DESCRIPTOR },
   'midi-input': { component: MidiInputItemComponent, descriptor: MIDI_INPUT_DESCRIPTOR },

@@ -4,6 +4,7 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
+import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
 
 /**
@@ -68,9 +69,19 @@ export class CwInputService {
 
   private started = false;
 
+  /** True between a key-down and its key-up from the detector */
+  private keyIsDown = false;
+
+  /** How long the detector may stay keyed with the sidetone on before it is treated as feedback */
+  private readonly STUCK_KEY_MS = 2500;
+
+  /** Fires when the key has been held for STUCK_KEY_MS */
+  private stuckTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private settings: SettingsService,
     private zone: NgZone,
+    private loopDetection: LoopDetectionService,
   ) {}
 
   get isStarted(): boolean {
@@ -130,7 +141,7 @@ export class CwInputService {
     this.workletNode.port.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'keyChange') {
-        this.zone.run(() => this.keyEvent$.next({ down: data.down, time: data.time }));
+        this.zone.run(() => this.onKeyChange(data.down, data.time));
       } else if (data.type === 'level') {
         this.zone.run(() => this.level$.next({
           magnitude: data.magnitude,
@@ -179,8 +190,40 @@ export class CwInputService {
     });
   }
 
+  /**
+   * Publish a key change and watch for feedback. If the sidetone is audible to
+   * the input, the detector hears it, keys the sidetone, hears that, and so on:
+   * one unbroken key-down. Any such key-down held for STUCK_KEY_MS with the
+   * sidetone on is treated as a feedback loop and the detector is shut off.
+   */
+  private onKeyChange(down: boolean, time: number): void {
+    this.keyIsDown = down;
+    this.keyEvent$.next({ down, time });
+    if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
+    if (!down) return;
+    this.stuckTimer = setTimeout(() => {
+      this.stuckTimer = null;
+      if (!this.keyIsDown || !this.settings.settings().sidetoneEnabled) return;
+      this.zone.run(() => {
+        this.settings.update({ cwInputEnabled: false });
+        void this.stop();
+        this.loopDetection.reportFeedback(
+          'Audio feedback detected! The CW tone detector stayed keyed for over 2.5 seconds while the sidetone ' +
+          'was on, so it is probably hearing the sidetone. The CW detector was turned off. Use headphones, ' +
+          'lower the volume, move the sidetone away from the detector tone, or turn the sidetone off, then ' +
+          're-enable the detector.');
+      });
+    }, this.STUCK_KEY_MS);
+  }
+
   /** Stop the CW input pipeline and release all resources */
   async stop(): Promise<void> {
+    if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
+    // A key-down with no later key-up would leave the sidetone held on, so release it
+    if (this.keyIsDown) {
+      this.keyIsDown = false;
+      this.zone.run(() => this.keyEvent$.next({ down: false, time: performance.now() }));
+    }
     this.clearKeepAlive();
     try { this.workletNode?.disconnect(); } catch { }
     for (const track of this.stream?.getTracks() ?? []) {

@@ -4,6 +4,8 @@
 
 import { Injectable, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
+import { AudioOutputService } from './audio-output.service';
+import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
 
 /**
@@ -54,9 +56,20 @@ export class AudioInputService {
 
   private started = false;
 
+  /** True between a key-down and its key-up from the detector */
+  private keyIsDown = false;
+
+  /** How long the mic key may stay down with the sidetone on before it is treated as feedback */
+  private readonly STUCK_KEY_MS = 2500;
+
+  /** Fires when the key has been down for STUCK_KEY_MS */
+  private stuckTimer: ReturnType<typeof setTimeout> | null = null;
+
   constructor(
     private settings: SettingsService,
     private zone: NgZone,
+    private audioOutput: AudioOutputService,
+    private loopDetection: LoopDetectionService,
   ) {}
 
   get isStarted(): boolean {
@@ -106,7 +119,7 @@ export class AudioInputService {
     this.workletNode.port.onmessage = (e) => {
       const data = e.data;
       if (data.type === 'keyChange') {
-        this.zone.run(() => this.keyEvent$.next({ down: data.down, time: data.time }));
+        this.zone.run(() => this.onKeyChange(data.down, data.time));
       } else if (data.type === 'level') {
         this.zone.run(() => this.level$.next(data.magnitude));
       } else if (data.type === 'calibration') {
@@ -150,8 +163,40 @@ export class AudioInputService {
     });
   }
 
+  /**
+   * Publish a key change and watch for feedback. If the sidetone leaks into the
+   * mic, the key reads as permanently down and keys the sidetone again. A
+   * key-down held for STUCK_KEY_MS with the sidetone on is treated as feedback:
+   * the mic key and its pilot tone are switched off.
+   */
+  private onKeyChange(down: boolean, time: number): void {
+    this.keyIsDown = down;
+    this.keyEvent$.next({ down, time });
+    if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
+    if (!down) return;
+    this.stuckTimer = setTimeout(() => {
+      this.stuckTimer = null;
+      if (!this.keyIsDown || !this.settings.settings().sidetoneEnabled) return;
+      this.zone.run(() => {
+        this.settings.update({ micInputEnabled: false });
+        void this.stop();
+        void this.audioOutput.stopPilot();
+        this.loopDetection.reportFeedback(
+          'Audio feedback detected! The mic key stayed down for over 2.5 seconds while the sidetone ' +
+          'was on, so it is probably hearing the sidetone. The mic key and pilot tone were turned off. ' +
+          'Use headphones, lower the volume, or turn the sidetone off, then re-enable the mic key.');
+      });
+    }, this.STUCK_KEY_MS);
+  }
+
   /** Stop the audio input pipeline and release all resources */
   async stop(): Promise<void> {
+    if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
+    // A key-down with no later key-up would leave the sidetone held on, so release it
+    if (this.keyIsDown) {
+      this.keyIsDown = false;
+      this.zone.run(() => this.keyEvent$.next({ down: false, time: performance.now() }));
+    }
     this.clearKeepAlive();
     try { this.workletNode?.disconnect(); } catch { }
     for (const track of this.stream?.getTracks() ?? []) {

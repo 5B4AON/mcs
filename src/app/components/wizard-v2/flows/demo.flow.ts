@@ -112,6 +112,18 @@ export const DEMO_FLOW: WizardFlow = {
       items: [{ item: 'winkeyer' }],
     },
     {
+      id: 'cwDetector',
+      title: 'CW tone detector',
+      intro: 'Decode CW tones from an audio input.',
+      items: [{ item: 'cw-detector' }],
+    },
+    {
+      id: 'micKey',
+      title: 'Straight key via mic',
+      intro: 'Read a hardware key through the microphone with a pilot tone.',
+      items: [{ item: 'mic' }],
+    },
+    {
       id: 'rtdbIn',
       title: 'Firebase input',
       intro: 'Receive morse from a Firebase channel.',

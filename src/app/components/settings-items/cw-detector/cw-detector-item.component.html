@@ -1,0 +1,133 @@
+<!-- CW Tone Detector -->
+<app-item-shell cardId="cw-detector-card" title="CW Tone Detector" [mode]="mode"
+                [enabled]="s().cwInputEnabled" [toggleDisabled]="!!cwInputConflict()"
+                (enabledChange)="onCwEnabledChange($event)">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().cwInputSource === 'rx'" [class.source-tx]="s().cwInputSource === 'tx'">{{ s().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().cwInputEnabled" [disabled]="!!cwInputConflict()"
+             (change)="onCwEnabledChange($any($event.target).checked)">
+      Decode CW tones from an audio input
+    </label>
+    <div class="keyer-hint">
+      @if (s().cwInputEnabled) {
+        The CW detector is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to choose the audio input and tone settings.
+      }
+    </div>
+    @if (!s().cwInputEnabled && cwInputConflict()) {
+      <div class="conflict-warning">{{ cwInputConflict() }}</div>
+    }
+  }
+
+  @if (mode === 'card' || s().cwInputEnabled) {
+    @if (cwInputConflict()) {
+      <div class="conflict-warning">{{ cwInputConflict() }}</div>
+    }
+
+    <label>Used for:
+      <select [value]="s().cwInputSource" (change)="onSettingChange('cwInputSource', $event)">
+        <option value="rx">RX &mdash; received morse</option>
+        <option value="tx">TX &mdash; transmitted morse</option>
+      </select>
+    </label>
+
+    <label>Audio Input Device:
+      <select [value]="s().cwInputDeviceId" (change)="onSettingChange('cwInputDeviceId', $event)">
+        <option value="default" [selected]="s().cwInputDeviceId === 'default'">System Default</option>
+        @for (dev of devices.inputDevices(); track dev.deviceId) {
+          <option [value]="dev.deviceId" [selected]="dev.deviceId === s().cwInputDeviceId">{{ dev.label }}</option>
+        }
+      </select>
+    </label>
+
+    <label>Input Channel:
+      <select [value]="s().cwInputChannel" (change)="onCwParamChange('cwInputChannel', $event)">
+        <option value="left" [selected]="s().cwInputChannel === 'left'">Left</option>
+        <option value="right" [selected]="s().cwInputChannel === 'right'">Right</option>
+      </select>
+    </label>
+
+    <label>CW Tone Frequency (Hz):
+      <input type="number" min="200" max="2000" step="10"
+             [value]="s().cwInputFrequency"
+             (change)="onCwParamChange('cwInputFrequency', $event)">
+    </label>
+
+    <label>CW Tone Bandwidth (Hz):
+      <input type="number" min="100" max="500" step="10"
+             [value]="s().cwInputBandwidth"
+             (change)="onCwParamChange('cwInputBandwidth', $event)">
+    </label>
+
+    <div class="cw-hint">
+      Typical CW audio tone: 500–700 Hz. Match to your radio's sidetone or BFO offset.
+      The bandwidth controls how selective the detector is around the centre frequency.
+      At {{ s().cwInputBandwidth }} Hz bandwidth, the passband is
+      {{ s().cwInputFrequency - s().cwInputBandwidth / 2 }}–{{ s().cwInputFrequency + s().cwInputBandwidth / 2 }} Hz.
+      Narrower = more selective but requires a more precise frequency setting.
+    </div>
+
+    <label>
+      <input type="checkbox" [checked]="s().cwInputAutoThreshold"
+             (change)="onCwParamChange('cwInputAutoThreshold', $event)">
+      Auto Threshold
+    </label>
+
+    @if (!s().cwInputAutoThreshold) {
+      <label>Manual Threshold:
+        <input type="range" min="0.0001" max="0.5" step="0.0001"
+               [value]="s().cwInputThreshold"
+               (input)="onCwParamChange('cwInputThreshold', $event)">
+        {{ (s().cwInputThreshold * 1000).toFixed(2) }}m
+      </label>
+    }
+
+    @if (cwNoiseFloor > 0 || cwSignalPeak > 0) {
+      <div class="cw-auto-info">
+        Noise: {{ (cwNoiseFloor * 1000).toFixed(2) }}m
+        &nbsp;|&nbsp; Peak: {{ (cwSignalPeak * 1000).toFixed(2) }}m
+        &nbsp;|&nbsp; Threshold: {{ (cwThreshold * 1000).toFixed(2) }}m
+      </div>
+    }
+
+    <label>Debounce (ms):
+      <input type="number" min="1" max="100"
+             [value]="s().cwInputDebounceMs"
+             (change)="onCwParamChange('cwInputDebounceMs', $event)">
+    </label>
+
+    <div class="cw-hint">
+      Feed audio from your radio receiver, virtual audio cable, or any audio source carrying CW tones.
+      The detector uses a narrow Goertzel filter at the configured frequency with automatic gain tracking.
+    </div>
+
+    <div class="card-section-divider"></div>
+
+    <label>Name:
+      <input type="text" [value]="s().cwInputName"
+             (input)="onSettingChange('cwInputName', $event)"
+             placeholder="e.g. callsign (optional)"
+             maxlength="20">
+    </label>
+    <div class="cw-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+    <label>Color:
+      <div class="card-color-row">
+        <input type="color" class="card-color-picker"
+               [ngModel]="s().cwInputColor || '#ffffff'"
+               (ngModelChange)="scope.update({ cwInputColor: $event })">
+        @if (s().cwInputColor) {
+          <button type="button" class="card-color-clear"
+                  (click)="scope.update({ cwInputColor: '' })" title="Clear color">&#10005;</button>
+        }
+        <span class="card-color-preview" [style.color]="s().cwInputColor || 'inherit'">Sample</span>
+      </div>
+    </label>
+    <div class="cw-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+  }
+</app-item-shell>
