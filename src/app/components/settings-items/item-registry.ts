@@ -26,6 +26,8 @@ import { ProsignActionsItemComponent } from './prosign-actions/prosign-actions-i
 import { PROSIGN_ACTIONS_DESCRIPTOR } from './prosign-actions/prosign-actions-item.model';
 import { EmojisItemComponent } from './emojis/emojis-item.component';
 import { EMOJIS_DESCRIPTOR } from './emojis/emojis-item.model';
+import { KeyboardKeyerItemComponent } from './keyboard-keyer/keyboard-keyer-item.component';
+import { KEYBOARD_KEYER_DESCRIPTOR } from './keyboard-keyer/keyboard-keyer-item.model';
 
 /** One registered item: how to draw it and what it edits. */
 export interface RegisteredItem {
@@ -48,6 +50,7 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },
   'prosign-actions': { component: ProsignActionsItemComponent, descriptor: PROSIGN_ACTIONS_DESCRIPTOR },
   'emojis': { component: EmojisItemComponent, descriptor: EMOJIS_DESCRIPTOR },
+  'keyboard-keyer': { component: KeyboardKeyerItemComponent, descriptor: KEYBOARD_KEYER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },
   'encoder-speed': { component: SpeedItemComponent, descriptor: ENCODER_SPEED_DESCRIPTOR, inputs: { show: ['encoder'] } },
   'keyer-speed': { component: SpeedItemComponent, descriptor: KEYER_SPEED_DESCRIPTOR, inputs: { show: ['keyer'] } },

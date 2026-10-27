@@ -2,30 +2,38 @@
  * Morse Code Studio
  */
 
-import { Component, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { SettingsService, AppSettings, KeyboardInputMapping, DecoderSource, PaddleMode } from '../../../../services/settings.service';
-import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../keyboard-input-edit-modal/keyboard-input-edit-modal.component';
-import { MappingListComponent } from '../../../settings-items/mapping/mapping-list/mapping-list.component';
+import { Component, Input, computed, inject } from '@angular/core';
+import { KeyboardInputMapping, DecoderSource, PaddleMode } from '../../../services/settings.service';
+import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../settings-modal/keyboard-input-edit-modal/keyboard-input-edit-modal.component';
+import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { SETTINGS_SCOPE } from '../settings-scope';
+import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
 /**
- * Settings card — Keyboard Keyer.
+ * Settings item — Keyboard Keyer.
  *
  * Displays a table of keyboard input mappings (straight key / paddle),
  * with add/edit/delete support via the keyboard input edit modal.
  * Each mapping has its own key code(s), source, mode, paddle mode,
  * and optional name/colour — modelled after the MIDI input card.
+ * In a wizard step only the master switch and an intro are shown: the
+ * mappings are edited on their own pages (repeat step) instead of in the popup.
  */
 @Component({
-  selector: 'app-keyboard-keyer-card',
+  selector: 'app-keyboard-keyer-item',
   standalone: true,
-  imports: [FormsModule, MappingListComponent, KeyboardInputEditModalComponent],
-  templateUrl: './keyboard-keyer-card.component.html',
+  imports: [ItemShellComponent, MappingListComponent, KeyboardInputEditModalComponent],
+  templateUrl: './keyboard-keyer-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class KeyboardKeyerCardComponent {
-  /** Whether this card's body is expanded */
-  expanded = false;
+export class KeyboardKeyerItemComponent {
+  /** Card look (Settings) or flat look (wizard step) */
+  @Input() mode: 'card' | 'embedded' = 'card';
+
+  readonly scope = inject(SETTINGS_SCOPE);
+
+  /** Current values from the scope */
+  readonly s = this.scope.value;
 
   /** Index of the mapping currently being edited, or -1 for new */
   editIndex = -1;
@@ -42,7 +50,7 @@ export class KeyboardKeyerCardComponent {
 
   /** Unique source badges from all enabled mappings */
   readonly sourceBadges = computed(() => {
-    const mappings = this.settings.settings().keyboardInputMappings;
+    const mappings = this.s().keyboardInputMappings;
     const sources = new Set<DecoderSource>();
     for (const m of mappings) {
       if (m.enabled) sources.add(m.source);
@@ -50,25 +58,22 @@ export class KeyboardKeyerCardComponent {
     return [...sources];
   });
 
-  constructor(public settings: SettingsService) {}
-
-  /** Handle a boolean setting change from a checkbox */
-  onBoolChange(key: keyof AppSettings, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ [key]: checked } as Partial<AppSettings>);
+  /** Master switch */
+  onEnabledChange(enabled: boolean): void {
+    this.scope.update({ keyboardKeyerEnabled: enabled });
   }
 
   /** Toggle an individual mapping on/off */
   onMappingEnabledChange(index: number, checked: boolean): void {
-    const mappings = this.settings.settings().keyboardInputMappings.map((m, i) =>
+    const mappings = this.s().keyboardInputMappings.map((m, i) =>
       i === index ? { ...m, enabled: checked } : m
     );
-    this.settings.update({ keyboardInputMappings: mappings });
+    this.scope.update({ keyboardInputMappings: mappings });
   }
 
   /** Open the edit modal for an existing mapping */
   startEdit(index: number): void {
-    const m = this.settings.settings().keyboardInputMappings[index];
+    const m = this.s().keyboardInputMappings[index];
     this.editIndex = index;
     this.editMapping = { ...m };
     this.showEditModal = true;
@@ -87,7 +92,7 @@ export class KeyboardKeyerCardComponent {
 
   /** Handle save from the edit modal */
   onEditSaved(event: KeyboardInputEditSaveEvent): void {
-    const mappings = [...this.settings.settings().keyboardInputMappings];
+    const mappings = [...this.s().keyboardInputMappings];
     if (this.editIndex >= 0) {
       mappings[this.editIndex] = {
         ...mappings[this.editIndex],
@@ -113,7 +118,7 @@ export class KeyboardKeyerCardComponent {
         color: event.color,
       });
     }
-    this.settings.update({ keyboardInputMappings: mappings });
+    this.scope.update({ keyboardInputMappings: mappings });
     this.showEditModal = false;
   }
 
@@ -125,8 +130,8 @@ export class KeyboardKeyerCardComponent {
   /** Handle delete from the edit modal */
   onEditDeleted(): void {
     if (this.editIndex >= 0) {
-      const mappings = this.settings.settings().keyboardInputMappings.filter((_, i) => i !== this.editIndex);
-      this.settings.update({ keyboardInputMappings: mappings });
+      const mappings = this.s().keyboardInputMappings.filter((_, i) => i !== this.editIndex);
+      this.scope.update({ keyboardInputMappings: mappings });
     }
     this.showEditModal = false;
   }

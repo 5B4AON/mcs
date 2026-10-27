@@ -48,6 +48,12 @@ export const DEMO_FLOW: WizardFlow = {
       items: [{ item: 'practice' }, { item: 'text-blur' }, { item: 'show-prosigns' }, { item: 'prosign-actions' }, { item: 'emojis' }],
     },
     {
+      id: 'keyer',
+      title: 'Keyboard keyer',
+      intro: 'Turn the keyboard keyer on or off. Your keys are set on the next pages.',
+      items: [{ item: 'keyboard-keyer' }],
+    },
+    {
       id: 'keys',
       title: 'Keyboard keys',
       intro: 'One page per keyboard mapping, with the same fields as Settings > Inputs.',
