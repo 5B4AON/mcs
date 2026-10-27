@@ -64,5 +64,8 @@ export function labelledReview(
 function defaultFormat(_key: keyof AppSettings, value: unknown): string {
   if (typeof value === 'boolean') return value ? 'On' : 'Off';
   if (value === '' || value === undefined || value === null) return 'none';
+  if (Array.isArray(value)) return value.length ? value.join(', ') : 'none';
+  if (typeof value === 'object') return Object.entries(value as Record<string, { enabled?: boolean; action?: string }>)
+    .map(([k, v]) => `${k}: ${v.enabled ? v.action : 'off'}`).join(', ');
   return String(value);
 }

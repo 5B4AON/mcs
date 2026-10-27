@@ -42,6 +42,12 @@ export const DEMO_FLOW: WizardFlow = {
       items: [{ item: 'encoder' }, { item: 'audio-output' }, { item: 'vibration' }],
     },
     {
+      id: 'display',
+      title: 'Practice and display',
+      intro: 'Copy practice, text blurring, prosigns and emojis, flat.',
+      items: [{ item: 'practice' }, { item: 'text-blur' }, { item: 'show-prosigns' }, { item: 'prosign-actions' }, { item: 'emojis' }],
+    },
+    {
       id: 'keys',
       title: 'Keyboard keys',
       intro: 'One page per keyboard mapping, with the same fields as Settings > Inputs.',

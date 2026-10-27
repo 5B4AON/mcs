@@ -2,27 +2,34 @@
  * Morse Code Studio
  */
 
-import { Component } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, ProsignAction, ProsignActionEntry } from '../../../../services/settings.service';
+import { ProsignAction, ProsignActionEntry } from '../../../services/settings.service';
+import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
- * Settings card — Prosign Actions.
+ * Settings item — Prosign Actions.
  *
  * Assigns behaviour (newLine, newParagraph, clearLastWord, etc.) to
  * decoded/encoded prosigns. Each prosign entry can be individually
  * enabled or disabled.
  */
 @Component({
-  selector: 'app-prosign-actions-card',
+  selector: 'app-prosign-actions-item',
   standalone: true,
-  imports: [FormsModule],
-  templateUrl: './prosign-actions-card.component.html',
+  imports: [FormsModule, ItemShellComponent],
+  templateUrl: './prosign-actions-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class ProsignActionsCardComponent {
-  /** Whether this card's body is expanded */
-  expanded = false;
+export class ProsignActionsItemComponent {
+  /** Card look (Settings) or flat look (wizard step) */
+  @Input() mode: 'card' | 'embedded' = 'card';
+
+  readonly scope = inject(SETTINGS_SCOPE);
+
+  /** Current values from the scope */
+  readonly s = this.scope.value;
 
   /** Ordered list of prosign keys for the Prosign Actions card */
   readonly prosignKeys = ['<AR>', '<BK>', '<BT>', '<HH>'];
@@ -36,35 +43,32 @@ export class ProsignActionsCardComponent {
     { value: 'clearScreen', label: 'Clear Screen' },
   ];
 
-  constructor(public settings: SettingsService) {}
-
   /** Safely get the entry for a prosign key, falling back to a default */
   getEntry(key: string): ProsignActionEntry {
-    return this.settings.settings().prosignActions[key]
+    return this.s().prosignActions[key]
         ?? { enabled: false, action: 'newLine' };
-  }
-
-  /** Toggle the master prosign-actions enabled switch */
-  onProsignActionsEnabledChange(event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ prosignActionsEnabled: checked });
   }
 
   /** Toggle an individual prosign entry on/off */
   onProsignEntryEnabledChange(key: string, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    const actions = { ...this.settings.settings().prosignActions };
+    const actions = { ...this.s().prosignActions };
     const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
     actions[key] = { ...existing, enabled: checked };
-    this.settings.update({ prosignActions: actions });
+    this.scope.update({ prosignActions: actions });
   }
 
   /** Change the action assigned to a prosign key */
   onProsignEntryActionChange(key: string, event: Event): void {
     const value = (event.target as HTMLSelectElement).value as ProsignAction;
-    const actions = { ...this.settings.settings().prosignActions };
+    const actions = { ...this.s().prosignActions };
     const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
     actions[key] = { ...existing, action: value };
-    this.settings.update({ prosignActions: actions });
+    this.scope.update({ prosignActions: actions });
+  }
+
+  /** Master switch */
+  onEnabledChange(enabled: boolean): void {
+    this.scope.update({ prosignActionsEnabled: enabled });
   }
 }

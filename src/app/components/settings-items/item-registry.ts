@@ -16,6 +16,16 @@ import { VibrationItemComponent } from './vibration/vibration-item.component';
 import { VIBRATION_DESCRIPTOR } from './vibration/vibration-item.model';
 import { EncoderItemComponent } from './encoder/encoder-item.component';
 import { ENCODER_DESCRIPTOR } from './encoder/encoder-item.model';
+import { PracticeItemComponent } from './practice/practice-item.component';
+import { PRACTICE_DESCRIPTOR } from './practice/practice-item.model';
+import { TextBlurItemComponent } from './text-blur/text-blur-item.component';
+import { TEXT_BLUR_DESCRIPTOR } from './text-blur/text-blur-item.model';
+import { ShowProsignsItemComponent } from './show-prosigns/show-prosigns-item.component';
+import { SHOW_PROSIGNS_DESCRIPTOR } from './show-prosigns/show-prosigns-item.model';
+import { ProsignActionsItemComponent } from './prosign-actions/prosign-actions-item.component';
+import { PROSIGN_ACTIONS_DESCRIPTOR } from './prosign-actions/prosign-actions-item.model';
+import { EmojisItemComponent } from './emojis/emojis-item.component';
+import { EMOJIS_DESCRIPTOR } from './emojis/emojis-item.model';
 
 /** One registered item: how to draw it and what it edits. */
 export interface RegisteredItem {
@@ -33,6 +43,11 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'audio-output': { component: AudioOutputItemComponent, descriptor: AUDIO_OUTPUT_DESCRIPTOR, needsAudio: true },
   vibration: { component: VibrationItemComponent, descriptor: VIBRATION_DESCRIPTOR },
   encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
+  'practice': { component: PracticeItemComponent, descriptor: PRACTICE_DESCRIPTOR },
+  'text-blur': { component: TextBlurItemComponent, descriptor: TEXT_BLUR_DESCRIPTOR },
+  'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },
+  'prosign-actions': { component: ProsignActionsItemComponent, descriptor: PROSIGN_ACTIONS_DESCRIPTOR },
+  'emojis': { component: EmojisItemComponent, descriptor: EMOJIS_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },
   'encoder-speed': { component: SpeedItemComponent, descriptor: ENCODER_SPEED_DESCRIPTOR, inputs: { show: ['encoder'] } },
   'keyer-speed': { component: SpeedItemComponent, descriptor: KEYER_SPEED_DESCRIPTOR, inputs: { show: ['keyer'] } },

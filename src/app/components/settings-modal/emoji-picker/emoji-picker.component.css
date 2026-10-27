@@ -51,6 +51,11 @@
   color: #ffcc00;
 }
 
+.emoji-picker-header,
+.emoji-picker-search {
+  flex: none;
+}
+
 .emoji-picker-search {
   padding: 1rem;
   border-bottom: 1px solid #3a3a4e;
@@ -76,7 +81,7 @@
   gap: 0.5rem;
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #3a3a4e;
-  overflow-x: auto;
+  flex: none;
   flex-wrap: wrap;
 }
 
@@ -111,7 +116,8 @@
   grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
   gap: 0.5rem;
   overflow-y: auto;
-  max-height: 400px;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .emoji-item {

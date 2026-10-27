@@ -1,0 +1,32 @@
+<!-- Prosign Actions -->
+<app-item-shell cardId="prosign-actions-card" title="Prosign Actions" [mode]="mode"
+                [enabled]="s().prosignActionsEnabled"
+                (enabledChange)="onEnabledChange($event)">
+  <div class="cw-hint">
+    Assign an action to each prosign. When a prosign is decoded (or encoded),
+    the selected action is triggered in the conversation log.
+  </div>
+  <div class="prosign-actions-list">
+    @for (key of prosignKeys; track key) {
+      @if (getEntry(key); as entry) {
+        <div class="prosign-action-row">
+          <label class="prosign-action-enable">
+            <input type="checkbox"
+                   [checked]="entry.enabled"
+                   (change)="onProsignEntryEnabledChange(key, $event)">
+          </label>
+          <span class="prosign-action-name">{{ key }}</span>
+          <select class="prosign-action-select"
+                  [value]="entry.action"
+                  (change)="onProsignEntryActionChange(key, $event)"
+                  [disabled]="!entry.enabled">
+            @for (opt of prosignActionOptions; track opt.value) {
+              <option [value]="opt.value" [selected]="opt.value === entry.action">{{ opt.label }}</option>
+            }
+          </select>
+        </div>
+      }
+    }
+  </div>
+</app-item-shell>
+

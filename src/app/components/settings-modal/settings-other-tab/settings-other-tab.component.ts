@@ -5,12 +5,12 @@
 import { Component } from '@angular/core';
 import { SpeedItemComponent } from '../../settings-items/speed/speed-item.component';
 import { WakeLockCardComponent } from './wake-lock-card/wake-lock-card.component';
-import { TextBlurCardComponent } from './text-blur-card/text-blur-card.component';
+import { TextBlurItemComponent } from '../../settings-items/text-blur/text-blur-item.component';
 import { FarnsworthItemComponent } from '../../settings-items/farnsworth/farnsworth-item.component';
-import { PracticeCardComponent } from './practice-card/practice-card.component';
-import { ShowProsignsCardComponent } from './show-prosigns-card/show-prosigns-card.component';
-import { ProsignActionsCardComponent } from './prosign-actions-card/prosign-actions-card.component';
-import { EmojisCardComponent } from './emojis-card/emojis-card.component';
+import { PracticeItemComponent } from '../../settings-items/practice/practice-item.component';
+import { ShowProsignsItemComponent } from '../../settings-items/show-prosigns/show-prosigns-item.component';
+import { ProsignActionsItemComponent } from '../../settings-items/prosign-actions/prosign-actions-item.component';
+import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.component';
 
 /**
  * Settings — Other tab.
@@ -25,12 +25,12 @@ import { EmojisCardComponent } from './emojis-card/emojis-card.component';
   imports: [
     SpeedItemComponent,
     WakeLockCardComponent,
-    TextBlurCardComponent,
+    TextBlurItemComponent,
     FarnsworthItemComponent,
-    PracticeCardComponent,
-    ShowProsignsCardComponent,
-    ProsignActionsCardComponent,
-    EmojisCardComponent,
+    PracticeItemComponent,
+    ShowProsignsItemComponent,
+    ProsignActionsItemComponent,
+    EmojisItemComponent,
   ],
   templateUrl: './settings-other-tab.component.html',
 })

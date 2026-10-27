@@ -63,6 +63,8 @@ type Stage = 'start' | 'steps' | 'review' | 'done';
     MappingPageComponent, MappingListComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['../setup-wizard/setup-wizard.component.css'],
+  // The review shows the old value muted, without the old wizard's strikethrough
+  styles: ['.wizard-dialog .wizard-from { text-decoration: none; }'],
   providers: [
     { provide: SETTINGS_SCOPE, useFactory: () => new DraftSettingsScope(inject(SettingsService)) },
   ],
@@ -403,11 +405,19 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     else this.closed.emit();
   }
 
-  @HostListener('document:keydown.escape')
-  onEscape(): void {
-    // The goal list handles its own Escape
-    if (this.confirmDiscard() || !this.inFlow()) return;
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event): void {
+    // The goal list handles its own Escape, and a dialog opened above the wizard (such as the emoji picker) closes itself first
+    if (this.confirmDiscard() || !this.inFlow() || event.defaultPrevented || this.dialogAboveWizard()) return;
     this.requestClose();
+  }
+
+  /** True when another visible dialog sits on top of the wizard dialog. */
+  private dialogAboveWizard(): boolean {
+    const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]'))
+      .filter(d => d.getClientRects().length > 0);
+    const top = dialogs[dialogs.length - 1];
+    return !!top && top !== this.dialog?.nativeElement;
   }
 
   @HostListener('document:keydown', ['$event'])
