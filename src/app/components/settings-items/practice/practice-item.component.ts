@@ -26,6 +26,11 @@ export class PracticeItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
+  /** Classroom practice uses only local audio and vibration. */
+  @Input() forceLocalPipeline = false;
+  /** Classroom copy practice always receives decoded Morse. */
+  @Input() forceReceivedMorse = false;
+
   readonly scope = inject(SETTINGS_SCOPE);
 
   /** Current values from the scope */

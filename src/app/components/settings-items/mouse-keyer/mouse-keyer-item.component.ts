@@ -26,6 +26,8 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
 export class MouseKeyerItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
+  @Input() forceEnabled = false;
+  @Input() forceSource: 'rx' | 'tx' | null = null;
 
   readonly scope = inject(SETTINGS_SCOPE);
 

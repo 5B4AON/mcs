@@ -44,17 +44,21 @@ export interface StepQuestion {
   /** Answer id; conditions and Revert use it */
   id: string;
   label: string;
-  /** `single` = pick one, `multi` = pick any, `number` = a count, `boolean` = yes/no */
-  kind: 'single' | 'multi' | 'number' | 'boolean';
+  /** `single` = pick one, `select` = pick one from a dropdown, `multi` = pick any, `number` = a count, `boolean` = yes/no */
+  kind: 'single' | 'select' | 'multi' | 'number' | 'text' | 'boolean' | 'participant';
   options?: QuestionOption[];
   /** Start value; also what Revert restores */
   default: unknown;
-  /** Start value taken from the current settings (e.g. which inputs are on now); wins over `default` */
+  /** Start value taken from the current settings (e.g. which inputs are on now); wins over `default`. */
   defaultFrom?: (settings: AppSettings) => unknown;
+  /** Dynamic choices based on the draft and preceding answers. */
+  optionsFrom?: (ctx: ConditionContext) => QuestionOption[];
   hint?: string;
   /** For `number` questions */
   min?: number;
   max?: number;
+  /** For `text` questions */
+  maxLength?: number;
 }
 
 /** A settings item placed on a step. */
@@ -63,6 +67,8 @@ export interface StepItem {
   item: string;
   /** Wizard steps normally use the flat look */
   mode?: 'card' | 'embedded';
+  /** Per-placement item inputs override the registry defaults. */
+  inputs?: Record<string, unknown>;
   /** Extra plain-language line shown with the item */
   hint?: string;
 }
@@ -135,4 +141,18 @@ export interface WizardFlow {
   goal: WizardGoalId;
   steps: WizardStep[];
   forced?: ForcedSetting[];
+  /** Settings keys derived from wizard-only answers rather than direct item edits. */
+  derivedKeys?: readonly (keyof AppSettings)[];
+  /** Build settings changes from wizard-only answers, preserving the starting settings. */
+  derivePatch?: (ctx: ConditionContext, base: AppSettings) => Partial<AppSettings>;
+  /** Validate shared items against forced/derived values, rather than only the editable draft. */
+  validateWithFlowSettings?: boolean;
+  /** Review lines for settings derived from wizard-only answers. */
+  deriveReview?: (
+    base: AppSettings,
+    proposed: AppSettings,
+    ctx: ConditionContext,
+  ) => import('../../settings-items/item-descriptor').ItemReviewLine[];
+  /** Permit a deliberate Apply action even when selected behavior already matches settings. */
+  applyWhen?: Condition;
 }

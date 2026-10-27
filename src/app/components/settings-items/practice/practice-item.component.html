@@ -124,32 +124,43 @@
     </div>
   }
 
-  <!-- Pipeline -->
-  <label>
-    Pipeline:
-    <select (change)="onPipelineChange($event)">
-      <option value="local" [selected]="s().practicePipeline === 'local'">Local audio and vibration</option>
-      <option value="full" [selected]="s().practicePipeline === 'full'">Full pipeline</option>
-    </select>
-  </label>
-  <div class="cw-hint">
-    @if (s().practicePipeline === 'local') {
-      Practice audio and vibration are played locally only &mdash; serial,
-      MIDI, WinKeyer, and RTDB outputs are not driven.
-    } @else {
-      Practice uses configured audio, serial, MIDI, RTDB, and vibration
-      outputs through the full output pipeline.
-    }
-  </div>
+  @if (forceLocalPipeline) {
+    <div class="cw-hint">
+      This guide keeps practice local. It will not drive serial, MIDI,
+      WinKeyer or RTDB outputs.
+    </div>
+  } @else {
+    <!-- Pipeline -->
+    <label>
+      Pipeline:
+      <select (change)="onPipelineChange($event)">
+        <option value="local" [selected]="s().practicePipeline === 'local'">Local audio and vibration</option>
+        <option value="full" [selected]="s().practicePipeline === 'full'">Full pipeline</option>
+      </select>
+    </label>
+    <div class="cw-hint">
+      @if (s().practicePipeline === 'local') {
+        Practice audio and vibration are played locally only &mdash; serial,
+        MIDI, WinKeyer, and RTDB outputs are not driven.
+      } @else {
+        Practice uses configured audio, serial, MIDI, RTDB, and vibration
+        outputs through the full output pipeline.
+      }
+    </div>
+  }
 
-  <!-- Direction (RX/TX) -->
-  <label>
-    Direction:
-    <select (change)="onSourceChange($event)">
-      <option value="rx" [selected]="s().practiceSource === 'rx'">RX</option>
-      <option value="tx" [selected]="s().practiceSource === 'tx'">TX</option>
-    </select>
-  </label>
+  @if (forceReceivedMorse) {
+    <div class="cw-hint">Practice receives decoded Morse (RX).</div>
+  } @else {
+    <!-- Direction (RX/TX) -->
+    <label>
+      Direction:
+      <select (change)="onSourceChange($event)">
+        <option value="rx" [selected]="s().practiceSource === 'rx'">RX</option>
+        <option value="tx" [selected]="s().practiceSource === 'tx'">TX</option>
+      </select>
+    </label>
+  }
 
   <!-- Name and color -->
   <label>
@@ -171,4 +182,3 @@
     </span>
   </label>
 </app-item-shell>
-

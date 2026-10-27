@@ -1,9 +1,9 @@
 <!-- Firebase RTDB Output -->
 <app-item-shell cardId="rtdb-output-card" title="Firebase RTDB Output" [mode]="mode"
-                [enabled]="s().rtdbOutputEnabled" [showRequired]="missingRequired"
+                [enabled]="forceEnabled ? null : s().rtdbOutputEnabled" [showRequired]="missingRequired"
                 (enabledChange)="onEnabledChange($event)">
   <span item-badges>
-    <span class="source-badge" [class.source-rx]="s().rtdbOutputForward === 'rx'" [class.source-tx]="s().rtdbOutputForward === 'tx'" [class.source-both]="s().rtdbOutputForward === 'both'">{{ s().rtdbOutputForward === 'rx' ? 'RX' : s().rtdbOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    <span class="source-badge" [class.source-rx]="(forceForward ?? s().rtdbOutputForward) === 'rx'" [class.source-tx]="(forceForward ?? s().rtdbOutputForward) === 'tx'" [class.source-both]="(forceForward ?? s().rtdbOutputForward) === 'both'">{{ (forceForward ?? s().rtdbOutputForward) === 'rx' ? 'RX' : (forceForward ?? s().rtdbOutputForward) === 'tx' ? 'TX' : 'RX/TX' }}</span>
   </span>
   <span item-header-extra class="connectivity-badge" [class.connected]="rtdbService.outputActive()" [class.disconnected]="!rtdbService.outputActive()">
     @if (rtdbService.outputActive()) {
@@ -20,7 +20,7 @@
     <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
   </div>
 
-  @if (mode === 'embedded') {
+  @if (mode === 'embedded' && !forceEnabled) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputEnabled"
              (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
@@ -35,14 +35,18 @@
     </div>
   }
 
-  @if (mode === 'card' || s().rtdbOutputEnabled) {
-    <label>Forward:
-      <select [value]="s().rtdbOutputForward" (change)="onForwardChange($event)">
-        <option value="rx" [selected]="s().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
-        <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
-        <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
-      </select>
-    </label>
+  @if (mode === 'card' || forceEnabled || s().rtdbOutputEnabled) {
+    @if (forceForward) {
+      <p class="cw-hint">This guide shares both received and sent Morse.</p>
+    } @else {
+      <label>Forward:
+        <select [value]="s().rtdbOutputForward" (change)="onForwardChange($event)">
+          <option value="rx" [selected]="s().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+          <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+          <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
+        </select>
+      </label>
+    }
 
     @if (!rtdbService.isOnline()) {
       <div class="conflict-warning">
@@ -50,27 +54,30 @@
       </div>
     }
 
-    <label [class.field-invalid]="!s().rtdbOutputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
-      <input type="text" [value]="s().rtdbOutputChannelName"
-             (input)="onTextChange('rtdbOutputChannelName', $event)"
+    <label [class.field-invalid]="!(sharedChannel ? s().rtdbInputChannelName : s().rtdbOutputChannelName).trim()">Channel Name<span class="required-mark">*</span>:
+      <input type="text" [value]="sharedChannel ? s().rtdbInputChannelName : s().rtdbOutputChannelName"
+             (input)="sharedChannel ? onSharedChannelChange('rtdbInputChannelName', $event) : onTextChange('rtdbOutputChannelName', $event)"
              placeholder="e.g. cw-practice"
              maxlength="50">
     </label>
 
-    <label [class.field-invalid]="!s().rtdbOutputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
+    <label [class.field-invalid]="!(sharedChannel ? s().rtdbInputChannelSecret : s().rtdbOutputChannelSecret).trim()">Channel Secret<span class="required-mark">*</span>:
       <!-- Text field masked with CSS: a real password field triggers Chrome's password manager and breach checks -->
-      <input type="text" name="channelSecret" class="secret-mask" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" [value]="s().rtdbOutputChannelSecret"
-             (input)="onTextChange('rtdbOutputChannelSecret', $event)"
+      <input type="text" name="channelSecret" class="secret-mask" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" [value]="sharedChannel ? s().rtdbInputChannelSecret : s().rtdbOutputChannelSecret"
+             (input)="sharedChannel ? onSharedChannelChange('rtdbInputChannelSecret', $event) : onTextChange('rtdbOutputChannelSecret', $event)"
              placeholder="shared secret"
              maxlength="50">
     </label>
 
-    <label [class.field-invalid]="!s().rtdbOutputName.trim()">Name<span class="required-mark">*</span>:
+    <label [class.field-invalid]="!s().rtdbOutputName.trim() && !suggestedName.trim()">Name@if (!suggestedName) {<span class="required-mark">*</span>}:
       <input type="text" [value]="s().rtdbOutputName"
              (input)="onTextChange('rtdbOutputName', $event)"
-             placeholder="e.g. callsign"
+             [placeholder]="suggestedName || 'e.g. callsign'"
              maxlength="20">
     </label>
+    @if (suggestedName) {
+      <div class="cw-hint">Leave blank to use {{ suggestedName }}.</div>
+    }
 
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputOverrideName"

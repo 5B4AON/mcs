@@ -1,17 +1,25 @@
 <!-- Mouse Keyer -->
 <app-item-shell cardId="mouse-keyer-card" title="Mouse Keyer" [mode]="mode"
-                [enabled]="s().mouseKeyerEnabled"
+                [enabled]="forceEnabled ? null : s().mouseKeyerEnabled"
                 (enabledChange)="scope.update({ mouseKeyerEnabled: $event })">
   <span item-badges>
-    <span class="source-badge" [class.source-rx]="s().mouseKeyerSource === 'rx'" [class.source-tx]="s().mouseKeyerSource === 'tx'">{{ s().mouseKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+    <span class="source-badge" [class.source-rx]="(forceSource ?? s().mouseKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().mouseKeyerSource) === 'tx'">{{ (forceSource ?? s().mouseKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+@if (forceEnabled) {
+  <p class="keyer-hint">This guide enables mouse keying.</p>
+}
+
+@if (forceSource) {
+  <p class="keyer-hint">Mouse keying sends Morse (TX).</p>
+} @else {
 <label>Used for:
   <select [value]="s().mouseKeyerSource" (change)="onSettingChange('mouseKeyerSource', $event)">
     <option value="rx">RX &mdash; received morse</option>
     <option value="tx">TX &mdash; transmitted morse</option>
   </select>
 </label>
+}
 
 <label>Left Button:
   <select [value]="s().mouseLeftAction"

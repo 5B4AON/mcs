@@ -1,17 +1,25 @@
 <!-- Touch Keyer -->
 <app-item-shell cardId="touch-keyer-card" title="Touch Keyer" [mode]="mode"
-                [enabled]="s().touchKeyerEnabled"
+                [enabled]="forceEnabled ? null : s().touchKeyerEnabled"
                 (enabledChange)="scope.update({ touchKeyerEnabled: $event })">
   <span item-badges>
-    <span class="source-badge" [class.source-rx]="s().touchKeyerSource === 'rx'" [class.source-tx]="s().touchKeyerSource === 'tx'">{{ s().touchKeyerSource === 'rx' ? 'RX' : 'TX' }}</span>
+    <span class="source-badge" [class.source-rx]="(forceSource ?? s().touchKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().touchKeyerSource) === 'tx'">{{ (forceSource ?? s().touchKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+@if (forceEnabled) {
+  <p class="keyer-hint">This guide enables touch keying.</p>
+}
+
+@if (forceSource) {
+  <p class="keyer-hint">Touch keying sends Morse (TX).</p>
+} @else {
 <label>Used for:
   <select [value]="s().touchKeyerSource" (change)="onSettingChange('touchKeyerSource', $event)">
     <option value="rx">RX &mdash; received morse</option>
     <option value="tx">TX &mdash; transmitted morse</option>
   </select>
 </label>
+}
 
 <label>Touch Mode:
   <select [value]="s().touchKeyerMode"

@@ -35,6 +35,10 @@ export class RtdbInputItemComponent implements OnDestroy {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
+  /** The containing flow makes receiving part of the selected goal. */
+  @Input() forceEnabled = false;
+  @Input() forceSource: AppSettings['rtdbInputSource'] | null = null;
+
   readonly scope = inject(SETTINGS_SCOPE);
 
   /** Current values from the scope */

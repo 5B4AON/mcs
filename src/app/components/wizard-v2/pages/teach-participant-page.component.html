@@ -1,0 +1,39 @@
+<label class="wizard-field">Input for {{ profile.role === 'teacher' ? 'the teacher' : 'this student' }}
+  <select [ngModel]="inputType" (ngModelChange)="inputType = $event; error = ''">
+    <option value="keyboard">Keyboard key or paddle</option>
+    <option value="mouse">Shared mouse</option>
+    <option value="touch">Touch controls</option>
+    <option value="midi" [disabled]="!midiSupported">MIDI key or paddle</option>
+    <option value="serial" [disabled]="!serialSupported">Serial key or paddle</option>
+  </select>
+</label>
+
+@if (inputType === 'keyboard') {
+  <app-keyboard-mapping-editor
+    [mapping]="profile.keyboard"
+    [editIndex]="-1"
+    [allMappings]="keyboardMappings()"
+    [idPrefix]="'teachKb' + index" />
+} @else if (inputType === 'midi') {
+  <app-midi-input-mapping-editor
+    [mapping]="profile.midi"
+    [editIndex]="-1"
+    [allMappings]="midiMappings()"
+    [midiDevices]="midiInput.midiInputs()"
+    [idPrefix]="'teachMidi' + index" />
+} @else if (inputType === 'serial') {
+  <app-serial-input-mapping-editor
+    [mapping]="profile.serial"
+    [editIndex]="-1"
+    [allMappings]="serialMappings()"
+    [idPrefix]="'teachSerial' + index" />
+} @else {
+  <p class="wizard-note">
+    The {{ inputType }} input is shared on this device and can identify one local participant.
+    Its settings are shown on the next page.
+  </p>
+}
+
+@if (error) {
+  <p class="wizard-error" role="alert">{{ error }}</p>
+}

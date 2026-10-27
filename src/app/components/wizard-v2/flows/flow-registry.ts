@@ -11,6 +11,7 @@ import { PRACTICE_FLOW } from './practice.flow';
 import { RELAY_FLOW } from './relay.flow';
 import { SEND_FLOW } from './send.flow';
 import { TYPE_FLOW } from './type.flow';
+import { TEACH_FLOW } from './teach.flow';
 
 /** Flows migrated to the new wizard; each goal is added here as it lands. */
 const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
@@ -21,6 +22,7 @@ const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
   decode: DECODE_FLOW,
   relay: RELAY_FLOW,
   hardware: HARDWARE_FLOW,
+  teach: TEACH_FLOW,
 };
 
 /** The migrated flow for a goal, or undefined while it still uses the old wizard. */

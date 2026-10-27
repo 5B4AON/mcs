@@ -1,9 +1,9 @@
 <!-- Firebase RTDB Input -->
 <app-item-shell cardId="rtdb-input-card" title="Firebase RTDB" [mode]="mode"
-                [enabled]="s().rtdbInputEnabled" [showRequired]="missingRequired"
+                [enabled]="forceEnabled ? null : s().rtdbInputEnabled" [showRequired]="missingRequired"
                 (enabledChange)="onEnabledChange($event)">
   <span item-badges>
-    <span class="source-badge" [class.source-rx]="s().rtdbInputSource === 'rx'" [class.source-tx]="s().rtdbInputSource === 'tx'">{{ s().rtdbInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+    <span class="source-badge" [class.source-rx]="(forceSource ?? s().rtdbInputSource) === 'rx'" [class.source-tx]="(forceSource ?? s().rtdbInputSource) === 'tx'">{{ (forceSource ?? s().rtdbInputSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
   <span item-header-extra class="connectivity-badge" [class.connected]="rtdbService.inputListening()" [class.disconnected]="!rtdbService.inputListening()">
     @if (rtdbService.inputListening()) {
@@ -20,7 +20,7 @@
     <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
   </div>
 
-  @if (mode === 'embedded') {
+  @if (mode === 'embedded' && !forceEnabled) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbInputEnabled"
              (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
@@ -35,19 +35,23 @@
     </div>
   }
 
-  @if (mode === 'card' || s().rtdbInputEnabled) {
+  @if (mode === 'card' || forceEnabled || s().rtdbInputEnabled) {
     @if (!rtdbService.isOnline()) {
       <div class="conflict-warning">
         You are currently offline. Firebase Realtime Database requires an internet connection.
       </div>
     }
 
-    <label>Used for:
-      <select [value]="s().rtdbInputSource" (change)="onSourceChange($event)">
-        <option value="rx">RX &mdash; received morse</option>
-        <option value="tx">TX &mdash; transmitted morse</option>
-      </select>
-    </label>
+    @if (forceSource) {
+      <p class="cw-hint">This guide receives remote Morse as RX.</p>
+    } @else {
+      <label>Used for:
+        <select [value]="s().rtdbInputSource" (change)="onSourceChange($event)">
+          <option value="rx">RX &mdash; received morse</option>
+          <option value="tx">TX &mdash; transmitted morse</option>
+        </select>
+      </label>
+    }
 
     <label [class.field-invalid]="!s().rtdbInputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
       <input type="text" [value]="s().rtdbInputChannelName"

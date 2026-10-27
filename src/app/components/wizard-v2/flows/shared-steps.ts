@@ -8,13 +8,18 @@ import { Condition, WizardStep } from '../engine/flow-types';
 export interface TimingStepOptions {
   /** Hide the step, e.g. on a hardware-timed path such as WinKeyer only */
   when?: Condition;
+  /** Override the default id when a flow needs multiple speed pages */
+  id?: string;
 }
 
 /**
  * Standard speed step: every goal that sends Morse asks for the speed first.
  * Pick the encoder (text the app sends), the keyer (your key or paddle), or both.
  */
-export function speedStep(speeds: { encoder?: boolean; keyer?: boolean }, options: TimingStepOptions = {}): WizardStep {
+export function speedStep(
+  speeds: { encoder?: boolean; keyer?: boolean; rx?: boolean; tx?: boolean },
+  options: TimingStepOptions = {},
+): WizardStep {
   const items = [];
   if (speeds.encoder) {
     items.push({ item: 'encoder-speed' });
@@ -22,8 +27,14 @@ export function speedStep(speeds: { encoder?: boolean; keyer?: boolean }, option
   if (speeds.keyer) {
     items.push({ item: 'keyer-speed' });
   }
+  if (speeds.rx) {
+    items.push({ item: 'rx-speed' });
+  }
+  if (speeds.tx) {
+    items.push({ item: 'tx-speed' });
+  }
   return {
-    id: 'speed',
+    id: options.id ?? 'speed',
     title: 'Choose your speed',
     intro: 'Pick how fast Morse is sent for this task. You can change it later from the main menu.',
     when: options.when,

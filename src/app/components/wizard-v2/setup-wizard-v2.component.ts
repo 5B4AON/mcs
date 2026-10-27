@@ -41,9 +41,18 @@ import { WizardEngine } from './engine/wizard-engine';
 import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
 import { MappingPageComponent } from './pages/mapping-page.component';
+import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
 import { GoalNavigatorModalComponent } from '../goal-navigator-modal/goal-navigator-modal.component';
 import { feedbackRiskOutputs } from '../settings-items/audio-feedback-guard/audio-feedback-guard-item.model';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
+import {
+  TeachParticipantProfile,
+  includesScenario,
+  isTeachParticipantProfile,
+  selectedTeachParticipants,
+  teachParticipantChannelName,
+  usesLocalKeying,
+} from './flows/teach-participant.model';
 import { DEMO_FLOW } from './flows/demo.flow';
 import { flowForGoal } from './flows/flow-registry';
 
@@ -62,7 +71,7 @@ type Stage = 'start' | 'steps' | 'review';
   selector: 'app-setup-wizard-v2',
   standalone: true,
   imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, GoalNavigatorModalComponent,
-    MappingPageComponent, MappingListComponent],
+    MappingPageComponent, MappingListComponent, TeachParticipantPageComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['../setup-wizard/setup-wizard.component.css'],
   // The review shows the old value muted, without the old wizard's strikethrough
@@ -88,6 +97,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   @ViewChild('dialog') dialog?: ElementRef<HTMLElement>;
   @ViewChild(MappingPageComponent) private mappingPage?: MappingPageComponent;
+  @ViewChild(TeachParticipantPageComponent) private teachParticipantPage?: TeachParticipantPageComponent;
 
   readonly settings = inject(SettingsService);
   readonly presets = inject(PresetService);
@@ -122,11 +132,41 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   /** Inputs for a step item: its fixed registry inputs, look and audio state. */
   itemInputs(it: StepItem, audioRunning: boolean): Record<string, unknown> {
     const entry = ITEM_REGISTRY[it.item];
+    const engine = this.engine();
+    const teachInputs = it.item === 'rtdb-output' && engine?.flow.goal === 'teach'
+      ? { suggestedName: this.teachSuggestedName(engine) }
+      : {};
     return {
       ...entry.inputs,
+      ...it.inputs,
+      ...teachInputs,
       mode: it.mode ?? 'embedded',
       ...(entry.needsAudio ? { audioRunning } : {}),
     };
+  }
+
+  private teachSuggestedName(engine: WizardEngine): string {
+    const teacher = engine.answers()['participant0'];
+    if (!isTeachParticipantProfile(teacher)) return 'Teacher';
+    return teachParticipantChannelName(
+      teacher,
+      this.scope.value(),
+    );
+  }
+
+  participantProfile(engine: WizardEngine, question: StepQuestion) {
+    return engine.answers()[question.id] as TeachParticipantProfile;
+  }
+
+  participantProfiles(engine: WizardEngine): TeachParticipantProfile[] {
+    const count = Number(engine.answers()['studentCount']);
+    if (!Number.isInteger(count) || count < 0 || count > 4) return [];
+    return Array.from({ length: count + 1 }, (_, index) => engine.answers()[`participant${index}`])
+      .filter(isTeachParticipantProfile);
+  }
+
+  participantIndex(question: StepQuestion): number {
+    return Number(question.id.replace('participant', ''));
   }
 
   private readonly focusReturnTarget = document.activeElement as HTMLElement | null;
@@ -154,7 +194,8 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   /** True when the user has moved any answer and has not applied yet. */
   hasDraft(): boolean {
-    return !this.applied && !!this.engine()?.hasAnyChanges();
+    return !this.applied && (!!this.engine()?.hasAnyChanges()
+      || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
   }
 
   /** Progress counts the engine steps plus the Review page. */
@@ -195,6 +236,10 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     this.engine()?.setAnswer(question.id, value);
   }
 
+  setSelect(question: StepQuestion, event: Event): void {
+    this.setSingle(question, (event.target as HTMLSelectElement).value);
+  }
+
   setBoolean(question: StepQuestion, event: Event): void {
     this.engine()?.setAnswer(question.id, (event.target as HTMLInputElement).checked);
   }
@@ -202,6 +247,10 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   setNumber(question: StepQuestion, event: Event): void {
     const value = Number((event.target as HTMLInputElement).value);
     if (Number.isFinite(value)) this.engine()?.setAnswer(question.id, value);
+  }
+
+  setText(question: StepQuestion, event: Event): void {
+    this.engine()?.setAnswer(question.id, (event.target as HTMLInputElement).value);
   }
 
   isChosen(question: StepQuestion, value: string): boolean {
@@ -215,11 +264,18 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     this.engine()?.setAnswer(question.id, on ? [...current, value] : current.filter(v => v !== value));
   }
 
+  questionOptions(engine: WizardEngine, question: StepQuestion) {
+    return question.optionsFrom?.({
+      settings: this.scope.value(),
+      answers: engine.answers(),
+    }) ?? question.options ?? [];
+  }
+
   // ---- Navigation ----
 
   next(): void {
     const engine = this.engine();
-    if (!engine || this.problems().length || !this.commitMappingPage()) return;
+    if (!engine || !this.commitTeachParticipantPage(true) || this.problems().length || !this.commitMappingPage()) return;
     if (engine.isLast) this.stage.set('review');
     else engine.next();
     this.focusStep();
@@ -229,9 +285,13 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     const engine = this.engine();
     if (!engine) return;
     if (this.stage() === 'review') this.stage.set('steps');
-    else if (this.commitMappingPage(), !engine.back()) {
-      this.requestClose();
-      return;
+    else {
+      this.commitTeachParticipantPage(false);
+      this.commitMappingPage();
+      if (!engine.back()) {
+        this.requestClose();
+        return;
+      }
     }
     this.focusStep();
   }
@@ -253,13 +313,24 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   revert(): void {
     this.mappingPage?.reset();
+    this.teachParticipantPage?.reset();
     this.engine()?.revertStep();
   }
 
   get canRevert(): boolean {
     const engine = this.engine();
     return !!engine && this.stage() === 'steps' &&
-      (engine.stepHasChanges() || !!this.mappingPage?.isDirty());
+      (engine.stepHasChanges() || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
+  }
+
+  private commitTeachParticipantPage(validate: boolean): boolean {
+    const engine = this.engine();
+    const question = engine?.step().questions?.find(item => item.kind === 'participant');
+    if (!engine || !question || !this.teachParticipantPage) return true;
+    const profile = validate ? this.teachParticipantPage.build() : this.teachParticipantPage.fields();
+    if (!profile) return false;
+    engine.setAnswer(question.id, profile);
+    return true;
   }
 
   // ---- Mapping pages (repeat steps) ----
@@ -397,9 +468,21 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
       await this.midiOutput.start();
       this.midiOutput.reattach();
     }
+    const teachContext = { settings: this.settings.settings(), answers: engine.answers() };
+    const teachUsesMidi = engine.flow.goal === 'teach'
+      && usesLocalKeying(teachContext)
+      && selectedTeachParticipants(teachContext).some(profile => profile.inputType === 'midi')
+      && this.settings.settings().midiInputEnabled;
+    if (teachUsesMidi) {
+      await this.midiInput.start();
+      this.midiInput.reattach();
+    }
     // A direction the user ticked is connected now instead of waiting for the next health check
-    if (patch.rtdbInputEnabled && !base.rtdbInputEnabled) this.rtdb.startInput();
-    if (patch.rtdbOutputEnabled && !base.rtdbOutputEnabled) this.rtdb.startOutput();
+    const teachUsesMobile = engine.flow.goal === 'teach' && includesScenario(teachContext, 'mobile');
+    if ((patch.rtdbInputEnabled && !base.rtdbInputEnabled)
+      || (teachUsesMobile && this.settings.settings().rtdbInputEnabled)) this.rtdb.startInput();
+    if ((patch.rtdbOutputEnabled && !base.rtdbOutputEnabled)
+      || (teachUsesMobile && this.settings.settings().rtdbOutputEnabled)) this.rtdb.startOutput();
     if (patch.cwInputEnabled) {
       this.cwInput.updateParams();
       this.detectorEnabled.emit();

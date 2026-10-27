@@ -263,7 +263,10 @@ export class WizardEngine {
 
   /** True when any step of the flow has an answer that differs from the start. */
   hasAnyChanges(): boolean {
-    return this.steps().some(step => this.stepHasChanges(step));
+    const changed = new Set(this.scope.changedKeys());
+    const derived = this.flow.derivePatch?.(this.context(), this.scope.base()) ?? {};
+    return this.steps().some(step => this.stepHasChanges(step))
+      || (this.flow.derivedKeys ?? []).some(key => changed.has(key) && key in derived);
   }
 
   /**
@@ -276,6 +279,7 @@ export class WizardEngine {
     for (const step of this.flow.steps) {
       for (const key of this.stepKeys(step)) patch[key] = settings[key];
     }
+    for (const key of this.flow.derivedKeys ?? []) patch[key] = settings[key];
     this.scope.update(patch as Partial<AppSettings>);
     this.origins = {};
     this.answerState.set(structuredClone(this.defaults));
@@ -286,7 +290,9 @@ export class WizardEngine {
 
   /** Plain-language problems on a step; empty means the user may continue. */
   validateStep(step: WizardStep): string[] {
-    const settings = this.scope.value();
+    const settings = this.flow.validateWithFlowSettings
+      ? this.validationSettings()
+      : this.scope.value();
     const descriptors = step.page
       ? [this.kindFor(step.page.item).descriptor]
       : (step.items ?? []).map(item => this.descriptorFor(item.item));
@@ -295,6 +301,16 @@ export class WizardEngine {
     // a mapping page is checked by its mapping kind, and its edits reach the draft on Next
     const ownCheck = step.page?.kind === 'mapping' ? [] : step.validate?.(this.context()) ?? [];
     return [...problems, ...ownCheck];
+  }
+
+  /** Settings implied by selected flow choices, used when validating shared items. */
+  private validationSettings(): AppSettings {
+    const base = this.scope.base();
+    const forced = Object.fromEntries(
+      this.activeForced().map(item => [item.key, item.value]),
+    ) as Partial<AppSettings>;
+    const derived = this.flow.derivePatch?.(this.context(), base) ?? {};
+    return { ...this.scope.value(), ...forced, ...derived };
   }
 
   /** Every shown step's problems; Apply stays blocked while any remain. */
@@ -316,6 +332,7 @@ export class WizardEngine {
     for (const forced of this.activeForced()) {
       if (!sameJson(base[forced.key], forced.value)) patch[forced.key] = forced.value;
     }
+    Object.assign(patch, this.flow.derivePatch?.(this.context(), base));
     return patch as Partial<AppSettings>;
   }
 
@@ -343,6 +360,13 @@ export class WizardEngine {
       }
       if (changes.length) steps.push({ step, changes });
     }
+    const derivedChanges = this.flow.deriveReview?.(base, proposed, this.context()) ?? [];
+    if (derivedChanges.length) {
+      steps.push({
+        step: { id: 'derived', title: 'Teaching participants', intro: '' },
+        changes: derivedChanges,
+      });
+    }
     const forced = this.activeForced()
       .filter(f => !sameJson(base[f.key], f.value) && !seen.has(f.key))
       .map(f => ({ label: f.label, key: f.key }));
@@ -367,7 +391,7 @@ export class WizardEngine {
 
   /** True when there is something to apply and nothing blocks it. */
   canApply(): boolean {
-    return Object.keys(this.applyPatch()).length > 0 &&
+    return (Object.keys(this.applyPatch()).length > 0 || !!this.flow.applyWhen?.(this.context())) &&
       this.validateFlow().length === 0 &&
       this.newConflicts().length === 0;
   }

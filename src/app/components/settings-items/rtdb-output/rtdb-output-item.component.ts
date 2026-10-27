@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Component, Input, OnDestroy, signal, computed, inject } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, signal, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
@@ -30,12 +30,18 @@ type RequiredKey = 'rtdbOutputChannelName' | 'rtdbOutputChannelSecret' | 'rtdbOu
   templateUrl: './rtdb-output-item.component.html',
   styles: [':host { display: contents; } .secret-mask { -webkit-text-security: disc; text-security: disc; }'],
 })
-export class RtdbOutputItemComponent implements OnDestroy {
+export class RtdbOutputItemComponent implements OnInit, OnDestroy {
   /** Help section targeted by the contextual Help link. */
   readonly helpSection = 'ch10';
 
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
+
+  /** The containing flow makes sending part of the selected goal. */
+  @Input() forceEnabled = false;
+  @Input() forceForward: AppSettings['rtdbOutputForward'] | null = null;
+  @Input() sharedChannel = false;
+  @Input() suggestedName = '';
 
   readonly scope = inject(SETTINGS_SCOPE);
 
@@ -67,11 +73,21 @@ export class RtdbOutputItemComponent implements OnDestroy {
     if (this.restartTimer) clearTimeout(this.restartTimer);
   }
 
+  ngOnInit(): void {
+    if (this.sharedChannel && !this.scope.isLive) {
+      this.scope.update({
+        rtdbOutputChannelName: this.s().rtdbInputChannelName,
+        rtdbOutputChannelSecret: this.s().rtdbInputChannelSecret,
+      });
+    }
+  }
+
   /** True while the item is off and a required value is still missing (outlines the card). */
   get missingRequired(): boolean {
     const s = this.s();
     return !s.rtdbOutputEnabled
-      && (!s.rtdbOutputChannelName.trim() || !s.rtdbOutputChannelSecret.trim() || !s.rtdbOutputName.trim());
+      && (!s.rtdbOutputChannelName.trim() || !s.rtdbOutputChannelSecret.trim()
+        || (!s.rtdbOutputName.trim() && !this.suggestedName.trim()));
   }
 
   openHelp(event: Event): void {
@@ -118,6 +134,14 @@ export class RtdbOutputItemComponent implements OnDestroy {
   onTextChange(key: RequiredKey, event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.scope.update({ [key]: value } as Partial<AppSettings>);
+  }
+
+  onSharedChannelChange(key: 'rtdbInputChannelName' | 'rtdbInputChannelSecret', event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.scope.update({
+      [key]: value,
+      [key === 'rtdbInputChannelName' ? 'rtdbOutputChannelName' : 'rtdbOutputChannelSecret']: value,
+    } as Partial<AppSettings>);
     if (!this.scope.isLive || !this.s().rtdbOutputEnabled) return;
     if (!value.trim()) {
       this.scope.update({ rtdbOutputEnabled: false });

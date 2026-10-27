@@ -92,7 +92,7 @@
                 }
                 @switch (q.kind) {
                   @case ('single') {
-                    @for (opt of q.options ?? []; track opt.value) {
+                    @for (opt of questionOptions(eng, q); track opt.value) {
                       <label class="wizard-check">
                         <input type="radio" [name]="q.id" [checked]="answer(q) === opt.value"
                                (change)="setSingle(q, opt.value)">
@@ -101,8 +101,17 @@
                       </label>
                     }
                   }
+                  @case ('select') {
+                    <label class="wizard-field">{{ q.label }}
+                      <select [value]="answer(q)" (change)="setSelect(q, $event)">
+                        @for (opt of questionOptions(eng, q); track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
                   @case ('multi') {
-                    @for (opt of q.options ?? []; track opt.value) {
+                    @for (opt of questionOptions(eng, q); track opt.value) {
                       <label class="wizard-check">
                         <input type="checkbox" [checked]="isChosen(q, opt.value)"
                                (change)="toggleMulti(q, opt.value, $event)">
@@ -122,6 +131,18 @@
                       <input type="number" [min]="q.min ?? null" [max]="q.max ?? null"
                              [value]="answer(q)" (input)="setNumber(q, $event)">
                     </label>
+                  }
+                  @case ('text') {
+                    <label class="wizard-field">{{ q.label }}
+                      <input type="text" [value]="answer(q)" [attr.maxlength]="q.maxLength ?? null"
+                             (input)="setText(q, $event)">
+                    </label>
+                  }
+                  @case ('participant') {
+                    <app-teach-participant-page
+                      [profile]="participantProfile(eng, q)"
+                      [profiles]="participantProfiles(eng)"
+                      [index]="participantIndex(q)" />
                   }
                 }
               </fieldset>
