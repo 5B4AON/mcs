@@ -47,8 +47,6 @@ export class WizardEngine {
   /** Id of the current step (an id, not an index, so it survives steps appearing/disappearing) */
   private readonly currentId = signal('');
 
-  /** Route acknowledgements ticked on the review step */
-  private readonly acknowledged = signal<Readonly<Record<string, boolean>>>({});
 
   /**
    * How each mapping looked when the wizard started, per list and in step with
@@ -281,7 +279,6 @@ export class WizardEngine {
     this.scope.update(patch as Partial<AppSettings>);
     this.origins = {};
     this.answerState.set(structuredClone(this.defaults));
-    this.acknowledged.set({});
     this.currentId.set(this.flow.steps[0]?.id ?? '');
   }
 
@@ -365,25 +362,11 @@ export class WizardEngine {
       .filter(message => !before.has(message));
   }
 
-  /** Key under which a route acknowledgement is stored. */
-  ackKey(route: ExternalRouteChange): string {
-    return `${route.id}:${route.target}`;
-  }
-
-  isAcknowledged(route: ExternalRouteChange): boolean {
-    return this.acknowledged()[this.ackKey(route)] === true;
-  }
-
-  acknowledge(route: ExternalRouteChange, value: boolean): void {
-    this.acknowledged.set({ ...this.acknowledged(), [this.ackKey(route)]: value });
-  }
-
   /** True when there is something to apply and nothing blocks it. */
   canApply(): boolean {
     return Object.keys(this.applyPatch()).length > 0 &&
       this.validateFlow().length === 0 &&
-      this.newConflicts().length === 0 &&
-      this.routeChanges().every(route => !route.acknowledgementRequired || this.isAcknowledged(route));
+      this.newConflicts().length === 0;
   }
 }
 

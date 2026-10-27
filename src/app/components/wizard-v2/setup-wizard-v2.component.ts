@@ -29,7 +29,6 @@ import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
 import { suggestPresetName } from '../../services/settings-presets';
 import { createSettingsSnapshot } from '../../services/settings-transfer';
 import { prepareSettingsImport } from '../../services/settings-transfer-review';
-import { ExternalRouteChange } from '../../services/output-change-checker';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
@@ -353,12 +352,20 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   // ---- Review and apply ----
 
-  routeAcknowledgementText(route: ExternalRouteChange): string {
-    return `I understand this ${route.type.toLowerCase()} will use ${route.destination}.`;
-  }
-
-  acknowledgeRoute(route: ExternalRouteChange, event: Event): void {
-    this.engine()?.acknowledge(route, (event.target as HTMLInputElement).checked);
+  /** Short one-line route description, e.g. "MIDI input (any device), channel 0, note 60". */
+  routeLabel(route: { type: string; destination: string }): string {
+    const d = route.destination;
+    switch (route.type) {
+      case 'MIDI key/paddle input': return d.replace(/^MIDI device/, 'MIDI input');
+      case 'MIDI radio keying': return d.replace(/^MIDI device/, 'MIDI output');
+      case 'Serial key/paddle input': return d.replace(/^Serial port/, 'Serial input, port');
+      case 'Serial radio keying': return d.replace(/^Serial port/, 'Serial output, port');
+      case 'WinKeyer radio keying': return d.replace(/^Serial port/, 'WinKeyer, port');
+      case 'Radio keying through audio optocoupler': return d.replace(/^Audio device/, 'Opto output, audio device');
+      case 'Firebase RTDB input': return d.replace(/^Shared channel/, 'Firebase input, channel');
+      case 'Firebase RTDB output': return d.replace(/^Shared channel/, 'Firebase output, channel');
+      default: return `${route.type}: ${d}`;
+    }
   }
 
   apply(): void {

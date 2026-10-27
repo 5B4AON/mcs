@@ -58,6 +58,7 @@
   padding: 0;
   transition: background .15s;
 }
+.wizard-close-btn svg { display: block; }
 .wizard-close-btn:hover {
   background: #3a4050;
 }
@@ -151,6 +152,12 @@
   border: 0;
 }
 
+.wizard-check input[type=checkbox] {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: none;
+  cursor: pointer;
+}
 .wizard-check {
   display: flex;
   align-items: center;
@@ -445,3 +452,10 @@
   border: 1px solid #3f4d78;
   border-radius: 6px;
 }
+
+.wizard-route-list {
+  margin: .5rem 0;
+  padding-left: 1.2rem;
+  font-size: .9rem;
+}
+.wizard-route-list li { margin: .3rem 0; }

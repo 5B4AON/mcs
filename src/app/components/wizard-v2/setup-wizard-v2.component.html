@@ -190,19 +190,12 @@
             @if (eng.routeChanges().length) {
               <section class="wizard-route-review">
                 <h4>External routes that will change</h4>
-                <p class="wizard-note">New external routes stay off until you use their separate Connect, Join or Enable action.</p>
-                @for (route of eng.routeChanges(); track route.id) {
-                  <article class="wizard-route-change">
-                    <h5>{{ route.type }} — {{ route.change }}</h5>
-                    <p><strong>Destination:</strong> {{ route.destination }}</p>
-                    <p><strong>Requirements:</strong> {{ route.requirements }}</p>
-                    <label class="wizard-check wizard-route-ack">
-                      <input type="checkbox" [checked]="eng.isAcknowledged(route)"
-                             (change)="acknowledgeRoute(route, $event)">
-                      {{ routeAcknowledgementText(route) }}
-                    </label>
-                  </article>
-                }
+                <p class="wizard-note">Inputs and outputs that use a device, port or channel outside this app are listed here for your information. Nothing connects until you use its own Connect, Join or Enable action.</p>
+                <ul class="wizard-route-list">
+                  @for (route of eng.routeChanges(); track route.id) {
+                    <li>{{ routeLabel(route) }}</li>
+                  }
+                </ul>
               </section>
             }
             @for (message of eng.newConflicts(); track message) {

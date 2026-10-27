@@ -27,13 +27,13 @@
             <div class="speed-row">
               <button type="button" class="speed-step-btn" (click)="step(kind, -1)"
                       [disabled]="s()[info[kind].key] <= range.min"
-                      [attr.aria-label]="'Decrease ' + info[kind].label">-</button>
+                      [attr.aria-label]="'Decrease ' + info[kind].label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
               <input type="range" [min]="range.min" [max]="range.max" step="1"
                      [value]="s()[info[kind].key]" (input)="onSpeed(kind, $event)"
                      [attr.aria-label]="info[kind].label">
               <button type="button" class="speed-step-btn" (click)="step(kind, 1)"
                       [disabled]="s()[info[kind].key] >= range.max"
-                      [attr.aria-label]="'Increase ' + info[kind].label">+</button>
+                      [attr.aria-label]="'Increase ' + info[kind].label"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><line x1="12" y1="5" x2="12" y2="19"/></svg></button>
             </div>
           </div>
         }
