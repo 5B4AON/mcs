@@ -10,9 +10,10 @@
         <span class="settings-card-name">{{ title }}</span>
         <ng-content select="[item-badges]"></ng-content>
       </button>
+      <ng-content select="[item-header-extra]"></ng-content>
       @if (enabled !== null) {
         <label class="toggle-switch" (click)="$event.stopPropagation()">
-          <input type="checkbox" [checked]="enabled" (change)="onToggle($event)">
+          <input type="checkbox" [checked]="enabled" [disabled]="toggleDisabled" (change)="onToggle($event)">
           <span class="toggle-slider"></span>
         </label>
       }

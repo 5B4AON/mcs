@@ -66,6 +66,12 @@ export const DEMO_FLOW: WizardFlow = {
       repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor' },
     },
     {
+      id: 'midiKey',
+      title: 'MIDI input',
+      intro: 'Turn MIDI keying on or off. Your notes are set on the next pages.',
+      items: [{ item: 'midi-input' }],
+    },
+    {
       id: 'midiIn',
       title: 'MIDI input',
       intro: 'One page per MIDI input mapping.',

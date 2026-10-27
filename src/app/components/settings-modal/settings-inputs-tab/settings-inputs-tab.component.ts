@@ -10,7 +10,7 @@ import { EncoderItemComponent } from '../../settings-items/encoder/encoder-item.
 import { MouseKeyerItemComponent } from '../../settings-items/mouse-keyer/mouse-keyer-item.component';
 import { TouchKeyerItemComponent } from '../../settings-items/touch-keyer/touch-keyer-item.component';
 import { SpriteKeyItemComponent } from '../../settings-items/sprite-key/sprite-key-item.component';
-import { MidiInputCardComponent } from './midi-input-card/midi-input-card.component';
+import { MidiInputItemComponent } from '../../settings-items/midi-input/midi-input-item.component';
 import { SerialInputCardComponent } from './serial-input-card/serial-input-card.component';
 import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.component';
 
@@ -32,7 +32,7 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
     MouseKeyerItemComponent,
     TouchKeyerItemComponent,
     SpriteKeyItemComponent,
-    MidiInputCardComponent,
+    MidiInputItemComponent,
     SerialInputCardComponent,
     RtdbInputCardComponent,
   ],

@@ -11,7 +11,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
  * `card` mode is the Settings look: collapsible header with title, optional
  * badges and an optional enable switch. `embedded` mode is for wizard steps:
  * the same body shown flat and always open, without an enable switch
- * (choosing the step already means the user wants the item on). Items project their badges (`[item-badges]`) and body.
+ * (choosing the step already means the user wants the item on). Items project their badges (`[item-badges]`), an optional header extra (`[item-header-extra]`, shown beside the switch) and body.
  * The card markup and ids match the original cards so styles and the
  * "reveal card" behaviour keep working.
  */
@@ -34,6 +34,9 @@ export class ItemShellComponent {
 
   /** Enable switch state; leave null for items without a switch */
   @Input() enabled: boolean | null = null;
+
+  /** Disable the enable switch (for example when the browser lacks the API) */
+  @Input() toggleDisabled = false;
 
   /** Emitted when the user flips the enable switch */
   @Output() enabledChange = new EventEmitter<boolean>();

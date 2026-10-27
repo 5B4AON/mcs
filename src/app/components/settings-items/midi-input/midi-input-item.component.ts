@@ -2,31 +2,43 @@
  * Morse Code Studio
  */
 
-import { Component, computed } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { SettingsService, MidiInputMapping, DecoderSource } from '../../../../services/settings.service';
-import { MidiInputService, midiNoteName } from '../../../../services/midi-input.service';
-import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../midi-input-edit-modal/midi-input-edit-modal.component';
-import { MappingListComponent } from '../../../settings-items/mapping/mapping-list/mapping-list.component';
+/**
+ * Morse Code Studio
+ */
+
+import { Component, Input, computed, inject } from '@angular/core';
+import { SettingsService, MidiInputMapping, DecoderSource } from '../../../services/settings.service';
+import { MidiInputService, midiNoteName } from '../../../services/midi-input.service';
+import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../settings-modal/midi-input-edit-modal/midi-input-edit-modal.component';
+import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { SETTINGS_SCOPE } from '../settings-scope';
+import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
 /**
- * Settings card — MIDI Input.
+ * Settings item — MIDI Input.
  *
  * Displays a table of MIDI input mappings (straight key / paddle),
  * with add/edit/delete support via the MIDI input edit modal.
  * Each mapping has its own device, channel, source, mode, and
- * note assignments — modelled after the Emojis card pattern.
+ * note assignments. In a wizard step only the master switch is shown:
+ * the mappings are edited on their own pages (repeat step). Starting and
+ * stopping the MIDI service only happens in live Settings.
  */
 @Component({
-  selector: 'app-midi-input-card',
+  selector: 'app-midi-input-item',
   standalone: true,
-  imports: [FormsModule, MappingListComponent, MidiInputEditModalComponent],
-  templateUrl: './midi-input-card.component.html',
+  imports: [ItemShellComponent, MappingListComponent, MidiInputEditModalComponent],
+  templateUrl: './midi-input-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class MidiInputCardComponent {
-  /** Whether this card's body is expanded */
-  expanded = false;
+export class MidiInputItemComponent {
+  /** Card look (Settings) or flat look (wizard step) */
+  @Input() mode: 'card' | 'embedded' = 'card';
+
+  readonly scope = inject(SETTINGS_SCOPE);
+
+  /** Current values from the scope */
+  readonly s = this.scope.value;
 
   /** Index of the mapping currently being edited, or -1 for new */
   editIndex = -1;
@@ -43,7 +55,7 @@ export class MidiInputCardComponent {
 
   /** Unique source badges from all enabled mappings */
   readonly sourceBadges = computed(() => {
-    const mappings = this.settings.settings().midiInputMappings;
+    const mappings = this.s().midiInputMappings;
     const sources = new Set<DecoderSource>();
     for (const m of mappings) {
       if (m.enabled) sources.add(m.source);
@@ -51,19 +63,14 @@ export class MidiInputCardComponent {
     return [...sources];
   });
 
-  constructor(
-    public settings: SettingsService,
-    public midiInput: MidiInputService,
-  ) {}
+  readonly settings = inject(SettingsService);
+  readonly midiInput = inject(MidiInputService);
 
   /** Handle MIDI input enabled toggle */
-  async onMidiEnabledChange(event: Event): Promise<void> {
-    const checked = (event.target as HTMLInputElement).checked;
-    if (checked && !this.midiInput.supported) {
-      (event.target as HTMLInputElement).checked = false;
-      return;
-    }
-    this.settings.update({ midiInputEnabled: checked });
+  async onMidiEnabledChange(checked: boolean): Promise<void> {
+    if (checked && this.scope.isLive && !this.midiInput.supported) return;
+    this.scope.update({ midiInputEnabled: checked });
+    if (!this.scope.isLive) return;
     if (checked) {
       await this.midiInput.start();
     } else {
@@ -73,16 +80,16 @@ export class MidiInputCardComponent {
 
   /** Toggle an individual mapping on/off */
   onMappingEnabledChange(index: number, checked: boolean): void {
-    const mappings = this.settings.settings().midiInputMappings.map((m, i) =>
+    const mappings = this.s().midiInputMappings.map((m, i) =>
       i === index ? { ...m, enabled: checked } : m
     );
-    this.settings.update({ midiInputMappings: mappings });
-    this.midiInput.reattach();
+    this.scope.update({ midiInputMappings: mappings });
+    this.reattach();
   }
 
   /** Open the edit modal for an existing mapping */
   startEdit(index: number): void {
-    const m = this.settings.settings().midiInputMappings[index];
+    const m = this.s().midiInputMappings[index];
     this.editIndex = index;
     this.editMapping = { ...m };
     this.showEditModal = true;
@@ -101,6 +108,11 @@ export class MidiInputCardComponent {
     this.ensureDevicesEnumerated();
   }
 
+  /** Re-read the mappings in the running MIDI service (live Settings only) */
+  private reattach(): void {
+    if (this.scope.isLive) this.midiInput.reattach();
+  }
+
   /** Ensure MIDI devices are enumerated for the edit modal dropdown */
   private ensureDevicesEnumerated(): void {
     if (this.midiInput.midiInputs().length === 0) {
@@ -110,7 +122,7 @@ export class MidiInputCardComponent {
 
   /** Handle save from the edit modal */
   onEditSaved(event: MidiInputEditSaveEvent): void {
-    const mappings = [...this.settings.settings().midiInputMappings];
+    const mappings = [...this.s().midiInputMappings];
     if (this.editIndex >= 0) {
       mappings[this.editIndex] = {
         ...mappings[this.editIndex],
@@ -138,9 +150,9 @@ export class MidiInputCardComponent {
         color: event.color,
       });
     }
-    this.settings.update({ midiInputMappings: mappings });
+    this.scope.update({ midiInputMappings: mappings });
     this.showEditModal = false;
-    this.midiInput.reattach();
+    this.reattach();
   }
 
   /** Handle cancel from the edit modal */
@@ -151,17 +163,17 @@ export class MidiInputCardComponent {
   /** Handle delete from the edit modal */
   onEditDeleted(): void {
     if (this.editIndex >= 0) {
-      const mappings = this.settings.settings().midiInputMappings.filter((_, i) => i !== this.editIndex);
+      const mappings = this.s().midiInputMappings.filter((_, i) => i !== this.editIndex);
       // Clean up relay references in output mappings: remove the deleted index
       // and decrement any index greater than the deleted one.
-      const outputMappings = this.settings.settings().midiOutputMappings.map(om => ({
+      const outputMappings = this.s().midiOutputMappings.map(om => ({
         ...om,
         relayInputIndices: (om.relayInputIndices || [])
           .filter(idx => idx !== this.editIndex)
           .map(idx => idx > this.editIndex ? idx - 1 : idx),
       }));
-      this.settings.update({ midiInputMappings: mappings, midiOutputMappings: outputMappings });
-      this.midiInput.reattach();
+      this.scope.update({ midiInputMappings: mappings, midiOutputMappings: outputMappings });
+      this.reattach();
     }
     this.showEditModal = false;
   }
