@@ -12,6 +12,7 @@ import {
 } from '../../../services/settings.service';
 import { SerialKeyInputService } from '../../../services/serial-key-input.service';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
+import { HelpLinkButtonComponent } from '../../settings-items/help-link-button/help-link-button.component';
 
 /**
  * Result payload emitted when the user saves a serial input mapping.
@@ -42,7 +43,7 @@ export interface SerialInputEditSaveEvent {
 @Component({
   selector: 'app-serial-input-edit-modal',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, HelpLinkButtonComponent],
   templateUrl: './serial-input-edit-modal.component.html',
   styleUrls: ['./serial-input-edit-modal.component.css'],
 })

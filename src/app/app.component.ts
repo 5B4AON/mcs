@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -18,6 +18,7 @@ import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
+import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
@@ -158,6 +159,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   spriteReady = false;
 
   private subs: Subscription[] = [];
+  private readonly helpLinks = inject(HelpLinkService);
 
   /** Bound handler for visualViewport resize — stored for cleanup */
   private vvResizeHandler: (() => void) | null = null;
@@ -454,6 +456,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.subs.push(this.helpLinks.requested$.subscribe(id => this.showHelpOnTop(id)));
     try {
       this.showTryMorseGuide = localStorage.getItem('mcsTryMorseGuideDismissed') !== '1';
     } catch {
@@ -1564,6 +1567,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.helpInitialSection = initialSection;
     this.showHelp = true;
     this.pushModalState('help');
+  }
+
+  /** Open Help on top of the current dialogs so closing it returns to them. */
+  private showHelpOnTop(sectionId: string): void {
+    if (this.showHelp) {
+      this.helpInitialSection = sectionId;
+      return;
+    }
+    this.openHelp(sectionId);
   }
 
   /** Close Settings and open the requested Help section. */

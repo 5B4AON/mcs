@@ -37,12 +37,15 @@
 
     <div class="md-field">
       <label class="md-label" [for]="idPrefix + 'PaddleMode'">Paddle Mode</label>
-      <select [id]="idPrefix + 'PaddleMode'" class="md-select" [(ngModel)]="editPaddleMode">
+      <div style="display: flex; align-items: center">
+      <select style="flex: 1" [id]="idPrefix + 'PaddleMode'" class="md-select" [(ngModel)]="editPaddleMode">
         <option value="iambic-b">Iambic B</option>
         <option value="iambic-a">Iambic A</option>
         <option value="ultimatic">Ultimatic</option>
         <option value="single-lever">Single Lever</option>
       </select>
+      <app-help-link-button section="paddle-modes" />
+      </div>
     </div>
   }
 

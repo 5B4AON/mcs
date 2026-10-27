@@ -26,6 +26,12 @@ import { ProsignActionsItemComponent } from './prosign-actions/prosign-actions-i
 import { PROSIGN_ACTIONS_DESCRIPTOR } from './prosign-actions/prosign-actions-item.model';
 import { EmojisItemComponent } from './emojis/emojis-item.component';
 import { EMOJIS_DESCRIPTOR } from './emojis/emojis-item.model';
+import { MouseKeyerItemComponent } from './mouse-keyer/mouse-keyer-item.component';
+import { MOUSE_KEYER_DESCRIPTOR } from './mouse-keyer/mouse-keyer-item.model';
+import { TouchKeyerItemComponent } from './touch-keyer/touch-keyer-item.component';
+import { TOUCH_KEYER_DESCRIPTOR } from './touch-keyer/touch-keyer-item.model';
+import { SpriteKeyItemComponent } from './sprite-key/sprite-key-item.component';
+import { SPRITE_KEY_DESCRIPTOR } from './sprite-key/sprite-key-item.model';
 import { KeyboardKeyerItemComponent } from './keyboard-keyer/keyboard-keyer-item.component';
 import { KEYBOARD_KEYER_DESCRIPTOR } from './keyboard-keyer/keyboard-keyer-item.model';
 
@@ -50,6 +56,9 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },
   'prosign-actions': { component: ProsignActionsItemComponent, descriptor: PROSIGN_ACTIONS_DESCRIPTOR },
   'emojis': { component: EmojisItemComponent, descriptor: EMOJIS_DESCRIPTOR },
+  'mouse-keyer': { component: MouseKeyerItemComponent, descriptor: MOUSE_KEYER_DESCRIPTOR },
+  'touch-keyer': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_DESCRIPTOR },
+  'sprite-key': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_DESCRIPTOR },
   'keyboard-keyer': { component: KeyboardKeyerItemComponent, descriptor: KEYBOARD_KEYER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },
   'encoder-speed': { component: SpeedItemComponent, descriptor: ENCODER_SPEED_DESCRIPTOR, inputs: { show: ['encoder'] } },

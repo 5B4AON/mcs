@@ -98,21 +98,39 @@
               (touchend)="onTouchKey('straight', false, $event)" (touchcancel)="onTouchKey('straight', false, $event)"
               (pointercancel)="onTouchKey('straight', false, $event)" (mousedown)="onTouchMouseKey('straight', true, $event)"
               (mouseup)="onTouchMouseKey('straight', false, $event)" (mouseleave)="onTouchMouseKey('straight', false, $event)">
-        <span class="touch-btn-icon">&#x25CF;</span>
+        <svg class="touch-btn-svg" viewBox="0 0 48 24" width="48" height="24" fill="currentColor" aria-hidden="true">
+          <circle cx="24" cy="12" r="7"/>
+        </svg>
       </button>
     } @else {
-      <button type="button" class="touch-btn touch-btn-left" aria-label="Left paddle. Press and hold to key."
+      <button type="button" class="touch-btn touch-btn-left" [attr.aria-label]="(effectiveTouchElement('left') === 'dit' ? 'Dot' : 'Dash') + ' paddle. Press and hold to key.'"
               (keydown)="onTouchKeyboardKey('left', true, $event)" (keyup)="onTouchKeyboardKey('left', false, $event)"
               (blur)="onTouchKeyBlur()" (touchstart)="onTouchKey('left', true, $event)"
               (touchend)="onTouchKey('left', false, $event)" (touchcancel)="onTouchKey('left', false, $event)"
               (pointercancel)="onTouchKey('left', false, $event)" (mousedown)="onTouchMouseKey('left', true, $event)"
-              (mouseup)="onTouchMouseKey('left', false, $event)" (mouseleave)="onTouchMouseKey('left', false, $event)">DIT</button>
-      <button type="button" class="touch-btn touch-btn-right" aria-label="Right paddle. Press and hold to key."
+              (mouseup)="onTouchMouseKey('left', false, $event)" (mouseleave)="onTouchMouseKey('left', false, $event)">
+        <svg class="touch-btn-svg" viewBox="0 0 48 24" width="48" height="24" fill="currentColor" aria-hidden="true">
+          @if (effectiveTouchElement('left') === 'dit') {
+            <circle cx="24" cy="12" r="7"/>
+          } @else {
+            <rect x="4" y="6" width="40" height="12" rx="6"/>
+          }
+        </svg>
+      </button>
+      <button type="button" class="touch-btn touch-btn-right" [attr.aria-label]="(effectiveTouchElement('right') === 'dit' ? 'Dot' : 'Dash') + ' paddle. Press and hold to key.'"
               (keydown)="onTouchKeyboardKey('right', true, $event)" (keyup)="onTouchKeyboardKey('right', false, $event)"
               (blur)="onTouchKeyBlur()" (touchstart)="onTouchKey('right', true, $event)"
               (touchend)="onTouchKey('right', false, $event)" (touchcancel)="onTouchKey('right', false, $event)"
               (pointercancel)="onTouchKey('right', false, $event)" (mousedown)="onTouchMouseKey('right', true, $event)"
-              (mouseup)="onTouchMouseKey('right', false, $event)" (mouseleave)="onTouchMouseKey('right', false, $event)">DAH</button>
+              (mouseup)="onTouchMouseKey('right', false, $event)" (mouseleave)="onTouchMouseKey('right', false, $event)">
+        <svg class="touch-btn-svg" viewBox="0 0 48 24" width="48" height="24" fill="currentColor" aria-hidden="true">
+          @if (effectiveTouchElement('right') === 'dit') {
+            <circle cx="24" cy="12" r="7"/>
+          } @else {
+            <rect x="4" y="6" width="40" height="12" rx="6"/>
+          }
+        </svg>
+      </button>
     }
   </div>
 }

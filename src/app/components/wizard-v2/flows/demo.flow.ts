@@ -48,6 +48,12 @@ export const DEMO_FLOW: WizardFlow = {
       items: [{ item: 'practice' }, { item: 'text-blur' }, { item: 'show-prosigns' }, { item: 'prosign-actions' }, { item: 'emojis' }],
     },
     {
+      id: 'screenKeys',
+      title: 'Mouse, touch and sprite keys',
+      intro: 'Keying with the mouse, the touch screen and the on-screen straight key.',
+      items: [{ item: 'mouse-keyer' }, { item: 'touch-keyer' }, { item: 'sprite-key' }],
+    },
+    {
       id: 'keyer',
       title: 'Keyboard keyer',
       intro: 'Turn the keyboard keyer on or off. Your keys are set on the next pages.',

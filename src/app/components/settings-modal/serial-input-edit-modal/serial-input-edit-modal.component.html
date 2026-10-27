@@ -137,12 +137,15 @@
         <!-- Paddle Mode -->
         <div class="serial-edit-field">
           <label class="serial-edit-label" for="serialEditPaddleMode">Paddle Mode</label>
-          <select id="serialEditPaddleMode" class="serial-edit-select" [(ngModel)]="editPaddleMode">
+          <div style="display: flex; align-items: center">
+          <select style="flex: 1" id="serialEditPaddleMode" class="serial-edit-select" [(ngModel)]="editPaddleMode">
             <option value="iambic-b">Iambic B</option>
             <option value="iambic-a">Iambic A</option>
             <option value="ultimatic">Ultimatic</option>
             <option value="single-lever">Single Lever</option>
           </select>
+          <app-help-link-button section="paddle-modes" />
+          </div>
         </div>
       }
 

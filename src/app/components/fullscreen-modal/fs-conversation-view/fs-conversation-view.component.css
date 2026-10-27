@@ -185,9 +185,9 @@
 .touch-btn-straight {
   max-width: 100%;
 }
-.touch-btn-icon {
-  font-size: 1.8rem;
-  line-height: 1;
+.touch-btn-svg {
+  width: 56px;
+  height: 28px;
 }
 .touch-btn-label {
   font-size: 0.75rem;

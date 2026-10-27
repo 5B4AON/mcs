@@ -2,12 +2,14 @@
  * Morse Code Studio
  */
 
-import { Component } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SettingsService, AppSettings } from '../../../../services/settings.service';
+import { AppSettings } from '../../../services/settings.service';
+import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
- * Settings card — Straight-Key Sprite Button.
+ * Settings item — Straight-Key Sprite Button.
  *
  * Controls the on-screen straight-key sprite button that appears at
  * the bottom of the main view when screen space is available. The
@@ -16,33 +18,30 @@ import { SettingsService, AppSettings } from '../../../../services/settings.serv
  * sources (keyboard, encoder, mouse, MIDI, serial, mic).
  */
 @Component({
-  selector: 'app-sprite-key-card',
+  selector: 'app-sprite-key-item',
   standalone: true,
-  imports: [FormsModule],
-  templateUrl: './sprite-key-card.component.html',
+  imports: [FormsModule, ItemShellComponent],
+  templateUrl: './sprite-key-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class SpriteKeyCardComponent {
-  /** Whether this card's body is expanded */
-  expanded = false;
+export class SpriteKeyItemComponent {
+  /** Card look (Settings) or flat look (wizard step) */
+  @Input() mode: 'card' | 'embedded' = 'card';
 
-  constructor(public settings: SettingsService) {}
+  readonly scope = inject(SETTINGS_SCOPE);
 
-  /** Toggle the sprite button master switch */
-  onEnabledChange(event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ spriteButtonEnabled: checked });
-  }
+  /** Current values from the scope */
+  readonly s = this.scope.value;
 
   /** Handle a string setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {
     const el = event.target as HTMLInputElement;
-    this.settings.update({ [key]: el.value } as Partial<AppSettings>);
+    this.scope.update({ [key]: el.value } as Partial<AppSettings>);
   }
 
   /** Toggle a sprite animation association */
   onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateEncoder' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateSerial' | 'spriteAnimateMic', event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ [key]: checked });
+    this.scope.update({ [key]: checked });
   }
 }

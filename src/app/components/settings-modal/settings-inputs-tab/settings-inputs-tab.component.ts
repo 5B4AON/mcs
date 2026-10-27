@@ -7,9 +7,9 @@ import { MicCardComponent } from './mic-card/mic-card.component';
 import { CwDetectorCardComponent } from './cw-detector-card/cw-detector-card.component';
 import { KeyboardKeyerItemComponent } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.component';
 import { EncoderItemComponent } from '../../settings-items/encoder/encoder-item.component';
-import { MouseKeyerCardComponent } from './mouse-keyer-card/mouse-keyer-card.component';
-import { TouchKeyerCardComponent } from './touch-keyer-card/touch-keyer-card.component';
-import { SpriteKeyCardComponent } from './sprite-key-card/sprite-key-card.component';
+import { MouseKeyerItemComponent } from '../../settings-items/mouse-keyer/mouse-keyer-item.component';
+import { TouchKeyerItemComponent } from '../../settings-items/touch-keyer/touch-keyer-item.component';
+import { SpriteKeyItemComponent } from '../../settings-items/sprite-key/sprite-key-item.component';
 import { MidiInputCardComponent } from './midi-input-card/midi-input-card.component';
 import { SerialInputCardComponent } from './serial-input-card/serial-input-card.component';
 import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.component';
@@ -29,9 +29,9 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
     CwDetectorCardComponent,
     KeyboardKeyerItemComponent,
     EncoderItemComponent,
-    MouseKeyerCardComponent,
-    TouchKeyerCardComponent,
-    SpriteKeyCardComponent,
+    MouseKeyerItemComponent,
+    TouchKeyerItemComponent,
+    SpriteKeyItemComponent,
     MidiInputCardComponent,
     SerialInputCardComponent,
     RtdbInputCardComponent,

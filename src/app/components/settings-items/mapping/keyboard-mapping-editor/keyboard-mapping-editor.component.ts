@@ -8,6 +8,7 @@ import { KeyboardInputMapping, KeyInputMode, DecoderSource, PaddleMode } from '.
 import { CaptureSlot } from '../capture-slot';
 import { DetectButtonComponent } from '../detect-button/detect-button.component';
 import { MappingIdentityFieldsComponent } from '../identity-fields/mapping-identity-fields.component';
+import { HelpLinkButtonComponent } from '../../help-link-button/help-link-button.component';
 
 /** Result of a validated keyboard mapping edit (one mapping, ready to store). */
 export interface KeyboardInputEditSaveEvent {
@@ -52,7 +53,7 @@ export function formatKeyCode(code: string): string {
 @Component({
   selector: 'app-keyboard-mapping-editor',
   standalone: true,
-  imports: [FormsModule, DetectButtonComponent, MappingIdentityFieldsComponent],
+  imports: [FormsModule, DetectButtonComponent, MappingIdentityFieldsComponent, HelpLinkButtonComponent],
   templateUrl: './keyboard-mapping-editor.component.html',
   styles: [':host { display: block; }'],
 })

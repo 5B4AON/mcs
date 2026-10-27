@@ -1,0 +1,99 @@
+<!-- Straight-Key Sprite -->
+<app-item-shell cardId="sprite-key-card" title="Straight-Key Sprite" [mode]="mode"
+                [enabled]="s().spriteButtonEnabled"
+                (enabledChange)="scope.update({ spriteButtonEnabled: $event })">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().spriteSource === 'rx'" [class.source-tx]="s().spriteSource === 'tx'">{{ s().spriteSource === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+
+<div class="cw-hint">
+  Shows an interactive straight-key button at the bottom of the
+  screen when there is enough space. Tap or click it to key Morse
+  code just like a physical straight key &mdash; press and hold for dashes,
+  tap briefly for dots. This is especially useful on touch-screen
+  devices but works with a mouse on desktop too.
+</div>
+
+<label>Used for:
+  <select [value]="s().spriteSource" (change)="onSettingChange('spriteSource', $event)">
+    <option value="rx">RX &mdash; received morse</option>
+    <option value="tx">TX &mdash; transmitted morse</option>
+  </select>
+</label>
+
+<div class="card-section-divider"></div>
+
+<label>Name:
+  <input type="text" [value]="s().spriteName"
+         (input)="onSettingChange('spriteName', $event)"
+         placeholder="e.g. callsign (optional)"
+         maxlength="20">
+</label>
+<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+<label>Color:
+  <div class="card-color-row">
+    <input type="color" class="card-color-picker"
+           [ngModel]="s().spriteColor || '#ffffff'"
+           (ngModelChange)="scope.update({ spriteColor: $event })">
+    @if (s().spriteColor) {
+      <button type="button" class="card-color-clear"
+              (click)="scope.update({ spriteColor: '' })" title="Clear color">&#10005;</button>
+    }
+    <span class="card-color-preview" [style.color]="s().spriteColor || 'inherit'">Sample</span>
+  </div>
+</label>
+<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+
+<div class="card-section-divider"></div>
+
+<div class="cw-hint">
+  You can also have the button visually animate (depress) when a
+  key press is detected from other input sources. This
+  provides a satisfying visual indicator of keying activity. Check
+  the sources below whose key presses should animate the sprite:
+</div>
+
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateKeyboard"
+           (change)="onAnimateChange('spriteAnimateKeyboard', $event)">
+    Keyboard straight key
+  </label>
+</div>
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateEncoder"
+           (change)="onAnimateChange('spriteAnimateEncoder', $event)">
+    Keyboard encoder
+  </label>
+</div>
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateMouse"
+           (change)="onAnimateChange('spriteAnimateMouse', $event)">
+    Mouse straight key
+  </label>
+</div>
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateMidi"
+           (change)="onAnimateChange('spriteAnimateMidi', $event)">
+    MIDI straight key
+  </label>
+</div>
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateSerial"
+           (change)="onAnimateChange('spriteAnimateSerial', $event)">
+    Serial straight key
+  </label>
+</div>
+<div class="settings-row">
+  <label class="settings-checkbox">
+    <input type="checkbox" [checked]="s().spriteAnimateMic"
+           (change)="onAnimateChange('spriteAnimateMic', $event)">
+    Straight key via mic
+  </label>
+</div>
+</app-item-shell>
