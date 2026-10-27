@@ -3,8 +3,9 @@
  */
 
 import { Component, Input, OnInit, ViewChild, inject } from '@angular/core';
-import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping, SerialInputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping, SerialInputMapping, SerialOutputMapping } from '../../../services/settings.service';
 import { SerialInputMappingEditorComponent } from '../../settings-items/mapping/serial-input-mapping-editor/serial-input-mapping-editor.component';
+import { SerialOutputMappingEditorComponent } from '../../settings-items/mapping/serial-output-mapping-editor/serial-output-mapping-editor.component';
 import { MidiInputService } from '../../../services/midi-input.service';
 import { MidiOutputService } from '../../../services/midi-output.service';
 import { SETTINGS_SCOPE } from '../../settings-items/settings-scope';
@@ -22,7 +23,7 @@ import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/m
 @Component({
   selector: 'app-mapping-page',
   standalone: true,
-  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent, MidiOutputMappingEditorComponent, SerialInputMappingEditorComponent],
+  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent, MidiOutputMappingEditorComponent, SerialInputMappingEditorComponent, SerialOutputMappingEditorComponent],
   template: `
     @switch (kind) {
       @case ('keyboard-mapping-editor') {
@@ -37,6 +38,12 @@ import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/m
       @case ('serial-input-mapping-editor') {
         <app-serial-input-mapping-editor [mapping]="asSerial()" [editIndex]="index"
                                          [allMappings]="asSerialList()" idPrefix="wzSerial" />
+      }
+      @case ('serial-output-mapping-editor') {
+        <app-serial-output-mapping-editor [mapping]="asSerialOut()" [editIndex]="index"
+                                          [allMappings]="asSerialOutList()"
+                                          [serialInputMappings]="scope.value().serialInputMappings"
+                                          idPrefix="wzSerialOut" />
       }
       @case ('midi-output-mapping-editor') {
         <app-midi-output-mapping-editor [mapping]="asMidiOut()" [editIndex]="index"
@@ -71,7 +78,9 @@ export class MappingPageComponent implements OnInit {
 
   @ViewChild(SerialInputMappingEditorComponent) private serial?: SerialInputMappingEditorComponent;
 
-  private editor() { return this.keyboard ?? this.midi ?? this.midiOut ?? this.serial; }
+  @ViewChild(SerialOutputMappingEditorComponent) private serialOut?: SerialOutputMappingEditorComponent;
+
+  private editor() { return this.keyboard ?? this.midi ?? this.midiOut ?? this.serial ?? this.serialOut; }
 
   /** Like the Settings popup: fill the MIDI device list when a MIDI page opens. */
   ngOnInit(): void {
@@ -89,6 +98,8 @@ export class MappingPageComponent implements OnInit {
   asMidiList(): MidiInputMapping[] { return this.allMappings as MidiInputMapping[]; }
   asSerial(): SerialInputMapping { return this.mapping as SerialInputMapping; }
   asSerialList(): SerialInputMapping[] { return this.allMappings as SerialInputMapping[]; }
+  asSerialOut(): SerialOutputMapping { return this.mapping as SerialOutputMapping; }
+  asSerialOutList(): SerialOutputMapping[] { return this.allMappings as SerialOutputMapping[]; }
   asMidiOut(): MidiOutputMapping { return this.mapping as MidiOutputMapping; }
   asMidiOutList(): MidiOutputMapping[] { return this.allMappings as MidiOutputMapping[]; }
 

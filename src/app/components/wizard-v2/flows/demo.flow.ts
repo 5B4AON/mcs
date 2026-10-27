@@ -93,6 +93,25 @@ export const DEMO_FLOW: WizardFlow = {
       repeat: { list: 'serialInputMappings', item: 'serial-input-mapping-editor' },
     },
     {
+      id: 'serialOutKey',
+      title: 'Serial output',
+      intro: 'Turn serial (DTR/RTS) output on or off. Ports and pins are set on the next pages.',
+      items: [{ item: 'serial-output' }],
+    },
+    {
+      id: 'serialOut',
+      title: 'Serial output',
+      intro: 'One page per serial output mapping.',
+      when: settingIs('serialEnabled', true),
+      repeat: { list: 'serialOutputMappings', item: 'serial-output-mapping-editor' },
+    },
+    {
+      id: 'winkeyer',
+      title: 'WinKeyer',
+      intro: 'Choose whether to key through a WinKeyer, and its port, speed and direction.',
+      items: [{ item: 'winkeyer' }],
+    },
+    {
       id: 'midiOutKey',
       title: 'MIDI output',
       intro: 'Turn MIDI output on or off. Your notes are set on the next pages.',

@@ -1,0 +1,108 @@
+<!-- WinKeyer Output -->
+<app-item-shell cardId="winkeyer-card" title="WinKeyer Output" [mode]="mode"
+                [enabled]="s().winkeyerEnabled"
+                [toggleDisabled]="unavailable"
+                (enabledChange)="onEnabledChange($event)">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().winkeyerForward === 'rx'" [class.source-tx]="s().winkeyerForward === 'tx'" [class.source-both]="s().winkeyerForward === 'both'">{{ forwardLabel(s().winkeyerForward) }}</span>
+  </span>
+  <span item-header-extra class="connectivity-badge" [class.connected]="winkeyerOutput.connected()" [class.disconnected]="!winkeyerOutput.connected()">
+    @if (winkeyerOutput.connected()) {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+    }
+  </span>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().winkeyerEnabled" [disabled]="unavailable"
+             (change)="onEnabledChange($any($event.target).checked)">
+      Key through a WinKeyer device
+    </label>
+    <div class="keyer-hint">
+      @if (s().winkeyerEnabled) {
+        WinKeyer output is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to choose its port, speed and direction.
+      }
+    </div>
+  }
+
+  @if (!webSerialSupported) {
+    <div class="conflict-warning">
+      Web Serial API is not supported in this browser. WinKeyer features require a
+      Chromium-based browser (Chrome or Edge).
+    </div>
+  } @else if (isAndroid) {
+    <div class="conflict-warning">
+      Serial port access is not available on Android. USB-to-serial devices like WinKeyer
+      are not supported by Chrome on Android even via USB OTG. This feature requires
+      Chrome or Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+    </div>
+  }
+
+  @if (mode === 'card' || s().winkeyerEnabled) {
+    <label>Forward:
+      <select [value]="s().winkeyerForward" (change)="onForwardChange($event)">
+        <option value="rx" [selected]="s().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
+        <option value="tx" [selected]="s().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
+        <option value="both" [selected]="s().winkeyerForward === 'both'">Both RX and TX</option>
+      </select>
+    </label>
+
+    <label>WinKeyer Port:
+      <select [value]="s().winkeyerPortIndex" (change)="onPortChange($event)">
+        <option [value]="-1">&mdash; Select &mdash;</option>
+        @for (port of winkeyerOutput.ports(); track $index) {
+          <option [value]="$index" [selected]="$index === s().winkeyerPortIndex">
+            {{ winkeyerOutput.portLabel(port) }}
+          </option>
+        }
+        <option value="-2">+ Add serial port&hellip;</option>
+      </select>
+    </label>
+
+    <label>WPM Speed:
+      <input type="number" min="5" max="99" [value]="s().winkeyerWpm" (change)="onWpmChange($event)">
+    </label>
+  }
+
+  <div class="cw-hint">
+    Forwards decoded text to a K1EL WinKeyer (WK2/WK3/WKUSB) device.
+    WinKeyer generates perfectly timed CW keying on its output &mdash; the host
+    sends plain ASCII characters and WinKeyer handles the morse timing internally.<br><br>
+    <strong>Connection:</strong> 1200 baud, 8N2. The WinKeyer appears as a virtual
+    COM port (USB-serial). Select which decoded text to forward: RX (received),
+    TX (transmitted by the encoder/keyer), or both.<br><br>
+    <strong>Use case:</strong> Re-key received or transmitted morse through a
+    WinKeyer for relay, practice, or driving an external transmitter with
+    clean timing.
+  </div>
+
+  @if (winkeyerOutput.lastError()) {
+    <div class="conflict-warning">{{ winkeyerOutput.lastError() }}</div>
+  }
+
+  @if (scope.isLive) {
+    <div class="serial-port-row">
+      <button [disabled]="!winkeyerOutput.connected()"
+              (click)="winkeyerOutput.test()" class="test-btn">
+        Test (send "TEST")
+      </button>
+      <button [disabled]="!winkeyerOutput.connected()"
+              (click)="winkeyerOutput.clearBuffer()" class="test-btn">
+        Clear Buffer
+      </button>
+      @if (winkeyerOutput.connected()) {
+        <span class="serial-status connected">&#x2714; Connected
+          @if (winkeyerOutput.firmwareVersion()) {
+            (v{{ winkeyerOutput.firmwareVersion() }})
+          }
+        </span>
+      } @else {
+        <span class="serial-status">&#x2716; Disconnected</span>
+      }
+    </div>
+  }
+</app-item-shell>

@@ -34,6 +34,10 @@ import { SpriteKeyItemComponent } from './sprite-key/sprite-key-item.component';
 import { SPRITE_KEY_DESCRIPTOR } from './sprite-key/sprite-key-item.model';
 import { SerialInputItemComponent } from './serial-input/serial-input-item.component';
 import { SERIAL_INPUT_DESCRIPTOR } from './serial-input/serial-input-item.model';
+import { SerialOutputItemComponent } from './serial-output/serial-output-item.component';
+import { SERIAL_OUTPUT_DESCRIPTOR } from './serial-output/serial-output-item.model';
+import { WinkeyerItemComponent } from './winkeyer/winkeyer-item.component';
+import { WINKEYER_DESCRIPTOR } from './winkeyer/winkeyer-item.model';
 import { MidiOutputItemComponent } from './midi-output/midi-output-item.component';
 import { MIDI_OUTPUT_DESCRIPTOR } from './midi-output/midi-output-item.model';
 import { MidiInputItemComponent } from './midi-input/midi-input-item.component';
@@ -67,6 +71,8 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'sprite-key': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_DESCRIPTOR },
   'midi-output': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_DESCRIPTOR },
   'serial-input': { component: SerialInputItemComponent, descriptor: SERIAL_INPUT_DESCRIPTOR },
+  'serial-output': { component: SerialOutputItemComponent, descriptor: SERIAL_OUTPUT_DESCRIPTOR },
+  'winkeyer': { component: WinkeyerItemComponent, descriptor: WINKEYER_DESCRIPTOR },
   'midi-input': { component: MidiInputItemComponent, descriptor: MIDI_INPUT_DESCRIPTOR },
   'keyboard-keyer': { component: KeyboardKeyerItemComponent, descriptor: KEYBOARD_KEYER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },

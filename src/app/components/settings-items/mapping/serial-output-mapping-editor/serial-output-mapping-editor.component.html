@@ -1,0 +1,92 @@
+<div class="md-editor">
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Port'">Serial Port</label>
+    <div class="md-port-row">
+      <select [id]="idPrefix + 'Port'" class="md-select" [value]="editPortIndex" (change)="onPortChange($event)">
+        <option [value]="-1">&mdash; Select &mdash;</option>
+        @for (port of serialOutput.ports(); track $index) {
+          <option [value]="$index" [selected]="$index === editPortIndex">{{ serialOutput.portLabel(port) }}</option>
+        }
+        <option value="-2">+ Add serial port&hellip;</option>
+      </select>
+      <span class="md-conn" [class.connected]="isConnected" [class.disconnected]="!isConnected"
+            [title]="isConnected ? 'Port connected' : 'Port not connected'">
+        @if (isConnected) {
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+        }
+      </span>
+    </div>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Pin'">Output Pin</label>
+    <select [id]="idPrefix + 'Pin'" class="md-select" [(ngModel)]="editPin">
+      @for (p of pins; track p.value) {
+        <option [value]="p.value">{{ p.label }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="md-field md-checkbox-row">
+    <label>
+      <input type="checkbox" [(ngModel)]="editInvert">
+      Invert Output
+    </label>
+    <span class="md-hint">By default, the pin is held LOW when idle and driven HIGH when keyed. Check to reverse polarity.</span>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Forward'">Forward</label>
+    <select [id]="idPrefix + 'Forward'" class="md-select" [(ngModel)]="editForward">
+      <option value="tx">TX only &mdash; transmitted morse</option>
+      <option value="rx">RX only &mdash; received morse</option>
+      <option value="both">Both RX and TX</option>
+    </select>
+  </div>
+
+  <div class="md-hint">DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.</div>
+
+  @if (warning) {
+    <div class="md-warning">{{ warning }}</div>
+  }
+
+  @if (serialInputMappings.length > 0) {
+    <div class="md-field">
+      <span class="md-label">Relay from Serial Input</span>
+      <span class="md-hint">
+        Select serial input mappings to relay through this output. Only inputs
+        whose source matches the forward direction are shown.
+        Enable when input and output use separate adapters or ports with no electrical connection.
+      </span>
+      <div class="md-checkbox-row">
+        @for (input of serialInputMappings; track $index) {
+          @if (isInputCompatible(input)) {
+            <label [style.opacity]="input.enabled ? 1 : 0.5">
+              <input type="checkbox" [checked]="editRelayInputIndices.includes($index)"
+                     (change)="toggleRelayInput($index)">
+              {{ inputMappingLabel(input, $index) }}
+            </label>
+          }
+        }
+        @if (editRelayInputIndices.length > 0) {
+          <label>
+            <input type="checkbox" [(ngModel)]="editRelaySuppressOtherInputs">
+            Suppress other inputs
+          </label>
+        }
+      </div>
+      @if (editRelayInputIndices.length > 0) {
+        <span class="md-hint">
+          When enabled, this output will only forward signals from the explicitly
+          selected relay sources above. All other input paths are suppressed.
+        </span>
+      }
+    </div>
+  }
+
+  @if (canTest) {
+    <button type="button" class="md-test-btn" (click)="testOutput()">Test Output (1s)</button>
+  }
+</div>

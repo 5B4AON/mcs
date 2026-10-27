@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { AppSettings, SerialInputMapping, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
+import { AppSettings, SerialInputMapping, SerialOutputMapping, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
 import { midiNoteName } from '../../../services/midi-input.service';
 import { midiOutputNoteName } from '../../../services/midi-output.service';
 import { ItemDescriptor } from '../item-descriptor';
@@ -77,6 +77,13 @@ const serialInputSummary = (raw: unknown): string => {
   return `${name}${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${pins}, ${port} (${m.source.toUpperCase()})`;
 };
 
+const serialOutputSummary = (raw: unknown): string => {
+  const m = raw as SerialOutputMapping;
+  const fwd = m.forward === 'both' ? 'RX/TX' : m.forward.toUpperCase();
+  const port = m.portIndex >= 0 ? `port ${m.portIndex + 1}` : 'no port';
+  return `${m.pin.toUpperCase()} on ${port}${m.invert ? ' inverted' : ''} (${fwd})`;
+};
+
 const midiOutputSummary = (raw: unknown): string => {
   const m = raw as MidiOutputMapping;
   const note = (n: number) => `${midiOutputNoteName(n)}(${n})`;
@@ -142,6 +149,18 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
     }),
     descriptor: listDescriptor(
       'serial-input-mapping-editor', 'serialInputMappings', 'Serial input mappings', serialInputSummary),
+  },
+  'serial-output-mapping-editor': {
+    id: 'serial-output-mapping-editor',
+    list: 'serialOutputMappings',
+    noun: 'serial output mapping',
+    create: (): SerialOutputMapping => ({
+      enabled: true, portIndex: -1, pin: 'dtr', invert: false, forward: 'tx', relayInputIndices: [],
+      relaySuppressOtherInputs: false,
+    }),
+    summary: serialOutputSummary,
+    descriptor: listDescriptor(
+      'serial-output-mapping-editor', 'serialOutputMappings', 'Serial output mappings', serialOutputSummary),
   },
   'midi-output-mapping-editor': {
     id: 'midi-output-mapping-editor',
