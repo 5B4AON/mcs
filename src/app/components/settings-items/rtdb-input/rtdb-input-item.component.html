@@ -1,0 +1,132 @@
+<!-- Firebase RTDB Input -->
+<app-item-shell cardId="rtdb-input-card" title="Firebase RTDB" [mode]="mode"
+                [enabled]="s().rtdbInputEnabled" [showRequired]="missingRequired"
+                (enabledChange)="onEnabledChange($event)">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().rtdbInputSource === 'rx'" [class.source-tx]="s().rtdbInputSource === 'tx'">{{ s().rtdbInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+  <span item-header-extra class="connectivity-badge" [class.connected]="rtdbService.inputListening()" [class.disconnected]="!rtdbService.inputListening()">
+    @if (rtdbService.inputListening()) {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+    }
+  </span>
+
+  <div class="cw-hint">
+    Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
+    The secret is hidden on screen only, and channel values may be saved in this browser.
+    Don’t reuse sensitive credentials or send sensitive content.
+    <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
+  </div>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbInputEnabled"
+             (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
+      Receive morse from a Firebase channel
+    </label>
+    <div class="keyer-hint">
+      @if (s().rtdbInputEnabled) {
+        Firebase input is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to enter the channel name and secret.
+      }
+    </div>
+  }
+
+  @if (mode === 'card' || s().rtdbInputEnabled) {
+    @if (!rtdbService.isOnline()) {
+      <div class="conflict-warning">
+        You are currently offline. Firebase Realtime Database requires an internet connection.
+      </div>
+    }
+
+    <label>Used for:
+      <select [value]="s().rtdbInputSource" (change)="onSourceChange($event)">
+        <option value="rx">RX &mdash; received morse</option>
+        <option value="tx">TX &mdash; transmitted morse</option>
+      </select>
+    </label>
+
+    <label [class.field-invalid]="!s().rtdbInputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
+      <input type="text" [value]="s().rtdbInputChannelName"
+             (input)="onChannelChange('rtdbInputChannelName', $event)"
+             placeholder="e.g. cw-practice"
+             maxlength="50">
+    </label>
+
+    <label [class.field-invalid]="!s().rtdbInputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
+      <!-- Text field masked with CSS: a real password field triggers Chrome's password manager and breach checks -->
+      <input type="text" name="channelSecret" class="secret-mask" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" [value]="s().rtdbInputChannelSecret"
+             (input)="onChannelChange('rtdbInputChannelSecret', $event)"
+             placeholder="shared secret"
+             maxlength="50">
+    </label>
+
+    <div class="cw-hint">
+      Subscribe to a Firebase Realtime Database channel to receive morse letters
+      from remote stations. Letters arrive as already-decoded characters and are
+      fed into the encoder as if typed on the keyboard.<br><br>
+      Both sender and receiver must share the same <strong>Channel Name</strong>
+      and <strong>Channel Secret</strong>. Only the latest letter per channel
+      is written; the app does not automatically delete stored data.<br><br>
+      <strong>Requires an internet connection.</strong> Offline caching is disabled.
+    </div>
+
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbInputOverrideWpm"
+             (change)="onBoolChange('rtdbInputOverrideWpm', $event)">
+      Override remote WPM with local encoder WPM
+    </label>
+    <div class="cw-hint">
+      Each character sent via RTDB carries the WPM speed that was used to
+      generate it. By default, received characters are played back at the
+      sender's original speed for realistic timing. Enable this option to
+      ignore the remote WPM and use your local Encoder WPM instead.
+    </div>
+
+    <div class="card-section-divider"></div>
+
+    <label>Override Name:
+      <input type="text" [value]="s().rtdbInputName"
+             (input)="onOverrideNameChange($event)"
+             placeholder="empty = keep sender's name"
+             maxlength="20">
+    </label>
+    <div class="cw-hint">If set, replaces the incoming sender name. Leave empty to preserve the remote name.</div>
+
+    <label>Override Color:
+      <div class="card-color-row">
+        <input type="color" class="card-color-picker"
+               [ngModel]="s().rtdbInputColor || '#ffffff'"
+               (ngModelChange)="scope.update({ rtdbInputColor: $event })">
+        @if (s().rtdbInputColor) {
+          <button type="button" class="card-color-clear"
+                  (click)="scope.update({ rtdbInputColor: '' })" title="Clear color">&#10005;</button>
+        }
+        <span class="card-color-preview" [style.color]="s().rtdbInputColor || 'inherit'">Sample</span>
+      </div>
+    </label>
+    <div class="cw-hint">If set, overrides the incoming colour. Leave cleared to use the sender's colour (or default RX/TX colour).</div>
+
+    @if (rtdbService.lastError()) {
+      <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
+    }
+
+    @if (scope.isLive) {
+      <div class="serial-port-row">
+        @if (rtdbService.inputListening()) {
+          <span class="serial-status connected">&#x2714; Listening</span>
+        } @else if (s().rtdbInputEnabled) {
+          <span class="serial-status">&#x2716; Not connected</span>
+        }
+      </div>
+    }
+  }
+</app-item-shell>
+
+@if (notice(); as message) {
+  <app-confirm-dialog title="Cannot enable yet" [message]="message" confirmLabel="OK"
+                      [singleAction]="true" (confirmed)="notice.set(null)"></app-confirm-dialog>
+}

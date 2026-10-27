@@ -38,6 +38,9 @@ export class ItemShellComponent {
   /** Disable the enable switch (for example when the browser lacks the API) */
   @Input() toggleDisabled = false;
 
+  /** Outline the card when it is off and still missing required values */
+  @Input() showRequired = false;
+
   /** Emitted when the user flips the enable switch */
   @Output() enabledChange = new EventEmitter<boolean>();
 
@@ -51,6 +54,9 @@ export class ItemShellComponent {
 
   /** Forward the checkbox state */
   onToggle(event: Event): void {
-    this.enabledChange.emit((event.target as HTMLInputElement).checked);
+    const box = event.target as HTMLInputElement;
+    this.enabledChange.emit(box.checked);
+    // If the parent refused the change, put the switch back once change detection has run
+    setTimeout(() => { box.checked = this.enabled ?? false; });
   }
 }

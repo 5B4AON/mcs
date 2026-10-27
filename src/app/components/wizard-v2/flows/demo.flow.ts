@@ -112,6 +112,18 @@ export const DEMO_FLOW: WizardFlow = {
       items: [{ item: 'winkeyer' }],
     },
     {
+      id: 'rtdbIn',
+      title: 'Firebase input',
+      intro: 'Receive morse from a Firebase channel.',
+      items: [{ item: 'rtdb-input' }],
+    },
+    {
+      id: 'rtdbOut',
+      title: 'Firebase output',
+      intro: 'Send morse to a Firebase channel.',
+      items: [{ item: 'rtdb-output' }],
+    },
+    {
       id: 'midiOutKey',
       title: 'MIDI output',
       intro: 'Turn MIDI output on or off. Your notes are set on the next pages.',

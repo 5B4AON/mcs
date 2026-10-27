@@ -38,6 +38,10 @@ import { SerialOutputItemComponent } from './serial-output/serial-output-item.co
 import { SERIAL_OUTPUT_DESCRIPTOR } from './serial-output/serial-output-item.model';
 import { WinkeyerItemComponent } from './winkeyer/winkeyer-item.component';
 import { WINKEYER_DESCRIPTOR } from './winkeyer/winkeyer-item.model';
+import { RtdbInputItemComponent } from './rtdb-input/rtdb-input-item.component';
+import { RTDB_INPUT_DESCRIPTOR } from './rtdb-input/rtdb-input-item.model';
+import { RtdbOutputItemComponent } from './rtdb-output/rtdb-output-item.component';
+import { RTDB_OUTPUT_DESCRIPTOR } from './rtdb-output/rtdb-output-item.model';
 import { MidiOutputItemComponent } from './midi-output/midi-output-item.component';
 import { MIDI_OUTPUT_DESCRIPTOR } from './midi-output/midi-output-item.model';
 import { MidiInputItemComponent } from './midi-input/midi-input-item.component';
@@ -73,6 +77,8 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'serial-input': { component: SerialInputItemComponent, descriptor: SERIAL_INPUT_DESCRIPTOR },
   'serial-output': { component: SerialOutputItemComponent, descriptor: SERIAL_OUTPUT_DESCRIPTOR },
   'winkeyer': { component: WinkeyerItemComponent, descriptor: WINKEYER_DESCRIPTOR },
+  'rtdb-input': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_DESCRIPTOR },
+  'rtdb-output': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_DESCRIPTOR },
   'midi-input': { component: MidiInputItemComponent, descriptor: MIDI_INPUT_DESCRIPTOR },
   'keyboard-keyer': { component: KeyboardKeyerItemComponent, descriptor: KEYBOARD_KEYER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },

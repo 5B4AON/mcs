@@ -12,7 +12,7 @@ import { TouchKeyerItemComponent } from '../../settings-items/touch-keyer/touch-
 import { SpriteKeyItemComponent } from '../../settings-items/sprite-key/sprite-key-item.component';
 import { MidiInputItemComponent } from '../../settings-items/midi-input/midi-input-item.component';
 import { SerialInputItemComponent } from '../../settings-items/serial-input/serial-input-item.component';
-import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.component';
+import { RtdbInputItemComponent } from '../../settings-items/rtdb-input/rtdb-input-item.component';
 
 /**
  * Settings — Inputs tab.
@@ -34,7 +34,7 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
     SpriteKeyItemComponent,
     MidiInputItemComponent,
     SerialInputItemComponent,
-    RtdbInputCardComponent,
+    RtdbInputItemComponent,
   ],
   templateUrl: './settings-inputs-tab.component.html',
 })

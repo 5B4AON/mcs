@@ -6,7 +6,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { AudioOutputItemComponent } from '../../settings-items/audio-output/audio-output-item.component';
 import { SerialOutputItemComponent } from '../../settings-items/serial-output/serial-output-item.component';
 import { WinkeyerItemComponent } from '../../settings-items/winkeyer/winkeyer-item.component';
-import { RtdbOutputCardComponent } from './rtdb-output-card/rtdb-output-card.component';
+import { RtdbOutputItemComponent } from '../../settings-items/rtdb-output/rtdb-output-item.component';
 import { MidiOutputItemComponent } from '../../settings-items/midi-output/midi-output-item.component';
 import { SidetoneItemComponent } from '../../settings-items/sidetone/sidetone-item.component';
 import { VibrationItemComponent } from '../../settings-items/vibration/vibration-item.component';
@@ -25,7 +25,7 @@ import { VibrationItemComponent } from '../../settings-items/vibration/vibration
     AudioOutputItemComponent,
     SerialOutputItemComponent,
     WinkeyerItemComponent,
-    RtdbOutputCardComponent,
+    RtdbOutputItemComponent,
     MidiOutputItemComponent,
     SidetoneItemComponent,
     VibrationItemComponent,

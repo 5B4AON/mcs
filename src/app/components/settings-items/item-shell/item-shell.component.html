@@ -2,7 +2,7 @@
 <ng-template #body><ng-content></ng-content></ng-template>
 
 @if (mode === 'card') {
-  <div class="settings-card" [id]="'settings-card-' + cardId" [class.disabled-card]="enabled === false">
+  <div class="settings-card" [id]="'settings-card-' + cardId" [class.disabled-card]="enabled === false" [class.show-required]="showRequired">
     <div class="settings-card-header" (click)="toggleExpanded()">
       <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" [attr.aria-controls]="'settings-card-' + cardId"
               (click)="toggleExpanded(); $event.stopPropagation()">

@@ -1,0 +1,166 @@
+<!-- Firebase RTDB Output -->
+<app-item-shell cardId="rtdb-output-card" title="Firebase RTDB Output" [mode]="mode"
+                [enabled]="s().rtdbOutputEnabled" [showRequired]="missingRequired"
+                (enabledChange)="onEnabledChange($event)">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().rtdbOutputForward === 'rx'" [class.source-tx]="s().rtdbOutputForward === 'tx'" [class.source-both]="s().rtdbOutputForward === 'both'">{{ s().rtdbOutputForward === 'rx' ? 'RX' : s().rtdbOutputForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+  </span>
+  <span item-header-extra class="connectivity-badge" [class.connected]="rtdbService.outputActive()" [class.disconnected]="!rtdbService.outputActive()">
+    @if (rtdbService.outputActive()) {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+    }
+  </span>
+
+  <div class="cw-hint">
+    Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
+    The secret is hidden on screen only, and channel values may be saved in this browser.
+    Don’t reuse sensitive credentials or send sensitive content.
+    <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
+  </div>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbOutputEnabled"
+             (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
+      Send morse to a Firebase channel
+    </label>
+    <div class="keyer-hint">
+      @if (s().rtdbOutputEnabled) {
+        Firebase output is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to enter the channel name, secret and your name.
+      }
+    </div>
+  }
+
+  @if (mode === 'card' || s().rtdbOutputEnabled) {
+    <label>Forward:
+      <select [value]="s().rtdbOutputForward" (change)="onForwardChange($event)">
+        <option value="rx" [selected]="s().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+        <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+        <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
+      </select>
+    </label>
+
+    @if (!rtdbService.isOnline()) {
+      <div class="conflict-warning">
+        You are currently offline. Firebase Realtime Database requires an internet connection.
+      </div>
+    }
+
+    <label [class.field-invalid]="!s().rtdbOutputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
+      <input type="text" [value]="s().rtdbOutputChannelName"
+             (input)="onTextChange('rtdbOutputChannelName', $event)"
+             placeholder="e.g. cw-practice"
+             maxlength="50">
+    </label>
+
+    <label [class.field-invalid]="!s().rtdbOutputChannelSecret.trim()">Channel Secret<span class="required-mark">*</span>:
+      <!-- Text field masked with CSS: a real password field triggers Chrome's password manager and breach checks -->
+      <input type="text" name="channelSecret" class="secret-mask" autocomplete="off" autocapitalize="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" data-form-type="other" [value]="s().rtdbOutputChannelSecret"
+             (input)="onTextChange('rtdbOutputChannelSecret', $event)"
+             placeholder="shared secret"
+             maxlength="50">
+    </label>
+
+    <label [class.field-invalid]="!s().rtdbOutputName.trim()">Name<span class="required-mark">*</span>:
+      <input type="text" [value]="s().rtdbOutputName"
+             (input)="onTextChange('rtdbOutputName', $event)"
+             placeholder="e.g. callsign"
+             maxlength="20">
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbOutputOverrideName"
+             (change)="onBoolChange('rtdbOutputOverrideName', $event)">
+      Always use this name (override input-specific names)
+    </label>
+    <div class="cw-hint">When unchecked, input-specific names (e.g. from Mouse Keyer or CW Detector) are sent if defined; otherwise this name is used as fallback.</div>
+
+    <label>Color:
+      <div class="card-color-row">
+        <input type="color" class="card-color-picker"
+               [ngModel]="s().rtdbOutputColor || '#ffffff'"
+               (ngModelChange)="scope.update({ rtdbOutputColor: $event })">
+        @if (s().rtdbOutputColor) {
+          <button type="button" class="card-color-clear"
+                  (click)="scope.update({ rtdbOutputColor: '' })" title="Clear color">&#10005;</button>
+        }
+        <span class="card-color-preview" [style.color]="s().rtdbOutputColor || 'inherit'">Sample</span>
+      </div>
+    </label>
+
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbOutputOverrideColor"
+             (change)="onBoolChange('rtdbOutputOverrideColor', $event)">
+      Always use this color (override input-specific colors)
+    </label>
+    <div class="cw-hint">When unchecked, input-specific colors are sent if defined; otherwise this color is used as fallback.</div>
+
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().rtdbAllowInputRelay && !isSameChannel()"
+             [disabled]="isSameChannel()"
+             (change)="onBoolChange('rtdbAllowInputRelay', $event)">
+      Allow relay from RTDB input to RTDB output
+    </label>
+    @if (isSameChannel()) {
+      <div class="cw-hint">
+        Relay is not available when input and output use the same channel and
+        secret, as this would create a feedback loop.
+      </div>
+    } @else {
+      <div class="cw-hint">
+        Enable when RTDB input and output use different channel/secret
+        combinations. Characters received on the input channel will be
+        relayed to the output channel.
+      </div>
+    }
+
+    @if (s().rtdbAllowInputRelay && !isSameChannel()) {
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="s().rtdbRelaySuppressOtherInputs"
+               (change)="onBoolChange('rtdbRelaySuppressOtherInputs', $event)">
+        Suppress other inputs
+      </label>
+      <div class="cw-hint">
+        When enabled, only characters received from the RTDB input channel
+        are forwarded to RTDB output. All other local input paths are
+        suppressed.
+      </div>
+    }
+
+    <div class="cw-hint">
+      Publishes decoded morse characters to a Firebase Realtime Database channel.
+      Remote stations subscribed to the same channel and secret will receive
+      each letter as it is decoded.<br><br>
+      <strong>User Name</strong> is attached to each posted letter (typically your
+      callsign). Select which decoded text to forward: RX (received), TX
+      (transmitted by the encoder/keyer), or both.<br><br>
+      Only the <strong>latest letter</strong> per channel is written; the app
+      does not automatically clean up stored data. See the project README for
+      developer guidance on security and data retention.<br><br>
+      <strong>Requires an internet connection.</strong> Offline caching is disabled.
+    </div>
+
+    @if (rtdbService.lastError()) {
+      <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
+    }
+
+    @if (scope.isLive) {
+      <div class="serial-port-row">
+        @if (rtdbService.outputActive()) {
+          <span class="serial-status connected">&#x2714; Active</span>
+        } @else if (s().rtdbOutputEnabled) {
+          <span class="serial-status">&#x2716; Not active</span>
+        }
+      </div>
+    }
+  }
+</app-item-shell>
+
+@if (notice(); as message) {
+  <app-confirm-dialog title="Cannot enable yet" [message]="message" confirmLabel="OK"
+                      [singleAction]="true" (confirmed)="notice.set(null)"></app-confirm-dialog>
+}
