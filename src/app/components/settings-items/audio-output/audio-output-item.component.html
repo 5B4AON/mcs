@@ -4,6 +4,22 @@
               (enabledChange)="scope.update({ optoEnabled: $event })">
   <span item-badges class="source-badge" [class.source-rx]="s().optoForward === 'rx'" [class.source-tx]="s().optoForward === 'tx'" [class.source-both]="s().optoForward === 'both'">{{ s().optoForward === 'rx' ? 'RX' : s().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
 
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().optoEnabled"
+             (change)="scope.update({ optoEnabled: $any($event.target).checked })">
+      Key a radio through the sound card (optocoupler)
+    </label>
+    <div class="keyer-hint">
+      @if (s().optoEnabled) {
+        Audio key output is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to choose its device, channel and level.
+      }
+    </div>
+  }
+
+  @if (mode === 'card' || s().optoEnabled) {
   <div class="experimental-banner" style="padding-top: 10px">&#x26A0; Experimental &mdash; AC coupling on some sound cards may produce unreliable keying.</div>
   <label>Forward:
     <select [value]="s().optoForward"
@@ -93,5 +109,6 @@
   </button>
   } @else {
   <div class="keyer-hint">The output test is available in Settings, where it can use your real sound card.</div>
+  }
   }
 </app-item-shell>

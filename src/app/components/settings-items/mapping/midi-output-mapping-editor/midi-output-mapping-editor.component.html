@@ -104,7 +104,9 @@
     </div>
   }
 
-  <button type="button" class="md-test-btn" [disabled]="!midiOutput.connected()" (click)="testMapping()">
-    Test Output (1s)
-  </button>
+  @if (showTestButton) {
+    <button type="button" class="md-test-btn" [disabled]="!midiOutput.connected()" (click)="testMapping()">
+      Test Output (1s)
+    </button>
+  }
 </div>

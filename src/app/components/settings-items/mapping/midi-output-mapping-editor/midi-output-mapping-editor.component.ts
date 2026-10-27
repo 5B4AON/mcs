@@ -58,6 +58,9 @@ export class MidiOutputMappingEditorComponent implements OnChanges {
   /** Prefix that keeps element ids unique when two editors exist at once */
   @Input() idPrefix = 'midiOut';
 
+  /** Settings can test a live output; the wizard edits a draft that is not active yet. */
+  @Input() showTestButton = true;
+
   editDeviceId = '';
   editChannel = 1;
   editForward: OutputForward = 'tx';

@@ -291,7 +291,10 @@ export class WizardEngine {
       ? [this.kindFor(step.page.item).descriptor]
       : (step.items ?? []).map(item => this.descriptorFor(item.item));
     const problems = descriptors.flatMap(d => d.validate(settings));
-    return [...problems, ...(step.validate?.(this.context()) ?? [])];
+    // A repeat step's own check looks at the whole list, so it runs on the list page only;
+    // a mapping page is checked by its mapping kind, and its edits reach the draft on Next
+    const ownCheck = step.page?.kind === 'mapping' ? [] : step.validate?.(this.context()) ?? [];
+    return [...problems, ...ownCheck];
   }
 
   /** Every shown step's problems; Apply stays blocked while any remain. */

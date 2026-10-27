@@ -5,6 +5,7 @@
 import { WizardGoalId } from '../../settings-modal/goal-navigator/setup-goals';
 import { WizardFlow } from '../engine/flow-types';
 import { DECODE_FLOW } from './decode.flow';
+import { HARDWARE_FLOW } from './hardware.flow';
 import { MIDI_FLOW } from './midi.flow';
 import { PRACTICE_FLOW } from './practice.flow';
 import { RELAY_FLOW } from './relay.flow';
@@ -19,6 +20,7 @@ const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
   practice: PRACTICE_FLOW,
   decode: DECODE_FLOW,
   relay: RELAY_FLOW,
+  hardware: HARDWARE_FLOW,
 };
 
 /** The migrated flow for a goal, or undefined while it still uses the old wizard. */

@@ -385,7 +385,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     }
   }
 
-  apply(): void {
+  async apply(): Promise<void> {
     const engine = this.engine();
     if (!engine || !engine.canApply()) return;
     const patch = engine.applyPatch();
@@ -393,6 +393,10 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';
     const base = this.settings.settings();
     this.settings.update(patch);
+    if (patch.midiOutputEnabled) {
+      await this.midiOutput.start();
+      this.midiOutput.reattach();
+    }
     // A direction the user ticked is connected now instead of waiting for the next health check
     if (patch.rtdbInputEnabled && !base.rtdbInputEnabled) this.rtdb.startInput();
     if (patch.rtdbOutputEnabled && !base.rtdbOutputEnabled) this.rtdb.startOutput();

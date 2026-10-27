@@ -49,7 +49,8 @@ import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/m
         <app-midi-output-mapping-editor [mapping]="asMidiOut()" [editIndex]="index"
                                         [allMappings]="asMidiOutList()"
                                         [midiInputMappings]="scope.value().midiInputMappings"
-                                        [midiDevices]="midiOutput.midiOutputs()" idPrefix="wzMidiOut" />
+                                        [midiDevices]="midiOutput.midiOutputs()" idPrefix="wzMidiOut"
+                                        [showTestButton]="false" />
       }
     }
   `,
