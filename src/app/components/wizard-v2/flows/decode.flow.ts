@@ -22,12 +22,14 @@ export const DECODE_FLOW: WizardFlow = {
       id: 'before',
       title: 'Before you listen',
       intro: 'This guide never starts listening, never asks for microphone access and never lists your devices. Your browser may ask for microphone permission later, when audio starts.',
+      helpSection: 's7-7',
       items: [{ item: 'audio-feedback-guard' }],
     },
     {
       id: 'tone',
       title: 'Tune the detector',
       intro: 'Match these to the tone you hear from your radio. Typical CW pitch is 500-700 Hz.',
+      helpSection: 's6-1',
       items: [{ item: 'cw-detector-tune' }],
       validate: ctx => {
         const s = ctx.settings;

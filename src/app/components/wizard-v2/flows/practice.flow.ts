@@ -3,7 +3,7 @@
  */
 
 import { WizardFlow } from '../engine/flow-types';
-import { speedStep } from './shared-steps';
+import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /**
  * Goal "Practise receiving Morse": speed, Farnsworth, the copy-practice item
@@ -22,31 +22,19 @@ export const PRACTICE_FLOW: WizardFlow = {
     { key: 'practicePipeline', value: 'local', label: 'Practice plays on this device only' },
   ],
   steps: [
-    {
-      ...speedStep({ encoder: true }),
-      title: 'How fast should practice play?',
+    speedStep({ encoder: true }, {
       intro: 'Practice sequences play at this speed. Slower is easier to copy while you learn.',
-    },
-    {
-      id: 'farnsworth',
-      title: 'Make practice easier to copy?',
-      intro: 'Farnsworth timing keeps each character at full speed but stretches the gaps between characters and words. Leave it off for normal timing.',
-      items: [{
-        item: 'farnsworth',
-        hint: 'Practice plays as received (RX) Morse. Choose "RX Only" or "Both RX and TX" so the gaps are stretched.',
-      }],
-    },
+    }),
+    farnsworthStep({ applies: 'rx' }),
     {
       id: 'practice',
       title: 'What do you want to copy?',
       intro: 'Choose the content, how it is scored and how many rounds. This goal keeps practice on this device only, whatever the pipeline below shows.',
+      helpSection: 's3-5',
       items: [{ item: 'practice' }],
     },
-    {
-      id: 'sidetone',
-      title: 'Hear the practice',
-      intro: 'Practice is played through the sidetone on this device. Make sure it is on and at a comfortable volume.',
-      items: [{ item: 'sidetone' }],
-    },
+    soundStep({
+      detail: 'Practice sequences are played through it. Make sure it is on and at a comfortable volume.',
+    }),
   ],
 };

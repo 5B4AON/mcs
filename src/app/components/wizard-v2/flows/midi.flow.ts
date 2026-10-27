@@ -4,7 +4,7 @@
 
 import { settingIs } from '../engine/conditions';
 import { WizardFlow } from '../engine/flow-types';
-import { farnsworthStep, speedStep } from './shared-steps';
+import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /**
  * Goal "Use my paddle or key through MIDI": keyer speed, Farnsworth, an explicit
@@ -18,12 +18,13 @@ export const MIDI_FLOW: WizardFlow = {
   title: 'Use my paddle or key through MIDI',
   goal: 'midi',
   steps: [
-    speedStep({ keyer: true }),
+    speedStep({ keyer: true }, { helpSection: 's6-2' }),
     farnsworthStep(),
     {
       id: 'midiKey',
       title: 'Use a MIDI key or paddle',
       intro: 'Tick the box to use MIDI input. Your device, channel and notes are set on the next pages.',
+      helpSection: 's6-2',
       items: [{ item: 'midi-input' }],
       validate: ctx => ctx.settings.midiInputEnabled ? [] : ['Tick "Use MIDI input" to continue, or close the wizard.'],
     },
@@ -31,17 +32,15 @@ export const MIDI_FLOW: WizardFlow = {
       id: 'midiIn',
       title: 'MIDI mapping',
       intro: 'One page per mapping. Choose the device, press Detect and play the note for each paddle or key.',
+      helpSection: 's6-2',
       when: settingIs('midiInputEnabled', true),
       repeat: { list: 'midiInputMappings', item: 'midi-input-mapping-editor' },
       validate: ctx => ctx.settings.midiInputMappings.some(m => m.enabled)
         ? []
         : ['Enable and configure at least one MIDI key or paddle mapping.'],
     },
-    {
-      id: 'sidetone',
-      title: 'Hear your keying',
-      intro: 'The sidetone is the beep you hear while you key. It only plays on this device.',
-      items: [{ item: 'sidetone' }],
-    },
+    soundStep({
+      detail: 'Your keying is played through it, so you hear what you send.',
+    }),
   ],
 };

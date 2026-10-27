@@ -42,6 +42,7 @@ import { MappingListComponent, MappingListRow } from '../settings-items/mapping/
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
 import { MappingPageComponent } from './pages/mapping-page.component';
 import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
+import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
 import { GoalNavigatorModalComponent } from '../goal-navigator-modal/goal-navigator-modal.component';
 import { feedbackRiskOutputs } from '../settings-items/audio-feedback-guard/audio-feedback-guard-item.model';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
@@ -71,11 +72,15 @@ type Stage = 'start' | 'steps' | 'review';
   selector: 'app-setup-wizard-v2',
   standalone: true,
   imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, GoalNavigatorModalComponent,
-    MappingPageComponent, MappingListComponent, TeachParticipantPageComponent],
+    MappingPageComponent, MappingListComponent, TeachParticipantPageComponent, HelpLinkButtonComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['../setup-wizard/setup-wizard.component.css'],
   // The review shows the old value muted, without the old wizard's strikethrough
-  styles: ['.wizard-dialog .wizard-from { text-decoration: none; }'],
+  styles: [`
+    .wizard-dialog .wizard-from { text-decoration: none; }
+    .wizard-step-head { display: flex; align-items: center; gap: .25rem; }
+    .wizard-step-head .wizard-step-title { margin-right: 0; }
+  `],
   providers: [
     { provide: SETTINGS_SCOPE, useFactory: () => new DraftSettingsScope(inject(SettingsService)) },
   ],

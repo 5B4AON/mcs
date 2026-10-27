@@ -78,7 +78,12 @@
             }
 
             @let step = eng.step();
-            <h3 class="wizard-step-title" tabindex="-1">{{ step.title }}</h3>
+            <div class="wizard-step-head">
+              <h3 class="wizard-step-title" tabindex="-1">{{ step.title }}</h3>
+              @if (step.helpSection; as helpSection) {
+                <app-help-link-button [section]="helpSection" label="Help about this step" />
+              }
+            </div>
             <p class="wizard-hint">{{ step.intro }}</p>
             @if (step.help) {
               <p class="wizard-note">{{ step.help }}</p>

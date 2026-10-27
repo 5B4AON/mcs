@@ -5,7 +5,7 @@
 import { answerIncludes, not } from '../engine/conditions';
 import { ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
-import { farnsworthStep, speedStep } from './shared-steps';
+import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
 const METHODS: { id: string; label: string; key: 'keyboardKeyerEnabled' | 'mouseKeyerEnabled' | 'touchKeyerEnabled' }[] = [
@@ -35,6 +35,7 @@ export const SEND_FLOW: WizardFlow = {
       id: 'methods',
       title: 'Choose how you will send',
       intro: 'Keyboard, mouse and touch keyers are local inputs. They do not start audio or enable radio, MIDI, serial or online outputs.',
+      helpSection: 's4-1',
       questions: [{
         id: 'methods',
         label: 'Local keyers',
@@ -53,6 +54,7 @@ export const SEND_FLOW: WizardFlow = {
       id: 'keyboard',
       title: 'Keyboard keys',
       intro: 'One page per keyboard mapping. Use Detect to press the key you want, then pick a name and colour.',
+      helpSection: 's4-1',
       when: answerIncludes('methods', 'keyboard'),
       repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor' },
       validate: ctx => ctx.settings.keyboardInputMappings.some(m => m.enabled && m.keyCode)
@@ -63,6 +65,7 @@ export const SEND_FLOW: WizardFlow = {
       id: 'mouse',
       title: 'Mouse keyer',
       intro: 'Choose what each mouse button does.',
+      helpSection: 's4-2',
       when: answerIncludes('methods', 'mouse'),
       items: [{ item: 'mouse-keyer' }],
     },
@@ -70,14 +73,12 @@ export const SEND_FLOW: WizardFlow = {
       id: 'touch',
       title: 'Touch keyer',
       intro: 'Choose how the touch screen keys.',
+      helpSection: 's4-3',
       when: answerIncludes('methods', 'touch'),
       items: [{ item: 'touch-keyer' }],
     },
-    {
-      id: 'sidetone',
-      title: 'Hear your keying',
-      intro: 'The sidetone is the beep you hear while you key. It only plays on this device.',
-      items: [{ item: 'sidetone' }],
-    },
+    soundStep({
+      detail: 'Your keying is played through it, so you hear what you send.',
+    }),
   ],
 };

@@ -4,7 +4,7 @@
 
 import { settingIs } from '../engine/conditions';
 import { WizardFlow } from '../engine/flow-types';
-import { farnsworthStep, speedStep } from './shared-steps';
+import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /**
  * Goal "Key a radio or device": encoder speed, Farnsworth, then one step per
@@ -23,17 +23,19 @@ export const HARDWARE_FLOW: WizardFlow = {
   goal: 'hardware',
   steps: [
     speedStep({ encoder: true }),
-    farnsworthStep(),
+    farnsworthStep({ applies: 'tx' }),
     {
       id: 'midiOut',
       title: 'MIDI output',
       intro: 'Sends keying to a MIDI device. Tick the box to set up mappings on the next pages, or leave it to skip this route.',
+      helpSection: 's7-4',
       items: [{ item: 'midi-output' }],
     },
     {
       id: 'midiMap',
       title: 'MIDI output mapping',
       intro: 'One page per mapping. Choose the exact device, channel and notes.',
+      helpSection: 's7-4',
       when: settingIs('midiOutputEnabled', true),
       repeat: { list: 'midiOutputMappings', item: 'midi-output-mapping-editor' },
       validate: ctx => {
@@ -48,32 +50,32 @@ export const HARDWARE_FLOW: WizardFlow = {
       id: 'winkeyer',
       title: 'WinKeyer',
       intro: 'Keys through a WinKeyer device, which times the Morse itself. Tick the box to choose its port and speed, or leave it to skip this route.',
+      helpSection: 's7-3',
       items: [{ item: 'winkeyer' }],
     },
     {
       id: 'serialOut',
       title: 'Serial DTR/RTS keying',
       intro: 'Keys a radio through a USB-serial adapter. Tick the box to set up mappings on the next pages, or leave it to skip this route.',
+      helpSection: 's7-2',
       items: [{ item: 'serial-output' }],
     },
     {
       id: 'serialMap',
       title: 'Serial output mapping',
       intro: 'One page per mapping. Choose the exact port and pin for each.',
+      helpSection: 's7-2',
       when: settingIs('serialEnabled', true),
       repeat: { list: 'serialOutputMappings', item: 'serial-output-mapping-editor' },
       validate: ctx => ctx.settings.serialOutputMappings.some(m => m.enabled && m.portIndex >= 0)
         ? []
         : ['Enable a serial mapping and assign it an exact serial port.'],
     },
-    {
-      id: 'sidetone',
-      title: 'Hear the Morse',
-      intro: 'The sidetone is the beep you hear while Morse plays. It only plays on this device.',
-      items: [{ item: 'sidetone' }],
+    soundStep({
+      detail: 'The text you send is also played through it. It does not change the radio-keying routes you chose on the previous pages.',
       validate: ctx => ctx.settings.serialEnabled || ctx.settings.winkeyerEnabled || ctx.settings.midiOutputEnabled
         ? []
         : ['Tick at least one radio-keying route (MIDI, WinKeyer or serial), or close the wizard.'],
-    },
+    }),
   ],
 };

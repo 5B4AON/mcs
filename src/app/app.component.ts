@@ -644,7 +644,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Close the topmost modal — called by popstate (back button) */
   private closeActiveModal(): void {
-    if (this.showGoalPresets) {
+    // Help and the symbols reference open on top of every other dialog, so they close first
+    if (this.showHelp) {
+      this.showHelp = false;
+    } else if (this.showSymbolsRef) {
+      this.showSymbolsRef = false;
+    } else if (this.showGoalPresets) {
       this.dismissGoalPresets(false);
     } else if (this.showWizardV2) {
       if (this.wizardV2Ref?.inFlow()) {
@@ -662,10 +667,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       } else {
         this.showWizard = false;
       }
-    } else if (this.showHelp) {
-      this.showHelp = false;
-    } else if (this.showSymbolsRef) {
-      this.showSymbolsRef = false;
     } else if (this.showSettings) {
       this.showSettings = false;
     } else if (this.showGoals) {
