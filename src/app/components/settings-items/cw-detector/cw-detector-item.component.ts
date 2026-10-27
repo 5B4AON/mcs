@@ -29,6 +29,8 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 export class CwDetectorItemComponent implements OnInit, OnDestroy {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
+  /** Wizard only: hide the on/off tick and always show the tuning fields (the wizard never switches the detector on by itself) */
+  @Input() tuneOnly = false;
 
   /** Whether audio contexts are running (the detector starts at once only if so) */
   @Input() audioRunning = false;

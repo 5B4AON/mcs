@@ -16,7 +16,6 @@ export const TYPE_FLOW: WizardFlow = {
   id: 'type',
   title: 'Type text and hear it as Morse',
   goal: 'type',
-  nextSteps: 'Type some text on the main screen and press Enter. Nothing is sent until you choose the send action.',
   steps: [
     {
       ...speedStep({ encoder: true }),

@@ -4,6 +4,7 @@
 
 import { WizardGoalId } from '../../settings-modal/goal-navigator/setup-goals';
 import { WizardFlow } from '../engine/flow-types';
+import { DECODE_FLOW } from './decode.flow';
 import { MIDI_FLOW } from './midi.flow';
 import { PRACTICE_FLOW } from './practice.flow';
 import { SEND_FLOW } from './send.flow';
@@ -15,6 +16,7 @@ const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
   send: SEND_FLOW,
   midi: MIDI_FLOW,
   practice: PRACTICE_FLOW,
+  decode: DECODE_FLOW,
 };
 
 /** The migrated flow for a goal, or undefined while it still uses the old wizard. */

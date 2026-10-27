@@ -6,7 +6,7 @@
     <span class="source-badge" [class.source-rx]="s().cwInputSource === 'rx'" [class.source-tx]="s().cwInputSource === 'tx'">{{ s().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
-  @if (mode === 'embedded') {
+  @if (mode === 'embedded' && !tuneOnly) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().cwInputEnabled" [disabled]="!!cwInputConflict()"
              (change)="onCwEnabledChange($any($event.target).checked)">
@@ -24,7 +24,7 @@
     }
   }
 
-  @if (mode === 'card' || s().cwInputEnabled) {
+  @if (mode === 'card' || tuneOnly || s().cwInputEnabled) {
     @if (cwInputConflict()) {
       <div class="conflict-warning">{{ cwInputConflict() }}</div>
     }

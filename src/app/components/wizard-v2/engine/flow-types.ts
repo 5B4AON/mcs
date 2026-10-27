@@ -133,8 +133,6 @@ export interface WizardFlow {
   title: string;
   /** The goal in the goal list this flow belongs to */
   goal: WizardGoalId;
-  /** Plain-language "what to do next" shown on the Applied page */
-  nextSteps?: string;
   steps: WizardStep[];
   forced?: ForcedSetting[];
 }

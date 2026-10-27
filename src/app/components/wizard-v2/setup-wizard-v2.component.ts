@@ -19,6 +19,7 @@ import {
 import { NgComponentOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AudioDeviceService } from '../../services/audio-device.service';
+import { CwInputService } from '../../services/cw-input.service';
 import { MidiInputService } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
 import { PresetService } from '../../services/preset.service';
@@ -40,12 +41,13 @@ import { MappingListComponent, MappingListRow } from '../settings-items/mapping/
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
 import { MappingPageComponent } from './pages/mapping-page.component';
 import { GoalNavigatorModalComponent } from '../goal-navigator-modal/goal-navigator-modal.component';
+import { feedbackRiskOutputs } from '../settings-items/audio-feedback-guard/audio-feedback-guard-item.model';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import { DEMO_FLOW } from './flows/demo.flow';
 import { flowForGoal } from './flows/flow-registry';
 
 /** Where the user is: choosing a flow, answering steps, reviewing, or finished. */
-type Stage = 'start' | 'steps' | 'review' | 'done';
+type Stage = 'start' | 'steps' | 'review';
 
 /**
  * Setup Wizard v2 shell (temporary entry in the kebab menu until the cutover).
@@ -78,8 +80,10 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   /** Dialog closed (after discard, or from the done page) */
   @Output() closed = new EventEmitter<void>();
 
-  /** "Try without saving": leave the wizard for the main screen */
-  @Output() tryRequested = new EventEmitter<void>();
+  /** Emitted after Apply with the goal id, so the app can land focus where the user continues */
+  @Output() tryRequested = new EventEmitter<string>();
+  /** Emitted after the detector was switched on, so the app can start it when audio already runs */
+  @Output() readonly detectorEnabled = new EventEmitter<void>();
 
   @ViewChild('dialog') dialog?: ElementRef<HTMLElement>;
   @ViewChild(MappingPageComponent) private mappingPage?: MappingPageComponent;
@@ -89,6 +93,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   private readonly scope = inject(SETTINGS_SCOPE) as DraftSettingsScope;
   private readonly audioDevices = inject(AudioDeviceService);
   private readonly midiInput = inject(MidiInputService);
+  private readonly cwInput = inject(CwInputService);
   private readonly midiOutput = inject(MidiOutputService);
   private readonly serialInput = inject(SerialKeyInputService);
   private readonly serialOutput = inject(SerialKeyOutputService);
@@ -173,6 +178,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     this.flowTitle.set(flow.title);
     this.presetNotice.set('');
     this.presetWarnings.set([]);
+    this.cancelPresetSave();
     this.stage.set('steps');
     this.focusStep();
   }
@@ -235,6 +241,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     this.flowTitle.set('');
     this.applied = false;
     this.presetPickerOpen.set(false);
+    this.cancelPresetSave();
   }
 
   /** True while a flow is open (as opposed to the goal list). */
@@ -337,6 +344,14 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     this.presetSaveOpen.set(!this.presets.loadError());
   }
 
+  /** Back to the initial "Save as preset" button: hides the name box and clears messages. */
+  cancelPresetSave(): void {
+    this.presetSaveOpen.set(false);
+    this.presetSaveName.set('');
+    this.presetSaveNotice.set('');
+    this.presetError.set('');
+  }
+
   /** Save the proposed setup as a secret-free preset without applying it. */
   savePreset(): void {
     const proposed = { ...this.settings.settings(), ...this.engine()?.applyPatch() };
@@ -371,14 +386,16 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   apply(): void {
     const engine = this.engine();
     if (!engine || !engine.canApply()) return;
-    this.settings.update(engine.applyPatch());
+    const patch = engine.applyPatch();
+    // The practice goal selects the Practice encoder mode so the user can press Start right away
+    if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';
+    this.settings.update(patch);
+    if (patch.cwInputEnabled) {
+      this.cwInput.updateParams();
+      this.detectorEnabled.emit();
+    }
     this.applied = true;
-    this.stage.set('done');
-    this.focusStep();
-  }
-
-  tryNow(): void {
-    this.tryRequested.emit();
+    this.tryRequested.emit(engine.flow.goal);
   }
 
   // ---- Closing ----

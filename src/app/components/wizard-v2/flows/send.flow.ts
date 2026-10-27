@@ -30,7 +30,6 @@ export const SEND_FLOW: WizardFlow = {
   title: 'Practice sending',
   goal: 'send',
   forced: FORCED,
-  nextSteps: 'Your chosen keyers are ready. Press or operate a key yourself when you are ready; nothing sends by itself.',
   steps: [
     {
       id: 'methods',

@@ -390,7 +390,8 @@
 
 @if (showWizardV2) {
   <app-setup-wizard-v2 [audioRunning]="audioRunning" (closed)="closeWizardV2()"
-                       (tryRequested)="onWizardV2Try()"></app-setup-wizard-v2>
+                       (tryRequested)="onWizardV2Try($event)"
+                       (detectorEnabled)="onWizardDetectorEnabled()"></app-setup-wizard-v2>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->

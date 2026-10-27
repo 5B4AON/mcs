@@ -4,6 +4,8 @@
 
 import { Type } from '@angular/core';
 import { ItemDescriptor } from './item-descriptor';
+import { AudioFeedbackGuardItemComponent } from './audio-feedback-guard/audio-feedback-guard-item.component';
+import { AUDIO_FEEDBACK_GUARD_DESCRIPTOR } from './audio-feedback-guard/audio-feedback-guard-item.model';
 import { SidetoneItemComponent } from './sidetone/sidetone-item.component';
 import { SIDETONE_DESCRIPTOR } from './sidetone/sidetone-item.model';
 import { FarnsworthItemComponent } from './farnsworth/farnsworth-item.component';
@@ -83,6 +85,8 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'winkeyer': { component: WinkeyerItemComponent, descriptor: WINKEYER_DESCRIPTOR },
   mic: { component: MicItemComponent, descriptor: MIC_DESCRIPTOR, needsAudio: true },
   'cw-detector': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, needsAudio: true },
+  'cw-detector-tune': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, inputs: { tuneOnly: true }, needsAudio: true },
+  'audio-feedback-guard': { component: AudioFeedbackGuardItemComponent, descriptor: AUDIO_FEEDBACK_GUARD_DESCRIPTOR },
   'rtdb-input': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_DESCRIPTOR },
   'rtdb-output': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_DESCRIPTOR },
   'midi-input': { component: MidiInputItemComponent, descriptor: MIDI_INPUT_DESCRIPTOR },

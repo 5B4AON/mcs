@@ -211,45 +211,35 @@
               <li>It does not start audio, send Morse or turn on any output.</li>
             </ul>
 
-            <div class="wizard-inline-actions">
-              <button type="button" class="wizard-pill wizard-inline-pill" (click)="openPresetSave()">
-                <span>Save as preset without applying</span>
-              </button>
-            </div>
-            @if (presetSaveOpen()) {
-              <label class="wizard-field">Preset name
-                <input id="wizard-preset-name" type="text" [ngModel]="presetSaveName()"
-                       (ngModelChange)="presetSaveName.set($event)">
-              </label>
-              @if (presetError()) {
-                <div class="wizard-error" role="alert">{{ presetError() }}</div>
+            <section class="wizard-preset-save" aria-labelledby="wizard-preset-save-title">
+              @if (!presetSaveOpen()) {
+                <button type="button" class="wizard-pill" (click)="openPresetSave()">Save as preset without applying</button>
+              } @else {
+                <h4 id="wizard-preset-save-title">Save as preset without applying</h4>
+                <label class="wizard-field">Preset name
+                  <input id="wizard-preset-name" type="text" [ngModel]="presetSaveName()"
+                         (ngModelChange)="presetSaveName.set($event)">
+                </label>
+                @if (presetError()) {
+                  <div class="wizard-error" role="alert">{{ presetError() }}</div>
+                }
+                <div class="wizard-preset-actions">
+                  <button type="button" class="wizard-pill wizard-primary" (click)="savePreset()">Save preset</button>
+                  <button type="button" class="wizard-pill" (click)="cancelPresetSave()">Cancel</button>
+                </div>
               }
-              <button type="button" class="wizard-pill wizard-inline-pill" (click)="savePreset()"><span>Save preset</span></button>
-            }
-            @if (presetSaveNotice()) {
-              <p class="wizard-note" role="status">{{ presetSaveNotice() }}</p>
-            }
+              @if (presetSaveNotice()) {
+                <p class="wizard-note" role="status">{{ presetSaveNotice() }}</p>
+              }
+            </section>
           }
         }
 
-        @case ('done') {
-          <h3 class="wizard-step-title" tabindex="-1">Applied</h3>
-          <p class="wizard-hint">The setup is active but not saved to the automatic device profile.</p>
-          @if (engine()?.flow?.nextSteps; as nextSteps) {
-            <h4 class="wizard-next-title">What to do next</h4>
-            <p>{{ nextSteps }}</p>
-          }
-        }
       }
     </div>
 
     <footer class="wizard-footer">
       @switch (stage()) {
-        @case ('done') {
-          <button type="button" class="wizard-pill wizard-primary" (click)="tryNow()">
-            <span>Try without saving</span>
-          </button>
-        }
         @default {
           <button type="button" class="wizard-pill" (click)="back()">
             <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 5 8 12 15 19"/></svg>

@@ -17,7 +17,6 @@ export const MIDI_FLOW: WizardFlow = {
   id: 'midi',
   title: 'Use my paddle or key through MIDI',
   goal: 'midi',
-  nextSteps: 'Key on your MIDI device. Nothing sends by itself, and MIDI output is not changed.',
   steps: [
     speedStep({ keyer: true }),
     farnsworthStep(),

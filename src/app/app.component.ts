@@ -1476,13 +1476,22 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /** Leave the new wizard for the main screen, keeping the applied settings unsaved */
-  onWizardV2Try(): void {
+  onWizardV2Try(goal?: string): void {
     this.showWizardV2 = false;
     if (this.modalHistoryDepth > 0) {
       this.modalHistoryDepth -= 1;
       this.ignoringPopState = true;
       history.go(-1);
     }
+    window.requestAnimationFrame(() => {
+      if (goal === 'practice' && this.settings.settings().practiceFeedbackMode !== 'typealong') {
+        this.practiceActionButtonRef?.nativeElement.focus();
+      } else if (goal === 'decode') {
+        this.audioToggleButtonRef?.nativeElement.focus();
+      } else {
+        this.encoderInputRef?.nativeElement.focus();
+      }
+    });
   }
 
   /** Close the guided setup, leaving Settings as it was */
