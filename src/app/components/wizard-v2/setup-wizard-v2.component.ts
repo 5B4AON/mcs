@@ -19,6 +19,7 @@ import {
 import { NgComponentOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AudioDeviceService } from '../../services/audio-device.service';
+import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { MidiInputService } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
@@ -94,6 +95,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   private readonly audioDevices = inject(AudioDeviceService);
   private readonly midiInput = inject(MidiInputService);
   private readonly cwInput = inject(CwInputService);
+  private readonly rtdb = inject(FirebaseRtdbService);
   private readonly midiOutput = inject(MidiOutputService);
   private readonly serialInput = inject(SerialKeyInputService);
   private readonly serialOutput = inject(SerialKeyOutputService);
@@ -389,7 +391,11 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     const patch = engine.applyPatch();
     // The practice goal selects the Practice encoder mode so the user can press Start right away
     if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';
+    const base = this.settings.settings();
     this.settings.update(patch);
+    // A direction the user ticked is connected now instead of waiting for the next health check
+    if (patch.rtdbInputEnabled && !base.rtdbInputEnabled) this.rtdb.startInput();
+    if (patch.rtdbOutputEnabled && !base.rtdbOutputEnabled) this.rtdb.startOutput();
     if (patch.cwInputEnabled) {
       this.cwInput.updateParams();
       this.detectorEnabled.emit();
