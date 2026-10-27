@@ -101,11 +101,6 @@ export const MORE_GOALS: SetupGoal[] = [
   { label: 'Decode Morse from sound', landing: 'cw-detector', icon: 'waveform', wizard: 'decode' },
 ];
 
-/** Look up the goal that owns a wizard. */
-export function goalForWizard(id: WizardGoalId): SetupGoal {
-  return [...MAIN_GOALS, ...MORE_GOALS].find(goal => goal.wizard === id)!;
-}
-
 /** Convert a shared landing into a target for the settings modal. */
 export function goalTargetForLanding(id: string): GoalTarget {
   const landing = LANDINGS[id];

@@ -10,6 +10,7 @@ import {
   HostListener,
   Input,
   OnDestroy,
+  OnInit,
   Output,
   ViewChild,
   computed,
@@ -43,8 +44,6 @@ import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-regi
 import { MappingPageComponent } from './pages/mapping-page.component';
 import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
 import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
-import { GoalNavigatorModalComponent } from '../goal-navigator-modal/goal-navigator-modal.component';
-import { feedbackRiskOutputs } from '../settings-items/audio-feedback-guard/audio-feedback-guard-item.model';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import {
   TeachParticipantProfile,
@@ -54,45 +53,42 @@ import {
   teachParticipantChannelName,
   usesLocalKeying,
 } from './flows/teach-participant.model';
-import { DEMO_FLOW } from './flows/demo.flow';
 import { flowForGoal } from './flows/flow-registry';
 
-/** Where the user is: choosing a flow, answering steps, reviewing, or finished. */
-type Stage = 'start' | 'steps' | 'review';
+/** Where the user is: answering steps or reviewing. */
+type Stage = 'steps' | 'review';
 
 /**
- * Setup Wizard v2 shell (temporary entry in the kebab menu until the cutover).
+ * Setup Wizard shell: the guided setup of one goal, opened over the goal list.
  *
- * The shell is only the dialog: it lists the flows, hosts the current step of a
- * `WizardEngine` (questions plus registered settings items) and shows the shared
- * Review and Done pages. All navigation and change logic lives in the engine.
- * Nothing touches live settings until Apply; Apply never saves the device profile.
+ * The shell is only the dialog: it hosts the current step of a `WizardEngine`
+ * (questions plus registered settings items) and shows the shared Review page.
+ * All navigation and change logic lives in the engine and the goal's declarative
+ * flow in `flows/`. Nothing touches live settings until Apply; Apply never saves
+ * the device profile.
  */
 @Component({
   selector: 'app-setup-wizard-v2',
   standalone: true,
-  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, GoalNavigatorModalComponent,
+  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent,
     MappingPageComponent, MappingListComponent, TeachParticipantPageComponent, HelpLinkButtonComponent],
   templateUrl: './setup-wizard-v2.component.html',
-  styleUrls: ['../setup-wizard/setup-wizard.component.css'],
-  // The review shows the old value muted, without the old wizard's strikethrough
-  styles: [`
-    .wizard-dialog .wizard-from { text-decoration: none; }
-    .wizard-step-head { display: flex; align-items: center; gap: .25rem; }
-    .wizard-step-head .wizard-step-title { margin-right: 0; }
-  `],
+  styleUrls: ['./setup-wizard-v2.component.css'],
   providers: [
     { provide: SETTINGS_SCOPE, useFactory: () => new DraftSettingsScope(inject(SettingsService)) },
   ],
 })
-export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
+export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy {
+  /** The goal to set up; its flow is looked up in `flows/flow-registry.ts` */
+  @Input({ required: true }) goal!: WizardGoalId;
+
   /** True while audio runs, so items can offer their Test buttons */
   @Input() audioRunning = false;
 
   /** Element to focus on close when the opener is gone */
   @Input() focusReturnFallback: HTMLElement | null = null;
 
-  /** Dialog closed (after discard, or from the done page) */
+  /** Dialog closed (Back from the first step, the close button, or a confirmed discard) */
   @Output() closed = new EventEmitter<void>();
 
   /** Emitted after Apply with the goal id, so the app can land focus where the user continues */
@@ -116,11 +112,8 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   private readonly serialOutput = inject(SerialKeyOutputService);
   private readonly winkeyerOutput = inject(WinkeyerOutputService);
 
-  readonly demoFlow = DEMO_FLOW;
-  /** Shown on the goal list after choosing a goal that is not migrated yet */
-  readonly startNotice = signal('');
   private overlayPressed = false;
-  readonly stage = signal<Stage>('start');
+  readonly stage = signal<Stage>('steps');
   readonly engine = signal<WizardEngine | null>(null);
   readonly flowTitle = signal('');
   readonly confirmDiscard = signal(false);
@@ -183,6 +176,10 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     return engine ? engine.validateStep(engine.step()) : [];
   });
 
+  ngOnInit(): void {
+    this.startFlow(flowForGoal(this.goal));
+  }
+
   ngAfterViewInit(): void {
     window.requestAnimationFrame(() => {
       if (this.dialog) focusDialog(this.dialog.nativeElement, '.wizard-primary');
@@ -194,7 +191,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
   }
 
   get title(): string {
-    return this.flowTitle() || 'Setup wizard (new, temporary)';
+    return this.flowTitle();
   }
 
   /** True when the user has moved any answer and has not applied yet. */
@@ -212,15 +209,7 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
     return `Step ${at} of ${total}`;
   }
 
-  /** A goal was chosen on the goal list. */
-  chooseGoal(goal: WizardGoalId): void {
-    const flow = flowForGoal(goal);
-    if (flow) this.startFlow(flow);
-    else this.startNotice.set('That goal is not migrated to the new wizard yet. Use the Setup Wizard entry in the menu for it.');
-  }
-
-  startFlow(flow: WizardFlow): void {
-    this.startNotice.set('');
+  private startFlow(flow: WizardFlow): void {
     this.scope.seed(this.settings.settings());
     this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind));
     this.flowTitle.set(flow.title);
@@ -299,21 +288,6 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
       }
     }
     this.focusStep();
-  }
-
-  /** Back to the goal list, dropping the flow's draft. */
-  private leaveFlow(): void {
-    this.stage.set('start');
-    this.engine.set(null);
-    this.flowTitle.set('');
-    this.applied = false;
-    this.presetPickerOpen.set(false);
-    this.cancelPresetSave();
-  }
-
-  /** True while a flow is open (as opposed to the goal list). */
-  inFlow(): boolean {
-    return this.stage() !== 'start';
   }
 
   revert(): void {
@@ -498,10 +472,9 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   // ---- Closing ----
 
-  /** Close the open flow back to the goal list (asking first when answers changed); on the list, close the dialog. */
+  /** Close the wizard back to the goal list, asking first when answers changed. */
   requestClose(): void {
     if (this.hasDraft()) this.confirmDiscard.set(true);
-    else if (this.inFlow()) this.leaveFlow();
     else this.closed.emit();
   }
 
@@ -522,15 +495,13 @@ export class SetupWizardV2Component implements AfterViewInit, OnDestroy {
 
   onDiscardAnswer(discard: boolean): void {
     this.confirmDiscard.set(false);
-    if (!discard) return;
-    if (this.inFlow()) this.leaveFlow();
-    else this.closed.emit();
+    if (discard) this.closed.emit();
   }
 
   @HostListener('document:keydown.escape', ['$event'])
   onEscape(event: Event): void {
-    // The goal list handles its own Escape, and a dialog opened above the wizard (such as the emoji picker) closes itself first
-    if (this.confirmDiscard() || !this.inFlow() || event.defaultPrevented || this.dialogAboveWizard()) return;
+    // A dialog opened above the wizard (such as the emoji picker or Help) closes itself first
+    if (this.confirmDiscard() || event.defaultPrevented || this.dialogAboveWizard()) return;
     this.requestClose();
   }
 

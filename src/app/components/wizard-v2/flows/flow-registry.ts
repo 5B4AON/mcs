@@ -13,8 +13,8 @@ import { SEND_FLOW } from './send.flow';
 import { TYPE_FLOW } from './type.flow';
 import { TEACH_FLOW } from './teach.flow';
 
-/** Flows migrated to the new wizard; each goal is added here as it lands. */
-const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
+/** The flow of every goal that has a guided setup. Add a goal's flow here when it gets a wizard. */
+const FLOWS: Record<WizardGoalId, WizardFlow> = {
   type: TYPE_FLOW,
   send: SEND_FLOW,
   midi: MIDI_FLOW,
@@ -25,7 +25,7 @@ const MIGRATED: Partial<Record<WizardGoalId, WizardFlow>> = {
   teach: TEACH_FLOW,
 };
 
-/** The migrated flow for a goal, or undefined while it still uses the old wizard. */
-export function flowForGoal(goal: WizardGoalId): WizardFlow | undefined {
-  return MIGRATED[goal];
+/** The flow for a goal. */
+export function flowForGoal(goal: WizardGoalId): WizardFlow {
+  return FLOWS[goal];
 }

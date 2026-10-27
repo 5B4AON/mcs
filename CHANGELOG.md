@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-10-28
+
+### Added
+
+- **One Setup Wizard, rebuilt** — Every goal's guide now uses the same settings controls as Settings, so colour pickers, Detect for keyboard and MIDI keys, and per-mapping pages (with Add and Delete) work the same in both places. Each guide is declared as a flow of steps, which makes new guides easier to add.
+- **Speed and Farnsworth in every sending goal** — Goals that send Morse ask for the speed first, then optional Farnsworth timing, with the same wording everywhere.
+- **Sound step in every goal that plays Morse** — Type, Send, MIDI, Practice, Relay and Hardware end with the same "Hear the Morse" sidetone step. Decode only listens and has none.
+- **Help from every step** — Wizard steps show a "?" button that opens the matching Help section on top of the wizard; closing Help returns to the same step.
+- **Revert on every step** — Revert appears whenever something on a step changes and restores only that step.
+
+### Changed
+
+- **Teach goal** — The guided Teach setup is being redesigned. For now the goal shows a "Work in progress" step and changes nothing; classroom inputs can still be set up in Settings.
+- **Browser Back with Help open** — Back now closes Help first when it is open over the wizard or Settings.
+- **Smaller app** — The old wizard code was removed, cutting the app's main script from about 1.59 MB to 1.40 MB.
+
+### Removed
+
+- The temporary "Setup wizard (new, temporary)" menu entry; the regular Setup Wizard entry opens the new wizard.
+
 ## [2.0.1] - 2026-10-25
 
 ### Fixed

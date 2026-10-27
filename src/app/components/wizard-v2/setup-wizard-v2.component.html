@@ -1,14 +1,3 @@
-@if (stage() === 'start') {
-  <app-goal-navigator-modal [showActions]="false" (closed)="closed.emit()"
-                            (wizardRequested)="chooseGoal($event)" (goalSelected)="startNotice.set('That goal is not migrated to the new wizard yet.')">
-    <div style="margin-top: .75rem">
-      <button type="button" class="wizard-pill" (click)="startFlow(demoFlow)"><span>Demo flow (temporary)</span></button>
-      @if (startNotice()) {
-        <p class="wizard-note" role="status">{{ startNotice() }}</p>
-      }
-    </div>
-  </app-goal-navigator-modal>
-} @else {
 <div class="wizard-overlay" (mousedown)="overlayDown($event)" (click)="overlayClick($event)">
   <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
        aria-labelledby="wizard-title" tabindex="-1"
@@ -294,7 +283,6 @@
     </footer>
   </div>
 </div>
-}
 
 @if (confirmDiscard()) {
   <app-confirm-dialog

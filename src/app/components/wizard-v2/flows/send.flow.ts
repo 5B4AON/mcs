@@ -14,7 +14,7 @@ const METHODS: { id: string; label: string; key: 'keyboardKeyerEnabled' | 'mouse
   { id: 'touch', label: 'Touch keyer', key: 'touchKeyerEnabled' },
 ];
 
-/** Each chosen keyer is switched on, each unchosen one off, as the old wizard did. */
+/** Each chosen keyer is switched on, each unchosen one off. */
 const FORCED: ForcedSetting[] = METHODS.flatMap(m => [
   { key: m.key, value: true, label: `Turn the ${m.label.toLowerCase()} on`, when: answerIncludes('methods', m.id) },
   { key: m.key, value: false, label: `Turn the ${m.label.toLowerCase()} off`, when: not(answerIncludes('methods', m.id)) },

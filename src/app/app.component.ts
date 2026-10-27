@@ -26,7 +26,6 @@ import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
 import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
-import { SetupWizardComponent } from './components/setup-wizard/setup-wizard.component';
 import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.component';
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
@@ -57,7 +56,7 @@ import * as practiceUi from './practice-ui.utils';
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -85,10 +84,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showGoals = false;
   /** Whether Presets, opened from the Setup Wizard, are showing */
   showGoalPresets = false;
-  /** Guided setup state */
+  /** Guided setup state: the wizard of one goal, opened over the goal list */
   showWizard = false;
-  /** Temporary: the new wizard, opened from the kebab menu until the cutover */
-  showWizardV2 = false;
   wizardGoal: WizardGoalId = 'type';
   /** Whether the Help modal is visible */
   showHelp = false;
@@ -144,8 +141,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Visible control to focus if the fullscreen menu item is hidden when the view closes */
   fullscreenFocusFallback: HTMLElement | null = null;
 
-  @ViewChild(SetupWizardComponent) private wizardRef?: SetupWizardComponent;
-  @ViewChild(SetupWizardV2Component) private wizardV2Ref?: SetupWizardV2Component;
+  @ViewChild(SetupWizardV2Component) private wizardRef?: SetupWizardV2Component;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
@@ -625,7 +621,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
-  private openFullscreenAfterWizardClose = false;
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
@@ -651,14 +646,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.showSymbolsRef = false;
     } else if (this.showGoalPresets) {
       this.dismissGoalPresets(false);
-    } else if (this.showWizardV2) {
-      if (this.wizardV2Ref?.inFlow()) {
-        // Back inside a flow returns to the goal list (asking first when answers changed)
-        this.pushModalState('wizardV2');
-        this.wizardV2Ref.requestClose();
-      } else {
-        this.showWizardV2 = false;
-      }
     } else if (this.showWizard) {
       if (this.wizardRef?.hasDraft()) {
         // Back was pressed with unapplied answers: keep the wizard and ask first.
@@ -714,10 +701,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.ignoringPopState) {
       this.ignoringPopState = false;
-      if (this.openFullscreenAfterWizardClose) {
-        this.openFullscreenAfterWizardClose = false;
-        this.openModal(this.fullscreenFocusFallback);
-      }
       return;
     }
     if (this.modalHistoryDepth > 0) {
@@ -1458,44 +1441,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     window.setTimeout(() => document.querySelector<HTMLElement>('app-goal-navigator-modal .settings-action-btn[aria-label="Presets"]')?.focus());
   }
 
-  /** Open the guided setup for a goal, on top of Settings */
+  /** Open the guided setup for a goal, on top of the goal list */
   openWizard(goal: WizardGoalId): void {
     this.wizardGoal = goal;
     this.showWizard = true;
     this.pushModalState('wizard');
   }
 
-  /** Temporary: open the new wizard from the kebab menu */
-  openWizardV2(): void {
-    this.showWizardV2 = true;
-    this.pushModalState('wizardV2');
-  }
-
-  closeWizardV2(): void {
-    this.showWizardV2 = false;
-    this.popModalState();
-  }
-
-  /** Leave the new wizard for the main screen, keeping the applied settings unsaved */
-  onWizardV2Try(goal?: string): void {
-    this.showWizardV2 = false;
-    if (this.modalHistoryDepth > 0) {
-      this.modalHistoryDepth -= 1;
-      this.ignoringPopState = true;
-      history.go(-1);
-    }
-    window.requestAnimationFrame(() => {
-      if (goal === 'practice' && this.settings.settings().practiceFeedbackMode !== 'typealong') {
-        this.practiceActionButtonRef?.nativeElement.focus();
-      } else if (goal === 'decode') {
-        this.audioToggleButtonRef?.nativeElement.focus();
-      } else {
-        this.encoderInputRef?.nativeElement.focus();
-      }
-    });
-  }
-
-  /** Close the guided setup, leaving Settings as it was */
+  /** Close the guided setup, leaving the goal list as it was */
   closeWizard(): void {
     this.showWizard = false;
     this.popModalState();
@@ -1506,9 +1459,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.audioRunning) await this.cwInput.start();
   }
 
-  /** Leave the guided setup and Settings together, back to the main screen, keeping the applied settings unsaved */
-  onWizardTry(): void {
-    const goal = this.wizardGoal;
+  /** Leave the guided setup and the goal list/Settings together, back to the main screen, keeping the applied settings unsaved */
+  onWizardTry(goal: string): void {
     const steps = Math.min(this.modalHistoryDepth, (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0));
     this.showWizard = false;
     this.showSettings = false;
@@ -1529,25 +1481,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.encoderInputRef?.nativeElement.focus();
       }
     });
-  }
-
-  /** Close the wizard and settings before opening the shared conversation. */
-  onWizardOpenFullscreen(): void {
-    const steps = Math.min(this.modalHistoryDepth, (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0));
-    this.showWizard = false;
-    this.showSettings = false;
-    this.showGoals = false;
-    this.defaultsResetInSettings = false;
-    this.defaultsResetSaved = false;
-    this.fullscreenFocusFallback = this.encoderInputRef?.nativeElement ?? null;
-    if (steps > 0) {
-      this.modalHistoryDepth -= steps;
-      this.openFullscreenAfterWizardClose = true;
-      this.ignoringPopState = true;
-      history.go(-steps);
-    } else {
-      this.openModal(this.fullscreenFocusFallback);
-    }
   }
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */

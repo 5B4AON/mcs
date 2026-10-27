@@ -24,7 +24,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly in a 
 
 **Getting started** — Start audio safely, try an interactive Morse example, and use goal-based Settings to find the relevant controls. Settings distinguish live changes from the separate per-device **Save Settings** action.
 
-**Setup Wizard** — Choose a goal for a guided, draft-and-review flow covering sending, typing, copy practice, decoding, teaching, MIDI or serial input, relay, and radio-keying hardware. Start from a saved preset to seed only the relevant draft settings, or save the reviewed proposal as a named preset without applying it. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
+**Setup Wizard** — Choose a goal for a guided, draft-and-review flow covering sending, typing, copy practice, decoding, MIDI or serial input, relay, and radio-keying hardware (the teaching guide is being redesigned). Start from a saved preset to seed only the relevant draft settings, or save the reviewed proposal as a named preset without applying it. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
 
 **Named Presets** — Save, rename, duplicate, export, import, and review before applying reusable setups. Importing only adds a preset; it never applies it. Presets omit RTDB secrets and remain separate from both live settings and per-device profiles.
 
