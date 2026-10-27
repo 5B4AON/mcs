@@ -77,5 +77,17 @@ export const DEMO_FLOW: WizardFlow = {
       intro: 'One page per MIDI input mapping.',
       repeat: { list: 'midiInputMappings', item: 'midi-input-mapping-editor' },
     },
+    {
+      id: 'midiOutKey',
+      title: 'MIDI output',
+      intro: 'Turn MIDI output on or off. Your notes are set on the next pages.',
+      items: [{ item: 'midi-output' }],
+    },
+    {
+      id: 'midiOut',
+      title: 'MIDI output',
+      intro: 'One page per MIDI output mapping.',
+      repeat: { list: 'midiOutputMappings', item: 'midi-output-mapping-editor' },
+    },
   ],
 };

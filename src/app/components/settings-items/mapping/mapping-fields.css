@@ -291,3 +291,30 @@
     font-size: 0.92rem;
   }
 }
+
+/* Non-blocking warning and test button (MIDI output editor) */
+.md-warning {
+  color: #da0;
+  font-size: 0.82rem;
+  padding: 0.2rem 0;
+}
+
+.md-test-btn {
+  align-self: flex-start;
+  padding: 0.4rem 0.9rem;
+  border-radius: 6px;
+  border: 1px solid #3a5a7a;
+  background: #1e3a4e;
+  color: #8cf;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.md-test-btn:hover:not(:disabled) {
+  background: #285a70;
+}
+
+.md-test-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

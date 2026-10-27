@@ -28,7 +28,7 @@ export interface MidiInputEditSaveEvent {
  * One MIDI note as the editor shows it: the note number plus the three ways
  * to change it (note name, octave, raw number), kept in sync with each other.
  */
-class NoteField {
+export class NoteField {
   value: number;
   raw: string;
   note: number;

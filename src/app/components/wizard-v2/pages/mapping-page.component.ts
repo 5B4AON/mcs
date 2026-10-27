@@ -3,10 +3,13 @@
  */
 
 import { Component, Input, OnInit, ViewChild, inject } from '@angular/core';
-import { KeyboardInputMapping, MidiInputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
 import { MidiInputService } from '../../../services/midi-input.service';
+import { MidiOutputService } from '../../../services/midi-output.service';
+import { SETTINGS_SCOPE } from '../../settings-items/settings-scope';
 import { KeyboardMappingEditorComponent } from '../../settings-items/mapping/keyboard-mapping-editor/keyboard-mapping-editor.component';
 import { MidiInputMappingEditorComponent } from '../../settings-items/mapping/midi-input-mapping-editor/midi-input-mapping-editor.component';
+import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/midi-output-mapping-editor/midi-output-mapping-editor.component';
 
 /**
  * One wizard page for one mapping: the same field editor Settings uses, shown
@@ -18,7 +21,7 @@ import { MidiInputMappingEditorComponent } from '../../settings-items/mapping/mi
 @Component({
   selector: 'app-mapping-page',
   standalone: true,
-  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent],
+  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent, MidiOutputMappingEditorComponent],
   template: `
     @switch (kind) {
       @case ('keyboard-mapping-editor') {
@@ -30,14 +33,22 @@ import { MidiInputMappingEditorComponent } from '../../settings-items/mapping/mi
                                        [allMappings]="asMidiList()"
                                        [midiDevices]="midiInput.midiInputs()" idPrefix="wzMidi" />
       }
+      @case ('midi-output-mapping-editor') {
+        <app-midi-output-mapping-editor [mapping]="asMidiOut()" [editIndex]="index"
+                                        [allMappings]="asMidiOutList()"
+                                        [midiInputMappings]="scope.value().midiInputMappings"
+                                        [midiDevices]="midiOutput.midiOutputs()" idPrefix="wzMidiOut" />
+      }
     }
   `,
   styles: [':host { display: block; }'],
 })
 export class MappingPageComponent implements OnInit {
   readonly midiInput = inject(MidiInputService);
+  readonly midiOutput = inject(MidiOutputService);
+  readonly scope = inject(SETTINGS_SCOPE);
 
-  /** Mapping kind id (`keyboard-mapping-editor`, `midi-input-mapping-editor`) */
+  /** Mapping kind id (`keyboard-mapping-editor`, `midi-input-mapping-editor`, `midi-output-mapping-editor`) */
   @Input({ required: true }) kind = '';
 
   /** The mapping as stored in the draft */
@@ -51,11 +62,17 @@ export class MappingPageComponent implements OnInit {
 
   @ViewChild(KeyboardMappingEditorComponent) private keyboard?: KeyboardMappingEditorComponent;
   @ViewChild(MidiInputMappingEditorComponent) private midi?: MidiInputMappingEditorComponent;
+  @ViewChild(MidiOutputMappingEditorComponent) private midiOut?: MidiOutputMappingEditorComponent;
+
+  private editor() { return this.keyboard ?? this.midi ?? this.midiOut; }
 
   /** Like the Settings popup: fill the MIDI device list when a MIDI page opens. */
   ngOnInit(): void {
     if (this.kind === 'midi-input-mapping-editor' && this.midiInput.midiInputs().length === 0) {
       void this.midiInput.enumerateDevices();
+    }
+    if (this.kind === 'midi-output-mapping-editor' && this.midiOutput.midiOutputs().length === 0) {
+      void this.midiOutput.enumerateDevices();
     }
   }
 
@@ -63,23 +80,25 @@ export class MappingPageComponent implements OnInit {
   asKeyboardList(): KeyboardInputMapping[] { return this.allMappings as KeyboardInputMapping[]; }
   asMidi(): MidiInputMapping { return this.mapping as MidiInputMapping; }
   asMidiList(): MidiInputMapping[] { return this.allMappings as MidiInputMapping[]; }
+  asMidiOut(): MidiOutputMapping { return this.mapping as MidiOutputMapping; }
+  asMidiOutList(): MidiOutputMapping[] { return this.allMappings as MidiOutputMapping[]; }
 
   /** Validate the editor; returns the whole mapping to store, or null (the editor shows why). */
   commit(): unknown | null {
-    const built = (this.keyboard ?? this.midi)?.build();
+    const built = this.editor()?.build();
     return built ? { ...(this.mapping as object), ...built } : null;
   }
 
   /** True when the fields differ from the stored mapping (nothing validated, nothing stored). */
   isDirty(): boolean {
-    const fields = (this.keyboard ?? this.midi)?.fields() as Record<string, unknown> | undefined;
+    const fields = this.editor()?.fields() as Record<string, unknown> | undefined;
     if (!fields) return false;
     const stored = this.mapping as Record<string, unknown>;
-    return Object.keys(fields).some(key => (fields[key] ?? '') !== (stored[key] ?? ''));
+    return Object.keys(fields).some(key => JSON.stringify(fields[key] ?? '') !== JSON.stringify(stored[key] ?? ''));
   }
 
   /** Put the editor's fields back to the stored mapping. */
   reset(): void {
-    (this.keyboard ?? this.midi)?.reset();
+    this.editor()?.reset();
   }
 }

@@ -7,7 +7,7 @@ import { AudioOutputItemComponent } from '../../settings-items/audio-output/audi
 import { SerialOutputCardComponent } from './serial-output-card/serial-output-card.component';
 import { WinkeyerCardComponent } from './winkeyer-card/winkeyer-card.component';
 import { RtdbOutputCardComponent } from './rtdb-output-card/rtdb-output-card.component';
-import { MidiOutputCardComponent } from './midi-output-card/midi-output-card.component';
+import { MidiOutputItemComponent } from '../../settings-items/midi-output/midi-output-item.component';
 import { SidetoneItemComponent } from '../../settings-items/sidetone/sidetone-item.component';
 import { VibrationItemComponent } from '../../settings-items/vibration/vibration-item.component';
 
@@ -26,7 +26,7 @@ import { VibrationItemComponent } from '../../settings-items/vibration/vibration
     SerialOutputCardComponent,
     WinkeyerCardComponent,
     RtdbOutputCardComponent,
-    MidiOutputCardComponent,
+    MidiOutputItemComponent,
     SidetoneItemComponent,
     VibrationItemComponent,
   ],

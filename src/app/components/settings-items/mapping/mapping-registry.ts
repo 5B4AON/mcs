@@ -2,8 +2,9 @@
  * Morse Code Studio
  */
 
-import { AppSettings, KeyboardInputMapping, MidiInputMapping } from '../../../services/settings.service';
+import { AppSettings, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
 import { midiNoteName } from '../../../services/midi-input.service';
+import { midiOutputNoteName } from '../../../services/midi-output.service';
 import { ItemDescriptor } from '../item-descriptor';
 import { formatKeyCode } from './keyboard-mapping-editor/keyboard-mapping-editor.component';
 
@@ -68,6 +69,14 @@ const midiInputSummary = (raw: unknown): string => {
   return `${name}${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${notes}, ${ch} (${m.source.toUpperCase()})`;
 };
 
+const midiOutputSummary = (raw: unknown): string => {
+  const m = raw as MidiOutputMapping;
+  const note = (n: number) => `${midiOutputNoteName(n)}(${n})`;
+  const notes = m.mode === 'paddle' ? `${note(m.value)} / ${note(m.dahValue)}` : note(m.value);
+  const fwd = m.forward === 'both' ? 'RX/TX' : m.forward.toUpperCase();
+  return `${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${notes}, ch ${m.channel} (${fwd})`;
+};
+
 /** All mapping kinds by id. */
 export const MAPPING_REGISTRY: Record<string, MappingKind> = {
   'keyboard-mapping-editor': {
@@ -102,6 +111,19 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
     }),
     descriptor: listDescriptor(
       'midi-input-mapping-editor', 'midiInputMappings', 'MIDI input mappings', midiInputSummary),
+  },
+  'midi-output-mapping-editor': {
+    id: 'midi-output-mapping-editor',
+    list: 'midiOutputMappings',
+    noun: 'MIDI output mapping',
+    create: (): MidiOutputMapping => ({
+      enabled: true, deviceId: '', channel: 1,
+      forward: 'tx', mode: 'straightKey', value: 80, dahValue: -1, relayInputIndices: [],
+      relaySuppressOtherInputs: false,
+    }),
+    summary: midiOutputSummary,
+    descriptor: listDescriptor(
+      'midi-output-mapping-editor', 'midiOutputMappings', 'MIDI output mappings', midiOutputSummary),
   },
 };
 

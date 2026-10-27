@@ -2,30 +2,40 @@
  * Morse Code Studio
  */
 
-import { Component } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { SettingsService, AppSettings, MidiOutputMapping } from '../../../../services/settings.service';
-import { MidiOutputService, midiOutputNoteName } from '../../../../services/midi-output.service';
-import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../midi-output-edit-modal/midi-output-edit-modal.component';
+import { Component, Input, inject } from '@angular/core';
+import { MidiOutputMapping } from '../../../services/settings.service';
+import { MidiOutputService, midiOutputNoteName } from '../../../services/midi-output.service';
+import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../settings-modal/midi-output-edit-modal/midi-output-edit-modal.component';
+import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { SETTINGS_SCOPE } from '../settings-scope';
+import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
 /**
- * Settings card — MIDI Output (key events as MIDI note-on/off).
+ * Settings item — MIDI Output (key events as MIDI note-on/off).
  *
  * Displays a table of MIDI output mappings (straight key / paddle),
  * with add/edit/delete support via the MIDI output edit modal.
  * Each mapping has its own device, channel, mode, and note assignments.
- * Global settings (forward mode, override WPM) are at the card level.
+ * The override-WPM option is at the item level. In a wizard step only the
+ * master switch and the override option are shown: the mappings are edited
+ * on their own pages (repeat step). Starting/stopping MIDI output and
+ * reattaching mappings only happens in live Settings.
  */
 @Component({
-  selector: 'app-midi-output-card',
+  selector: 'app-midi-output-item',
   standalone: true,
-  imports: [FormsModule, MidiOutputEditModalComponent],
-  templateUrl: './midi-output-card.component.html',
+  imports: [ItemShellComponent, MappingListComponent, MidiOutputEditModalComponent],
+  templateUrl: './midi-output-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class MidiOutputCardComponent {
-  /** Whether this card's body is expanded */
-  expanded = false;
+export class MidiOutputItemComponent {
+  /** Card look (Settings) or flat look (wizard step) */
+  @Input() mode: 'card' | 'embedded' = 'card';
+
+  readonly scope = inject(SETTINGS_SCOPE);
+
+  /** Current values from the scope */
+  readonly s = this.scope.value;
 
   /** Index of the mapping currently being edited, or -1 for new */
   editIndex = -1;
@@ -40,25 +50,13 @@ export class MidiOutputCardComponent {
   /** Whether the edit modal is visible */
   showEditModal = false;
 
-  constructor(
-    public settings: SettingsService,
-    public midiOutput: MidiOutputService,
-  ) {}
-
-  /** Handle a boolean setting change from a checkbox */
-  onBoolChange(key: keyof AppSettings, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    this.settings.update({ [key]: checked } as Partial<AppSettings>);
-  }
+  readonly midiOutput = inject(MidiOutputService);
 
   /** Handle MIDI output enabled toggle — starts/stops MIDI output access */
-  async onMidiOutputEnabledChange(event: Event): Promise<void> {
-    const checked = (event.target as HTMLInputElement).checked;
-    if (checked && !this.midiOutput.supported) {
-      (event.target as HTMLInputElement).checked = false;
-      return;
-    }
-    this.settings.update({ midiOutputEnabled: checked });
+  async onMidiOutputEnabledChange(checked: boolean): Promise<void> {
+    if (checked && this.scope.isLive && !this.midiOutput.supported) return;
+    this.scope.update({ midiOutputEnabled: checked });
+    if (!this.scope.isLive) return;
     if (checked) {
       await this.midiOutput.start();
     } else {
@@ -67,18 +65,17 @@ export class MidiOutputCardComponent {
   }
 
   /** Toggle an individual mapping on/off */
-  onMappingEnabledChange(index: number, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
-    const mappings = this.settings.settings().midiOutputMappings.map((m, i) =>
+  onMappingEnabledChange(index: number, checked: boolean): void {
+    const mappings = this.s().midiOutputMappings.map((m, i) =>
       i === index ? { ...m, enabled: checked } : m
     );
-    this.settings.update({ midiOutputMappings: mappings });
-    this.midiOutput.reattach();
+    this.scope.update({ midiOutputMappings: mappings });
+    this.reattach();
   }
 
   /** Open the edit modal for an existing mapping */
   startEdit(index: number): void {
-    const m = this.settings.settings().midiOutputMappings[index];
+    const m = this.s().midiOutputMappings[index];
     this.editIndex = index;
     this.editMapping = { ...m };
     this.showEditModal = true;
@@ -99,7 +96,7 @@ export class MidiOutputCardComponent {
 
   /** Handle save from the edit modal */
   onEditSaved(event: MidiOutputEditSaveEvent): void {
-    const mappings = [...this.settings.settings().midiOutputMappings];
+    const mappings = [...this.s().midiOutputMappings];
     if (this.editIndex >= 0) {
       mappings[this.editIndex] = {
         ...mappings[this.editIndex],
@@ -125,9 +122,9 @@ export class MidiOutputCardComponent {
         relaySuppressOtherInputs: event.relaySuppressOtherInputs,
       });
     }
-    this.settings.update({ midiOutputMappings: mappings });
+    this.scope.update({ midiOutputMappings: mappings });
     this.showEditModal = false;
-    this.midiOutput.reattach();
+    this.reattach();
   }
 
   /** Handle cancel from the edit modal */
@@ -138,9 +135,9 @@ export class MidiOutputCardComponent {
   /** Handle delete from the edit modal */
   onEditDeleted(): void {
     if (this.editIndex >= 0) {
-      const mappings = this.settings.settings().midiOutputMappings.filter((_, i) => i !== this.editIndex);
-      this.settings.update({ midiOutputMappings: mappings });
-      this.midiOutput.reattach();
+      const mappings = this.s().midiOutputMappings.filter((_, i) => i !== this.editIndex);
+      this.scope.update({ midiOutputMappings: mappings });
+      this.reattach();
     }
     this.showEditModal = false;
   }
@@ -164,6 +161,11 @@ export class MidiOutputCardComponent {
     if (!m.deviceId) return 'Any';
     const dev = this.midiOutput.midiOutputs().find(d => d.id === m.deviceId);
     return dev ? dev.name : 'Disconnected';
+  }
+
+  /** Re-read the mappings in the running MIDI output service (live Settings only) */
+  private reattach(): void {
+    if (this.scope.isLive) this.midiOutput.reattach();
   }
 
   /** Ensure MIDI devices are enumerated for the edit modal dropdown */
