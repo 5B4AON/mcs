@@ -49,6 +49,8 @@ export interface StepQuestion {
   options?: QuestionOption[];
   /** Start value; also what Revert restores */
   default: unknown;
+  /** Start value taken from the current settings (e.g. which inputs are on now); wins over `default` */
+  defaultFrom?: (settings: AppSettings) => unknown;
   hint?: string;
   /** For `number` questions */
   min?: number;
@@ -131,6 +133,8 @@ export interface WizardFlow {
   title: string;
   /** The goal in the goal list this flow belongs to */
   goal: WizardGoalId;
+  /** Plain-language "what to do next" shown on the Applied page */
+  nextSteps?: string;
   steps: WizardStep[];
   forced?: ForcedSetting[];
 }

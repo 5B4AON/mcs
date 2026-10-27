@@ -242,6 +242,10 @@
         @case ('done') {
           <h3 class="wizard-step-title" tabindex="-1">Applied</h3>
           <p class="wizard-hint">The setup is active but not saved to the automatic device profile.</p>
+          @if (engine()?.flow?.nextSteps; as nextSteps) {
+            <h4 class="wizard-next-title">What to do next</h4>
+            <p>{{ nextSteps }}</p>
+          }
         }
       }
     </div>

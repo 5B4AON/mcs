@@ -21,7 +21,7 @@
   }
 
   @if (mode === 'card' || s().micInputEnabled) {
-    <div class="experimental-banner">&#x26A0; Experimental &mdash; AC coupling varies across sound cards; results may be unreliable.</div>
+    <div class="experimental-banner" style="padding-top: 10px">&#x26A0; Experimental &mdash; AC coupling varies across sound cards; results may be unreliable.</div>
     <label>Used for:
       <select [value]="s().micInputSource" (change)="onSettingChange('micInputSource', $event)">
         <option value="rx">RX &mdash; received morse</option>

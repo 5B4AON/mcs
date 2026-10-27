@@ -77,7 +77,9 @@ export class WizardEngine {
     private readonly kindFor: MappingKindLookup = id => { throw new Error(`No mapping kinds: ${id}`); },
   ) {
     for (const step of flow.steps) {
-      for (const q of step.questions ?? []) this.defaults[q.id] = structuredClone(q.default);
+      for (const q of step.questions ?? []) {
+        this.defaults[q.id] = structuredClone(q.defaultFrom ? q.defaultFrom(scope.value()) : q.default);
+      }
     }
     this.answerState.set(structuredClone(this.defaults));
 
