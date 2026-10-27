@@ -7,7 +7,7 @@ import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /**
- * Goal "Key a radio or device": encoder speed, Farnsworth, then one step per
+ * Goal "Connect output hardware": encoder speed, Farnsworth, then one step per
  * route - MIDI output (one page per mapping), WinKeyer and serial DTR/RTS (one
  * page per mapping) - and the sidetone. The experimental audio key output (and
  * the experimental mic key input) are left out of the wizards; they stay in
@@ -19,7 +19,7 @@ import { farnsworthStep, soundStep, speedStep } from './shared-steps';
  */
 export const HARDWARE_FLOW: WizardFlow = {
   id: 'hardware',
-  title: 'Key a radio or device',
+  title: 'Connect output hardware',
   goal: 'hardware',
   steps: [
     speedStep({ encoder: true }),

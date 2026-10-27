@@ -6,7 +6,7 @@
 export type GoalTab = 'inputs' | 'outputs' | 'other';
 
 /** Goals that also have a guided setup wizard. */
-export type WizardGoalId = 'send' | 'type' | 'practice' | 'midi' | 'relay' | 'hardware' | 'decode' | 'teach';
+export type WizardGoalId = 'send' | 'type' | 'practice' | 'relay' | 'hardware' | 'decode' | 'teach';
 
 /** Where a goal lands: an existing settings card, with the guidance shown while it is open. */
 export interface GoalLanding {
@@ -22,7 +22,7 @@ export interface GoalTarget {
   cardId?: string;
 }
 
-export type GoalIcon = 'keyboard' | 'speaker' | 'headphones' | 'midi' | 'globe' | 'radio' | 'waveform' | 'graduationCap';
+export type GoalIcon = 'keyboard' | 'key' | 'headphones' | 'globe' | 'radio' | 'waveform' | 'graduationCap';
 
 /** One entry of the shared goal list used by the navigator and the setup wizard. */
 export interface SetupGoal {
@@ -55,9 +55,6 @@ export const LANDINGS: Record<string, GoalLanding> = {
   'practice': {
     tab: 'other', cardId: 'settings-card-practice-card',
   },
-  'midi-input': {
-    tab: 'inputs', cardId: 'settings-card-midi-input-card',
-  },
   'serial-input': {
     tab: 'inputs', cardId: 'settings-card-serial-input-card',
   },
@@ -88,16 +85,15 @@ export const LANDINGS: Record<string, GoalLanding> = {
 };
 
 export const MAIN_GOALS: SetupGoal[] = [
-  { label: 'Practice sending Morse with keyboard, mouse or touch', landing: 'keyboard-keyer', icon: 'keyboard', wizard: 'send' },
-  { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'speaker', wizard: 'type' },
-  { label: 'Practice receiving (copy practice)', landing: 'practice', icon: 'headphones', wizard: 'practice' },
+  { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'keyboard', wizard: 'type' },
+  { label: 'Practice sending Morse', landing: 'keyboard-keyer', icon: 'key', wizard: 'send' },
+  { label: 'Practice receiving Morse', landing: 'practice', icon: 'headphones', wizard: 'practice' },
   { label: 'Teach or demonstrate Morse', landing: 'teach', icon: 'graduationCap', wizard: 'teach' },
-  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe', wizard: 'relay' },
 ];
 
 export const MORE_GOALS: SetupGoal[] = [
-  { label: 'Use my paddle or key through MIDI', landing: 'midi-input', icon: 'midi', wizard: 'midi' },
-  { label: 'Connect a radio or other hardware', landing: 'midi-output', icon: 'radio', wizard: 'hardware' },
+  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe', wizard: 'relay' },
+  { label: 'Connect output hardware', landing: 'midi-output', icon: 'radio', wizard: 'hardware' },
   { label: 'Decode Morse from sound', landing: 'cw-detector', icon: 'waveform', wizard: 'decode' },
 ];
 

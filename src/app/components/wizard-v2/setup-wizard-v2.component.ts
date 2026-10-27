@@ -49,9 +49,7 @@ import {
   TeachParticipantProfile,
   includesScenario,
   isTeachParticipantProfile,
-  selectedTeachParticipants,
   teachParticipantChannelName,
-  usesLocalKeying,
 } from './flows/teach-participant.model';
 import { flowForGoal } from './flows/flow-registry';
 
@@ -447,15 +445,16 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
       await this.midiOutput.start();
       this.midiOutput.reattach();
     }
-    const teachContext = { settings: this.settings.settings(), answers: engine.answers() };
-    const teachUsesMidi = engine.flow.goal === 'teach'
-      && usesLocalKeying(teachContext)
-      && selectedTeachParticipants(teachContext).some(profile => profile.inputType === 'midi')
-      && this.settings.settings().midiInputEnabled;
-    if (teachUsesMidi) {
-      await this.midiInput.start();
-      this.midiInput.reattach();
+    // MIDI input follows the applied settings: connect it (and re-read the mappings) when it is on, release it when the guide turned it off
+    if (patch.midiInputEnabled !== undefined || patch.midiInputMappings) {
+      if (this.settings.settings().midiInputEnabled) {
+        await this.midiInput.start();
+        this.midiInput.reattach();
+      } else {
+        this.midiInput.shutdown();
+      }
     }
+    const teachContext = { settings: this.settings.settings(), answers: engine.answers() };
     // A direction the user ticked is connected now instead of waiting for the next health check
     const teachUsesMobile = engine.flow.goal === 'teach' && includesScenario(teachContext, 'mobile');
     if ((patch.rtdbInputEnabled && !base.rtdbInputEnabled)

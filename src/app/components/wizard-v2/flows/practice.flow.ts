@@ -6,7 +6,7 @@ import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
 /**
- * Goal "Practise receiving Morse": speed, Farnsworth, the copy-practice item
+ * Goal "Practice receiving Morse": speed, Farnsworth, the copy-practice item
  * (content, feedback, rounds) and the sidetone. Applying always turns copy
  * practice on and keeps it on this device (local pipeline), so no serial, MIDI,
  * WinKeyer or online output is driven. The shell also selects the Practice
@@ -15,7 +15,7 @@ import { farnsworthStep, soundStep, speedStep } from './shared-steps';
  */
 export const PRACTICE_FLOW: WizardFlow = {
   id: 'practice',
-  title: 'Practise receiving Morse',
+  title: 'Practice receiving Morse',
   goal: 'practice',
   forced: [
     { key: 'practiceEnabled', value: true, label: 'Copy practice on' },
