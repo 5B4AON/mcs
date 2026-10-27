@@ -318,3 +318,99 @@
   opacity: 0.5;
   cursor: default;
 }
+
+/* Serial input editor: signal LEDs, poll/debounce row, port row */
+.md-port-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.md-port-row .md-select {
+  flex: 1;
+}
+
+.md-conn {
+  display: flex;
+  align-items: center;
+  flex: none;
+}
+
+.md-conn.connected {
+  color: #4a8;
+}
+
+.md-conn.disconnected {
+  color: #888;
+  opacity: 0.75;
+}
+
+.md-signals {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.3rem 0;
+  flex-wrap: wrap;
+}
+
+.md-signal-label {
+  font-size: 0.82rem;
+  color: #778;
+}
+
+.md-led {
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid #444;
+  transition: background 0.12s, color 0.12s;
+  font-family: monospace;
+}
+
+.md-led-on {
+  background: #1a5a1a;
+  color: #6f6;
+  border-color: #2a7a2a;
+}
+
+.md-led-off {
+  background: #1a1a22;
+  color: #556;
+  border-color: #333;
+}
+
+.md-poll-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+  flex-wrap: wrap;
+}
+
+.md-poll-label {
+  font-size: 0.85rem;
+  color: #aab;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.md-poll-input {
+  width: 56px;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.85rem;
+  background: #12121e;
+  color: #ddd;
+  border: 1px solid #444;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.md-poll-input:focus {
+  outline: none;
+  border-color: #667;
+}
+
+.md-share {
+  color: #0f8;
+}

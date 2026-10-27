@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { AppSettings, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
+import { AppSettings, SerialInputMapping, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
 import { midiNoteName } from '../../../services/midi-input.service';
 import { midiOutputNoteName } from '../../../services/midi-output.service';
 import { ItemDescriptor } from '../item-descriptor';
@@ -69,6 +69,14 @@ const midiInputSummary = (raw: unknown): string => {
   return `${name}${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${notes}, ${ch} (${m.source.toUpperCase()})`;
 };
 
+const serialInputSummary = (raw: unknown): string => {
+  const m = raw as SerialInputMapping;
+  const pins = m.mode === 'paddle' ? `${m.pin.toUpperCase()} / ${m.dahPin.toUpperCase()}` : m.pin.toUpperCase();
+  const name = m.name ? `${m.name}: ` : '';
+  const port = m.portIndex >= 0 ? `port ${m.portIndex + 1}` : 'no port';
+  return `${name}${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${pins}, ${port} (${m.source.toUpperCase()})`;
+};
+
 const midiOutputSummary = (raw: unknown): string => {
   const m = raw as MidiOutputMapping;
   const note = (n: number) => `${midiOutputNoteName(n)}(${n})`;
@@ -111,6 +119,29 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
     }),
     descriptor: listDescriptor(
       'midi-input-mapping-editor', 'midiInputMappings', 'MIDI input mappings', midiInputSummary),
+  },
+  'serial-input-mapping-editor': {
+    id: 'serial-input-mapping-editor',
+    list: 'serialInputMappings',
+    noun: 'serial input mapping',
+    create: (): SerialInputMapping => ({
+      enabled: true, mode: 'straightKey', pin: 'dsr', dahPin: 'cts',
+      invert: false, source: 'rx', reversePaddles: false,
+      paddleMode: 'iambic-b', portIndex: -1, pollInterval: 10,
+      debounceMs: 5, name: '', color: '',
+    }),
+    summary: serialInputSummary,
+    // Output mappings refer to inputs by position, so deleting one shifts them
+    onRemove: (settings, index) => ({
+      serialOutputMappings: settings.serialOutputMappings.map(om => ({
+        ...om,
+        relayInputIndices: (om.relayInputIndices || [])
+          .filter(idx => idx !== index)
+          .map(idx => idx > index ? idx - 1 : idx),
+      })),
+    }),
+    descriptor: listDescriptor(
+      'serial-input-mapping-editor', 'serialInputMappings', 'Serial input mappings', serialInputSummary),
   },
   'midi-output-mapping-editor': {
     id: 'midi-output-mapping-editor',

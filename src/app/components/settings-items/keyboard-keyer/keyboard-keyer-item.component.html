@@ -35,6 +35,13 @@
              (change)="onEnabledChange($any($event.target).checked)">
       Use the keyboard as a key
     </label>
+    <div class="keyer-hint">
+      @if (s().keyboardKeyerEnabled) {
+        Keyboard keying is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+      } @else {
+        Tick the box to set up its mappings on the next pages.
+      }
+    </div>
   }
 
   <div class="keyer-hint">

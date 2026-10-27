@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { answerIs } from '../engine/conditions';
+import { answerIs, settingIs } from '../engine/conditions';
 import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, speedStep } from './shared-steps';
 
@@ -63,6 +63,7 @@ export const DEMO_FLOW: WizardFlow = {
       id: 'keys',
       title: 'Keyboard keys',
       intro: 'One page per keyboard mapping, with the same fields as Settings > Inputs.',
+      when: settingIs('keyboardKeyerEnabled', true),
       repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor' },
     },
     {
@@ -75,7 +76,21 @@ export const DEMO_FLOW: WizardFlow = {
       id: 'midiIn',
       title: 'MIDI input',
       intro: 'One page per MIDI input mapping.',
+      when: settingIs('midiInputEnabled', true),
       repeat: { list: 'midiInputMappings', item: 'midi-input-mapping-editor' },
+    },
+    {
+      id: 'serialKey',
+      title: 'Serial input',
+      intro: 'Turn serial keying on or off. Ports and pins are set on the next pages.',
+      items: [{ item: 'serial-input' }],
+    },
+    {
+      id: 'serialIn',
+      title: 'Serial input',
+      intro: 'One page per serial input mapping.',
+      when: settingIs('serialInputEnabled', true),
+      repeat: { list: 'serialInputMappings', item: 'serial-input-mapping-editor' },
     },
     {
       id: 'midiOutKey',
@@ -87,6 +102,7 @@ export const DEMO_FLOW: WizardFlow = {
       id: 'midiOut',
       title: 'MIDI output',
       intro: 'One page per MIDI output mapping.',
+      when: settingIs('midiOutputEnabled', true),
       repeat: { list: 'midiOutputMappings', item: 'midi-output-mapping-editor' },
     },
   ],

@@ -60,6 +60,13 @@
              (change)="onMidiEnabledChange($any($event.target).checked)">
       Use a MIDI device as a key
     </label>
+    <div class="keyer-hint">
+      @if (s().midiInputEnabled) {
+        MIDI input is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+      } @else {
+        Tick the box to set up its mappings on the next pages.
+      }
+    </div>
   }
 
 <div class="keyer-hint">

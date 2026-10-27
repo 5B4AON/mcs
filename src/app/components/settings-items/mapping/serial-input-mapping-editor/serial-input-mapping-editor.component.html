@@ -1,0 +1,126 @@
+<div class="md-editor">
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Port'">Serial Port</label>
+    <div class="md-port-row">
+      <select [id]="idPrefix + 'Port'" class="md-select" [value]="editPortIndex" (change)="onPortChange($event)">
+        <option [value]="-1">&mdash; Select &mdash;</option>
+        @for (port of serialInput.ports(); track $index) {
+          <option [value]="$index" [selected]="$index === editPortIndex">{{ serialInput.portLabel(port) }}</option>
+        }
+        <option value="-2">+ Add serial port&hellip;</option>
+      </select>
+      <span class="md-conn" [class.connected]="isConnected" [class.disconnected]="!isConnected"
+            [title]="isConnected ? 'Port connected' : 'Port not connected'">
+        @if (isConnected) {
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+        }
+      </span>
+    </div>
+  </div>
+
+  @if (isSharing) {
+    <div class="md-hint md-share">&#x1F517; Sharing port with Serial Output &mdash; no separate connection needed.</div>
+  }
+
+  @if (isConnected) {
+    <div class="md-signals">
+      <span class="md-signal-label">Signals:</span>
+      <span class="md-led" [class.md-led-on]="signalDsr" [class.md-led-off]="!signalDsr" title="Data Set Ready">DSR</span>
+      <span class="md-led" [class.md-led-on]="signalCts" [class.md-led-off]="!signalCts" title="Clear To Send">CTS</span>
+      <span class="md-led" [class.md-led-on]="signalDcd" [class.md-led-off]="!signalDcd" title="Data Carrier Detect">DCD</span>
+      <span class="md-led" [class.md-led-on]="signalRi" [class.md-led-off]="!signalRi" title="Ring Indicator">RI</span>
+    </div>
+  }
+
+  <div class="md-poll-row">
+    <label class="md-poll-label">
+      Poll interval:
+      <input type="number" class="md-poll-input" [value]="editPollInterval" [min]="5" [max]="50" step="1"
+             (change)="onPollIntervalChange($event)">
+      ms
+    </label>
+    <label class="md-poll-label">
+      Debounce:
+      <input type="number" class="md-poll-input" [value]="editDebounceMs" [min]="2" [max]="10" step="1"
+             (change)="onDebounceChange($event)">
+      ms
+    </label>
+  </div>
+  <div class="md-hint">Max ~{{ maxWpm }} WPM at {{ editPollInterval }}ms poll / {{ editDebounceMs }}ms debounce.</div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Mode'">Mode</label>
+    <select [id]="idPrefix + 'Mode'" class="md-select" [(ngModel)]="editMode">
+      <option value="straightKey">Straight Key</option>
+      <option value="paddle">Paddle</option>
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Pin'">{{ editMode === 'paddle' ? 'Dit Paddle Pin' : 'Straight Key Pin' }}</label>
+    <select [id]="idPrefix + 'Pin'" class="md-select" [(ngModel)]="editPin">
+      @for (p of pins; track p.value) {
+        <option [value]="p.value">{{ p.label }}</option>
+      }
+    </select>
+  </div>
+
+  @if (editMode === 'paddle') {
+    <div class="md-field">
+      <label class="md-label" [for]="idPrefix + 'DahPin'">Dah Paddle Pin</label>
+      <select [id]="idPrefix + 'DahPin'" class="md-select" [(ngModel)]="editDahPin">
+        @for (p of pins; track p.value) {
+          <option [value]="p.value">{{ p.label }}</option>
+        }
+      </select>
+    </div>
+  }
+
+  <div class="md-field md-checkbox-row">
+    <label>
+      <input type="checkbox" [(ngModel)]="editInvert">
+      Invert Signal
+    </label>
+    <span class="md-hint">Swap active-high and active-low for this mapping.</span>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Source'">Used for</label>
+    <select [id]="idPrefix + 'Source'" class="md-select" [(ngModel)]="editSource">
+      <option value="rx">RX &mdash; received morse</option>
+      <option value="tx">TX &mdash; transmitted morse</option>
+    </select>
+  </div>
+
+  @if (editMode === 'paddle') {
+    <div class="md-field md-checkbox-row">
+      <label>
+        <input type="checkbox" [(ngModel)]="editReversePaddles">
+        Reverse Paddles
+      </label>
+    </div>
+
+    <div class="md-field">
+      <label class="md-label" [for]="idPrefix + 'PaddleMode'">Paddle Mode</label>
+      <div style="display: flex; align-items: center">
+        <select style="flex: 1" [id]="idPrefix + 'PaddleMode'" class="md-select" [(ngModel)]="editPaddleMode">
+          <option value="iambic-b">Iambic B</option>
+          <option value="iambic-a">Iambic A</option>
+          <option value="ultimatic">Ultimatic</option>
+          <option value="single-lever">Single Lever</option>
+        </select>
+        <app-help-link-button section="paddle-modes" />
+      </div>
+    </div>
+  }
+
+  @if (error) {
+    <div class="md-error">{{ error }}</div>
+  }
+
+  <app-mapping-identity-fields [idPrefix]="idPrefix"
+                               colorHint="Optional. Overrides the default RX/TX colour in fullscreen views."
+                               [(name)]="editName" [(color)]="editColor" />
+</div>

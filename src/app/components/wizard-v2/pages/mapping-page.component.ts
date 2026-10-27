@@ -3,7 +3,8 @@
  */
 
 import { Component, Input, OnInit, ViewChild, inject } from '@angular/core';
-import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping, SerialInputMapping } from '../../../services/settings.service';
+import { SerialInputMappingEditorComponent } from '../../settings-items/mapping/serial-input-mapping-editor/serial-input-mapping-editor.component';
 import { MidiInputService } from '../../../services/midi-input.service';
 import { MidiOutputService } from '../../../services/midi-output.service';
 import { SETTINGS_SCOPE } from '../../settings-items/settings-scope';
@@ -21,7 +22,7 @@ import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/m
 @Component({
   selector: 'app-mapping-page',
   standalone: true,
-  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent, MidiOutputMappingEditorComponent],
+  imports: [KeyboardMappingEditorComponent, MidiInputMappingEditorComponent, MidiOutputMappingEditorComponent, SerialInputMappingEditorComponent],
   template: `
     @switch (kind) {
       @case ('keyboard-mapping-editor') {
@@ -32,6 +33,10 @@ import { MidiOutputMappingEditorComponent } from '../../settings-items/mapping/m
         <app-midi-input-mapping-editor [mapping]="asMidi()" [editIndex]="index"
                                        [allMappings]="asMidiList()"
                                        [midiDevices]="midiInput.midiInputs()" idPrefix="wzMidi" />
+      }
+      @case ('serial-input-mapping-editor') {
+        <app-serial-input-mapping-editor [mapping]="asSerial()" [editIndex]="index"
+                                         [allMappings]="asSerialList()" idPrefix="wzSerial" />
       }
       @case ('midi-output-mapping-editor') {
         <app-midi-output-mapping-editor [mapping]="asMidiOut()" [editIndex]="index"
@@ -64,7 +69,9 @@ export class MappingPageComponent implements OnInit {
   @ViewChild(MidiInputMappingEditorComponent) private midi?: MidiInputMappingEditorComponent;
   @ViewChild(MidiOutputMappingEditorComponent) private midiOut?: MidiOutputMappingEditorComponent;
 
-  private editor() { return this.keyboard ?? this.midi ?? this.midiOut; }
+  @ViewChild(SerialInputMappingEditorComponent) private serial?: SerialInputMappingEditorComponent;
+
+  private editor() { return this.keyboard ?? this.midi ?? this.midiOut ?? this.serial; }
 
   /** Like the Settings popup: fill the MIDI device list when a MIDI page opens. */
   ngOnInit(): void {
@@ -80,6 +87,8 @@ export class MappingPageComponent implements OnInit {
   asKeyboardList(): KeyboardInputMapping[] { return this.allMappings as KeyboardInputMapping[]; }
   asMidi(): MidiInputMapping { return this.mapping as MidiInputMapping; }
   asMidiList(): MidiInputMapping[] { return this.allMappings as MidiInputMapping[]; }
+  asSerial(): SerialInputMapping { return this.mapping as SerialInputMapping; }
+  asSerialList(): SerialInputMapping[] { return this.allMappings as SerialInputMapping[]; }
   asMidiOut(): MidiOutputMapping { return this.mapping as MidiOutputMapping; }
   asMidiOutList(): MidiOutputMapping[] { return this.allMappings as MidiOutputMapping[]; }
 

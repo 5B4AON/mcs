@@ -1,0 +1,101 @@
+<!-- Serial Input (DSR/CTS/DCD/RI signal monitoring) -->
+<app-item-shell cardId="serial-input-card" title="Serial Input" [mode]="mode"
+                [enabled]="s().serialInputEnabled"
+                [toggleDisabled]="unavailable"
+                (enabledChange)="onEnabledChange($event)">
+  <span item-badges>
+    @for (src of sourceBadges(); track src) {
+      <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
+    }
+  </span>
+  <span item-header-extra class="connectivity-badge" [class.connected]="serialInput.connected()" [class.disconnected]="!serialInput.connected()">
+    @if (serialInput.connected()) {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+    } @else {
+      <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+    }
+  </span>
+
+  @if (!webSerialSupported) {
+    <div class="conflict-warning">
+      Web Serial API is not supported in this browser. Serial port features require a
+      Chromium-based browser (Chrome or Edge).
+    </div>
+  } @else if (isAndroid) {
+    <div class="conflict-warning">
+      Serial port access is not available on Android. USB-to-serial adapters are not
+      supported by Chrome on Android even via USB OTG. This feature requires Chrome or
+      Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
+    </div>
+  }
+
+  @if (serialInput.lastError()) {
+    <div class="conflict-warning">{{ serialInput.lastError() }}</div>
+  }
+
+  @if (mode === 'card') {
+    <app-mapping-list [mappings]="s().serialInputMappings"
+                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
+      <ng-template let-mapping>
+        @if (mapping.name) {
+          <span class="midi-mapping-name" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
+        }
+        <span class="midi-mapping-mode">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+        <span class="midi-mapping-value">
+          @if (mapping.mode === 'straightKey') {
+            {{ pinLabel(mapping.pin) }}
+          } @else {
+            {{ pinLabel(mapping.pin) }}/{{ pinLabel(mapping.dahPin) }}
+          }
+        </span>
+        <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+        @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+          <span class="midi-mapping-reverse" title="Paddles reversed">↔</span>
+        }
+        @if (mapping.portIndex >= 0) {
+          <span class="midi-mapping-connected-icon" (click)="$event.stopPropagation()" [class.connected]="isMappingConnected(mapping)" [class.disconnected]="!isMappingConnected(mapping)" [title]="isMappingConnected(mapping) ? 'Port ' + mapping.portIndex + ' connected' : 'Port ' + mapping.portIndex + ' not connected'">
+            @if (isMappingConnected(mapping)) {
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+            } @else {
+              <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+            }
+          </span>
+        }
+      </ng-template>
+    </app-mapping-list>
+  }
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().serialInputEnabled" [disabled]="unavailable"
+             (change)="onEnabledChange($any($event.target).checked)">
+      Use a serial adapter as a key
+    </label>
+    <div class="keyer-hint">
+      @if (s().serialInputEnabled) {
+        Serial input is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+      } @else {
+        Tick the box to set up its mappings on the next pages.
+      }
+    </div>
+  }
+
+  <div class="keyer-hint">
+    Connect a straight key or paddles via a USB-serial adapter (FTDI, CH340, CP2102).
+    Each mapping specifies its own port, pin assignment, and polling parameters.
+    Wire your key between the adapter&rsquo;s signal pin and ground.
+  </div>
+</app-item-shell>
+
+<!-- Serial input edit modal (hosted here because it is opened from this card) -->
+@if (showEditModal) {
+  <app-serial-input-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [allMappings]="s().serialInputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-serial-input-edit-modal>
+}
