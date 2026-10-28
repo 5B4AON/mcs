@@ -35,18 +35,17 @@
            (change)="onSettingChange('sidetoneFrequency', $event)">
   </label>
 
-  <label>Amplitude:
-    <input type="range" min="0" max="1" step="0.05" [value]="s().sidetoneAmplitude"
-           (input)="onSettingChange('sidetoneAmplitude', $event)">
-    {{ s().sidetoneAmplitude }}
-  </label>
+  <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
+  <div class="cw-hint">How loud the sidetone is, from 0% (silent) to 100% (full level).</div>
+  <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
+               label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 
   @if (scope.isLive) {
-    <button [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="test-btn">
+    <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="settings-pill-btn">
       Test Output (1s)
     </button>
   } @else {
-    <button (click)="testDraft()" class="test-btn">Test Output (1s)</button>
+    <button type="button" (click)="testDraft()" class="settings-pill-btn">Test Output (1s)</button>
     <div class="keyer-hint">The test plays your choices above on their own; nothing is applied yet.</div>
   }
 </app-item-shell>

@@ -88,9 +88,9 @@
   <label>
     Feedback:
     <select (change)="onFeedbackModeChange($event)">
-      <option value="listen" [selected]="s().practiceFeedbackMode === 'listen'">Listen only</option>
-      <option value="blur" [selected]="s().practiceFeedbackMode === 'blur'">Blurred (reveal button)</option>
       <option value="typealong" [selected]="s().practiceFeedbackMode === 'typealong'">Type-along</option>
+      <option value="blur" [selected]="s().practiceFeedbackMode === 'blur'">Blurred (reveal button)</option>
+      <option value="listen" [selected]="s().practiceFeedbackMode === 'listen'">Listen only</option>
     </select>
   </label>
   <div class="cw-hint">

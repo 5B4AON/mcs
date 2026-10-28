@@ -27,14 +27,14 @@ export const HARDWARE_FLOW: WizardFlow = {
     {
       id: 'midiOut',
       title: 'MIDI output',
-      intro: 'Sends keying to a MIDI device. Tick the box to set up mappings on the next pages, or leave it to skip this route.',
+      intro: 'Sends keying to a MIDI device. Tick the box to set up mappings on the next page, or leave it to skip this route.',
       helpSection: 's7-4',
       items: [{ item: 'midi-output' }],
     },
     {
       id: 'midiMap',
       title: 'MIDI output mapping',
-      intro: 'One page per mapping. Choose the exact device, channel and notes.',
+      intro: 'Choose the exact device, channel and notes.',
       helpSection: 's7-4',
       when: settingIs('midiOutputEnabled', true),
       repeat: { list: 'midiOutputMappings', item: 'midi-output-mapping-editor' },
@@ -56,14 +56,14 @@ export const HARDWARE_FLOW: WizardFlow = {
     {
       id: 'serialOut',
       title: 'Serial DTR/RTS keying',
-      intro: 'Keys a radio through a USB-serial adapter. Tick the box to set up mappings on the next pages, or leave it to skip this route.',
+      intro: 'Keys a radio through a USB-serial adapter. Tick the box to set up mappings on the next page, or leave it to skip this route.',
       helpSection: 's7-2',
       items: [{ item: 'serial-output' }],
     },
     {
       id: 'serialMap',
       title: 'Serial output mapping',
-      intro: 'One page per mapping. Choose the exact port and pin for each.',
+      intro: 'Choose the exact port and pin.',
       helpSection: 's7-2',
       when: settingIs('serialEnabled', true),
       repeat: { list: 'serialOutputMappings', item: 'serial-output-mapping-editor' },

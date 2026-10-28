@@ -12,7 +12,8 @@ export interface MappingListRow {
 
 /**
  * The list of mappings in a settings card: an enable checkbox, the card's own
- * summary (given as an `<ng-template>` child), an edit button, and "+ Add Mapping".
+ * summary (given as an `<ng-template>` child), an edit button, an optional delete
+ * button (`deletable`), and "+ Add Mapping".
  * Clicking a row's summary opens it for editing. The list only reports what the
  * user did; the host decides where the mappings are stored (live settings or a
  * wizard draft). Row styles are the shared `.midi-mapping-*` classes.
@@ -37,6 +38,9 @@ export class MappingListComponent {
   /** Text of the add button */
   @Input() addLabel = '+ Add Mapping';
 
+  /** Show a delete button next to each edit button (the Settings popups have their own Delete) */
+  @Input() deletable = false;
+
   /** Row summary template; context is `$implicit` (the mapping) and `index` */
   @ContentChild(TemplateRef) rowTemplate?: TemplateRef<unknown>;
 
@@ -44,6 +48,9 @@ export class MappingListComponent {
 
   /** Index of the row to edit */
   @Output() edit = new EventEmitter<number>();
+
+  /** Index of the row to delete */
+  @Output() remove = new EventEmitter<number>();
 
   @Output() enabledChange = new EventEmitter<{ index: number; enabled: boolean }>();
 

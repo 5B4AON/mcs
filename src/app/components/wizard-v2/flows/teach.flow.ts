@@ -35,8 +35,8 @@ import { WizardFlow } from '../engine/flow-types';
  *    mapping editors as Settings. New mappings are APPENDED to existing ones on Apply;
  *    mouse and touch are single shared devices, so only one participant can own each.
  * 3. Speeds: sending speed; keyer speed only if a paddle input was chosen; TX decoder start
- *    speed only if a straight key was chosen (a straight key has no keyer speed, the TX
- *    decoder follows the operator's hand timing); then optional Farnsworth.
+ *    speed only if a straight key was chosen (a straight key has no keyer speed); then
+ *    optional Farnsworth.
  * 4. Copy practice: the existing Practice item forced to the local pipeline and received
  *    Morse, then fullscreen with a manual student roster (removed since). No aggregate scoring.
  * 5. Call-and-response: teacher types a prompt in fullscreen Type mode, students key replies

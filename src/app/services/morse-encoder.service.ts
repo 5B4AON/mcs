@@ -124,6 +124,14 @@ export class MorseEncoderService {
 
   /** Start TX */
   startTx(): void {
+    // Enter mode: drop spaces at the end of the message, and at its start when sending has not begun
+    if (this.settings.settings().encoderMode === 'enter') {
+      const sent = this.sentIndex();
+      const text = this.buffer();
+      const tail = sent === 0 ? text.trim() : text.slice(sent).trimEnd();
+      const trimmed = text.slice(0, sent) + tail;
+      if (trimmed !== text) this.buffer.set(trimmed);
+    }
     this.isSending.set(true);
     this.processSend();
   }

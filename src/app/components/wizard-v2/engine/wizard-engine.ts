@@ -89,9 +89,15 @@ export class WizardEngine {
       const id = this.currentId();
       // A page of a repeat step that no longer exists (mapping deleted) falls back to its list page
       const fallback = id.includes('#') ? `${id.slice(0, id.lastIndexOf('#'))}#list` : '';
-      return shown.find(step => step.id === id) ?? shown.find(step => step.id === fallback) ?? shown[0];
+      return shown.find(step => step.id === id) ?? this.mappingStep(id) ??
+        shown.find(step => step.id === fallback) ?? shown[0];
     });
-    this.index = computed(() => this.steps().indexOf(this.step()));
+    // A mapping page counts as its list page: it is a detour from the summary, not a step of its own
+    this.index = computed(() => {
+      const current = this.step();
+      const id = current.page?.kind === 'mapping' ? `${current.page.baseId}#list` : current.id;
+      return this.steps().findIndex(step => step.id === id);
+    });
     this.currentId.set(flow.steps[0]?.id ?? '');
   }
 
@@ -101,34 +107,43 @@ export class WizardEngine {
   }
 
   /**
-   * A repeat step becomes one page per mapping plus a list page; any other
-   * step stays as it is. Recomputed whenever the draft list changes.
+   * A repeat step becomes its list page (the summary of all mappings); any
+   * other step stays as it is. The pages that edit one mapping are not steps:
+   * the list page opens them (see `mappingStep()`), and Next or Back returns
+   * to the list. Recomputed whenever the draft list changes.
    */
   private expand(step: WizardStep): WizardStep[] {
     const repeat = step.repeat;
     if (!repeat) return [step];
     const kind = this.kindFor(repeat.item);
     const count = this.mappings(repeat.list).length;
-    const page = (type: StepPage['kind'], index: number): StepPage =>
-      ({ kind: type, index, baseId: step.id, list: repeat.list, item: repeat.item });
-    const pages: WizardStep[] = [];
-    for (let i = 0; i < count; i++) {
-      pages.push({
-        ...step, id: `${step.id}#${i}`, questions: undefined, items: undefined,
-        title: `${step.title} — ${capitalise(kind.noun)} ${i + 1} of ${count}`,
-        page: page('mapping', i),
-      });
-    }
-    pages.push({
+    return [{
       ...step, id: `${step.id}#list`, questions: undefined, items: undefined,
       title: repeat.listTitle ?? step.title,
       intro: repeat.listIntro ?? (count
-        ? `Add another ${kind.noun}, open one to change it, or continue.`
+        ? `Use Edit to change a ${kind.noun}, Delete to remove one, or add another. Nothing is removed from the app until you press Apply, and Revert brings back deleted or changed ones.`
         : `You have no ${kind.noun}s yet. Add one, or continue without.`),
       help: undefined,
-      page: page('list', count),
-    });
-    return pages;
+      page: { kind: 'list', index: count, baseId: step.id, list: repeat.list, item: repeat.item },
+    }];
+  }
+
+  /** The page that edits one mapping, for an id like `keyboard#2`; null when there is no such mapping. */
+  private mappingStep(id: string): WizardStep | null {
+    const match = /^(.+)#(\d+)$/.exec(id);
+    if (!match) return null;
+    const index = Number(match[2]);
+    const base = this.flow.steps.find(step => step.id === match[1] && step.repeat);
+    const repeat = base?.repeat;
+    if (!base || !repeat || (base.when && !base.when(this.context()))) return null;
+    const count = this.mappings(repeat.list).length;
+    if (index >= count) return null;
+    const kind = this.kindFor(repeat.item);
+    return {
+      ...base, id, questions: undefined, items: undefined,
+      title: `${base.title} — ${capitalise(kind.noun)} ${index + 1} of ${count}`,
+      page: { kind: 'mapping', index, baseId: base.id, list: repeat.list, item: repeat.item },
+    };
   }
 
   // ---- Mapping lists ----
@@ -189,27 +204,32 @@ export class WizardEngine {
 
   // ---- Navigation ----
 
-  get isFirst(): boolean { return this.index() <= 0; }
+  /** True on a page that edits one mapping; Next and Back both return to its list. */
+  private get onMappingPage(): boolean { return this.step().page?.kind === 'mapping'; }
 
-  get isLast(): boolean { return this.index() >= this.steps().length - 1; }
+  get isFirst(): boolean { return !this.onMappingPage && this.index() <= 0; }
+
+  get isLast(): boolean { return !this.onMappingPage && this.index() >= this.steps().length - 1; }
 
   /** Go to the next shown step if this one is valid. Returns whether it moved. */
   next(): boolean {
     if (this.isLast || this.validateStep(this.step()).length > 0) return false;
-    this.currentId.set(this.steps()[this.index() + 1].id);
+    const page = this.step().page;
+    this.currentId.set(page?.kind === 'mapping' ? `${page.baseId}#list` : this.steps()[this.index() + 1].id);
     return true;
   }
 
-  /** Go to the previous shown step. Answers are kept. */
+  /** Go to the previous shown step; from a mapping page, back to its list. Answers are kept. */
   back(): boolean {
     if (this.isFirst) return false;
-    this.currentId.set(this.steps()[this.index() - 1].id);
+    const page = this.step().page;
+    this.currentId.set(page?.kind === 'mapping' ? `${page.baseId}#list` : this.steps()[this.index() - 1].id);
     return true;
   }
 
-  /** Jump to a shown step (for example from the review). */
+  /** Jump to a shown step or a mapping page (for example from the review or a list). */
   goTo(stepId: string): boolean {
-    if (!this.steps().some(step => step.id === stepId)) return false;
+    if (!this.steps().some(step => step.id === stepId) && !this.mappingStep(stepId)) return false;
     this.currentId.set(stepId);
     return true;
   }

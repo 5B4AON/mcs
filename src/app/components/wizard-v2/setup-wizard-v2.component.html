@@ -165,8 +165,9 @@
                   </button>
                 </div>
               } @else {
-                <app-mapping-list [mappings]="rows(eng.mappings(page.list))" addLabel="+ Add {{ kind.noun }}"
+                <app-mapping-list [mappings]="rows(eng.mappings(page.list))" addLabel="+ Add {{ kind.noun }}" [deletable]="true"
                                   (add)="addMapping()" (edit)="openMapping(step, $event)"
+                                  (remove)="removeMapping(step, $event)"
                                   (enabledChange)="setMappingEnabled(step, $event.index, $event.enabled)">
                   <ng-template let-mapping let-i="index">
                     <span class="midi-mapping-value">{{ kind.summary(mapping) }}</span>
@@ -259,19 +260,15 @@
             <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 5 8 12 15 19"/></svg>
             <span>Back</span>
           </button>
-          @if (canRevert) {
-            <button type="button" class="wizard-pill" (click)="revert()">
+          <button type="button" class="wizard-pill" [disabled]="!canRevert" (click)="revert()">
               <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>
               <span>Revert</span>
             </button>
-          }
           @if (stage() === 'review') {
-            @if (engine()?.canApply()) {
-              <button type="button" class="wizard-pill wizard-primary" (click)="apply()">
-                <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
-                <span>Apply</span>
-              </button>
-            }
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="!engine()?.canApply()" (click)="apply()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
+              <span>Apply</span>
+            </button>
           } @else {
             <button type="button" class="wizard-pill wizard-primary" [disabled]="problems().length > 0" (click)="next()">
               <span>Next</span>

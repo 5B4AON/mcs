@@ -12,13 +12,3 @@
 .speed-sub-value { color: #8cf; font-variant-numeric: tabular-nums; }
 .speed-sub-title { font-weight: 600; padding: .5rem .6rem 0; }
 .speed-sub-body { padding: .2rem .6rem .6rem; }
-.speed-row { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
-.speed-row input[type=range] { flex: 1; min-width: 0; }
-.speed-step-btn {
-  width: 2rem; height: 2rem; flex: none; padding: 0; border-radius: 50%; cursor: pointer;
-  display: inline-flex; align-items: center; justify-content: center;
-  background: #2a3a2a; color: #8cf; border: 1px solid #446;
-}
-.speed-step-btn:hover:not(:disabled) { background: #3a5a3a; }
-.speed-step-btn:disabled { opacity: .4; cursor: default; }
-.speed-step-btn:focus-visible { outline: 2px solid #8cf; outline-offset: 1px; }

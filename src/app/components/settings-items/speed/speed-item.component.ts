@@ -7,6 +7,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { StepperComponent } from '../stepper/stepper.component';
 import { SPEED_INFO, SPEED_RANGE, SpeedKind } from './speed-item.model';
 
 /**
@@ -26,7 +27,7 @@ import { SPEED_INFO, SPEED_RANGE, SpeedKind } from './speed-item.model';
 @Component({
   selector: 'app-speed-item',
   standalone: true,
-  imports: [ItemShellComponent],
+  imports: [ItemShellComponent, StepperComponent],
   templateUrl: './speed-item.component.html',
   styleUrl: './speed-item.component.css',
 })
@@ -53,17 +54,8 @@ export class SpeedItemComponent {
     this.open.set(next);
   }
 
-  /** The + and - buttons; keeps the value inside the toolbar's range. */
-  step(kind: SpeedKind, delta: number): void {
-    const value = Math.max(SPEED_RANGE.min, Math.min(SPEED_RANGE.max, this.s()[SPEED_INFO[kind].key] + delta));
-    this.setSpeed(kind, value);
-  }
-
-  onSpeed(kind: SpeedKind, event: Event): void {
-    this.setSpeed(kind, +(event.target as HTMLInputElement).value);
-  }
-
-  private setSpeed(kind: SpeedKind, value: number): void {
+  /** Slider and + / - buttons (the stepper keeps the value inside the toolbar's range). */
+  setSpeed(kind: SpeedKind, value: number): void {
     this.scope.update({ [SPEED_INFO[kind].key]: value } as Partial<AppSettings>);
     // Same as the toolbar: a new start speed drops the learned timing (live only).
     if (this.scope.isLive) this.resetCalibration(kind);

@@ -44,6 +44,10 @@
       <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
     }
     @if (encoderPendingChars().length) {
+      @if (encoderStartsNewLine()) {
+        <div class="fs-line fs-line-placeholder" aria-hidden="true"
+             [style.marginBottom.em]="settings.modalDisplay().lineSpacing">&nbsp;</div>
+      }
       <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
         [class.sending]="$first && encoder.isSending()"
         [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"

@@ -270,9 +270,16 @@
 .wizard-pill:active:not(:disabled) {
   transform: translateY(1px);
 }
+/* Disabled: clearly flatter, darker and muted next to the enabled pills */
 .wizard-pill:disabled {
-  opacity: .5;
+  background: linear-gradient(180deg, #2b313b 0%, #242932 100%);
+  color: #6b7480;
+  box-shadow: none;
   cursor: not-allowed;
+}
+.wizard-pill.wizard-primary:disabled {
+  background: linear-gradient(180deg, #274440 0%, #20332f 100%);
+  color: #6f918b;
 }
 .pill-icon {
   flex-shrink: 0;

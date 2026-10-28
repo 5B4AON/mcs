@@ -1,0 +1,12 @@
+:host { display: block; }
+
+.stepper-row { display: flex; align-items: center; gap: .6rem; margin-top: .4rem; }
+.stepper-row input[type=range] { flex: 1; min-width: 0; }
+.speed-step-btn {
+  width: 2rem; height: 2rem; min-height: 0; flex: none; padding: 0; border-radius: 50%; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: #2a3a2a; color: #8cf; border: 1px solid #446;
+}
+.speed-step-btn:hover:not(:disabled) { background: #3a5a3a; }
+.speed-step-btn:disabled { opacity: .4; cursor: default; }
+.speed-step-btn:focus-visible { outline: 2px solid #8cf; outline-offset: 1px; }

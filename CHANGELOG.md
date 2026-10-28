@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.1] - 2026-10-28
+
+### Added
+
+- **Encoder speed in fullscreen** — The fullscreen kebab menu has an Encoder speed control (always present, in Key and Type mode), and the toolbar shows an Encoder indicator next to RX, TX and Keyer.
+- **Slider with + and − buttons** — Farnsworth effective WPM and gap multiplier (whole numbers 1 to 10), and sidetone and audio key amplitude (0 to 100% in steps of 5), now look and work like the Morse speeds, with the value and explanation above the slider.
+- **Delete on the wizard mapping summary** — Each row has an Edit and a Delete button. Delete only changes the guide's draft; Revert brings it back and nothing changes until Apply.
+
+### Changed
+
+- **Practice sending wizard** — Keyer speed and Farnsworth come after the keyer steps and only appear when a paddle is configured; their text says they apply to automatic paddle keying only.
+- **Wizard mappings** — Keyboard, MIDI and serial mappings show one summary page; Edit and Add open a mapping, and Next or Back return to the summary.
+- **Wizard buttons** — Revert and Apply are always visible and disabled when they do not apply, so buttons no longer shift. Disabled buttons are darker and more muted.
+- **Copy practice feedback** — Options are listed Type-along, Blurred, Listen only, and Type-along is the default for new settings.
+- **Farnsworth "Applies to"** — Options are listed Both RX and TX, RX Only, TX Only, and Both is the default for new settings.
+- **Wordsworth gap multiplier** — Multiplies the standard 7-dit word gap by 1 to 4 in steps of 0.5; character gaps are unchanged.
+- **Test Output buttons** — The sidetone and audio key tests are pill buttons.
+- **Keyboard encoder** — Spaces at the start of a message are ignored, repeated spaces collapse to one, and trailing spaces are trimmed when sending in Enter mode (main screen and fullscreen Type mode).
+- **Help** — Removed the Teach material and updated the Farnsworth, amplitude and practice feedback text.
+
+### Fixed
+
+- **Speed buttons on phones** — The − and + buttons are round again instead of stretched.
+- **Fullscreen Type mode** — Typed text no longer jumps when its first letter is played on a new line.
+- **Keyer speed text** — Removed an incorrect sentence about the TX decoder following a straight key.
+
 ## [2.1.0] - 2026-10-28
 
 ### Added

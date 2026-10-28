@@ -9,6 +9,7 @@ import { AudioDeviceService } from '../../../services/audio-device.service';
 import { AudioOutputService } from '../../../services/audio-output.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { StepperComponent } from '../stepper/stepper.component';
 import { playTestTone } from '../test-tone';
 
 /**
@@ -21,9 +22,9 @@ import { playTestTone } from '../test-tone';
 @Component({
   selector: 'app-sidetone-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, StepperComponent],
   templateUrl: './sidetone-item.component.html',
-  styles: [':host { display: contents; }'],
+  styles: [':host { display: contents; } .amplitude-value { font-weight: 600; margin-top: .6rem; }'],
 })
 export class SidetoneItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
@@ -47,6 +48,15 @@ export class SidetoneItemComponent {
       value = parseFloat(el.value);
     }
     this.scope.update({ [key]: value } as Partial<AppSettings>);
+  }
+
+  /** Amplitude is stored from 0 to 1 and shown as 0 to 100 percent */
+  get amplitudePercent(): number {
+    return Math.round(this.s().sidetoneAmplitude * 100);
+  }
+
+  setAmplitudePercent(percent: number): void {
+    this.scope.update({ sidetoneAmplitude: percent / 100 });
   }
 
   /** Wizard test: play the draft values through a throwaway audio context, leaving live audio alone */

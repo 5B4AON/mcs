@@ -2,8 +2,8 @@
  * Morse Code Studio
  */
 
-import { answerIncludes, not } from '../engine/conditions';
-import { ForcedSetting, WizardFlow } from '../engine/flow-types';
+import { all, answerIncludes, any, not } from '../engine/conditions';
+import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 
@@ -28,9 +28,29 @@ const FORCED: ForcedSetting[] = METHODS.flatMap(m => [
 ]);
 
 /**
+ * True when a chosen keyer has a paddle set up: a paddle keyboard or MIDI
+ * mapping, a mouse button that dits or dahs, or the touch keyer in paddle mode.
+ * Only a paddle makes the keyer generate the dits and dahs, so only then do the
+ * keyer speed and Farnsworth timing matter.
+ */
+const paddleConfigured: Condition = any(
+  all(answerIncludes('methods', 'keyboard'),
+    ctx => ctx.settings.keyboardInputMappings.some(m => m.enabled && m.mode === 'paddle')),
+  all(answerIncludes('methods', 'mouse'),
+    ctx => [ctx.settings.mouseLeftAction, ctx.settings.mouseMiddleAction, ctx.settings.mouseRightAction]
+      .some(action => action === 'dit' || action === 'dah')),
+  all(answerIncludes('methods', 'touch'), ctx => ctx.settings.touchKeyerMode === 'paddle'),
+  all(answerIncludes('methods', 'midi'),
+    ctx => ctx.settings.midiInputMappings.some(m => m.enabled && m.mode === 'paddle')),
+);
+
+const PADDLE_ONLY = 'This only applies to automatic keying with a paddle, where the keyer generates the dit and dah timings. A straight key is timed by your hand, so it is not affected.';
+
+/**
  * Goal "Practice sending Morse": choose which local keyers to use (keyboard,
- * mouse, touch, MIDI), then the speed, then one step per chosen keyer (one page
- * per keyboard or MIDI mapping), then the sidetone. Local keyers never start
+ * mouse, touch, MIDI), then one step per chosen keyer (a summary of the keyboard
+ * or MIDI mappings, each opened to edit), then the keyer speed and Farnsworth
+ * timing when a paddle is set up, then the sidetone. Local keyers never start
  * audio or enable radio, serial or online outputs. Choosing the MIDI keyer
  * switches MIDI input on; the app connects to it when the guide is applied.
  */
@@ -57,12 +77,10 @@ export const SEND_FLOW: WizardFlow = {
         ? []
         : ['Choose a keyboard, mouse, touch or MIDI keyer.'],
     },
-    speedStep({ keyer: true }),
-    farnsworthStep(),
     {
       id: 'keyboard',
       title: 'Keyboard keys',
-      intro: 'One page per keyboard mapping. Use Detect to press the key you want, then pick a name and colour.',
+      intro: 'Use Detect to press the key you want, then pick a name and colour.',
       helpSection: 's4-1',
       when: answerIncludes('methods', 'keyboard'),
       repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor' },
@@ -89,7 +107,7 @@ export const SEND_FLOW: WizardFlow = {
     {
       id: 'midi',
       title: 'MIDI keyer',
-      intro: 'One page per MIDI mapping. Choose the device, press Detect and play the note for each paddle or key.',
+      intro: 'Choose the device, press Detect and play the note for each paddle or key.',
       helpSection: 's6-2',
       when: answerIncludes('methods', 'midi'),
       repeat: { list: 'midiInputMappings', item: 'midi-input-mapping-editor' },
@@ -97,6 +115,14 @@ export const SEND_FLOW: WizardFlow = {
         ? []
         : ['Enable and configure at least one MIDI key or paddle mapping.'],
     },
+    speedStep({ keyer: true }, {
+      when: paddleConfigured,
+      intro: `Pick the keyer speed for your paddle. ${PADDLE_ONLY} You can change it later from the main menu.`,
+    }),
+    farnsworthStep({
+      when: paddleConfigured,
+      intro: `Optional. Farnsworth timing keeps each character at full speed but stretches the gaps between characters and words. ${PADDLE_ONLY} Leave it off for normal timing.`,
+    }),
     soundStep({
       detail: 'Your keying is played through it, so you hear what you send.',
     }),

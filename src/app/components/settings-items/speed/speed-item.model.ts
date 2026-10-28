@@ -20,7 +20,7 @@ export const SPEED_INFO: Record<SpeedKind, { key: 'encoderWpm' | 'keyerWpm' | 'r
   keyer: {
     key: 'keyerWpm',
     label: 'Keyer speed',
-    hint: 'The speed of the keyer you operate with paddles (iambic or single lever): it sets the length of the dots and dashes it generates. A straight key has no keyer speed, because you make the timing by hand; the TX decoder follows it instead.',
+    hint: 'The speed of the keyer you operate with paddles (iambic or single lever): it sets the length of the dots and dashes it generates. A straight key has no keyer speed, because you make the timing by hand.',
   },
   rx: {
     key: 'rxDecoderWpm',

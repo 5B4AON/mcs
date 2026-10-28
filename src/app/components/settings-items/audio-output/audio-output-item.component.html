@@ -60,17 +60,16 @@
     </label>
   }
 
-  <label>Amplitude:
-    <input type="range" min="0" max="1" step="0.05" [value]="s().optoAmplitude"
-           (input)="onSettingChange('optoAmplitude', $event)">
-    {{ s().optoAmplitude }}
-  </label>
+  <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
+  <div class="cw-hint">The level of the keying signal sent to the sound card, from 0% to 100% (full level).</div>
+  <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
+               label="Audio key amplitude" (valueChange)="setAmplitudePercent($event)" />
 
   <div class="opto-wiring-hint">
     @if (s().optoMode === 'dc') {
       <strong>DC Offset mode:</strong> Outputs a steady DC voltage when keyed.
       Only works with <em>DC-coupled</em> sound cards (rare). Set amplitude to
-      1.0 for maximum voltage.<br><br>
+      100% for maximum voltage.<br><br>
       <strong>Getting only ~100&ndash;200 mV?</strong> Most sound cards have
       <em>AC coupling capacitors</em> that block DC &mdash; the output decays to
       near-zero regardless of amplitude setting. This is a hardware limitation,
@@ -88,7 +87,7 @@
       collector &rarr; opto LED &rarr; 5&nbsp;V supply, emitter &rarr; GND.
     } @else {
       <strong>Wiring:</strong> Sound card channel → optocoupler LED anode.
-      Cathode → sound card GND. Set amplitude to 1.0.<br><br>
+      Cathode → sound card GND. Set amplitude to 100%.<br><br>
       <strong>Low voltage (&lt;2V peak)?</strong> Most headphone outputs are only 1–2V.
       With an opto LED Vf of ~1.1V, there is very little headroom.<br>
       &bull; <em>Remove any series resistor</em> &mdash; the sound card&rsquo;s output impedance
@@ -104,7 +103,7 @@
   </div>
 
   @if (scope.isLive) {
-  <button [disabled]="!audioRunning" (click)="audioOutput.testOpto()" class="test-btn">
+  <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testOpto()" class="settings-pill-btn">
     Test Output (1s)
   </button>
   } @else {

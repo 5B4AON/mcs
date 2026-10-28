@@ -1066,8 +1066,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onEncoderInput(textarea: HTMLTextAreaElement): void {
-    const pos = textarea.selectionStart;
-    textarea.value = textarea.value.toUpperCase();
+    let pos = textarea.selectionStart;
+    let value = textarea.value.toUpperCase();
+    if (this.settings.settings().encoderMode !== 'practice') {
+      // Spaces are ignored at the start and repeated spaces collapse to one as you type
+      // (a trailing space is allowed while typing and trimmed when sending)
+      const clean = (text: string) => text.replace(/^\s+/, '').replace(/[ \t]{2,}/g, ' ');
+      pos = clean(value.slice(0, pos)).length;
+      value = clean(value);
+    }
+    textarea.value = value;
     textarea.selectionStart = textarea.selectionEnd = pos;
     this.encoderInputHasText = textarea.value.trim().length > 0;
     requestAnimationFrame(() => this.checkSpriteSpace());
@@ -1381,15 +1389,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    *   use our own callsign so the local display mirrors the remote view.
    */
   private getDisplayName(type: 'rx' | 'tx', entryName?: string): string | undefined {
-    if (entryName) return entryName;
-    const s = this.settings.settings();
-    if (s.rtdbOutputEnabled && s.rtdbOutputName.trim()) {
-      const fwd = s.rtdbOutputForward;
-      if (fwd === 'both' || fwd === type) {
-        return s.rtdbOutputName.trim();
-      }
-    }
-    return undefined;
+    return this.displayBuffers.displayNameFor(type, entryName);
   }
 
   // ---- Settings handlers ----

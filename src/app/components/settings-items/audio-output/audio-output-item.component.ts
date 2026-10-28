@@ -8,6 +8,7 @@ import { AudioDeviceService } from '../../../services/audio-device.service';
 import { AudioOutputService } from '../../../services/audio-output.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { StepperComponent } from '../stepper/stepper.component';
 
 /**
  * Settings item — Audio Key Output (optocoupler keying via sound card).
@@ -19,9 +20,9 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-audio-output-item',
   standalone: true,
-  imports: [ItemShellComponent],
+  imports: [ItemShellComponent, StepperComponent],
   templateUrl: './audio-output-item.component.html',
-  styles: [':host { display: contents; }'],
+  styles: [':host { display: contents; } .amplitude-value { font-weight: 600; margin-top: .6rem; }'],
 })
 export class AudioOutputItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
@@ -45,6 +46,15 @@ export class AudioOutputItemComponent {
       value = parseFloat(el.value);
     }
     this.scope.update({ [key]: value } as Partial<AppSettings>);
+  }
+
+  /** Amplitude is stored from 0 to 1 and shown as 0 to 100 percent */
+  get amplitudePercent(): number {
+    return Math.round(this.s().optoAmplitude * 100);
+  }
+
+  setAmplitudePercent(percent: number): void {
+    this.scope.update({ optoAmplitude: percent / 100 });
   }
 
   /** Handle a boolean setting change from a checkbox */
