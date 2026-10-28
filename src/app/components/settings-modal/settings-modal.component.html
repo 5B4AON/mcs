@@ -1,5 +1,5 @@
 @if (!presetsOnly) {
-<div class="settings-overlay" (click)="close()">
+<div class="settings-overlay" (appBackdropClick)="close()">
   <div #settingsDialog class="settings-modal" role="dialog" aria-modal="true"
        aria-labelledby="settings-modal-title" tabindex="-1"
        (click)="$event.stopPropagation()" (keydown)="onSettingsDialogKeydown($event)">
@@ -127,7 +127,7 @@ This cannot be undone."
 }
 
 @if (showScanResults) {
-  <div class="scan-results-overlay" (click)="dismissScanResults()">
+  <div class="scan-results-overlay" (appBackdropClick)="dismissScanResults()">
     <div #scanDialog class="scan-results-dialog" (click)="$event.stopPropagation()" role="dialog"
          aria-modal="true" aria-labelledby="scan-results-title" tabindex="-1"
          (keydown)="onScanDialogKeydown($event)">
@@ -197,7 +197,7 @@ This cannot be undone."
 }
 
 @if (showPresets) {
-  <div class="settings-transfer-overlay" (click)="closeSettingsTransfer()">
+  <div class="settings-transfer-overlay" (appBackdropClick)="closeSettingsTransfer()">
     <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onSettingsTransferKeydown($event)">
       <header class="settings-transfer-header">
         <h2 id="settings-transfer-title" [class.preset-review-title]="transferReview && reviewPreset">{{ transferReview && reviewPreset ? reviewPreset.name : 'Presets' }}</h2>

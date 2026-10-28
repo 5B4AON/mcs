@@ -4,6 +4,7 @@
 
 import { Injectable, signal, computed } from '@angular/core';
 import { timingsFromWpm } from '../morse-table';
+import { DEFAULT_FULLSCREEN_FONT, FullscreenFontId } from '../fullscreen-fonts';
 
 /**
  * Detect whether the device has a touch-capable display.
@@ -468,6 +469,28 @@ export interface AppSettings {
   /** Which text directions to blur: rx, tx, or both */
   textBlurAppliesTo: 'rx' | 'tx' | 'both';
 
+  // --- Fullscreen view ---
+  /** Last chosen fullscreen input: mapped keying or typing */
+  fullscreenInputMode: 'key' | 'type';
+  /** Lens mode: show only the latest character and its symbols in fullscreen */
+  fullscreenLensEnabled: boolean;
+  /** Font used in the fullscreen view */
+  fullscreenFont: FullscreenFontId;
+  /** Fullscreen text size in px */
+  fullscreenFontSize: number;
+  fullscreenFontBold: boolean;
+  /** Row spacing in em (line-height plus margin between lines) */
+  fullscreenLineSpacing: number;
+  /** Fullscreen colours (hex) */
+  fullscreenRxForeground: string;
+  fullscreenRxBackground: string;
+  fullscreenTxForeground: string;
+  fullscreenTxBackground: string;
+  /** Colour of unsent (buffered) text */
+  fullscreenBufferForeground: string;
+  /** Colour of the character being transmitted */
+  fullscreenSendingForeground: string;
+
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
@@ -797,6 +820,19 @@ const DEFAULT_SETTINGS: AppSettings = {
   textBlurEnabled: false,
   textBlurAppliesTo: 'rx',
 
+  fullscreenInputMode: 'key',
+  fullscreenLensEnabled: false,
+  fullscreenFont: DEFAULT_FULLSCREEN_FONT,
+  fullscreenFontSize: 24,
+  fullscreenFontBold: false,
+  fullscreenLineSpacing: 0.1,
+  fullscreenRxForeground: '#00ff88',
+  fullscreenRxBackground: '#0e1218',
+  fullscreenTxForeground: '#ffcc00',
+  fullscreenTxBackground: '#0d0d18',
+  fullscreenBufferForeground: '#666666',
+  fullscreenSendingForeground: '#ffff00',
+
   farnsworthEnabled: false,
   farnsworthInputMode: 'wpm',
   farnsworthEffectiveWpm: 10,
@@ -868,11 +904,13 @@ const DEFAULT_SETTINGS: AppSettings = {
 };
 
 const PROFILES_KEY = 'morseProfiles';
-const MODAL_DISPLAY_KEY = 'morseModalDisplay';
+/** Where fullscreen display settings were stored before they became part of AppSettings. */
+const LEGACY_MODAL_DISPLAY_KEY = 'morseModalDisplay';
 
 /**
- * Display settings for the fullscreen conversation modal.
- * Stored separately from AppSettings since they are not device-dependent.
+ * Display settings of the fullscreen conversation modal, as one read-only view
+ * of the `fullscreen*` fields of AppSettings (so they are saved with the profile
+ * and included in presets).
  */
 export interface ModalDisplaySettings {
   fontSize: number;               // px
@@ -886,16 +924,17 @@ export interface ModalDisplaySettings {
   sendingForeground: string;      // currently transmitting char colour
 }
 
-const DEFAULT_MODAL_DISPLAY: ModalDisplaySettings = {
-  fontSize: 24,
-  fontBold: false,
-  lineSpacing: 0.1,
-  rxForeground: '#00ff88',
-  rxBackground: '#0e1218',
-  txForeground: '#ffcc00',
-  txBackground: '#0d0d18',
-  bufferForeground: '#666666',
-  sendingForeground: '#ffff00',
+/** AppSettings field behind each display setting. */
+const MODAL_DISPLAY_FIELDS: Record<keyof ModalDisplaySettings, keyof AppSettings> = {
+  fontSize: 'fullscreenFontSize',
+  fontBold: 'fullscreenFontBold',
+  lineSpacing: 'fullscreenLineSpacing',
+  rxForeground: 'fullscreenRxForeground',
+  rxBackground: 'fullscreenRxBackground',
+  txForeground: 'fullscreenTxForeground',
+  txBackground: 'fullscreenTxBackground',
+  bufferForeground: 'fullscreenBufferForeground',
+  sendingForeground: 'fullscreenSendingForeground',
 };
 
 /**
@@ -913,8 +952,21 @@ const DEFAULT_MODAL_DISPLAY: ModalDisplaySettings = {
 export class SettingsService {
   readonly settings = signal<AppSettings>({ ...DEFAULT_SETTINGS });
 
-  /** Modal (fullscreen) display settings � auto-saved separately */
-  readonly modalDisplay = signal<ModalDisplaySettings>({ ...DEFAULT_MODAL_DISPLAY });
+  /** Fullscreen display settings: a read-only view of the `fullscreen*` fields of `settings` */
+  readonly modalDisplay = computed<ModalDisplaySettings>(() => {
+    const s = this.settings();
+    return {
+      fontSize: s.fullscreenFontSize,
+      fontBold: s.fullscreenFontBold,
+      lineSpacing: s.fullscreenLineSpacing,
+      rxForeground: s.fullscreenRxForeground,
+      rxBackground: s.fullscreenRxBackground,
+      txForeground: s.fullscreenTxForeground,
+      txBackground: s.fullscreenTxBackground,
+      bufferForeground: s.fullscreenBufferForeground,
+      sendingForeground: s.fullscreenSendingForeground,
+    };
+  });
 
   /** True when in-memory settings differ from last save */
   readonly isDirty = signal(false);
@@ -950,21 +1002,35 @@ export class SettingsService {
       norm(s.optoOutputDeviceId) === norm(s.pilotOutputDeviceId);
   });
 
+  /** Fullscreen display values saved before they became part of AppSettings, if any. */
+  private legacyDisplay: Partial<AppSettings> | null = null;
+
   constructor() {
-    // Load modal display settings
+    // Carry over display settings stored by earlier versions in their own key
     try {
-      const raw = localStorage.getItem(MODAL_DISPLAY_KEY);
+      const raw = localStorage.getItem(LEGACY_MODAL_DISPLAY_KEY);
       if (raw) {
-        this.modalDisplay.set({ ...DEFAULT_MODAL_DISPLAY, ...JSON.parse(raw) });
+        const old = JSON.parse(raw) as Record<string, unknown>;
+        const patch: Record<string, unknown> = {};
+        for (const [key, field] of Object.entries(MODAL_DISPLAY_FIELDS)) {
+          if (typeof old[key] === typeof DEFAULT_SETTINGS[field]) patch[field] = old[key];
+        }
+        this.legacyDisplay = patch as Partial<AppSettings>;
+        this.settings.set({ ...DEFAULT_SETTINGS, ...this.legacyDisplay });
       }
     } catch { /* ignore */ }
   }
 
-  /** Update modal display settings and auto-persist */
+  /**
+   * Update fullscreen display settings in memory. Like other settings they are
+   * saved with the profile by `save()`, which the caller runs afterwards.
+   */
   updateModalDisplay(patch: Partial<ModalDisplaySettings>): void {
-    const next = { ...this.modalDisplay(), ...patch };
-    this.modalDisplay.set(next);
-    localStorage.setItem(MODAL_DISPLAY_KEY, JSON.stringify(next));
+    const mapped: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(patch)) {
+      mapped[MODAL_DISPLAY_FIELDS[key as keyof ModalDisplaySettings]] = value;
+    }
+    this.update(mapped as Partial<AppSettings>);
   }
 
   /** Update in-memory settings (does NOT persist  use save() for that) */
@@ -998,7 +1064,13 @@ export class SettingsService {
           (remapped as any)[key] = match ? match.deviceId : 'default';
         }
       }
-      this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
+      // Profiles saved before display settings joined AppSettings keep the old display values
+      const hasDisplay = Object.prototype.hasOwnProperty.call(remapped, 'fullscreenFontSize');
+      this.settings.set({
+        ...DEFAULT_SETTINGS,
+        ...(hasDisplay ? {} : this.legacyDisplay ?? {}),
+        ...remapped,
+      });
       // Ensure nested collections have all expected keys (e.g. new prosign
       // keys added after the profile was saved).
       this.backfillProsignActions();
@@ -1068,8 +1140,6 @@ export class SettingsService {
 
   resetToDefaults(): void {
     this.settings.set({ ...DEFAULT_SETTINGS });
-    this.modalDisplay.set({ ...DEFAULT_MODAL_DISPLAY });
-    localStorage.setItem(MODAL_DISPLAY_KEY, JSON.stringify(DEFAULT_MODAL_DISPLAY));
     this.isDirty.set(true);
   }
 

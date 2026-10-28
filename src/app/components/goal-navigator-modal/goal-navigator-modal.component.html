@@ -1,4 +1,4 @@
-<div class="wizard-overlay" (click)="closed.emit()">
+<div class="wizard-overlay" (appBackdropClick)="closed.emit()">
   <div #dialog class="wizard-modal" role="dialog" aria-modal="true" aria-labelledby="goal-modal-title" tabindex="-1"
        (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
     <div class="wizard-modal-header">

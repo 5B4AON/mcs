@@ -50,6 +50,7 @@ import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-out
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
 import { GoalTarget, goalTargetForLanding } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { BackdropClickDirective } from '../backdrop-click.directive';
 
 /**
  * Settings modal component — modal chrome and tab navigation.
@@ -74,6 +75,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
   imports: [
     FormsModule,
     DatePipe,
+    BackdropClickDirective,
     ConfirmDialogComponent,
     SettingsInputsTabComponent,
     SettingsOutputsTabComponent,

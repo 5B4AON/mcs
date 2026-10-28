@@ -1,4 +1,4 @@
-<div class="md-overlay" (click)="cancelled.emit()">
+<div class="md-overlay" (appBackdropClick)="cancelled.emit()">
   <div #dialog class="md-dialog" (click)="$event.stopPropagation()" role="dialog"
        aria-modal="true" tabindex="-1" (keydown)="onKeydown($event)" [attr.aria-label]="ariaLabel || title">
 

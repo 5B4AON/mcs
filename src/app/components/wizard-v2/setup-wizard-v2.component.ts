@@ -52,6 +52,8 @@ import {
   teachParticipantChannelName,
 } from './flows/teach-participant.model';
 import { flowForGoal } from './flows/flow-registry';
+import { BackdropClickDirective } from '../backdrop-click.directive';
+import { PracticeService } from '../../services/practice.service';
 
 /** Where the user is: answering steps or reviewing. */
 type Stage = 'steps' | 'review';
@@ -68,7 +70,7 @@ type Stage = 'steps' | 'review';
 @Component({
   selector: 'app-setup-wizard-v2',
   standalone: true,
-  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent,
+  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, BackdropClickDirective,
     MappingPageComponent, MappingListComponent, TeachParticipantPageComponent, HelpLinkButtonComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['./setup-wizard-v2.component.css'],
@@ -91,6 +93,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   /** Emitted after Apply with the goal id, so the app can land focus where the user continues */
   @Output() tryRequested = new EventEmitter<string>();
+  /** Emitted after Apply when the user chose the full screen (or Lens) as the place to work. */
+  @Output() readonly fullscreenRequested = new EventEmitter<void>();
   /** Emitted after the detector was switched on, so the app can start it when audio already runs */
   @Output() readonly detectorEnabled = new EventEmitter<void>();
 
@@ -99,6 +103,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild(TeachParticipantPageComponent) private teachParticipantPage?: TeachParticipantPageComponent;
 
   readonly settings = inject(SettingsService);
+  private readonly practice = inject(PracticeService);
   readonly presets = inject(PresetService);
   private readonly scope = inject(SETTINGS_SCOPE) as DraftSettingsScope;
   private readonly audioDevices = inject(AudioDeviceService);
@@ -110,7 +115,6 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   private readonly serialOutput = inject(SerialKeyOutputService);
   private readonly winkeyerOutput = inject(WinkeyerOutputService);
 
-  private overlayPressed = false;
   readonly stage = signal<Stage>('steps');
   readonly engine = signal<WizardEngine | null>(null);
   readonly flowTitle = signal('');
@@ -440,6 +444,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     // The practice goal selects the Practice encoder mode so the user can press Start right away
     if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';
     const base = this.settings.settings();
+    // Leaving Practice mode for typing ends any practice session, as the main-screen mode selector does
+    if (base.encoderMode === 'practice' && patch.encoderMode && patch.encoderMode !== 'practice') this.practice.reset();
     this.settings.update(patch);
     if (patch.midiOutputEnabled) {
       await this.midiOutput.start();
@@ -467,6 +473,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     }
     this.applied = true;
     this.tryRequested.emit(engine.flow.goal);
+    const screen = engine.answers()['screen'];
+    if (screen === 'fullscreen' || screen === 'lens') this.fullscreenRequested.emit();
   }
 
   // ---- Closing ----
@@ -475,16 +483,6 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   requestClose(): void {
     if (this.hasDraft()) this.confirmDiscard.set(true);
     else this.closed.emit();
-  }
-
-  /** Overlay click closes only when the press also started on the overlay (not at the end of a text selection). */
-  overlayDown(event: MouseEvent): void {
-    this.overlayPressed = event.target === event.currentTarget;
-  }
-
-  overlayClick(event: MouseEvent): void {
-    if (this.overlayPressed && event.target === event.currentTarget) this.requestClose();
-    this.overlayPressed = false;
   }
 
   /** Show the discard question (used by the browser Back button). */

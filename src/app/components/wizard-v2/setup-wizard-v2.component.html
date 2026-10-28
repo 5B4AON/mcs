@@ -1,4 +1,4 @@
-<div class="wizard-overlay" (mousedown)="overlayDown($event)" (click)="overlayClick($event)">
+<div class="wizard-overlay" (appBackdropClick)="requestClose()">
   <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
        aria-labelledby="wizard-title" tabindex="-1"
        (click)="$event.stopPropagation()">

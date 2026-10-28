@@ -17,7 +17,7 @@ import { AUDIO_OUTPUT_DESCRIPTOR } from './audio-output/audio-output-item.model'
 import { VibrationItemComponent } from './vibration/vibration-item.component';
 import { VIBRATION_DESCRIPTOR } from './vibration/vibration-item.model';
 import { EncoderItemComponent } from './encoder/encoder-item.component';
-import { ENCODER_DESCRIPTOR } from './encoder/encoder-item.model';
+import { ENCODER_DESCRIPTOR, ENCODER_MODE_DESCRIPTOR } from './encoder/encoder-item.model';
 import { PracticeItemComponent } from './practice/practice-item.component';
 import { PRACTICE_DESCRIPTOR } from './practice/practice-item.model';
 import { TextBlurItemComponent } from './text-blur/text-blur-item.component';
@@ -71,6 +71,7 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'audio-output': { component: AudioOutputItemComponent, descriptor: AUDIO_OUTPUT_DESCRIPTOR, needsAudio: true },
   vibration: { component: VibrationItemComponent, descriptor: VIBRATION_DESCRIPTOR },
   encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
+  'encoder-mode': { component: EncoderItemComponent, descriptor: ENCODER_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
   'practice': { component: PracticeItemComponent, descriptor: PRACTICE_DESCRIPTOR },
   'text-blur': { component: TextBlurItemComponent, descriptor: TEXT_BLUR_DESCRIPTOR },
   'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },

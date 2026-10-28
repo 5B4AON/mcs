@@ -6,11 +6,14 @@ import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
   NgZone, ViewChild
 } from '@angular/core';
-import { SettingsService } from '../../services/settings.service';
+import { AppSettings, SettingsService } from '../../services/settings.service';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
 import { KeyerService } from '../../services/keyer.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
 import { PracticeService } from '../../services/practice.service';
+import { LensService } from '../../services/lens.service';
+import { AudioDeviceService } from '../../services/audio-device.service';
+import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
 
@@ -48,7 +51,21 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** True when the on-screen keyboard is likely open (viewport significantly shorter than window) */
   viewportKeyboardOpen = false;
-  inputMode: 'key' | 'type' = 'key';
+
+  /** Key or Type, remembered between sessions (saved with the settings and presets). */
+  get inputMode(): 'key' | 'type' {
+    return this.settings.settings().fullscreenInputMode;
+  }
+
+  /** Lens mode (latest character shown large); remembered like the input mode. */
+  get lensMode(): boolean {
+    return this.settings.settings().fullscreenLensEnabled;
+  }
+
+  /** Font stack chosen in the fullscreen menu. */
+  get fontStack(): string {
+    return fullscreenFontStack(this.settings.settings().fullscreenFont);
+  }
 
   /** Controls overlay height so it stays above the on-screen keyboard */
   overlayHeight: string | null = null;
@@ -67,6 +84,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private encoder: MorseEncoderService,
     private keyer: KeyerService,
     private practice: PracticeService,
+    private lens: LensService,
+    private devices: AudioDeviceService,
     private zone: NgZone,
   ) {}
 
@@ -74,15 +93,21 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     // Subscribe to VisualViewport changes so the overlay shrinks when
     // the on-screen keyboard appears on mobile devices.
     this.setupVisualViewport();
+    // Restore the remembered choices: mapped keys only act in Key mode, and Lens starts recording.
+    this.keyer.setKeyboardMappingsEnabled(this.inputMode === 'key');
+    this.lens.setEnabled(this.lensMode);
   }
 
   ngAfterViewInit(): void {
     if (this.fullscreenDialog) {
-      focusDialog(this.fullscreenDialog.nativeElement, '.fs-conversation');
+      focusDialog(this.fullscreenDialog.nativeElement, this.inputMode === 'type' ? '.fs-type-input' : '.fs-conversation');
     }
   }
 
   ngOnDestroy(): void {
+    this.lens.setEnabled(false);
+    // Closing by any route (Back, Escape) must give mapped keys back to the main screen
+    this.keyer.setKeyboardMappingsEnabled(true);
     // Clean up VisualViewport listeners
     if (window.visualViewport && this.vvHandler) {
       window.visualViewport.removeEventListener('resize', this.vvHandler);
@@ -132,13 +157,28 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     this.closed.emit();
   }
 
-  /** Switch the temporary input choice without changing saved settings. */
+  /** Switch between Key and Type and remember the choice. */
   setInputMode(mode: 'key' | 'type'): void {
-    this.inputMode = mode;
+    this.remember({ fullscreenInputMode: mode });
     this.keyer.setKeyboardMappingsEnabled(mode === 'key');
     if (mode === 'key' && this.settings.settings().encoderMode === 'practice') this.practice.abort();
     if (mode === 'type') this.conversationView?.focusTypeInput();
     else this.conversationView?.focusMain();
+  }
+
+  /** Switch Lens on or off and remember the choice; the input mode is unchanged. */
+  toggleLens(): void {
+    this.remember({ fullscreenLensEnabled: !this.lensMode });
+    this.lens.setEnabled(this.lensMode);
+    // Keep the on-screen keyboard up in Type mode (same synchronous focus as the Key/Type toggle)
+    if (this.inputMode === 'type') this.conversationView?.focusTypeInput();
+    else this.conversationView?.focusMain();
+  }
+
+  /** Update a fullscreen setting and save it to the current device profile, like the toolbar does. */
+  private remember(patch: Partial<AppSettings>): void {
+    this.settings.update(patch);
+    this.settings.save(this.devices.inputDevices(), this.devices.outputDevices());
   }
 
   /** Open the help dialog (delegates to parent via output event) */

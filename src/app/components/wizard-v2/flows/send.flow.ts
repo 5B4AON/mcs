@@ -5,7 +5,7 @@
 import { all, answerIncludes, any, not } from '../engine/conditions';
 import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
-import { farnsworthStep, soundStep, speedStep } from './shared-steps';
+import { farnsworthStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
 const METHODS: {
@@ -15,17 +15,17 @@ const METHODS: {
   phrase: string;
   key: 'keyboardKeyerEnabled' | 'mouseKeyerEnabled' | 'touchKeyerEnabled' | 'midiInputEnabled';
 }[] = [
-  { id: 'keyboard', label: 'Keyboard key or paddle', phrase: 'keyboard key or paddle', key: 'keyboardKeyerEnabled' },
+  { id: 'keyboard', label: 'Keyboard keyer', phrase: 'keyboard key or paddle', key: 'keyboardKeyerEnabled' },
   { id: 'mouse', label: 'Mouse keyer', phrase: 'mouse keyer', key: 'mouseKeyerEnabled' },
   { id: 'touch', label: 'Touch keyer', phrase: 'touch keyer', key: 'touchKeyerEnabled' },
   { id: 'midi', label: 'MIDI keyer', phrase: 'MIDI keyer', key: 'midiInputEnabled' },
 ];
 
 /** Each chosen keyer is switched on, each unchosen one off. */
-const FORCED: ForcedSetting[] = METHODS.flatMap(m => [
+const FORCED: ForcedSetting[] = [...METHODS.flatMap(m => [
   { key: m.key, value: true, label: `Turn the ${m.phrase} on`, when: answerIncludes('methods', m.id) },
   { key: m.key, value: false, label: `Turn the ${m.phrase} off`, when: not(answerIncludes('methods', m.id)) },
-]);
+]), ...screenForced('key')];
 
 /**
  * True when a chosen keyer has a paddle set up: a paddle keyboard or MIDI
@@ -126,5 +126,6 @@ export const SEND_FLOW: WizardFlow = {
     soundStep({
       detail: 'Your keying is played through it, so you hear what you send.',
     }),
+    screenStep('key'),
   ],
 };

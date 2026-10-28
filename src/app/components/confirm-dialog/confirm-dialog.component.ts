@@ -13,6 +13,7 @@ import {
   ViewChild,
 } from '@angular/core';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { BackdropClickDirective } from '../backdrop-click.directive';
 
 /**
  * A reusable confirmation dialog component.
@@ -25,6 +26,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 @Component({
   selector: 'app-confirm-dialog',
   standalone: true,
+  imports: [BackdropClickDirective],
   templateUrl: './confirm-dialog.component.html',
   styleUrls: ['./confirm-dialog.component.css'],
 })

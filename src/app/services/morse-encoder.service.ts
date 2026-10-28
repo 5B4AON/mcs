@@ -13,9 +13,10 @@ import { WinkeyerOutputService } from './winkeyer-output.service';
 import { MidiOutputService } from './midi-output.service';
 import { FirebaseRtdbService } from './firebase-rtdb.service';
 import { LoopDetectionService } from './loop-detection.service';
+import { LensService } from './lens.service';
 
 /** Queue entry for playback of received characters through all matching outputs */
-interface SidetoneQueueEntry { char: string; source: 'rx' | 'tx'; wpm?: number; }
+interface SidetoneQueueEntry { char: string; source: 'rx' | 'tx'; wpm?: number; name?: string; color?: string; }
 
 /**
  * Morse Encoder Service — converts typed text to perfectly timed morse output.
@@ -77,6 +78,7 @@ export class MorseEncoderService {
     private winkeyerOutput: WinkeyerOutputService,
     private rtdbOutput: FirebaseRtdbService,
     private loopDetection: LoopDetectionService,
+    private lens: LensService,
   ) {}
 
   /** Enqueue text for sending */
@@ -259,6 +261,11 @@ export class MorseEncoderService {
     }
 
     const morse = MORSE_TABLE[char];
+    // Lens follows playback; Copy Practice has its own view
+    const lensMeta = s.encoderMode === 'practice'
+      ? null
+      : { source, name: s.encoderName || undefined, color: s.encoderColor || undefined };
+    if (lensMeta) this.lens.show('encoder', lensMeta, '', char, morse ?? '');
     if (!morse) return; // skip unknown chars
 
     for (let i = 0; i < morse.length; i++) {
@@ -266,6 +273,7 @@ export class MorseEncoderService {
 
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
+      if (lensMeta) this.lens.show('encoder', lensMeta, morse.slice(0, i + 1), char, morse);
 
       // Emit element-start for sprite animation
       this.elementEvent$.next({ down: true });
@@ -356,8 +364,8 @@ export class MorseEncoderService {
    * includes the given source. Used for incoming RTDB characters.
    * @param wpm Optional WPM from the remote sender; falls back to local encoderWpm
    */
-  enqueueRxPlayback(char: string, source: 'rx' | 'tx' = 'rx', wpm?: number): void {
-    this.sidetoneQueue.push({ char, source, wpm });
+  enqueueRxPlayback(char: string, source: 'rx' | 'tx' = 'rx', wpm?: number, name?: string, color?: string): void {
+    this.sidetoneQueue.push({ char, source, wpm, name, color });
     if (!this.sidetonePlaying) {
       this.processSidetoneQueue();
     }
@@ -370,16 +378,21 @@ export class MorseEncoderService {
     try {
       while (this.sidetoneQueue.length > 0) {
         const entry = this.sidetoneQueue.shift()!;
-        await this.playRxChar(entry.char, entry.source, entry.wpm);
+        await this.playRxChar(entry.char, entry.source, entry.wpm, entry.name, entry.color);
       }
     } finally {
       this.sidetonePlaying = false;
     }
   }
 
-  private async playRxChar(char: string, source: 'rx' | 'tx', wpm?: number): Promise<void> {
-    // Skip output if loop is suppressed
-    if (this.loopDetection.isSuppressed) return;
+  private async playRxChar(char: string, source: 'rx' | 'tx', wpm?: number, name?: string, color?: string): Promise<void> {
+    const lensMeta = { source, name, color };
+    // Skip output if loop is suppressed (Lens still shows the received character)
+    if (this.loopDetection.isSuppressed) {
+      const morse = MORSE_TABLE[char];
+      if (char !== ' ' && morse) this.lens.show('rtdb', lensMeta, morse, char);
+      return;
+    }
     const charWpm = wpm ?? this.settings.settings().encoderWpm;
     const baseTimings = timingsFromWpm(charWpm);
     const timings = adjustGapTimings(baseTimings, charWpm, source, this.settings.settings());
@@ -390,11 +403,13 @@ export class MorseEncoderService {
     }
 
     const morse = MORSE_TABLE[char];
+    this.lens.show('rtdb', lensMeta, '', char, morse ?? '');
     if (!morse) return;
 
     for (let i = 0; i < morse.length; i++) {
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
+      this.lens.show('rtdb', lensMeta, morse.slice(0, i + 1), char, morse);
 
       // Play through all outputs based on their forward settings
       await Promise.all([

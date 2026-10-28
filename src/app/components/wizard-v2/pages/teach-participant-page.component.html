@@ -1,8 +1,8 @@
 <label class="wizard-field">Input for {{ profile.role === 'teacher' ? 'the teacher' : 'this student' }}
   <select [ngModel]="inputType" (ngModelChange)="inputType = $event; error = ''">
-    <option value="keyboard">Keyboard key or paddle</option>
-    <option value="mouse">Shared mouse</option>
-    <option value="touch">Touch controls</option>
+    <option value="keyboard">Keyboard keyer</option>
+    <option value="mouse">Mouse keyer</option>
+    <option value="touch">Touch keyer</option>
     <option value="midi" [disabled]="!midiSupported">MIDI key or paddle</option>
     <option value="serial" [disabled]="!serialSupported">Serial key or paddle</option>
   </select>

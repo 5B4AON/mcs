@@ -1,4 +1,4 @@
-<div class="confirm-overlay" (click)="cancel()">
+<div class="confirm-overlay" (appBackdropClick)="cancel()">
   <div #dialog class="confirm-dialog" (click)="$event.stopPropagation()" role="alertdialog"
        aria-modal="true" aria-labelledby="confirm-dialog-title" tabindex="-1"
        (keydown)="onDialogKeydown($event)">

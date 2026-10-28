@@ -27,6 +27,9 @@ export class EncoderItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
+  /** `mode` shows only how typed text is sent (live or on Enter), used on its own wizard page; the card has no such choice, the main screen does. */
+  @Input() part: 'details' | 'mode' = 'details';
+
   readonly scope = inject(SETTINGS_SCOPE);
 
   /** Current values from the scope */

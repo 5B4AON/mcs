@@ -10,6 +10,7 @@ import { SerialKeyOutputService } from './serial-key-output.service';
 import { VibrationOutputService } from './vibration-output.service';
 import { MidiOutputService } from './midi-output.service';
 import { LoopDetectionService } from './loop-detection.service';
+import { LensService } from './lens.service';
 
 /**
  * Options for onKeyDown / onKeyUp calls.
@@ -204,6 +205,7 @@ export class MorseDecoderService {
     private vibrationOutput: VibrationOutputService,
     private midiOutput: MidiOutputService,
     private loopDetection: LoopDetectionService,
+    private lens: LensService,
   ) {
     this.resetCalibration();
   }
@@ -399,6 +401,7 @@ export class MorseDecoderService {
     }
 
     this.updatePatternSignals(pipeline);
+    this.lens.show(`decoder:${path}`, this.lensMeta(pipeline), pipeline.pattern, null);
 
     // Start silence timers for character/word boundary detection.
     // Use keyer WPM timing for perfect elements, adaptive dit average otherwise.
@@ -441,6 +444,7 @@ export class MorseDecoderService {
     this.rxCurrentPattern.set('');
     this.txCurrentPattern.set('');
     this.currentPattern.set('');
+    this.lens.reset();
   }
 
   // ---- Pipeline management ----
@@ -542,6 +546,11 @@ export class MorseDecoderService {
     return pipeline.source === 'tx' ? this.txEstimatedWpm() : this.rxEstimatedWpm();
   }
 
+  /** Source, name and colour of a pipeline for the Lens display. */
+  private lensMeta(pipeline: DecoderPipeline) {
+    return { source: pipeline.source, name: pipeline.name || undefined, color: pipeline.color || undefined };
+  }
+
   // ---- Pattern signal management ----
 
   /**
@@ -600,6 +609,7 @@ export class MorseDecoderService {
     this.taggedOutput.update(arr => [...arr, {
       type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial, name, color,
     }]);
+    this.lens.complete(`decoder:${path}`, char);
     pipeline.pattern = '';
     // A real character was decoded — allow a future trailing space
     pipeline.trailingSpaceEmitted = false;

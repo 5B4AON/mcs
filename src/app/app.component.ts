@@ -528,7 +528,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         const playbackWpm = this.settings.settings().rtdbInputOverrideWpm
           ? this.settings.settings().encoderWpm
           : wpm;
-        this.encoder.enqueueRxPlayback(char, source, playbackWpm);
+        this.encoder.enqueueRxPlayback(char, source, playbackWpm, effectiveName, effectiveColor);
       })
     );
 
@@ -619,6 +619,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ---- Browser back-button modal handling ----
 
+  /** Open the full screen once the wizard has left the history (set by the wizard's screen choice) */
+  private fullscreenAfterWizard = false;
+
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
 
@@ -701,6 +704,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.ignoringPopState) {
       this.ignoringPopState = false;
+      // The wizard's history entries are gone now, so the full screen can take its own entry
+      if (this.fullscreenAfterWizard) {
+        this.fullscreenAfterWizard = false;
+        this.openModal();
+      }
       return;
     }
     if (this.modalHistoryDepth > 0) {
@@ -1473,6 +1481,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       history.go(-steps);
     }
     window.requestAnimationFrame(() => {
+      if (this.activeModal || this.fullscreenAfterWizard) return;
       if (goal === 'decode') {
         this.audioToggleButtonRef?.nativeElement.focus();
       } else if (goal === 'practice' && this.settings.settings().practiceFeedbackMode !== 'typealong') {
@@ -1481,6 +1490,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.encoderInputRef?.nativeElement.focus();
       }
     });
+  }
+
+  /**
+   * The guide's last step chose the full screen (or Lens): open it once the wizard has left.
+   * When the browser history is still being rewound, wait for that to finish first.
+   */
+  onWizardFullscreen(): void {
+    if (this.ignoringPopState) this.fullscreenAfterWizard = true;
+    else this.openModal();
   }
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */

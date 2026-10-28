@@ -3,6 +3,7 @@
  */
 
 import { AppSettings } from './settings.service';
+import { FULLSCREEN_FONTS } from '../fullscreen-fonts';
 
 export const SETTINGS_SNAPSHOT_MAX_BYTES = 1_048_576;
 
@@ -132,6 +133,18 @@ export const SETTINGS_TRANSFER_FIELDS = [
   'spriteAnimateMic',
   'textBlurEnabled',
   'textBlurAppliesTo',
+  'fullscreenInputMode',
+  'fullscreenLensEnabled',
+  'fullscreenFont',
+  'fullscreenFontSize',
+  'fullscreenFontBold',
+  'fullscreenLineSpacing',
+  'fullscreenRxForeground',
+  'fullscreenRxBackground',
+  'fullscreenTxForeground',
+  'fullscreenTxBackground',
+  'fullscreenBufferForeground',
+  'fullscreenSendingForeground',
   'wakeLockEnabled',
   'showProsigns',
   'prosignActionsEnabled',
@@ -195,6 +208,8 @@ const ENUM_VALUES: Record<string, readonly string[]> = {
   touchPaddleMode: ['iambic-b', 'iambic-a', 'ultimatic', 'single-lever'],
   rtdbInputSource: ['rx', 'tx'],
   textBlurAppliesTo: ['rx', 'tx', 'both'],
+  fullscreenInputMode: ['key', 'type'],
+  fullscreenFont: FULLSCREEN_FONTS.map(f => f.id),
   farnsworthInputMode: ['wpm', 'multiplier'],
   farnsworthAppliesTo: ['both', 'rx', 'tx'],
   practiceContentMode: ['characters', 'words', 'callsigns'],
@@ -216,6 +231,22 @@ const ENUM_VALUES: Record<string, readonly string[]> = {
   'midiOutputMappings[].forward': ['rx', 'tx', 'both'],
   'midiOutputMappings[].mode': ['straightKey', 'paddle'],
   'prosignActions.*.action': ['newLine', 'newParagraph', 'clearLastWord', 'clearLine', 'clearScreen'],
+};
+
+/** Hex colours only, so a settings file cannot put arbitrary CSS into the display. */
+const COLOR_FIELDS = new Set([
+  'fullscreenRxForeground',
+  'fullscreenRxBackground',
+  'fullscreenTxForeground',
+  'fullscreenTxBackground',
+  'fullscreenBufferForeground',
+  'fullscreenSendingForeground',
+]);
+
+/** Allowed ranges, matching the fullscreen menu sliders. */
+const NUMBER_RANGES: Record<string, [number, number]> = {
+  fullscreenFontSize: [24, 184],
+  fullscreenLineSpacing: [-0.3, 0.5],
 };
 
 const INTEGER_FIELDS = new Set([
@@ -363,9 +394,15 @@ function matchesValue(value: unknown, template: unknown, path: string): boolean 
   }
 
   if (typeof template === 'number') {
+    const range = NUMBER_RANGES[path];
     return typeof value === 'number'
       && Number.isFinite(value)
-      && (!INTEGER_FIELDS.has(path) || Number.isSafeInteger(value));
+      && (!INTEGER_FIELDS.has(path) || Number.isSafeInteger(value))
+      && (!range || (value >= range[0] && value <= range[1]));
+  }
+
+  if (COLOR_FIELDS.has(path)) {
+    return typeof value === 'string' && /^#[0-9a-fA-F]{6}$/.test(value);
   }
 
   return typeof value === typeof template;

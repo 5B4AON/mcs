@@ -6,6 +6,7 @@ import { AfterViewInit, Component, ElementRef, EventEmitter, Output, ViewChild }
 import { GoalNavigatorComponent } from '../settings-modal/goal-navigator/goal-navigator.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import { focusDialog, trapDialogTabKey } from '../modal-accessibility';
+import { BackdropClickDirective } from '../backdrop-click.directive';
 
 /**
  * Setup Wizard modal: the plain-language goal list, in its own dialog of the
@@ -15,7 +16,7 @@ import { focusDialog, trapDialogTabKey } from '../modal-accessibility';
 @Component({
   selector: 'app-goal-navigator-modal',
   standalone: true,
-  imports: [GoalNavigatorComponent],
+  imports: [GoalNavigatorComponent, BackdropClickDirective],
   templateUrl: './goal-navigator-modal.component.html',
   styleUrls: ['./goal-navigator-modal.component.css'],
 })

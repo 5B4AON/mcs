@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
+import { BackdropClickDirective } from '../../backdrop-click.directive';
 
 /** A named group of emojis displayed as a tab in the picker */
 interface EmojiCategory {
@@ -23,7 +24,7 @@ interface EmojiCategory {
 @Component({
   selector: 'app-emoji-picker',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, BackdropClickDirective],
   templateUrl: './emoji-picker.component.html',
   styleUrls: ['./emoji-picker.component.css']
 })

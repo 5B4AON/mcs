@@ -15,6 +15,7 @@ import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
+import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import * as practiceUi from '../../../practice-ui.utils';
 
 /**
@@ -34,7 +35,7 @@ import * as practiceUi from '../../../practice-ui.utils';
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [],
+  imports: [FsLensViewComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -50,6 +51,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   @Input() viewportKeyboardOpen = false;
   /** Temporary fullscreen input choice; it is not stored in settings. */
   @Input() inputMode: 'key' | 'type' = 'key';
+  /** Lens mode: show only the latest character and its symbols (temporary, not saved). */
+  @Input() lensMode = false;
   /** Requests a temporary input choice change from the modal shell. */
   @Output() inputModeChange = new EventEmitter<'key' | 'type'>();
 
@@ -74,6 +77,21 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Practice briefing, feedback and typed text are shown only in Type mode so Key mode shows keyed characters. */
   get practiceView(): boolean {
     return this.isPractice && this.inputMode === 'type';
+  }
+
+  /** Lens replaces the conversation, except while Copy Practice uses it for its own text. */
+  get lensView(): boolean {
+    return this.lensMode && !this.practiceView;
+  }
+
+  /** Side space kept clear of the floating transmit and reveal buttons (otherwise 10% each side). */
+  get lensSideInset(): string {
+    return this.inputMode === 'type' || this.blurMode ? 'max(10%, 64px)' : '10%';
+  }
+
+  /** Bottom space kept clear of the touch keyer buttons. */
+  get lensBottomInset(): string {
+    return this.inputMode === 'key' && this.settings.settings().touchKeyerEnabled ? '100px' : '0px';
   }
 
   /** Pending encoder characters shown inline with the conversation. */
