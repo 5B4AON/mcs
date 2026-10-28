@@ -379,10 +379,9 @@
 
 <!-- ========== GUIDED SETUP ========== -->
 @if (showWizard) {
-  <app-setup-wizard [goal]="wizardGoal" (closed)="closeWizard()"
-                    (tryRequested)="onWizardTry()"
-                    (detectorEnabled)="onWizardDetectorEnabled()"
-                    (openFullscreenRequested)="onWizardOpenFullscreen()"></app-setup-wizard>
+  <app-setup-wizard-v2 [goal]="wizardGoal" [audioRunning]="audioRunning" (closed)="closeWizard()"
+                       (tryRequested)="onWizardTry($event)"
+                       (detectorEnabled)="onWizardDetectorEnabled()"></app-setup-wizard-v2>
 }
 
 <!-- ========== FULLSCREEN MODAL ========== -->

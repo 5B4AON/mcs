@@ -1,0 +1,33 @@
+<!-- Angular projects content into a single <ng-content> per selector, so the body lives in one template used by both modes -->
+<ng-template #body><ng-content></ng-content></ng-template>
+
+@if (mode === 'card') {
+  <div class="settings-card" [id]="'settings-card-' + cardId" [class.disabled-card]="enabled === false" [class.show-required]="showRequired">
+    <div class="settings-card-header" (click)="toggleExpanded()">
+      <button type="button" class="settings-card-title" [attr.aria-expanded]="expanded" [attr.aria-controls]="'settings-card-' + cardId"
+              (click)="toggleExpanded(); $event.stopPropagation()">
+        <span class="settings-card-chevron">{{ expanded ? '&#9660;' : '&#9654;' }}</span>
+        <span class="settings-card-name">{{ title }}</span>
+        <ng-content select="[item-badges]"></ng-content>
+      </button>
+      <ng-content select="[item-header-extra]"></ng-content>
+      @if (enabled !== null) {
+        <label class="toggle-switch" (click)="$event.stopPropagation()">
+          <input type="checkbox" [checked]="enabled" [disabled]="toggleDisabled" (change)="onToggle($event)">
+          <span class="toggle-slider"></span>
+        </label>
+      }
+    </div>
+    @if (expanded) {
+      <div class="settings-card-body">
+        <ng-container *ngTemplateOutlet="body"></ng-container>
+      </div>
+    }
+  </div>
+} @else {
+  <div class="settings-card" [id]="'settings-card-' + cardId">
+    <div class="settings-card-body">
+      <ng-container *ngTemplateOutlet="body"></ng-container>
+    </div>
+  </div>
+}

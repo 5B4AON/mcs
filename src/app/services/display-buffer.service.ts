@@ -294,6 +294,23 @@ export class DisplayBufferService {
     return null;
   }
 
+  /**
+   * Name shown with sent text: the given name, else the RTDB output name when
+   * that route forwards this source. Lines are split by name, so everything
+   * that pushes or predicts sent lines must use the same value.
+   */
+  displayNameFor(type: 'rx' | 'tx', entryName?: string): string | undefined {
+    if (entryName) return entryName;
+    const s = this.settings.settings();
+    if (s.rtdbOutputEnabled && s.rtdbOutputName.trim()) {
+      const fwd = s.rtdbOutputForward;
+      if (fwd === 'both' || fwd === type) {
+        return s.rtdbOutputName.trim();
+      }
+    }
+    return undefined;
+  }
+
   /** Clear both display buffers at once. */
   clearAll(): void {
     this.mainOutput.clear();

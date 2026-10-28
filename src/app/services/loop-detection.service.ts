@@ -53,6 +53,9 @@ export class LoopDetectionService {
   /** Cooldown (ms) after last loop detection before auto-clearing */
   private readonly COOLDOWN_MS = 8000;
 
+  /** Extra time (ms) the banner stays up after a feedback report, so it can be read */
+  private readonly FEEDBACK_EXTRA_MS = 4000;
+
   /** Maximum buffer size to prevent unbounded memory growth */
   private readonly MAX_BUFFER = 50;
 
@@ -98,6 +101,16 @@ export class LoopDetectionService {
       return true;
     }
     return this.loopDetected();
+  }
+
+  /**
+   * Report a feedback problem found outside the character-matching logic
+   * (for example a tone detector that hears the app's own sidetone).
+   * Shows the banner and suppresses outputs for the usual cooldown.
+   */
+  reportFeedback(message: string): void {
+    this.triggerSuppression(this.FEEDBACK_EXTRA_MS);
+    this.loopMessage.set(message);
   }
 
   /** Manually clear loop suppression (e.g. user acknowledges the warning) */
@@ -155,7 +168,7 @@ export class LoopDetectionService {
     return false;
   }
 
-  private triggerSuppression(): void {
+  private triggerSuppression(extraMs = 0): void {
     this.consecutiveDetections++;
     this.loopDetected.set(true);
     this.loopMessage.set(
@@ -168,7 +181,7 @@ export class LoopDetectionService {
     if (this.cooldownTimer) {
       clearTimeout(this.cooldownTimer);
     }
-    const cooldown = this.COOLDOWN_MS * Math.min(this.consecutiveDetections, 4);
+    const cooldown = this.COOLDOWN_MS * Math.min(this.consecutiveDetections, 4) + extraMs;
     this.cooldownTimer = setTimeout(() => {
       // Only auto-clear if no new loop is detected
       this.loopDetected.set(false);

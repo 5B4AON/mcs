@@ -1,0 +1,63 @@
+<!-- Keyboard Keyer -->
+<app-item-shell cardId="keyboard-keyer-card" title="Keyboard Keyer" [mode]="mode"
+                [enabled]="s().keyboardKeyerEnabled"
+                (enabledChange)="onEnabledChange($event)">
+  <span item-badges>
+    @for (src of sourceBadges(); track src) {
+      <span class="source-badge" [class.source-rx]="src === 'rx'" [class.source-tx]="src === 'tx'">{{ src === 'rx' ? 'RX' : 'TX' }}</span>
+    }
+  </span>
+
+  @if (mode === 'card') {
+    <app-mapping-list [mappings]="s().keyboardInputMappings"
+                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
+      <ng-template let-mapping>
+        @if (mapping.name) {
+          <span class="midi-mapping-name" [style.color]="nameColor(mapping)">{{ mapping.name }}</span>
+        }
+        <span class="midi-mapping-mode">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+        <span class="midi-mapping-value">{{ keySummary(mapping) }}</span>
+        <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
+        @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
+          <span class="midi-mapping-reverse" title="Paddles reversed">↔</span>
+        }
+        @if (mapping.mode === 'paddle') {
+          <span class="midi-mapping-mode-detail" title="Paddle mode">{{ paddleModeLabel(mapping.paddleMode) }}</span>
+        }
+      </ng-template>
+    </app-mapping-list>
+  }
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().keyboardKeyerEnabled"
+             (change)="onEnabledChange($any($event.target).checked)">
+      Use the keyboard as a key
+    </label>
+    <div class="keyer-hint">
+      @if (s().keyboardKeyerEnabled) {
+        Keyboard keying is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+      } @else {
+        Tick the box to set up its mappings on the next pages.
+      }
+    </div>
+  }
+
+  <div class="keyer-hint">
+    Map one or more keyboard keys as a straight key or paddle.
+    Each paddle mapping has its own mode and independent keyer.
+  </div>
+</app-item-shell>
+
+<!-- Keyboard input edit modal (hosted here because it's triggered from this card) -->
+@if (showEditModal) {
+  <app-keyboard-input-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [allMappings]="s().keyboardInputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-keyboard-input-edit-modal>
+}

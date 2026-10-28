@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -18,6 +18,7 @@ import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
+import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
@@ -25,7 +26,7 @@ import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
 import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.component';
-import { SetupWizardComponent } from './components/setup-wizard/setup-wizard.component';
+import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.component';
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
 import * as practiceUi from './practice-ui.utils';
@@ -55,7 +56,7 @@ import * as practiceUi from './practice-ui.utils';
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardComponent, GoalNavigatorModalComponent],
+  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -83,7 +84,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showGoals = false;
   /** Whether Presets, opened from the Setup Wizard, are showing */
   showGoalPresets = false;
-  /** Guided setup state */
+  /** Guided setup state: the wizard of one goal, opened over the goal list */
   showWizard = false;
   wizardGoal: WizardGoalId = 'type';
   /** Whether the Help modal is visible */
@@ -140,7 +141,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Visible control to focus if the fullscreen menu item is hidden when the view closes */
   fullscreenFocusFallback: HTMLElement | null = null;
 
-  @ViewChild(SetupWizardComponent) private wizardRef?: SetupWizardComponent;
+  @ViewChild(SetupWizardV2Component) private wizardRef?: SetupWizardV2Component;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
@@ -154,6 +155,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   spriteReady = false;
 
   private subs: Subscription[] = [];
+  private readonly helpLinks = inject(HelpLinkService);
 
   /** Bound handler for visualViewport resize — stored for cleanup */
   private vvResizeHandler: (() => void) | null = null;
@@ -450,6 +452,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnInit(): void {
+    this.subs.push(this.helpLinks.requested$.subscribe(id => this.showHelpOnTop(id)));
     try {
       this.showTryMorseGuide = localStorage.getItem('mcsTryMorseGuideDismissed') !== '1';
     } catch {
@@ -618,7 +621,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
-  private openFullscreenAfterWizardClose = false;
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
@@ -637,7 +639,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Close the topmost modal — called by popstate (back button) */
   private closeActiveModal(): void {
-    if (this.showGoalPresets) {
+    // Help and the symbols reference open on top of every other dialog, so they close first
+    if (this.showHelp) {
+      this.showHelp = false;
+    } else if (this.showSymbolsRef) {
+      this.showSymbolsRef = false;
+    } else if (this.showGoalPresets) {
       this.dismissGoalPresets(false);
     } else if (this.showWizard) {
       if (this.wizardRef?.hasDraft()) {
@@ -647,10 +654,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       } else {
         this.showWizard = false;
       }
-    } else if (this.showHelp) {
-      this.showHelp = false;
-    } else if (this.showSymbolsRef) {
-      this.showSymbolsRef = false;
     } else if (this.showSettings) {
       this.showSettings = false;
     } else if (this.showGoals) {
@@ -698,10 +701,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.ignoringPopState) {
       this.ignoringPopState = false;
-      if (this.openFullscreenAfterWizardClose) {
-        this.openFullscreenAfterWizardClose = false;
-        this.openModal(this.fullscreenFocusFallback);
-      }
       return;
     }
     if (this.modalHistoryDepth > 0) {
@@ -1067,8 +1066,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   onEncoderInput(textarea: HTMLTextAreaElement): void {
-    const pos = textarea.selectionStart;
-    textarea.value = textarea.value.toUpperCase();
+    let pos = textarea.selectionStart;
+    let value = textarea.value.toUpperCase();
+    if (this.settings.settings().encoderMode !== 'practice') {
+      // Spaces are ignored at the start and repeated spaces collapse to one as you type
+      // (a trailing space is allowed while typing and trimmed when sending)
+      const clean = (text: string) => text.replace(/^\s+/, '').replace(/[ \t]{2,}/g, ' ');
+      pos = clean(value.slice(0, pos)).length;
+      value = clean(value);
+    }
+    textarea.value = value;
     textarea.selectionStart = textarea.selectionEnd = pos;
     this.encoderInputHasText = textarea.value.trim().length > 0;
     requestAnimationFrame(() => this.checkSpriteSpace());
@@ -1382,15 +1389,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    *   use our own callsign so the local display mirrors the remote view.
    */
   private getDisplayName(type: 'rx' | 'tx', entryName?: string): string | undefined {
-    if (entryName) return entryName;
-    const s = this.settings.settings();
-    if (s.rtdbOutputEnabled && s.rtdbOutputName.trim()) {
-      const fwd = s.rtdbOutputForward;
-      if (fwd === 'both' || fwd === type) {
-        return s.rtdbOutputName.trim();
-      }
-    }
-    return undefined;
+    return this.displayBuffers.displayNameFor(type, entryName);
   }
 
   // ---- Settings handlers ----
@@ -1442,14 +1441,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     window.setTimeout(() => document.querySelector<HTMLElement>('app-goal-navigator-modal .settings-action-btn[aria-label="Presets"]')?.focus());
   }
 
-  /** Open the guided setup for a goal, on top of Settings */
+  /** Open the guided setup for a goal, on top of the goal list */
   openWizard(goal: WizardGoalId): void {
     this.wizardGoal = goal;
     this.showWizard = true;
     this.pushModalState('wizard');
   }
 
-  /** Close the guided setup, leaving Settings as it was */
+  /** Close the guided setup, leaving the goal list as it was */
   closeWizard(): void {
     this.showWizard = false;
     this.popModalState();
@@ -1460,9 +1459,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.audioRunning) await this.cwInput.start();
   }
 
-  /** Leave the guided setup and Settings together, back to the main screen, keeping the applied settings unsaved */
-  onWizardTry(): void {
-    const goal = this.wizardGoal;
+  /** Leave the guided setup and the goal list/Settings together, back to the main screen, keeping the applied settings unsaved */
+  onWizardTry(goal: string): void {
     const steps = Math.min(this.modalHistoryDepth, (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0));
     this.showWizard = false;
     this.showSettings = false;
@@ -1483,25 +1481,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.encoderInputRef?.nativeElement.focus();
       }
     });
-  }
-
-  /** Close the wizard and settings before opening the shared conversation. */
-  onWizardOpenFullscreen(): void {
-    const steps = Math.min(this.modalHistoryDepth, (this.showWizard ? 1 : 0) + (this.showSettings || this.showGoals ? 1 : 0));
-    this.showWizard = false;
-    this.showSettings = false;
-    this.showGoals = false;
-    this.defaultsResetInSettings = false;
-    this.defaultsResetSaved = false;
-    this.fullscreenFocusFallback = this.encoderInputRef?.nativeElement ?? null;
-    if (steps > 0) {
-      this.modalHistoryDepth -= steps;
-      this.openFullscreenAfterWizardClose = true;
-      this.ignoringPopState = true;
-      history.go(-steps);
-    } else {
-      this.openModal(this.fullscreenFocusFallback);
-    }
   }
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */
@@ -1531,6 +1510,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.helpInitialSection = initialSection;
     this.showHelp = true;
     this.pushModalState('help');
+  }
+
+  /** Open Help on top of the current dialogs so closing it returns to them. */
+  private showHelpOnTop(sectionId: string): void {
+    if (this.showHelp) {
+      this.helpInitialSection = sectionId;
+      return;
+    }
+    this.openHelp(sectionId);
   }
 
   /** Close Settings and open the requested Help section. */

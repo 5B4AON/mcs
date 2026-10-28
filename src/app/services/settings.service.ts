@@ -489,7 +489,7 @@ export interface AppSettings {
   farnsworthInputMode: 'wpm' | 'multiplier';
   /** Target effective WPM when inputMode is 'wpm' (range: 5 to encoderWpm) */
   farnsworthEffectiveWpm: number;
-  /** Direct gap multiplier when inputMode is 'multiplier' (range: 1.00 to 10.00) */
+  /** Direct gap multiplier when inputMode is 'multiplier' (Farnsworth: whole numbers 1 to 10; Wordsworth: 1 to 4 in steps of 0.5) */
   farnsworthMultiplier: number;
   /** Wordsworth mode: stretch only word gaps (not inter-character gaps) */
   farnsworthWordsworth: boolean;
@@ -802,7 +802,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   farnsworthEffectiveWpm: 10,
   farnsworthMultiplier: 2,
   farnsworthWordsworth: false,
-  farnsworthAppliesTo: 'rx',
+  farnsworthAppliesTo: 'both',
 
   practiceEnabled: false,
   practiceContentMode: 'characters',
@@ -812,7 +812,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   practiceIncludeNumbers: false,
   practiceIncludePunctuation: false,
   practiceWordLengths: [3, 4, 5],
-  practiceFeedbackMode: 'listen',
+  practiceFeedbackMode: 'typealong',
   practiceRounds: 1,
   practicePipeline: 'local',
   practiceSource: 'rx',

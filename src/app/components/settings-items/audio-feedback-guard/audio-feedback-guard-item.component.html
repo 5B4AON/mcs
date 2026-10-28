@@ -1,0 +1,12 @@
+<div class="keyer-hint">
+  If your speakers play Morse from this app while the detector listens, the sound can loop back
+  into the microphone and feed itself. Turn the sidetone (and any Key Output on an audio channel) off first.
+</div>
+@if (risky().length) {
+  <div class="guard-warning" role="status">
+    <p>Audio output is on: {{ risky().join(', ') }}.</p>
+    <button type="button" class="guard-btn" (click)="turnOff()"><span>Turn audio output off</span></button>
+  </div>
+} @else {
+  <p class="guard-note">No audio output that could cause a loop is on.</p>
+}

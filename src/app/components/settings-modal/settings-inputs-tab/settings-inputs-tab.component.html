@@ -1,12 +1,12 @@
 <!-- Inputs tab — 10 input source settings cards -->
 
-<app-keyboard-keyer-card></app-keyboard-keyer-card>
-<app-encoder-card></app-encoder-card>
-<app-mouse-keyer-card></app-mouse-keyer-card>
-<app-touch-keyer-card></app-touch-keyer-card>
-<app-sprite-key-card></app-sprite-key-card>
-<app-midi-input-card></app-midi-input-card>
-<app-serial-input-card></app-serial-input-card>
-<app-rtdb-input-card (helpRequested)="helpRequested.emit($event)"></app-rtdb-input-card>
-<app-cw-detector-card [audioRunning]="audioRunning"></app-cw-detector-card>
-<app-mic-card [audioRunning]="audioRunning"></app-mic-card>
+<app-encoder-item></app-encoder-item>
+<app-keyboard-keyer-item></app-keyboard-keyer-item>
+<app-mouse-keyer-item></app-mouse-keyer-item>
+<app-touch-keyer-item></app-touch-keyer-item>
+<app-sprite-key-item></app-sprite-key-item>
+<app-midi-input-item></app-midi-input-item>
+<app-serial-input-item></app-serial-input-item>
+<app-rtdb-input-item></app-rtdb-input-item>
+<app-cw-detector-item [audioRunning]="audioRunning"></app-cw-detector-item>
+<app-mic-item [audioRunning]="audioRunning"></app-mic-item>

@@ -83,6 +83,21 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return buffer.slice(this.encoder.sentIndex()).split('');
   });
 
+  /**
+   * True when the next sent character will open a new conversation line (the
+   * last line is empty or belongs to another source, name or colour). The
+   * pending text is then drawn one row lower, so the sent line fills the row
+   * above it and the pending text does not jump when its first letter is played.
+   */
+  readonly encoderStartsNewLine = computed(() => {
+    const s = this.settings.settings();
+    const last = this.displayBuffers.fullscreenConversation.lines().at(-1);
+    if (!last) return true;
+    return last.type !== s.encoderSource
+      || last.name !== this.displayBuffers.displayNameFor(s.encoderSource, s.encoderName || undefined)
+      || last.color !== (s.encoderColor || undefined);
+  });
+
   constructor(
     public settings: SettingsService,
     public decoder: MorseDecoderService,
@@ -240,7 +255,12 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
         const minimum = this.encoder.isSending() ? this.encoder.sentIndex() + 1 : this.encoder.sentIndex();
         if (buffer.length > minimum) this.encoder.setBuffer(buffer.slice(0, -1));
       } else if (inputEvent.data) {
-        for (const char of inputEvent.data) this.encoder.enqueue(char);
+        for (const char of inputEvent.data) {
+          // Ignore a space at the start of a message or right after another space
+          const buffer = this.encoder.buffer();
+          if (/\s/.test(char) && (buffer.length <= this.encoder.sentIndex() || /\s$/.test(buffer))) continue;
+          this.encoder.enqueue(char);
+        }
       }
     }
     this.resetTypeInput(input);

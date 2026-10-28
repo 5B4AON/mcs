@@ -43,6 +43,11 @@
       <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
       <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
     </span>
+    <span class="wpm-indicator" title="Encoder WPM">
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+      <span class="wpm-indicator-label"><span class="label-full">Encoder</span><span class="label-short">ENC</span></span>
+      <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
+    </span>
   </div>
   <span class="rtdb-status-icon" [class.rtdb-connected]="rtdb.inputListening() || rtdb.outputActive()" title="Firebase RTDB">
     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
@@ -85,6 +90,12 @@
           <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration" aria-label="Reset TX Calibration">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           </button>
+        </span>
+        <span class="wpm-pill wpm-pill-interactive">
+          <button class="wpm-btn" aria-label="Decrease encoder speed" (click)="adjustEncoderWpm(-1)">-</button>
+          <span class="wpm-pill-label">Encoder</span>
+          <span class="wpm-pill-value">{{ settings.settings().encoderWpm }}</span>
+          <button class="wpm-btn" aria-label="Increase encoder speed" (click)="adjustEncoderWpm(1)">+</button>
         </span>
         <span class="wpm-pill wpm-pill-interactive">
           <button class="wpm-btn" aria-label="Decrease keyer speed" (click)="adjustWpm('keyerWpm', -1)">-</button>

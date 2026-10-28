@@ -1,0 +1,14 @@
+:host { display: contents; }
+
+.speed-sub { border: 1px solid #334; border-radius: 6px; margin: .4rem 0; background: #1c1f2b; }
+.speed-sub-head {
+  display: flex; align-items: center; gap: .5rem; width: 100%;
+  background: none; border: 0; color: #ccd; font: inherit; padding: .5rem .6rem;
+  cursor: pointer; text-align: left;
+}
+.speed-sub-head:focus-visible { outline: 2px solid #8cf; outline-offset: -2px; }
+.speed-sub-chevron { color: #fc3; font-size: .7rem; }
+.speed-sub-name { flex: 1; font-weight: 600; }
+.speed-sub-value { color: #8cf; font-variant-numeric: tabular-nums; }
+.speed-sub-title { font-weight: 600; padding: .5rem .6rem 0; }
+.speed-sub-body { padding: .2rem .6rem .6rem; }

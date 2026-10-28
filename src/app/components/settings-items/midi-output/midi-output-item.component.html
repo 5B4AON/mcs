@@ -1,0 +1,91 @@
+<!-- MIDI Output -->
+<app-item-shell cardId="midi-output-card" title="MIDI Output" [mode]="mode"
+                [enabled]="s().midiOutputEnabled"
+                [toggleDisabled]="!midiOutput.supported"
+                (enabledChange)="onMidiOutputEnabledChange($event)">
+    <span item-header-extra class="connectivity-badge" [class.connected]="midiOutput.connected()" [class.disconnected]="!midiOutput.connected()">
+      @if (midiOutput.connected()) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+
+  @if (!midiOutput.supported) {
+    <div class="conflict-warning">
+      Web MIDI API is not supported in this browser. Use Chrome or Edge.
+    </div>
+  }
+
+  @if (midiOutput.lastError()) {
+    <div class="conflict-warning">{{ midiOutput.lastError() }}</div>
+  }
+
+  @if (mode === 'card') {
+    <app-mapping-list [mappings]="s().midiOutputMappings"
+                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
+      <ng-template let-mapping>
+        <span class="midi-mapping-mode">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
+        <span class="midi-mapping-value">{{ mappingSummary(mapping) }}</span>
+        <span class="source-badge source-badge-sm" [class.source-rx]="mapping.forward === 'rx'" [class.source-tx]="mapping.forward === 'tx'" [class.source-both]="mapping.forward === 'both'">{{ mapping.forward === 'rx' ? 'RX' : mapping.forward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+    <span class="midi-mapping-connected-icon" (click)="$event.stopPropagation()" [class.connected]="isMappingConnected(mapping)" [class.disconnected]="!isMappingConnected(mapping)" [title]="isMappingConnected(mapping) ? 'MIDI device connected' : 'MIDI device not connected'">
+      @if (isMappingConnected(mapping)) {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="2" x2="12" y2="5"/><rect x="8" y="5" width="8" height="5" rx="2.5"/><rect x="7" y="10" width="10" height="6" rx="3"/><line x1="12" y1="16" x2="12" y2="19"/></g></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><g transform="rotate(-45 12 12)"><line x1="12" y1="1" x2="12" y2="3"/><rect x="8" y="3" width="8" height="4" rx="2.5"/><line x1="10" y1="7" x2="10" y2="9.5"/><line x1="14" y1="7" x2="14" y2="9.5"/><rect x="7" y="14" width="10" height="6" rx="3"/><line x1="12" y1="20" x2="12" y2="22"/></g></svg>
+      }
+    </span>
+      </ng-template>
+    </app-mapping-list>
+  }
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().midiOutputEnabled" [disabled]="!midiOutput.supported"
+             (change)="onMidiOutputEnabledChange($any($event.target).checked)">
+      Send keying to a MIDI device
+    </label>
+    <div class="keyer-hint">
+      @if (s().midiOutputEnabled) {
+        MIDI output is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+      } @else {
+        Tick the box to set up its mappings on the next pages.
+      }
+    </div>
+  }
+
+  <div class="cw-hint">
+    Characters from any input are played as morse elements (dits/dahs) at
+    Encoder WPM. <strong>Straight Key</strong> fires on every element.
+    <strong>Paddle</strong> fires dit/dah notes separately. Both
+    straight-key and element-specific notes fire simultaneously.
+  </div>
+
+  <label class="checkbox-label">
+    <input type="checkbox" [checked]="s().midiOutputOverrideWpm"
+           (change)="scope.update({ midiOutputOverrideWpm: $any($event.target).checked })">
+    Override input WPM with local encoder WPM
+  </label>
+  <div class="cw-hint">
+    By default the MIDI output repeats the timing of the morse it receives, so
+    morse arriving at 20 WPM leaves at 20 WPM. Enable this to play everything at
+    your own Encoder WPM instead. This is useful when you receive morse at one
+    speed (for example from a fast sender or a relay input) and want the connected
+    MIDI device to play it back at a different, slower or faster, speed.
+  </div>
+</app-item-shell>
+
+<!-- MIDI output edit modal (hosted here because it's triggered from this card) -->
+@if (showEditModal) {
+  <app-midi-output-edit-modal
+    [mapping]="editMapping"
+    [editIndex]="editIndex"
+    [midiDevices]="midiOutput.midiOutputs()"
+    [allMappings]="s().midiOutputMappings"
+    [midiInputMappings]="s().midiInputMappings"
+    (saved)="onEditSaved($event)"
+    (cancelled)="onEditCancelled()"
+    (deleted)="onEditDeleted()">
+  </app-midi-output-edit-modal>
+}

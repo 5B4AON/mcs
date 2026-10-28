@@ -1,0 +1,184 @@
+<!-- Copy Practice -->
+<app-item-shell cardId="practice-card" title="Copy Practice" [mode]="mode"
+                [enabled]="s().practiceEnabled"
+                (enabledChange)="onEnabledChange($event)">
+  <div class="cw-hint">
+    Copy practice plays random Morse sequences for you to decode
+    by ear. When enabled, choose &ldquo;Practice&rdquo; in the encoder
+    mode dropdown, then press Start when you are ready. Choosing
+    Practice alone does not start a round.
+  </div>
+
+  <!-- Content mode -->
+  <label>
+    Content:
+    <select (change)="onContentModeChange($event)">
+      <option value="characters" [selected]="s().practiceContentMode === 'characters'">Random Characters</option>
+      <option value="words" [selected]="s().practiceContentMode === 'words'">Random Words</option>
+      <option value="callsigns" [selected]="s().practiceContentMode === 'callsigns'">Random Callsigns</option>
+    </select>
+  </label>
+
+  <!-- Group count (all modes) -->
+  <label>
+    Count:
+    <select (change)="onGroupCountChange($event)">
+      @for (n of [1,2,3,4,5,6,7,8,9,10]; track n) {
+        <option [value]="n" [selected]="s().practiceGroupCount === n">{{ n }}</option>
+      }
+    </select>
+  </label>
+
+  <!-- Random characters options -->
+  @if (s().practiceContentMode === 'characters') {
+    <label>
+      Group size:
+      <select (change)="onCharGroupSizeChange($event)">
+        @for (n of [1,2,3,4,5]; track n) {
+          <option [value]="n" [selected]="s().practiceCharGroupSize === n">{{ n }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="cw-hint">Character pool:</div>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceIncludeLetters"
+             (change)="onPoolToggle('practiceIncludeLetters', $event)">
+      Letters (A–Z)
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceIncludeNumbers"
+             (change)="onPoolToggle('practiceIncludeNumbers', $event)">
+      Numbers (0–9)
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceIncludePunctuation"
+             (change)="onPoolToggle('practiceIncludePunctuation', $event)">
+      Punctuation
+    </label>
+  }
+
+  <!-- Random words options -->
+  @if (s().practiceContentMode === 'words') {
+    <div class="cw-hint">Word lengths:</div>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceWordLengths.includes(3)"
+             (change)="onWordLengthToggle(3, $event)">
+      3 letters
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceWordLengths.includes(4)"
+             (change)="onWordLengthToggle(4, $event)">
+      4 letters
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox"
+             [checked]="s().practiceWordLengths.includes(5)"
+             (change)="onWordLengthToggle(5, $event)">
+      5 letters
+    </label>
+  }
+
+  <!-- Feedback mode -->
+  <label>
+    Feedback:
+    <select (change)="onFeedbackModeChange($event)">
+      <option value="typealong" [selected]="s().practiceFeedbackMode === 'typealong'">Type-along</option>
+      <option value="blur" [selected]="s().practiceFeedbackMode === 'blur'">Blurred (reveal button)</option>
+      <option value="listen" [selected]="s().practiceFeedbackMode === 'listen'">Listen only</option>
+    </select>
+  </label>
+  <div class="cw-hint">
+    @if (s().practiceFeedbackMode === 'listen') {
+      Listen only: audio plays and decoded text appears in the output area.
+    } @else if (s().practiceFeedbackMode === 'blur') {
+      Blurred: audio plays and decoded text appears blurred. Use the reveal button to peek.
+    } @else {
+      Type-along: audio plays with text blurred. Type what you hear in
+      the input box, then validate your answer when the sequence ends.
+    }
+    @if (s().practiceFeedbackMode !== 'typealong') {
+      Typing is unavailable in Listen and Blurred practice so the answer
+      stays hidden. Choose Type-along to enter what you hear.
+    }
+  </div>
+
+  @if (s().practiceFeedbackMode === 'typealong') {
+    <label>
+      Rounds:
+      <select (change)="onRoundsChange($event)">
+        @for (n of [1,2,3,4,5]; track n) {
+          <option [value]="n" [selected]="s().practiceRounds === n">{{ n }}</option>
+        }
+      </select>
+    </label>
+    <div class="cw-hint">
+      Choose 2 to 5 rounds for a short Type-along session. The first Enter
+      shows a session briefing; after the final round, you can view each
+      round's score and the average.
+    </div>
+  }
+
+  @if (forceLocalPipeline) {
+    <div class="cw-hint">
+      This guide keeps practice local. It will not drive serial, MIDI,
+      WinKeyer or RTDB outputs.
+    </div>
+  } @else {
+    <!-- Pipeline -->
+    <label>
+      Pipeline:
+      <select (change)="onPipelineChange($event)">
+        <option value="local" [selected]="s().practicePipeline === 'local'">Local audio and vibration</option>
+        <option value="full" [selected]="s().practicePipeline === 'full'">Full pipeline</option>
+      </select>
+    </label>
+    <div class="cw-hint">
+      @if (s().practicePipeline === 'local') {
+        Practice audio and vibration are played locally only &mdash; serial,
+        MIDI, WinKeyer, and RTDB outputs are not driven.
+      } @else {
+        Practice uses configured audio, serial, MIDI, RTDB, and vibration
+        outputs through the full output pipeline.
+      }
+    </div>
+  }
+
+  @if (forceReceivedMorse) {
+    <div class="cw-hint">Practice receives decoded Morse (RX).</div>
+  } @else {
+    <!-- Direction (RX/TX) -->
+    <label>
+      Direction:
+      <select (change)="onSourceChange($event)">
+        <option value="rx" [selected]="s().practiceSource === 'rx'">RX</option>
+        <option value="tx" [selected]="s().practiceSource === 'tx'">TX</option>
+      </select>
+    </label>
+  }
+
+  <!-- Name and color -->
+  <label>
+    Name:
+    <input type="text" maxlength="20"
+           [value]="s().practiceName"
+           (input)="onNameChange($event)"
+           placeholder="Optional display name">
+  </label>
+  <label>
+    Color:
+    <span class="color-input-group">
+      <input type="color"
+             [value]="s().practiceColor || '#ffffff'"
+             (input)="onColorChange($event)">
+      @if (s().practiceColor) {
+        <button class="color-clear-btn" (click)="clearColor()" title="Use default color">&times;</button>
+      }
+    </span>
+  </label>
+</app-item-shell>

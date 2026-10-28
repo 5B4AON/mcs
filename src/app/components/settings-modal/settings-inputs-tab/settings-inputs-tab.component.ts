@@ -3,16 +3,16 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MicCardComponent } from './mic-card/mic-card.component';
-import { CwDetectorCardComponent } from './cw-detector-card/cw-detector-card.component';
-import { KeyboardKeyerCardComponent } from './keyboard-keyer-card/keyboard-keyer-card.component';
-import { EncoderCardComponent } from './encoder-card/encoder-card.component';
-import { MouseKeyerCardComponent } from './mouse-keyer-card/mouse-keyer-card.component';
-import { TouchKeyerCardComponent } from './touch-keyer-card/touch-keyer-card.component';
-import { SpriteKeyCardComponent } from './sprite-key-card/sprite-key-card.component';
-import { MidiInputCardComponent } from './midi-input-card/midi-input-card.component';
-import { SerialInputCardComponent } from './serial-input-card/serial-input-card.component';
-import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.component';
+import { MicItemComponent } from '../../settings-items/mic/mic-item.component';
+import { CwDetectorItemComponent } from '../../settings-items/cw-detector/cw-detector-item.component';
+import { KeyboardKeyerItemComponent } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.component';
+import { EncoderItemComponent } from '../../settings-items/encoder/encoder-item.component';
+import { MouseKeyerItemComponent } from '../../settings-items/mouse-keyer/mouse-keyer-item.component';
+import { TouchKeyerItemComponent } from '../../settings-items/touch-keyer/touch-keyer-item.component';
+import { SpriteKeyItemComponent } from '../../settings-items/sprite-key/sprite-key-item.component';
+import { MidiInputItemComponent } from '../../settings-items/midi-input/midi-input-item.component';
+import { SerialInputItemComponent } from '../../settings-items/serial-input/serial-input-item.component';
+import { RtdbInputItemComponent } from '../../settings-items/rtdb-input/rtdb-input-item.component';
 
 /**
  * Settings — Inputs tab.
@@ -25,16 +25,16 @@ import { RtdbInputCardComponent } from './rtdb-input-card/rtdb-input-card.compon
   selector: 'app-settings-inputs-tab',
   standalone: true,
   imports: [
-    MicCardComponent,
-    CwDetectorCardComponent,
-    KeyboardKeyerCardComponent,
-    EncoderCardComponent,
-    MouseKeyerCardComponent,
-    TouchKeyerCardComponent,
-    SpriteKeyCardComponent,
-    MidiInputCardComponent,
-    SerialInputCardComponent,
-    RtdbInputCardComponent,
+    MicItemComponent,
+    CwDetectorItemComponent,
+    KeyboardKeyerItemComponent,
+    EncoderItemComponent,
+    MouseKeyerItemComponent,
+    TouchKeyerItemComponent,
+    SpriteKeyItemComponent,
+    MidiInputItemComponent,
+    SerialInputItemComponent,
+    RtdbInputItemComponent,
   ],
   templateUrl: './settings-inputs-tab.component.html',
 })

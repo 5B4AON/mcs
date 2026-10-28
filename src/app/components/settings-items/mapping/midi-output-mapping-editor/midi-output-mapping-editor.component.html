@@ -1,0 +1,112 @@
+<div class="md-editor">
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Device'">MIDI Device</label>
+    <select [id]="idPrefix + 'Device'" class="md-select" [(ngModel)]="editDeviceId">
+      <option value="">Any (first available)</option>
+      @for (dev of midiDevices; track dev.id) {
+        <option [value]="dev.id">{{ dev.name }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Channel'">MIDI Channel</label>
+    <select [id]="idPrefix + 'Channel'" class="md-select" [(ngModel)]="editChannel">
+      @for (ch of midiChannels; track ch) {
+        <option [ngValue]="ch">Channel {{ ch }}</option>
+      }
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Forward'">Forward</label>
+    <select [id]="idPrefix + 'Forward'" class="md-select" [(ngModel)]="editForward">
+      <option value="tx">TX only &mdash; transmitted morse</option>
+      <option value="rx">RX only &mdash; received morse</option>
+      <option value="both">Both RX and TX</option>
+    </select>
+  </div>
+
+  <div class="md-field">
+    <label class="md-label" [for]="idPrefix + 'Mode'">Mode</label>
+    <select [id]="idPrefix + 'Mode'" class="md-select" [(ngModel)]="editMode">
+      <option value="straightKey">Straight Key</option>
+      <option value="paddle">Paddle</option>
+    </select>
+  </div>
+
+  <!-- Note, octave and raw number for one note field -->
+  <ng-template #noteRow let-label="label" let-note="note">
+    <div class="md-field">
+      <label class="md-label">{{ label }}</label>
+      <div class="md-note-row">
+        <select class="md-note-select" [(ngModel)]="note.note" (ngModelChange)="note.fromPickers()">
+          @for (name of noteNames; track $index) {
+            <option [ngValue]="$index">{{ name }}</option>
+          }
+        </select>
+        <select class="md-octave-select" [(ngModel)]="note.octave" (ngModelChange)="note.fromPickers()">
+          @for (oct of octaves; track oct) {
+            <option [ngValue]="oct">{{ oct }}</option>
+          }
+        </select>
+        <span class="md-note-separator">or</span>
+        <input type="number" class="md-raw-input" min="0" max="127"
+               [(ngModel)]="note.raw" (ngModelChange)="note.fromRaw()" placeholder="0–127">
+      </div>
+      <span class="md-hint">{{ noteDisplay(note.value) }}</span>
+    </div>
+  </ng-template>
+
+  <ng-container *ngTemplateOutlet="noteRow; context: { label: editMode === 'paddle' ? 'Dit Paddle Note' : 'Straight Key Note', note: dit }" />
+  @if (editMode === 'paddle') {
+    <ng-container *ngTemplateOutlet="noteRow; context: { label: 'Dah Paddle Note', note: dah }" />
+  }
+
+  @if (error) {
+    <div class="md-error">{{ error }}</div>
+  }
+  @if (warning && !error) {
+    <div class="md-warning">{{ warning }}</div>
+  }
+
+  @if (midiInputMappings.length > 0) {
+    <div class="md-field">
+      <span class="md-label">Relay from MIDI Input</span>
+      <span class="md-hint">
+        Select MIDI input mappings to relay through this output. Only inputs
+        whose source matches the forward direction are shown.
+        Enable when input and output use separate hardware with no shared bus.
+      </span>
+      <div class="md-checkbox-row">
+        @for (input of midiInputMappings; track $index) {
+          @if (isInputCompatible(input)) {
+            <label>
+              <input type="checkbox" [checked]="editRelayInputIndices.includes($index)"
+                     (change)="toggleRelayInput($index)">
+              {{ inputMappingLabel(input, $index) }}
+            </label>
+          }
+        }
+        @if (editRelayInputIndices.length > 0) {
+          <label>
+            <input type="checkbox" [(ngModel)]="editRelaySuppressOtherInputs">
+            Suppress other inputs
+          </label>
+        }
+      </div>
+      @if (editRelayInputIndices.length > 0) {
+        <span class="md-hint">
+          When enabled, this output will only forward signals from the explicitly
+          selected relay sources above. All other input paths are suppressed.
+        </span>
+      }
+    </div>
+  }
+
+  @if (showTestButton) {
+    <button type="button" class="md-test-btn" [disabled]="!midiOutput.connected()" (click)="testMapping()">
+      Test Output (1s)
+    </button>
+  }
+</div>

@@ -1,0 +1,527 @@
+/**
+ * Morse Code Studio
+ */
+
+import {
+  AfterViewInit,
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostListener,
+  Input,
+  OnDestroy,
+  OnInit,
+  Output,
+  ViewChild,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
+import { NgComponentOutlet } from '@angular/common';
+import { FormsModule } from '@angular/forms';
+import { AudioDeviceService } from '../../services/audio-device.service';
+import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
+import { CwInputService } from '../../services/cw-input.service';
+import { MidiInputService } from '../../services/midi-input.service';
+import { MidiOutputService } from '../../services/midi-output.service';
+import { PresetService } from '../../services/preset.service';
+import { SerialKeyInputService } from '../../services/serial-key-input.service';
+import { SerialKeyOutputService } from '../../services/serial-key-output.service';
+import { SettingsService } from '../../services/settings.service';
+import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
+import { suggestPresetName } from '../../services/settings-presets';
+import { createSettingsSnapshot } from '../../services/settings-transfer';
+import { prepareSettingsImport } from '../../services/settings-transfer-review';
+import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
+import { ITEM_REGISTRY } from '../settings-items/item-registry';
+import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
+import { StepItem, StepQuestion, WizardFlow, WizardStep } from './engine/flow-types';
+import { WizardEngine } from './engine/wizard-engine';
+import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
+import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
+import { MappingPageComponent } from './pages/mapping-page.component';
+import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
+import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
+import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
+import {
+  TeachParticipantProfile,
+  includesScenario,
+  isTeachParticipantProfile,
+  teachParticipantChannelName,
+} from './flows/teach-participant.model';
+import { flowForGoal } from './flows/flow-registry';
+
+/** Where the user is: answering steps or reviewing. */
+type Stage = 'steps' | 'review';
+
+/**
+ * Setup Wizard shell: the guided setup of one goal, opened over the goal list.
+ *
+ * The shell is only the dialog: it hosts the current step of a `WizardEngine`
+ * (questions plus registered settings items) and shows the shared Review page.
+ * All navigation and change logic lives in the engine and the goal's declarative
+ * flow in `flows/`. Nothing touches live settings until Apply; Apply never saves
+ * the device profile.
+ */
+@Component({
+  selector: 'app-setup-wizard-v2',
+  standalone: true,
+  imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent,
+    MappingPageComponent, MappingListComponent, TeachParticipantPageComponent, HelpLinkButtonComponent],
+  templateUrl: './setup-wizard-v2.component.html',
+  styleUrls: ['./setup-wizard-v2.component.css'],
+  providers: [
+    { provide: SETTINGS_SCOPE, useFactory: () => new DraftSettingsScope(inject(SettingsService)) },
+  ],
+})
+export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy {
+  /** The goal to set up; its flow is looked up in `flows/flow-registry.ts` */
+  @Input({ required: true }) goal!: WizardGoalId;
+
+  /** True while audio runs, so items can offer their Test buttons */
+  @Input() audioRunning = false;
+
+  /** Element to focus on close when the opener is gone */
+  @Input() focusReturnFallback: HTMLElement | null = null;
+
+  /** Dialog closed (Back from the first step, the close button, or a confirmed discard) */
+  @Output() closed = new EventEmitter<void>();
+
+  /** Emitted after Apply with the goal id, so the app can land focus where the user continues */
+  @Output() tryRequested = new EventEmitter<string>();
+  /** Emitted after the detector was switched on, so the app can start it when audio already runs */
+  @Output() readonly detectorEnabled = new EventEmitter<void>();
+
+  @ViewChild('dialog') dialog?: ElementRef<HTMLElement>;
+  @ViewChild(MappingPageComponent) private mappingPage?: MappingPageComponent;
+  @ViewChild(TeachParticipantPageComponent) private teachParticipantPage?: TeachParticipantPageComponent;
+
+  readonly settings = inject(SettingsService);
+  readonly presets = inject(PresetService);
+  private readonly scope = inject(SETTINGS_SCOPE) as DraftSettingsScope;
+  private readonly audioDevices = inject(AudioDeviceService);
+  private readonly midiInput = inject(MidiInputService);
+  private readonly cwInput = inject(CwInputService);
+  private readonly rtdb = inject(FirebaseRtdbService);
+  private readonly midiOutput = inject(MidiOutputService);
+  private readonly serialInput = inject(SerialKeyInputService);
+  private readonly serialOutput = inject(SerialKeyOutputService);
+  private readonly winkeyerOutput = inject(WinkeyerOutputService);
+
+  private overlayPressed = false;
+  readonly stage = signal<Stage>('steps');
+  readonly engine = signal<WizardEngine | null>(null);
+  readonly flowTitle = signal('');
+  readonly confirmDiscard = signal(false);
+  readonly presetPickerOpen = signal(false);
+  readonly selectedPresetId = signal('');
+  readonly presetNotice = signal('');
+  readonly presetError = signal('');
+  readonly presetWarnings = signal<string[]>([]);
+  readonly presetSaveOpen = signal(false);
+  readonly presetSaveName = signal('');
+  readonly presetSaveNotice = signal('');
+  readonly registry = ITEM_REGISTRY;
+
+  /** Inputs for a step item: its fixed registry inputs, look and audio state. */
+  itemInputs(it: StepItem, audioRunning: boolean): Record<string, unknown> {
+    const entry = ITEM_REGISTRY[it.item];
+    const engine = this.engine();
+    const teachInputs = it.item === 'rtdb-output' && engine?.flow.goal === 'teach'
+      ? { suggestedName: this.teachSuggestedName(engine) }
+      : {};
+    return {
+      ...entry.inputs,
+      ...it.inputs,
+      ...teachInputs,
+      mode: it.mode ?? 'embedded',
+      ...(entry.needsAudio ? { audioRunning } : {}),
+    };
+  }
+
+  private teachSuggestedName(engine: WizardEngine): string {
+    const teacher = engine.answers()['participant0'];
+    if (!isTeachParticipantProfile(teacher)) return 'Teacher';
+    return teachParticipantChannelName(
+      teacher,
+      this.scope.value(),
+    );
+  }
+
+  participantProfile(engine: WizardEngine, question: StepQuestion) {
+    return engine.answers()[question.id] as TeachParticipantProfile;
+  }
+
+  participantProfiles(engine: WizardEngine): TeachParticipantProfile[] {
+    const count = Number(engine.answers()['studentCount']);
+    if (!Number.isInteger(count) || count < 0 || count > 4) return [];
+    return Array.from({ length: count + 1 }, (_, index) => engine.answers()[`participant${index}`])
+      .filter(isTeachParticipantProfile);
+  }
+
+  participantIndex(question: StepQuestion): number {
+    return Number(question.id.replace('participant', ''));
+  }
+
+  private readonly focusReturnTarget = document.activeElement as HTMLElement | null;
+  private applied = false;
+
+  /** Problems that block Next on the current step */
+  readonly problems = computed(() => {
+    const engine = this.engine();
+    return engine ? engine.validateStep(engine.step()) : [];
+  });
+
+  ngOnInit(): void {
+    this.startFlow(flowForGoal(this.goal));
+  }
+
+  ngAfterViewInit(): void {
+    window.requestAnimationFrame(() => {
+      if (this.dialog) focusDialog(this.dialog.nativeElement, '.wizard-primary');
+    });
+  }
+
+  ngOnDestroy(): void {
+    restoreDialogFocus(this.focusReturnTarget, this.focusReturnFallback);
+  }
+
+  get title(): string {
+    return this.flowTitle();
+  }
+
+  /** True when the user has moved any answer and has not applied yet. */
+  hasDraft(): boolean {
+    return !this.applied && (!!this.engine()?.hasAnyChanges()
+      || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
+  }
+
+  /** Progress counts the engine steps plus the Review page. */
+  get progress(): string {
+    const engine = this.engine();
+    if (!engine) return '';
+    const total = engine.steps().length + 1;
+    const at = this.stage() === 'review' ? total : engine.index() + 1;
+    return `Step ${at} of ${total}`;
+  }
+
+  private startFlow(flow: WizardFlow): void {
+    this.scope.seed(this.settings.settings());
+    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind));
+    this.flowTitle.set(flow.title);
+    this.presetNotice.set('');
+    this.presetWarnings.set([]);
+    this.cancelPresetSave();
+    this.stage.set('steps');
+    this.focusStep();
+  }
+
+  // ---- Questions ----
+
+  answer(question: StepQuestion): unknown {
+    return this.engine()?.answers()[question.id];
+  }
+
+  setSingle(question: StepQuestion, value: string): void {
+    this.engine()?.setAnswer(question.id, value);
+  }
+
+  setSelect(question: StepQuestion, event: Event): void {
+    this.setSingle(question, (event.target as HTMLSelectElement).value);
+  }
+
+  setBoolean(question: StepQuestion, event: Event): void {
+    this.engine()?.setAnswer(question.id, (event.target as HTMLInputElement).checked);
+  }
+
+  setNumber(question: StepQuestion, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (Number.isFinite(value)) this.engine()?.setAnswer(question.id, value);
+  }
+
+  setText(question: StepQuestion, event: Event): void {
+    this.engine()?.setAnswer(question.id, (event.target as HTMLInputElement).value);
+  }
+
+  isChosen(question: StepQuestion, value: string): boolean {
+    const current = this.answer(question);
+    return Array.isArray(current) && current.includes(value);
+  }
+
+  toggleMulti(question: StepQuestion, value: string, event: Event): void {
+    const current = (this.answer(question) as string[] | undefined) ?? [];
+    const on = (event.target as HTMLInputElement).checked;
+    this.engine()?.setAnswer(question.id, on ? [...current, value] : current.filter(v => v !== value));
+  }
+
+  questionOptions(engine: WizardEngine, question: StepQuestion) {
+    return question.optionsFrom?.({
+      settings: this.scope.value(),
+      answers: engine.answers(),
+    }) ?? question.options ?? [];
+  }
+
+  // ---- Navigation ----
+
+  next(): void {
+    const engine = this.engine();
+    if (!engine || !this.commitTeachParticipantPage(true) || this.problems().length || !this.commitMappingPage()) return;
+    if (engine.isLast) this.stage.set('review');
+    else engine.next();
+    this.focusStep();
+  }
+
+  back(): void {
+    const engine = this.engine();
+    if (!engine) return;
+    if (this.stage() === 'review') this.stage.set('steps');
+    else {
+      this.commitTeachParticipantPage(false);
+      this.commitMappingPage();
+      if (!engine.back()) {
+        this.requestClose();
+        return;
+      }
+    }
+    this.focusStep();
+  }
+
+  revert(): void {
+    this.mappingPage?.reset();
+    this.teachParticipantPage?.reset();
+    this.engine()?.revertStep();
+  }
+
+  get canRevert(): boolean {
+    const engine = this.engine();
+    return !!engine && this.stage() === 'steps' &&
+      (engine.stepHasChanges() || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
+  }
+
+  private commitTeachParticipantPage(validate: boolean): boolean {
+    const engine = this.engine();
+    const question = engine?.step().questions?.find(item => item.kind === 'participant');
+    if (!engine || !question || !this.teachParticipantPage) return true;
+    const profile = validate ? this.teachParticipantPage.build() : this.teachParticipantPage.fields();
+    if (!profile) return false;
+    engine.setAnswer(question.id, profile);
+    return true;
+  }
+
+  // ---- Mapping pages (repeat steps) ----
+
+  /** Mapping kind of the current step when it is a page of a repeat step. */
+  kindOf(step: WizardStep): MappingKind | null {
+    return step.page ? mappingKind(step.page.item) : null;
+  }
+
+  /**
+   * Store the fields of the open mapping page in the draft. Returns false (the
+   * editor shows why) when they are not valid; true when there is nothing to store.
+   */
+  private commitMappingPage(): boolean {
+    const engine = this.engine();
+    const page = engine?.step().page;
+    if (!engine || page?.kind !== 'mapping' || !this.mappingPage) return true;
+    const mapping = this.mappingPage.commit();
+    if (mapping === null) return false;
+    engine.commitMapping(page, mapping);
+    return true;
+  }
+
+  /** Mappings as list rows (every mapping has an `enabled` flag). */
+  rows(mappings: unknown[]): MappingListRow[] {
+    return mappings as MappingListRow[];
+  }
+
+  addMapping(): void {
+    this.engine()?.addMapping();
+  }
+
+  /** Open mapping `index` from the list page. */
+  openMapping(step: WizardStep, index: number): void {
+    if (step.page) this.engine()?.goTo(`${step.page.baseId}#${index}`);
+  }
+
+  removeMapping(step: WizardStep, index: number): void {
+    if (step.page) this.engine()?.removeMapping(step.page, index);
+  }
+
+  setMappingEnabled(step: WizardStep, index: number, enabled: boolean): void {
+    if (step.page) this.engine()?.patchMapping(step.page.list, index, { enabled });
+  }
+
+  // ---- Presets ----
+
+  togglePresetPicker(): void {
+    this.presets.reload();
+    this.presetPickerOpen.update(open => !open);
+  }
+
+  closePresetPicker(): void {
+    this.presetPickerOpen.set(false);
+    this.selectedPresetId.set('');
+  }
+
+  /** Load the chosen preset into the draft only; live settings and the preset stay unchanged. */
+  loadPreset(): void {
+    const engine = this.engine();
+    const preset = this.presets.presets().find(p => p.id === this.selectedPresetId());
+    if (!engine || !preset) return;
+    const prepared = prepareSettingsImport(this.settings.settings(), preset.settings, {
+      audioInputs: this.audioDevices.inputDevices(),
+      audioOutputs: this.audioDevices.outputDevices(),
+      audioLabelsAvailable: this.audioDevices.hasPermission(),
+      midiInputs: this.midiInput.midiInputs(),
+      midiOutputs: this.midiOutput.midiOutputs(),
+      serialInputPorts: this.serialInput.ports().map(port => this.serialInput.portLabel(port)),
+      serialOutputPorts: this.serialOutput.ports().map(port => this.serialOutput.portLabel(port)),
+      winkeyerPorts: this.winkeyerOutput.ports().map(port => this.winkeyerOutput.portLabel(port)),
+    });
+    engine.seedFromSettings(prepared.settings);
+    this.presetWarnings.set(prepared.unresolvedTargets);
+    this.presetNotice.set(`Loaded "${preset.name}" into this guide's draft only. Live settings are unchanged.`);
+    this.closePresetPicker();
+  }
+
+  openPresetSave(): void {
+    this.presets.reload();
+    this.presetSaveNotice.set('');
+    this.presetError.set('');
+    this.presetSaveName.set(suggestPresetName('My setup', this.presets.presets()));
+    this.presetSaveOpen.set(!this.presets.loadError());
+  }
+
+  /** Back to the initial "Save as preset" button: hides the name box and clears messages. */
+  cancelPresetSave(): void {
+    this.presetSaveOpen.set(false);
+    this.presetSaveName.set('');
+    this.presetSaveNotice.set('');
+    this.presetError.set('');
+  }
+
+  /** Save the proposed setup as a secret-free preset without applying it. */
+  savePreset(): void {
+    const proposed = { ...this.settings.settings(), ...this.engine()?.applyPatch() };
+    const result = this.presets.add(this.presetSaveName(), createSettingsSnapshot(proposed).settings);
+    if (!result.ok) {
+      this.presetError.set(result.error);
+      return;
+    }
+    this.presetSaveOpen.set(false);
+    this.presetError.set('');
+    this.presetSaveNotice.set(`Saved "${result.preset.name}" as a preset. Live settings are unchanged.`);
+  }
+
+  // ---- Review and apply ----
+
+  /** Short one-line route description, e.g. "MIDI input (any device), channel 0, note 60". */
+  routeLabel(route: { type: string; destination: string }): string {
+    const d = route.destination;
+    switch (route.type) {
+      case 'MIDI key/paddle input': return d.replace(/^MIDI device/, 'MIDI input');
+      case 'MIDI radio keying': return d.replace(/^MIDI device/, 'MIDI output');
+      case 'Serial key/paddle input': return d.replace(/^Serial port/, 'Serial input, port');
+      case 'Serial radio keying': return d.replace(/^Serial port/, 'Serial output, port');
+      case 'WinKeyer radio keying': return d.replace(/^Serial port/, 'WinKeyer, port');
+      case 'Radio keying through audio optocoupler': return d.replace(/^Audio device/, 'Opto output, audio device');
+      case 'Firebase RTDB input': return d.replace(/^Shared channel/, 'Firebase input, channel');
+      case 'Firebase RTDB output': return d.replace(/^Shared channel/, 'Firebase output, channel');
+      default: return `${route.type}: ${d}`;
+    }
+  }
+
+  async apply(): Promise<void> {
+    const engine = this.engine();
+    if (!engine || !engine.canApply()) return;
+    const patch = engine.applyPatch();
+    // The practice goal selects the Practice encoder mode so the user can press Start right away
+    if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';
+    const base = this.settings.settings();
+    this.settings.update(patch);
+    if (patch.midiOutputEnabled) {
+      await this.midiOutput.start();
+      this.midiOutput.reattach();
+    }
+    // MIDI input follows the applied settings: connect it (and re-read the mappings) when it is on, release it when the guide turned it off
+    if (patch.midiInputEnabled !== undefined || patch.midiInputMappings) {
+      if (this.settings.settings().midiInputEnabled) {
+        await this.midiInput.start();
+        this.midiInput.reattach();
+      } else {
+        this.midiInput.shutdown();
+      }
+    }
+    const teachContext = { settings: this.settings.settings(), answers: engine.answers() };
+    // A direction the user ticked is connected now instead of waiting for the next health check
+    const teachUsesMobile = engine.flow.goal === 'teach' && includesScenario(teachContext, 'mobile');
+    if ((patch.rtdbInputEnabled && !base.rtdbInputEnabled)
+      || (teachUsesMobile && this.settings.settings().rtdbInputEnabled)) this.rtdb.startInput();
+    if ((patch.rtdbOutputEnabled && !base.rtdbOutputEnabled)
+      || (teachUsesMobile && this.settings.settings().rtdbOutputEnabled)) this.rtdb.startOutput();
+    if (patch.cwInputEnabled) {
+      this.cwInput.updateParams();
+      this.detectorEnabled.emit();
+    }
+    this.applied = true;
+    this.tryRequested.emit(engine.flow.goal);
+  }
+
+  // ---- Closing ----
+
+  /** Close the wizard back to the goal list, asking first when answers changed. */
+  requestClose(): void {
+    if (this.hasDraft()) this.confirmDiscard.set(true);
+    else this.closed.emit();
+  }
+
+  /** Overlay click closes only when the press also started on the overlay (not at the end of a text selection). */
+  overlayDown(event: MouseEvent): void {
+    this.overlayPressed = event.target === event.currentTarget;
+  }
+
+  overlayClick(event: MouseEvent): void {
+    if (this.overlayPressed && event.target === event.currentTarget) this.requestClose();
+    this.overlayPressed = false;
+  }
+
+  /** Show the discard question (used by the browser Back button). */
+  askDiscard(): void {
+    this.confirmDiscard.set(true);
+  }
+
+  onDiscardAnswer(discard: boolean): void {
+    this.confirmDiscard.set(false);
+    if (discard) this.closed.emit();
+  }
+
+  @HostListener('document:keydown.escape', ['$event'])
+  onEscape(event: Event): void {
+    // A dialog opened above the wizard (such as the emoji picker or Help) closes itself first
+    if (this.confirmDiscard() || event.defaultPrevented || this.dialogAboveWizard()) return;
+    this.requestClose();
+  }
+
+  /** True when another visible dialog sits on top of the wizard dialog. */
+  private dialogAboveWizard(): boolean {
+    const dialogs = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]'))
+      .filter(d => d.getClientRects().length > 0);
+    const top = dialogs[dialogs.length - 1];
+    return !!top && top !== this.dialog?.nativeElement;
+  }
+
+  @HostListener('document:keydown', ['$event'])
+  onKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Tab' && !this.confirmDiscard() && this.dialog) {
+      trapDialogTabKey(event, this.dialog.nativeElement);
+    }
+  }
+
+  private focusStep(): void {
+    window.setTimeout(() => {
+      this.dialog?.nativeElement.querySelector<HTMLElement>('.wizard-step-title')?.focus();
+    }, 0);
+  }
+}

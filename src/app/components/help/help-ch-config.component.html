@@ -237,17 +237,19 @@
 
 <h3>Controls</h3>
 <ul>
-  <li><strong>Applies to</strong> &mdash; choose TX Only, RX Only, or Both. TX
+  <li><strong>Applies to</strong> &mdash; choose Both, RX Only, or TX Only (Both is the default). TX
       affects the encoder and keyed outputs (sidetone, serial, MIDI, vibration).
       RX affects playback of received characters (e.g.&nbsp;from Firebase RTDB).</li>
   <li><strong>Mode: Effective WPM</strong> &mdash; set a target overall WPM
       (5 to your encoder WPM). The app calculates the correct gap durations so
       the average word throughput matches your target.</li>
   <li><strong>Mode: Gap Multiplier</strong> &mdash; directly multiply gap
-      durations by a factor between 1.00&times; and 10.00&times;. Element durations
+      durations by a whole-number factor from 1&times; to 10&times;. Element durations
       (dit, dah) are never changed.</li>
   <li><strong>Wordsworth mode</strong> checkbox &mdash; when ticked, only the
-      word gaps are stretched; inter-character gaps remain at normal speed.</li>
+      word gaps are stretched; inter-character gaps remain at normal speed. In
+      Gap Multiplier mode the standard word gap (7 dits) is multiplied by 1 to 4
+      in steps of 0.5.</li>
 </ul>
 
 <p>

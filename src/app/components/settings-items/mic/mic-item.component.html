@@ -1,0 +1,141 @@
+<!-- Straight Key via Mic (Pilot Tone) -->
+<app-item-shell cardId="mic-card" title="Straight Key via Mic" [mode]="mode"
+                [enabled]="s().micInputEnabled" (enabledChange)="onMicEnabledChange($event)">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="s().micInputSource === 'rx'" [class.source-tx]="s().micInputSource === 'tx'">{{ s().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().micInputEnabled"
+             (change)="onMicEnabledChange($any($event.target).checked)">
+      Use a straight key through the microphone (pilot tone)
+    </label>
+    <div class="keyer-hint">
+      @if (s().micInputEnabled) {
+        Mic key input is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to choose the devices and pilot tone.
+      }
+    </div>
+  }
+
+  @if (mode === 'card' || s().micInputEnabled) {
+    <div class="experimental-banner" style="padding-top: 10px">&#x26A0; Experimental &mdash; AC coupling varies across sound cards; results may be unreliable.</div>
+    <label>Used for:
+      <select [value]="s().micInputSource" (change)="onSettingChange('micInputSource', $event)">
+        <option value="rx">RX &mdash; received morse</option>
+        <option value="tx">TX &mdash; transmitted morse</option>
+      </select>
+    </label>
+
+    <label>Mic Device:
+      <select [value]="s().inputDeviceId" (change)="onSettingChange('inputDeviceId', $event)">
+        <option value="default" [selected]="s().inputDeviceId === 'default'">System Default</option>
+        @for (dev of devices.inputDevices(); track dev.deviceId) {
+          <option [value]="dev.deviceId" [selected]="dev.deviceId === s().inputDeviceId">{{ dev.label }}</option>
+        }
+      </select>
+    </label>
+
+    <div class="pilot-settings">
+      <label>Pilot Output Device:
+        <select [value]="s().pilotOutputDeviceId" (change)="onSettingChange('pilotOutputDeviceId', $event)">
+          <option value="default" [selected]="s().pilotOutputDeviceId === 'default'">System Default</option>
+          @for (dev of devices.outputDevices(); track dev.deviceId) {
+            <option [value]="dev.deviceId" [selected]="dev.deviceId === s().pilotOutputDeviceId">{{ dev.label }}</option>
+          }
+        </select>
+      </label>
+
+      <label>Pilot Output Channel:
+        <select [value]="s().pilotOutputChannel" (change)="onSettingChange('pilotOutputChannel', $event)">
+          <option value="left" [selected]="s().pilotOutputChannel === 'left'">Left</option>
+          <option value="right" [selected]="s().pilotOutputChannel === 'right'">Right</option>
+        </select>
+      </label>
+
+      <label>Pilot Frequency (Hz):
+        <input type="number" min="10000" max="22000" step="500"
+               [value]="s().pilotFrequency"
+               (change)="onInputParamChange('pilotFrequency', $event)">
+      </label>
+
+      <label>Pilot Amplitude:
+        <input type="range" min="0.05" max="1" step="0.05"
+               [value]="s().pilotAmplitude"
+               (input)="onSettingChange('pilotAmplitude', $event)">
+        {{ s().pilotAmplitude }}
+      </label>
+
+      <div class="pilot-wiring-hint">
+        Wire: Pilot output → 10kΩ resistor → junction → mic input.
+        Morse key from junction to ground.
+      </div>
+    </div>
+
+    <label>Threshold:
+      <input type="range" min="0.0001" max="0.2" step="0.0001" [value]="s().inputThreshold"
+             (input)="onInputParamChange('inputThreshold', $event)">
+      {{ (s().inputThreshold * 1000).toFixed(2) }}m
+    </label>
+
+    @if (scope.isLive) {
+  <div class="calibration-row">
+      <span class="calibration-label">Calibrate:</span>
+      <button [disabled]="!audioRunning || calibrating" (click)="calibrateOpen()">
+        {{ calibrating === 'open' ? 'Measuring...' : '1. Key Open' }}
+      </button>
+      <button [disabled]="!audioRunning || calibrating" (click)="calibrateClosed()">
+        {{ calibrating === 'closed' ? 'Measuring...' : '2. Key Closed' }}
+      </button>
+      @if (calibOpenRms !== null || calibClosedRms !== null) {
+        <span class="calibration-values">
+          @if (calibOpenRms !== null) { Open: {{ (calibOpenRms * 1000).toFixed(3) }}m }
+          @if (calibClosedRms !== null) { &nbsp;Closed: {{ (calibClosedRms * 1000).toFixed(3) }}m }
+        </span>
+      }
+      @if (calibOpenRms !== null && calibClosedRms !== null) {
+        <button (click)="applyCalibration()">Apply threshold</button>
+      }
+    </div>
+  } @else {
+    <div class="cw-hint">Calibration measures the real key, so it is only available in Settings once audio is running.</div>
+  }
+
+    <label>Debounce (ms):
+      <input type="number" min="1" max="100" [value]="s().inputDebounceMs"
+             (change)="onInputParamChange('inputDebounceMs', $event)">
+    </label>
+
+    <label>
+      <input type="checkbox" [checked]="s().inputInvert"
+             (change)="onInputInvertChange($event)">
+      Invert key sense
+    </label>
+
+    <div class="card-section-divider"></div>
+
+    <label>Name:
+      <input type="text" [value]="s().micInputName"
+             (input)="onSettingChange('micInputName', $event)"
+             placeholder="e.g. callsign (optional)"
+             maxlength="20">
+    </label>
+    <div class="cw-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+    <label>Color:
+      <div class="card-color-row">
+        <input type="color" class="card-color-picker"
+               [ngModel]="s().micInputColor || '#ffffff'"
+               (ngModelChange)="scope.update({ micInputColor: $event })">
+        @if (s().micInputColor) {
+          <button type="button" class="card-color-clear"
+                  (click)="scope.update({ micInputColor: '' })" title="Clear color">&#10005;</button>
+        }
+        <span class="card-color-preview" [style.color]="s().micInputColor || 'inherit'">Sample</span>
+      </div>
+    </label>
+    <div class="cw-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+  }
+</app-item-shell>

@@ -1,0 +1,21 @@
+<!-- Text Blurring -->
+<app-item-shell cardId="text-blur-card" title="Text Blurring" [mode]="mode"
+                [enabled]="s().textBlurEnabled"
+                (enabledChange)="onEnabledChange($event)">
+  <div class="cw-hint">
+    Blurs decoded text so you can practice reading Morse by ear
+    without accidentally seeing the answer. A momentary reveal
+    button appears in the text area — press and hold to peek at
+    the blurred text.
+  </div>
+  <label>
+    Applies to:
+    <select [value]="s().textBlurAppliesTo"
+            (change)="onAppliesToChange($event)">
+      <option value="rx">RX Only</option>
+      <option value="tx">TX Only</option>
+      <option value="both">Both RX and TX</option>
+    </select>
+  </label>
+</app-item-shell>
+

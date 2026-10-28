@@ -1,0 +1,293 @@
+<div class="wizard-overlay" (mousedown)="overlayDown($event)" (click)="overlayClick($event)">
+  <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
+       aria-labelledby="wizard-title" tabindex="-1"
+       (click)="$event.stopPropagation()">
+
+    <header class="wizard-header">
+      <h2 id="wizard-title">{{ title }}</h2>
+      <button type="button" class="wizard-close-btn" (click)="requestClose()"
+              title="Close guided setup" aria-label="Close guided setup">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </header>
+
+    @if (stage() === 'steps' || stage() === 'review') {
+      <p class="wizard-progress" role="status">
+        {{ progress }}
+        <span class="wizard-draft-note">&mdash; nothing changes until you press Apply</span>
+      </p>
+    }
+
+    <div class="wizard-body">
+      @switch (stage()) {
+        @case ('steps') {
+          @if (engine(); as eng) {
+            @if (eng.isFirst) {
+              <section class="wizard-preset-start" aria-labelledby="wizard-preset-start-title">
+                @if (presetPickerOpen()) {
+                  <h3 id="wizard-preset-start-title">Start from a saved preset</h3>
+                  <p class="wizard-note">Only settings covered by this guide are copied into its draft; other preset settings stay as they are. Choosing a different preset replaces this guide's draft answers, but never changes live settings or the saved preset.</p>
+                  @if (presets.loadError()) {
+                    <p class="wizard-error" role="alert">
+                      {{ presets.loadError() }} Nothing was loaded. Close this guide, then use Presets in Settings to download or remove damaged saved preset data before reopening the guide.
+                    </p>
+                  } @else if (presets.presets().length === 0) {
+                    <p class="wizard-note">There are no saved presets yet. You can create one from Presets in Settings.</p>
+                  } @else {
+                    <label class="wizard-field">Saved preset
+                      <select [value]="selectedPresetId()" (change)="selectedPresetId.set($any($event.target).value)">
+                        <option value="">Choose a preset</option>
+                        @for (preset of presets.presets(); track preset.id) {
+                          <option [value]="preset.id">{{ preset.name }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+                  @if (!presets.loadError() && presets.presets().length > 0) {
+                    <div class="wizard-preset-actions">
+                      <button type="button" class="wizard-pill wizard-primary"
+                              [disabled]="!selectedPresetId()" (click)="loadPreset()">Load preset</button>
+                      <button type="button" class="wizard-pill" (click)="closePresetPicker()">Cancel</button>
+                    </div>
+                  } @else {
+                    <button type="button" class="wizard-pill" (click)="closePresetPicker()">Cancel</button>
+                  }
+                } @else {
+                  <button type="button" class="wizard-pill" (click)="togglePresetPicker()">Start from a saved preset</button>
+                }
+                @if (presetNotice()) {
+                  <p class="wizard-note" role="status">{{ presetNotice() }}</p>
+                }
+                @for (warning of presetWarnings(); track warning) {
+                  <p class="wizard-warning" role="status">
+                    {{ warning }} This target was not loaded; choose a verified target in the guide or Settings.
+                  </p>
+                }
+              </section>
+            }
+
+            @let step = eng.step();
+            <div class="wizard-step-head">
+              <h3 class="wizard-step-title" tabindex="-1">{{ step.title }}</h3>
+              @if (step.helpSection; as helpSection) {
+                <app-help-link-button [section]="helpSection" label="Help about this step" />
+              }
+            </div>
+            <p class="wizard-hint">{{ step.intro }}</p>
+            @if (step.help) {
+              <p class="wizard-note">{{ step.help }}</p>
+            }
+
+            @for (q of step.questions ?? []; track q.id) {
+              <fieldset class="wizard-fieldset">
+                <legend>{{ q.label }}</legend>
+                @if (q.hint) {
+                  <p class="wizard-note">{{ q.hint }}</p>
+                }
+                @switch (q.kind) {
+                  @case ('single') {
+                    @for (opt of questionOptions(eng, q); track opt.value) {
+                      <label class="wizard-check">
+                        <input type="radio" [name]="q.id" [checked]="answer(q) === opt.value"
+                               (change)="setSingle(q, opt.value)">
+                        {{ opt.label }}
+                        @if (opt.hint) { <span class="wizard-note">{{ opt.hint }}</span> }
+                      </label>
+                    }
+                  }
+                  @case ('select') {
+                    <label class="wizard-field">{{ q.label }}
+                      <select [value]="answer(q)" (change)="setSelect(q, $event)">
+                        @for (opt of questionOptions(eng, q); track opt.value) {
+                          <option [value]="opt.value">{{ opt.label }}</option>
+                        }
+                      </select>
+                    </label>
+                  }
+                  @case ('multi') {
+                    @for (opt of questionOptions(eng, q); track opt.value) {
+                      <label class="wizard-check">
+                        <input type="checkbox" [checked]="isChosen(q, opt.value)"
+                               (change)="toggleMulti(q, opt.value, $event)">
+                        {{ opt.label }}
+                        @if (opt.hint) { <span class="wizard-note">{{ opt.hint }}</span> }
+                      </label>
+                    }
+                  }
+                  @case ('boolean') {
+                    <label class="wizard-check">
+                      <input type="checkbox" [checked]="answer(q) === true" (change)="setBoolean(q, $event)">
+                      {{ q.label }}
+                    </label>
+                  }
+                  @case ('number') {
+                    <label class="wizard-field">{{ q.label }}
+                      <input type="number" [min]="q.min ?? null" [max]="q.max ?? null"
+                             [value]="answer(q)" (input)="setNumber(q, $event)">
+                    </label>
+                  }
+                  @case ('text') {
+                    <label class="wizard-field">{{ q.label }}
+                      <input type="text" [value]="answer(q)" [attr.maxlength]="q.maxLength ?? null"
+                             (input)="setText(q, $event)">
+                    </label>
+                  }
+                  @case ('participant') {
+                    <app-teach-participant-page
+                      [profile]="participantProfile(eng, q)"
+                      [profiles]="participantProfiles(eng)"
+                      [index]="participantIndex(q)" />
+                  }
+                }
+              </fieldset>
+            }
+
+            @for (it of step.items ?? []; track it.item) {
+              @if (it.hint) {
+                <p class="wizard-note">{{ it.hint }}</p>
+              }
+              <ng-container *ngComponentOutlet="registry[it.item].component;
+                inputs: itemInputs(it, audioRunning)" />
+            }
+
+            @if (step.page; as page) {
+              @let kind = kindOf(step)!;
+              @if (page.kind === 'mapping') {
+                @for (key of [step.id]; track key) {
+                  <app-mapping-page [kind]="page.item" [mapping]="eng.mappings(page.list)[page.index]"
+                                    [index]="page.index" [allMappings]="eng.mappings(page.list)" />
+                }
+                <div class="md-actions" style="margin-top: 1rem; padding-left: 0; padding-right: 0">
+                  <button type="button" class="md-action-btn md-delete-btn" (click)="removeMapping(step, page.index)"
+                          [title]="'Delete this ' + kind.noun">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                    Delete
+                  </button>
+                </div>
+              } @else {
+                <app-mapping-list [mappings]="rows(eng.mappings(page.list))" addLabel="+ Add {{ kind.noun }}" [deletable]="true"
+                                  (add)="addMapping()" (edit)="openMapping(step, $event)"
+                                  (remove)="removeMapping(step, $event)"
+                                  (enabledChange)="setMappingEnabled(step, $event.index, $event.enabled)">
+                  <ng-template let-mapping let-i="index">
+                    <span class="midi-mapping-value">{{ kind.summary(mapping) }}</span>
+                  </ng-template>
+                </app-mapping-list>
+              }
+            }
+
+            @for (problem of problems(); track problem) {
+              <div class="wizard-error" role="alert">{{ problem }}</div>
+            }
+          }
+        }
+
+        @case ('review') {
+          @if (engine(); as eng) {
+            @let review = eng.review();
+            <h3 class="wizard-step-title" tabindex="-1">Review before applying</h3>
+            @if (review.steps.length || review.forced.length) {
+              <p class="wizard-hint">Apply will change only these settings:</p>
+              <ul class="wizard-changes">
+                @for (group of review.steps; track group.step.id) {
+                  @for (line of group.changes; track line.key) {
+                    <li><span class="wizard-change-label">{{ line.label }}</span>
+                      <span class="wizard-change-values"><span class="wizard-from">{{ line.before }}</span> &rarr; <strong>{{ line.after }}</strong></span></li>
+                  }
+                }
+                @for (f of review.forced; track f.key) {
+                  <li><span class="wizard-change-label">{{ f.label }}</span></li>
+                }
+              </ul>
+            } @else {
+              <p class="wizard-hint">Your answers match your current settings, so there is nothing to apply.</p>
+            }
+
+            @if (eng.routeChanges().length) {
+              <section class="wizard-route-review">
+                <h4>External routes that will change</h4>
+                <p class="wizard-note">Inputs and outputs that use a device, port or channel outside this app are listed here for your information. Nothing connects until you use its own Connect, Join or Enable action.</p>
+                <ul class="wizard-route-list">
+                  @for (route of eng.routeChanges(); track route.id) {
+                    <li>{{ routeLabel(route) }}</li>
+                  }
+                </ul>
+              </section>
+            }
+            @for (message of eng.newConflicts(); track message) {
+              <div class="wizard-error" role="alert">{{ message }} Go back and adjust the setup before applying.</div>
+            }
+            @for (message of eng.validateFlow(); track message) {
+              <div class="wizard-error" role="alert">{{ message }}</div>
+            }
+
+            <p class="wizard-note">Everything else stays exactly as it is.</p>
+            <ul class="wizard-list">
+              <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
+            </ul>
+
+            <section class="wizard-preset-save" aria-labelledby="wizard-preset-save-title">
+              @if (!presetSaveOpen()) {
+                <button type="button" class="wizard-pill" (click)="openPresetSave()">Save as preset without applying</button>
+              } @else {
+                <h4 id="wizard-preset-save-title">Save as preset without applying</h4>
+                <label class="wizard-field">Preset name
+                  <input id="wizard-preset-name" type="text" [ngModel]="presetSaveName()"
+                         (ngModelChange)="presetSaveName.set($event)">
+                </label>
+                @if (presetError()) {
+                  <div class="wizard-error" role="alert">{{ presetError() }}</div>
+                }
+                <div class="wizard-preset-actions">
+                  <button type="button" class="wizard-pill wizard-primary" (click)="savePreset()">Save preset</button>
+                  <button type="button" class="wizard-pill" (click)="cancelPresetSave()">Cancel</button>
+                </div>
+              }
+              @if (presetSaveNotice()) {
+                <p class="wizard-note" role="status">{{ presetSaveNotice() }}</p>
+              }
+            </section>
+          }
+        }
+
+      }
+    </div>
+
+    <footer class="wizard-footer">
+      @switch (stage()) {
+        @default {
+          <button type="button" class="wizard-pill" (click)="back()">
+            <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 5 8 12 15 19"/></svg>
+            <span>Back</span>
+          </button>
+          <button type="button" class="wizard-pill" [disabled]="!canRevert" (click)="revert()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="1 4 1 10 7 10"/><path d="M3.5 15a9 9 0 1 0 2.1-9.4L1 10"/></svg>
+              <span>Revert</span>
+            </button>
+          @if (stage() === 'review') {
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="!engine()?.canApply()" (click)="apply()">
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="4 12 10 18 20 6"/></svg>
+              <span>Apply</span>
+            </button>
+          } @else {
+            <button type="button" class="wizard-pill wizard-primary" [disabled]="problems().length > 0" (click)="next()">
+              <span>Next</span>
+              <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 5 16 12 9 19"/></svg>
+            </button>
+          }
+        }
+      }
+    </footer>
+  </div>
+</div>
+
+@if (confirmDiscard()) {
+  <app-confirm-dialog
+    title="Discard your answers?"
+    message="Leaving now discards the choices you made in this guide. Nothing has been changed in the app."
+    confirmLabel="Discard"
+    cancelLabel="Keep editing"
+    [danger]="true"
+    (confirmed)="onDiscardAnswer($event)">
+  </app-confirm-dialog>
+}

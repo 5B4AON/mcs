@@ -1,0 +1,113 @@
+<!-- Audio Key Output (optocoupler keying through the sound card) -->
+<app-item-shell cardId="audio-output-card" title="Audio Key Output" [mode]="mode"
+              [enabled]="s().optoEnabled"
+              (enabledChange)="scope.update({ optoEnabled: $event })">
+  <span item-badges class="source-badge" [class.source-rx]="s().optoForward === 'rx'" [class.source-tx]="s().optoForward === 'tx'" [class.source-both]="s().optoForward === 'both'">{{ s().optoForward === 'rx' ? 'RX' : s().optoForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
+
+  @if (mode === 'embedded') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().optoEnabled"
+             (change)="scope.update({ optoEnabled: $any($event.target).checked })">
+      Key a radio through the sound card (optocoupler)
+    </label>
+    <div class="keyer-hint">
+      @if (s().optoEnabled) {
+        Audio key output is on. If you leave this box unchecked it will be turned off.
+      } @else {
+        Tick the box to choose its device, channel and level.
+      }
+    </div>
+  }
+
+  @if (mode === 'card' || s().optoEnabled) {
+  <div class="experimental-banner" style="padding-top: 10px">&#x26A0; Experimental &mdash; AC coupling on some sound cards may produce unreliable keying.</div>
+  <label>Forward:
+    <select [value]="s().optoForward"
+            (change)="onSettingChange('optoForward', $event)">
+      <option value="tx" [selected]="s().optoForward === 'tx'">TX only &mdash; transmitted morse</option>
+      <option value="rx" [selected]="s().optoForward === 'rx'">RX only &mdash; received morse</option>
+      <option value="both" [selected]="s().optoForward === 'both'">Both RX and TX</option>
+    </select>
+  </label>
+
+  <label>Audio Device:
+    <select [value]="s().optoOutputDeviceId" (change)="onSettingChange('optoOutputDeviceId', $event)">
+      <option value="default" [selected]="s().optoOutputDeviceId === 'default'">System Default</option>
+      @for (dev of devices.outputDevices(); track dev.deviceId) {
+        <option [value]="dev.deviceId" [selected]="dev.deviceId === s().optoOutputDeviceId">{{ dev.label }}</option>
+      }
+    </select>
+  </label>
+
+  <label>Channel:
+    <select [value]="s().optoOutputChannel" (change)="onSettingChange('optoOutputChannel', $event)">
+      <option value="left" [selected]="s().optoOutputChannel === 'left'">Left</option>
+      <option value="right" [selected]="s().optoOutputChannel === 'right'">Right</option>
+    </select>
+  </label>
+
+  <label>Mode:
+    <select [value]="s().optoMode" (change)="onSettingChange('optoMode', $event)">
+      <option value="dc" [selected]="s().optoMode === 'dc'">DC Offset</option>
+      <option value="ac" [selected]="s().optoMode === 'ac'">AC Tone</option>
+    </select>
+  </label>
+
+  @if (s().optoMode === 'ac') {
+    <label>Frequency (Hz):
+      <input type="number" min="100" max="20000" [value]="s().optoFrequency"
+             (change)="onSettingChange('optoFrequency', $event)">
+    </label>
+  }
+
+  <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
+  <div class="cw-hint">The level of the keying signal sent to the sound card, from 0% to 100% (full level).</div>
+  <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
+               label="Audio key amplitude" (valueChange)="setAmplitudePercent($event)" />
+
+  <div class="opto-wiring-hint">
+    @if (s().optoMode === 'dc') {
+      <strong>DC Offset mode:</strong> Outputs a steady DC voltage when keyed.
+      Only works with <em>DC-coupled</em> sound cards (rare). Set amplitude to
+      100% for maximum voltage.<br><br>
+      <strong>Getting only ~100&ndash;200 mV?</strong> Most sound cards have
+      <em>AC coupling capacitors</em> that block DC &mdash; the output decays to
+      near-zero regardless of amplitude setting. This is a hardware limitation,
+      not a software issue (the digital output is already at 0&nbsp;dBFS full
+      scale).<br><br>
+      <strong>&rarr; Switch to AC Tone mode</strong> for AC-coupled sound cards.
+      A square wave passes through coupling caps at full amplitude (1&ndash;2&nbsp;V
+      peak). The opto LED half-wave rectifies it automatically; add a Schottky
+      bridge rectifier (4&times; BAT43) for full-wave rectification and maximum
+      drive current.<br><br>
+      <strong>True DC-coupled cards:</strong> If your card does pass DC (some pro
+      audio interfaces and certain USB sound cards), this mode produces a clean
+      DC level. Consider a transistor buffer if voltage is still insufficient:
+      NPN (2N2222 / BC547), base via 1&nbsp;kΩ from audio output,
+      collector &rarr; opto LED &rarr; 5&nbsp;V supply, emitter &rarr; GND.
+    } @else {
+      <strong>Wiring:</strong> Sound card channel → optocoupler LED anode.
+      Cathode → sound card GND. Set amplitude to 100%.<br><br>
+      <strong>Low voltage (&lt;2V peak)?</strong> Most headphone outputs are only 1–2V.
+      With an opto LED Vf of ~1.1V, there is very little headroom.<br>
+      &bull; <em>Remove any series resistor</em> &mdash; the sound card&rsquo;s output impedance
+      (10–50Ω) already limits current. Connect the LED directly.<br>
+      &bull; <em>Bridge rectifier:</em> Use 4&times; small-signal Schottky diodes (e.g. BAT43,
+      Vf&asymp;0.3V) in a full-bridge to use both half-cycles, doubling average
+      current. This is the most effective approach for low-voltage outputs.<br>
+      &bull; <em>Transistor buffer:</em> Use a 2N2222/BC547 with base via 1kΩ from the
+      audio output, collector → opto LED → 5V supply, emitter → GND.
+      This uses external power and works reliably at any audio voltage.<br>
+      &bull; A 1N4148 reverse-protection diode across the LED is recommended.
+    }
+  </div>
+
+  @if (scope.isLive) {
+  <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testOpto()" class="settings-pill-btn">
+    Test Output (1s)
+  </button>
+  } @else {
+  <div class="keyer-hint">The output test is available in Settings, where it can use your real sound card.</div>
+  }
+  }
+</app-item-shell>

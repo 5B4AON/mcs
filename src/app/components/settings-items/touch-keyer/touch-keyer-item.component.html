@@ -1,0 +1,87 @@
+<!-- Touch Keyer -->
+<app-item-shell cardId="touch-keyer-card" title="Touch Keyer" [mode]="mode"
+                [enabled]="forceEnabled ? null : s().touchKeyerEnabled"
+                (enabledChange)="scope.update({ touchKeyerEnabled: $event })">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="(forceSource ?? s().touchKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().touchKeyerSource) === 'tx'">{{ (forceSource ?? s().touchKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+
+@if (forceEnabled) {
+  <p class="keyer-hint">This guide enables touch keying.</p>
+}
+
+@if (forceSource) {
+  <p class="keyer-hint">Touch keying sends Morse (TX).</p>
+} @else {
+<label>Used for:
+  <select [value]="s().touchKeyerSource" (change)="onSettingChange('touchKeyerSource', $event)">
+    <option value="rx">RX &mdash; received morse</option>
+    <option value="tx">TX &mdash; transmitted morse</option>
+  </select>
+</label>
+}
+
+<label>Touch Mode:
+  <select [value]="s().touchKeyerMode"
+          (change)="onSettingChange('touchKeyerMode', $event)">
+    <option value="straight">Straight Key</option>
+    <option value="paddle">Paddle</option>
+  </select>
+</label>
+
+<div class="keyer-hint">
+  @if (s().touchKeyerMode === 'straight') {
+    Shows a single touch button in the full-screen conversation (Key mode).
+    Press and hold to key down, release to key up.
+  } @else {
+    Shows two touch buttons in the full-screen conversation (Key mode).
+  }
+</div>
+
+@if (s().touchKeyerMode === 'paddle') {
+  <div class="keyer-hint">
+    Left button sends dits, right button sends dahs.
+    Use <strong>Reverse Paddles</strong> to swap.
+  </div>
+
+  <label>
+    <input type="checkbox" [checked]="s().touchReversePaddles"
+           (change)="onBoolChange('touchReversePaddles', $event)">
+    Reverse Paddles
+  </label>
+
+  <label>Paddle Mode:
+    <select [value]="s().touchPaddleMode" (change)="onSettingChange('touchPaddleMode', $event)">
+      <option value="iambic-b" [selected]="s().touchPaddleMode === 'iambic-b'">Iambic B</option>
+      <option value="iambic-a" [selected]="s().touchPaddleMode === 'iambic-a'">Iambic A</option>
+      <option value="ultimatic" [selected]="s().touchPaddleMode === 'ultimatic'">Ultimatic</option>
+      <option value="single-lever" [selected]="s().touchPaddleMode === 'single-lever'">Single Lever</option>
+    </select>
+    <app-help-link-button section="paddle-modes" />
+  </label>
+}
+
+<div class="card-section-divider"></div>
+
+<label>Name:
+  <input type="text" [value]="s().touchKeyerName"
+         (input)="onSettingChange('touchKeyerName', $event)"
+         placeholder="e.g. callsign (optional)"
+         maxlength="20">
+</label>
+<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+<label>Color:
+  <div class="card-color-row">
+    <input type="color" class="card-color-picker"
+           [ngModel]="s().touchKeyerColor || '#ffffff'"
+           (ngModelChange)="scope.update({ touchKeyerColor: $event })">
+    @if (s().touchKeyerColor) {
+      <button type="button" class="card-color-clear"
+              (click)="scope.update({ touchKeyerColor: '' })" title="Clear color">&#10005;</button>
+    }
+    <span class="card-color-preview" [style.color]="s().touchKeyerColor || 'inherit'">Sample</span>
+  </div>
+</label>
+<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+</app-item-shell>

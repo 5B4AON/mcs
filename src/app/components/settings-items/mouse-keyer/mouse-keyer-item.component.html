@@ -1,0 +1,102 @@
+<!-- Mouse Keyer -->
+<app-item-shell cardId="mouse-keyer-card" title="Mouse Keyer" [mode]="mode"
+                [enabled]="forceEnabled ? null : s().mouseKeyerEnabled"
+                (enabledChange)="scope.update({ mouseKeyerEnabled: $event })">
+  <span item-badges>
+    <span class="source-badge" [class.source-rx]="(forceSource ?? s().mouseKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().mouseKeyerSource) === 'tx'">{{ (forceSource ?? s().mouseKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
+  </span>
+
+@if (forceEnabled) {
+  <p class="keyer-hint">This guide enables mouse keying.</p>
+}
+
+@if (forceSource) {
+  <p class="keyer-hint">Mouse keying sends Morse (TX).</p>
+} @else {
+<label>Used for:
+  <select [value]="s().mouseKeyerSource" (change)="onSettingChange('mouseKeyerSource', $event)">
+    <option value="rx">RX &mdash; received morse</option>
+    <option value="tx">TX &mdash; transmitted morse</option>
+  </select>
+</label>
+}
+
+<label>Left Button:
+  <select [value]="s().mouseLeftAction"
+          (change)="onMouseActionChange('mouseLeftAction', $event)">
+    <option value="none">None</option>
+    <option value="straightKey">Straight Key</option>
+    <option value="dit">Dit</option>
+    <option value="dah">Dah</option>
+  </select>
+</label>
+
+<label>Middle Button:
+  <select [value]="s().mouseMiddleAction"
+          (change)="onMouseActionChange('mouseMiddleAction', $event)">
+    <option value="none">None</option>
+    <option value="straightKey">Straight Key</option>
+    <option value="dit">Dit</option>
+    <option value="dah">Dah</option>
+  </select>
+</label>
+
+<label>Right Button:
+  <select [value]="s().mouseRightAction"
+          (change)="onMouseActionChange('mouseRightAction', $event)">
+    <option value="none">None</option>
+    <option value="straightKey">Straight Key</option>
+    <option value="dit">Dit</option>
+    <option value="dah">Dah</option>
+  </select>
+</label>
+
+@if (mouseActionConflict()) {
+  <div class="conflict-warning">{{ mouseActionConflict() }}</div>
+}
+
+<label>
+  <input type="checkbox" [checked]="s().mouseReversePaddles"
+         (change)="onBoolChange('mouseReversePaddles', $event)">
+  Reverse Paddles
+</label>
+
+<label>Paddle Mode:
+  <select [value]="s().mousePaddleMode" (change)="onSettingChange('mousePaddleMode', $event)">
+    <option value="iambic-b" [selected]="s().mousePaddleMode === 'iambic-b'">Iambic B</option>
+    <option value="iambic-a" [selected]="s().mousePaddleMode === 'iambic-a'">Iambic A</option>
+    <option value="ultimatic" [selected]="s().mousePaddleMode === 'ultimatic'">Ultimatic</option>
+    <option value="single-lever" [selected]="s().mousePaddleMode === 'single-lever'">Single Lever</option>
+  </select>
+  <app-help-link-button section="paddle-modes" />
+</label>
+
+<div class="keyer-hint">
+  Mouse clicks are captured in the Morse Decoder area and the full-screen conversation (Key mode).
+  Right-click context menu is suppressed when mapped.
+</div>
+
+<div class="card-section-divider"></div>
+
+<label>Name:
+  <input type="text" [value]="s().mouseKeyerName"
+         (input)="onSettingChange('mouseKeyerName', $event)"
+         placeholder="e.g. callsign (optional)"
+         maxlength="20">
+</label>
+<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+
+<label>Color:
+  <div class="card-color-row">
+    <input type="color" class="card-color-picker"
+           [ngModel]="s().mouseKeyerColor || '#ffffff'"
+           (ngModelChange)="scope.update({ mouseKeyerColor: $event })">
+    @if (s().mouseKeyerColor) {
+      <button type="button" class="card-color-clear"
+              (click)="scope.update({ mouseKeyerColor: '' })" title="Clear color">&#10005;</button>
+    }
+    <span class="card-color-preview" [style.color]="s().mouseKeyerColor || 'inherit'">Sample</span>
+  </div>
+</label>
+<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+</app-item-shell>

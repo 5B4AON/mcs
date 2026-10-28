@@ -180,9 +180,13 @@ export function adjustGapTimings(
   if (fs.farnsworthInputMode === 'multiplier') {
     const m = Math.max(1, fs.farnsworthMultiplier);
     if (m <= 1) return timings;
+    if (fs.farnsworthWordsworth) {
+      // Wordsworth: only the 7-dit word gap is multiplied, up to 4 times.
+      return { ...timings, interWord: timings.interWord * Math.min(m, 4) };
+    }
     return {
       ...timings,
-      interChar: fs.farnsworthWordsworth ? timings.interChar : timings.interChar * m,
+      interChar: timings.interChar * m,
       interWord: timings.interWord * m,
     };
   }
