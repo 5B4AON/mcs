@@ -381,6 +381,7 @@
 @if (showWizard) {
   <app-setup-wizard-v2 [goal]="wizardGoal" [audioRunning]="audioRunning" (closed)="closeWizard()"
                        (tryRequested)="onWizardTry($event)"
+                       (fullscreenRequested)="onWizardFullscreen()"
                        (detectorEnabled)="onWizardDetectorEnabled()"></app-setup-wizard-v2>
 }
 

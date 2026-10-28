@@ -23,6 +23,12 @@
 .fs-conversation.vk-open {
   padding-bottom: 0;
 }
+/* Lens fills the area and positions its own content */
+.fs-conversation.lens-on {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+}
 .fs-conversation:focus {
   outline: none;
 }

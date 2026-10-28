@@ -9,6 +9,7 @@ import { FormsModule } from '@angular/forms';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
 import { EmojiMapping } from '../../../services/settings.service';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
+import { BackdropClickDirective } from '../../backdrop-click.directive';
 
 /**
  * Result payload emitted when the user saves an emoji mapping.
@@ -32,7 +33,7 @@ export interface EmojiEditSaveEvent {
 @Component({
   selector: 'app-emoji-edit-modal',
   standalone: true,
-  imports: [FormsModule, EmojiPickerComponent],
+  imports: [FormsModule, EmojiPickerComponent, BackdropClickDirective],
   templateUrl: './emoji-edit-modal.component.html',
   styleUrls: ['./emoji-edit-modal.component.css'],
 })

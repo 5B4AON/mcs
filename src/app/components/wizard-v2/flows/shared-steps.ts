@@ -2,7 +2,8 @@
  * Morse Code Studio
  */
 
-import { Condition, WizardStep } from '../engine/flow-types';
+import { Condition, ForcedSetting, WizardStep } from '../engine/flow-types';
+import { answerIs } from '../engine/conditions';
 
 /** Options shared by the standard timing steps. */
 export interface TimingStepOptions {
@@ -97,4 +98,47 @@ export function soundStep(options: SoundStepOptions): WizardStep {
     validate: options.validate,
     items: [{ item: 'sidetone', hint: options.detail }],
   };
+}
+
+/** Where the user wants to work: the main screen, the full screen, or the full screen with Lens. */
+export type ScreenChoice = 'main' | 'fullscreen' | 'lens';
+
+/**
+ * Standard last step of the goals where you type or key text yourself: which
+ * screen to use. Choosing the full screen or Lens also makes the full screen
+ * open (in Type or Key mode, matching the goal) when the guide is applied;
+ * "Main screen" changes nothing.
+ */
+export function screenStep(mode: 'key' | 'type'): WizardStep {
+  const doing = mode === 'type' ? 'Type' : 'Key';
+  return {
+    id: 'screen',
+    title: 'Choose your screen',
+    intro: 'Where would you like to work? The main screen shows everything at once. The full screen is one large conversation view. Lens is a teaching aid in the full screen: it shows only the latest character, very large, with its dots and dashes underneath.',
+    helpSection: 's2-6',
+    questions: [{
+      id: 'screen',
+      label: 'Screen',
+      kind: 'single',
+      default: 'main',
+      defaultFrom: settings => (settings.fullscreenLensEnabled ? 'lens' : 'main'),
+      options: [
+        { value: 'main', label: 'Main screen', hint: 'Stay on the main screen, as now. Nothing about the full screen changes.' },
+        { value: 'fullscreen', label: 'Full screen', hint: `Open the large conversation view in ${doing} mode, showing the whole text.` },
+        { value: 'lens', label: 'Full screen with Lens', hint: `Open the full screen in ${doing} mode showing one character at a time, with its Morse symbols below it. Each new character replaces the last. Useful for teaching.` },
+      ],
+    }],
+  };
+}
+
+/** Settings the screen choice sets: Lens on or off, and the full screen's Key or Type mode. Main screen sets nothing. */
+export function screenForced(mode: 'key' | 'type'): ForcedSetting[] {
+  const chosen = (value: ScreenChoice) => answerIs('screen', value);
+  const modeLabel = mode === 'type' ? 'Open the full screen in Type mode' : 'Open the full screen in Key mode';
+  return [
+    { key: 'fullscreenLensEnabled', value: true, label: 'Turn Lens on in the full screen', when: chosen('lens') },
+    { key: 'fullscreenLensEnabled', value: false, label: 'Turn Lens off in the full screen', when: chosen('fullscreen') },
+    { key: 'fullscreenInputMode', value: mode, label: modeLabel, when: chosen('lens') },
+    { key: 'fullscreenInputMode', value: mode, label: modeLabel, when: chosen('fullscreen') },
+  ];
 }

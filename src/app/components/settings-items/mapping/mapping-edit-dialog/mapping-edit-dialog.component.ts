@@ -4,6 +4,7 @@
 
 import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../../modal-accessibility';
+import { BackdropClickDirective } from '../../../backdrop-click.directive';
 
 /**
  * Popup frame of the Settings mapping editors: overlay, title with close
@@ -15,6 +16,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../../moda
 @Component({
   selector: 'app-mapping-edit-dialog',
   standalone: true,
+  imports: [BackdropClickDirective],
   templateUrl: './mapping-edit-dialog.component.html',
   styleUrls: ['./mapping-edit-dialog.component.css'],
 })

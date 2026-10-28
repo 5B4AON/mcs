@@ -1,0 +1,27 @@
+<div class="lens" data-lens>
+  @for (frame of frames; track frame.id + ':' + (frame.char ?? '')) {
+    <div class="lens-inner" [style.color]="colorOf(frame)"
+         [style.--n]="charCount(frame)" [style.--w]="geometry(frame).viewWidth">
+      @if (frame.name) {
+        <div class="lens-name">{{ frame.name }}</div>
+      }
+      <div class="lens-stage">
+        <div class="lens-char" [class.lens-prosign]="isProsign(frame)"
+             [class.lens-blurred]="isBlurred(frame)" [class.lens-pending]="!frame.char" aria-hidden="true">{{ displayChar(frame) }}</div>
+        <svg class="lens-symbols" [attr.viewBox]="'0 0 ' + geometry(frame).viewWidth + ' 1'"
+             fill="currentColor" aria-hidden="true" focusable="false">
+          @for (el of geometry(frame).elements; track $index) {
+            @if (el.kind === 'dot') {
+              <circle [attr.cx]="el.x + 0.5" cy="0.5" r="0.5"/>
+            } @else {
+              <rect [attr.x]="el.x" y="0" [attr.width]="el.width" height="1" rx="0.5"/>
+            }
+          }
+        </svg>
+      </div>
+    </div>
+  } @empty {
+    <div class="lens-empty">Key or type a character</div>
+  }
+  <div class="lens-live" aria-live="polite">{{ announcement(lens.frame()) }}</div>
+</div>

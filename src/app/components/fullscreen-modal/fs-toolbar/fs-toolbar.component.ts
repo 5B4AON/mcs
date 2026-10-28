@@ -16,6 +16,8 @@ import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService } from '../../../services/display-buffer.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
 import { PracticeService } from '../../../services/practice.service';
+import { LensService } from '../../../services/lens.service';
+import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 
 /**
  * Fullscreen modal toolbar component.
@@ -43,6 +45,12 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   /** Temporary fullscreen input choice. */
   @Input() inputMode: 'key' | 'type' = 'key';
 
+  /** True while Lens mode is on. */
+  @Input() lensMode = false;
+
+  /** Emitted when the user switches Lens on or off. */
+  @Output() lensToggle = new EventEmitter<void>();
+
   /** Emitted when the user clicks the close button */
   @Output() closeRequest = new EventEmitter<void>();
   /** Emitted when the user changes the temporary fullscreen input choice. */
@@ -53,6 +61,9 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Emitted when the user requests the symbols reference */
   @Output() symbolsRefRequested = new EventEmitter<void>();
+
+  /** Fonts offered in the kebab menu. */
+  readonly fonts = FULLSCREEN_FONTS;
 
   // ---- CW level meter state ----
   cwLevel = 0;
@@ -74,6 +85,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private cwInput: CwInputService,
     private displayBuffers: DisplayBufferService,
     private practice: PracticeService,
+    private lens: LensService,
   ) {}
 
   ngOnInit(): void {
@@ -175,12 +187,14 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
       value = parseFloat(el.value);
     }
     this.settings.updateModalDisplay({ [key]: value } as Partial<ModalDisplaySettings>);
+    this.saveSettings();
   }
 
   /** Handle modal display boolean toggle changes */
   onModalBoolChange(key: keyof ModalDisplaySettings, event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.settings.updateModalDisplay({ [key]: checked } as Partial<ModalDisplaySettings>);
+    this.saveSettings();
   }
 
   // ---- Clear methods ----
@@ -191,6 +205,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
       this.practice.abort();
     }
     this.displayBuffers.fullscreenConversation.clear();
+    this.lens.reset();
   }
 
   /** Clear all four display buffers plus encoder operational state */
@@ -201,6 +216,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.encoder.clearBuffer();
+    this.lens.reset();
   }
 
   /** Toggle the clear context menu */

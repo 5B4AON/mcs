@@ -338,6 +338,10 @@
   color: #aaa;
   cursor: pointer;
 }
+.fs-face-ctl .fs-mode-select {
+  flex: 1;
+  min-width: 0;
+}
 .fs-font-ctl input[type="range"] {
   flex: 1;
   min-width: 0;
@@ -527,6 +531,10 @@
   align-self: center;
   width: 92%;
   text-align: center;
+}
+.kebab-help-btn.lens-toggle-on {
+  background: linear-gradient(180deg, #2f7d5a 0%, #1f5a40 100%);
+  box-shadow: 0 0 0 2px #8cf, 0 3px 6px rgba(0,0,0,.35);
 }
 .kebab-help-btn:hover {
   transform: translateY(-1px);

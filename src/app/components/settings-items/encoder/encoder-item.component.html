@@ -1,4 +1,21 @@
 <!-- Keyboard Encoder -->
+@if (part === 'mode') {
+<app-item-shell cardId="encoder-mode-card" title="Send mode" [mode]="mode">
+  <label>Send mode:
+    <select [value]="s().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+      <option value="enter" [selected]="s().encoderMode === 'enter'">Send on Enter</option>
+      <option value="live" [selected]="s().encoderMode === 'live'">Live</option>
+      @if (s().encoderMode === 'practice') {
+        <option value="practice" selected>Practice (current)</option>
+      }
+    </select>
+  </label>
+  <div class="keyer-hint">
+    <strong>Send on Enter</strong>: type your message first, and it is played as Morse when you press Enter
+    or the transmit button. <strong>Live</strong>: each letter is played as soon as you type it.
+  </div>
+</app-item-shell>
+} @else {
 <app-item-shell cardId="encoder-card" title="Keyboard Encoder" [mode]="mode">
   <span item-badges class="source-badge" [class.source-rx]="s().encoderSource === 'rx'" [class.source-tx]="s().encoderSource === 'tx'">{{ s().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
 
@@ -41,3 +58,4 @@
   </label>
   <div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
 </app-item-shell>
+}

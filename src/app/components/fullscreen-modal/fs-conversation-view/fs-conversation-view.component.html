@@ -4,12 +4,16 @@
        (input)="onTypeInput($event)"
        (keydown)="onTypeKeydown($event)">
 
-<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen"
+<div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" [class.lens-on]="lensView"
+     [style.--lens-side]="lensSideInset"
+     [style.--lens-bottom]="lensBottomInset"
      [attr.tabindex]="inputMode === 'key' ? 0 : -1"
      (click)="onConversationClick()"
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
      [class.blur-revealing]="revealing" #conversationArea>
-  @if (practiceView && practice.sessionStage() === 'briefing') {
+  @if (lensView) {
+    <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing"></app-fs-lens-view>
+  } @else if (practiceView && practice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
       <strong>Practice session</strong>
       <div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>

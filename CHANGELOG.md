@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-10-28
+
+### Added
+
+- **Lens mode** — A new Lens switch in the fullscreen menu turns the whole fullscreen view into a teaching aid. It shows only the latest character, large and centred, with its dots and dashes in large symbols underneath. It works in Key and Type mode and for RX and TX, uses the RX/TX or input colours, and shows the input name at the top left. Keyed characters show their symbols first and the letter once it is decoded; typed characters follow the sound as they are played; received Firebase RTDB characters show with the sender's name. The view fits the window and the space left above a phone keyboard.
+- **Fullscreen font picker** — Choose Typewriter (Courier, the default), Classic (Times), Clean (Arial), Wide (Verdana) or Code (Consolas) in the fullscreen menu. It applies to the whole fullscreen view.
+- **Choose your screen** — The "Type text and hear it as Morse" and "Practice sending Morse" guides end with a step to stay on the main screen, use the full screen, or use the full screen with Lens. Choosing the full screen or Lens opens it (in Type or Key mode) when the guide is applied.
+- **Send mode in the Type guide** — The Type guide starts with a page for Send on Enter or Live, followed by a Keyboard encoder page.
+
+### Changed
+
+- **Fullscreen choices are remembered and in presets** — Key/Type, Lens, the font, font size, bold, row spacing and all fullscreen colours are saved with your settings (defaults: Key, Lens off, Typewriter) and are part of Presets and settings files. Older presets keep working with the defaults, and earlier display settings are carried over.
+- **Dialog dim areas** — A text-selection drag that starts in a dialog and ends on the dim area no longer closes the dialog (Settings, Presets, Emoji, Mapping, Goals, Setup Wizard and Confirm dialogs).
+- **Help** — New Lens mode section (Decoder chapter) and updated notes for the fullscreen font, remembered choices, the wizard screen step and the send mode.
+
+### Fixed
+
+- **Mapped keys after closing fullscreen** — Mapped keyboard keys are handed back to the main screen however fullscreen is closed (Back or Escape as well as Close), instead of staying off after leaving Type mode.
+
 ## [2.1.1] - 2026-10-28
 
 ### Added

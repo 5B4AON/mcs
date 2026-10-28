@@ -1,4 +1,4 @@
-<div class="emoji-edit-overlay" (click)="cancel()">
+<div class="emoji-edit-overlay" (appBackdropClick)="cancel()">
   <div #dialog class="emoji-edit-dialog" (click)="$event.stopPropagation()" role="dialog"
        aria-modal="true" tabindex="-1" (keydown)="onDialogKeydown($event)"
        aria-label="Edit Emoji Mapping">

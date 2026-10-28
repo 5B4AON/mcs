@@ -6,6 +6,8 @@
     <!-- Top toolbar: close, level meter, WPM pills, clear, kebab menu -->
     <app-fs-toolbar
       [inputMode]="inputMode"
+      [lensMode]="lensMode"
+      (lensToggle)="toggleLens()"
       (closeRequest)="close()"
       (inputModeChange)="setInputMode($event)"
       (helpRequested)="requestHelp()"
@@ -16,11 +18,13 @@
     <div class="fs-body"
          [style.background]="settings.modalDisplay().rxBackground"
          [style.fontSize.px]="settings.modalDisplay().fontSize"
+         [style.fontFamily]="fontStack"
          [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'"
          [style.lineHeight]="1.15 + settings.modalDisplay().lineSpacing">
 
       <app-fs-conversation-view [viewportKeyboardOpen]="viewportKeyboardOpen"
                            [inputMode]="inputMode"
+                           [lensMode]="lensMode"
                            (inputModeChange)="setInputMode($event)"></app-fs-conversation-view>
 
     </div>
