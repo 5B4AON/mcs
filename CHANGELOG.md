@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.2] - 2026-10-28
+
+### Fixed
+
+- **No Farnsworth question when practising sending** — The "Practice sending Morse" guide no longer asks about Farnsworth timing. Farnsworth only stretches gaps the app generates (the keyboard encoder and played-back received or relayed Morse), never the timing of a straight key or paddle, so the page changed nothing. The keyer speed page still appears when a paddle is set up. The Help chapter on Farnsworth now says keyers are not affected. (#91)
+
 ## [2.2.1] - 2026-10-28
 
 ### Removed
