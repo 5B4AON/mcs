@@ -74,9 +74,7 @@
 
     <!-- Tab content — delegates to child components -->
     <div id="settings-tab-panel" class="settings-tab-content" role="tabpanel"
-         [attr.aria-labelledby]="'settings-tab-' + settingsTab"
-         (touchstart)="onTabContentTouchStart($event)"
-         (touchend)="onTabContentTouchEnd($event)">
+         [attr.aria-labelledby]="'settings-tab-' + settingsTab">
 
       @if (settingsTab === 'inputs') {
         <app-settings-inputs-tab [audioRunning]="audioRunning"

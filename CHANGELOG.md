@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-10-28
+
+### Removed
+
+- **Swipe to change Settings tab** — Dragging left or right in Settings no longer switches tabs on touch devices, so moving a slider can no longer jump you to another tab. Tap a tab, or use the Arrow, Home and End keys, to change tab.
+
 ## [2.2.0] - 2026-10-28
 
 ### Added

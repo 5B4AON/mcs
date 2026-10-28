@@ -15,7 +15,7 @@ import {
 } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AppSettings, SettingsSaveResult, SettingsService, isTouchDevice } from '../../services/settings.service';
+import { AppSettings, SettingsSaveResult, SettingsService } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
@@ -59,7 +59,7 @@ import { BackdropClickDirective } from '../backdrop-click.directive';
  * ({@link SettingsInputsTabComponent}, {@link SettingsOutputsTabComponent},
  * {@link SettingsOtherTabComponent}) within a modal overlay. Handles:
  *
- *  - Tab switching with swipe gesture support
+ *  - Tab switching by tap, click or keyboard
  *  - Device scan / refresh (audio device enumeration)
  *  - Reset-to-defaults confirmation dialog
  *  - Save button and validation banner
@@ -192,11 +192,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   private transferBaseSettings: AppSettings | null = null;
   private pendingImport: PortableAppSettings | null = null;
   private settingsTransferTrigger: HTMLButtonElement | null = null;
-
-  // ---- Swipe gesture state ----
-  private touchStartX = 0;
-  private touchStartY = 0;
-  private readonly isTouchDevice = isTouchDevice();
 
   constructor(
     public settings: SettingsService,
@@ -373,61 +368,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  // ---- Swipe gesture for tab navigation ----
-
-  /** Tab order used for cycling */
+  /** Tab order used for keyboard navigation */
   private readonly tabOrder: ('inputs' | 'outputs' | 'other')[] = ['inputs', 'outputs', 'other'];
-
-  /** Record the starting touch position */
-  onTabContentTouchStart(event: TouchEvent): void {
-    if (!this.isTouchDevice) return;
-    const touch = event.touches[0];
-    this.touchStartX = touch.clientX;
-    this.touchStartY = touch.clientY;
-  }
-
-  /**
-   * Detect a horizontal swipe and switch tabs.
-   * Requires a minimum 60 px horizontal distance and the swipe must
-   * be more horizontal than vertical to avoid triggering on scrolls.
-   */
-  onTabContentTouchEnd(event: TouchEvent): void {
-    if (!this.isTouchDevice) return;
-    const touch = event.changedTouches[0];
-    const dx = touch.clientX - this.touchStartX;
-    const dy = touch.clientY - this.touchStartY;
-
-    // Only act if the gesture is predominantly horizontal
-    if (Math.abs(dx) < 60 || Math.abs(dy) > Math.abs(dx)) return;
-
-    if (dx < 0) {
-      this.nextTab();   // swipe left → next tab
-    } else {
-      this.prevTab();   // swipe right → previous tab
-    }
-  }
-
-  /** Move to the next tab (Inputs → Outputs → Other → Inputs) */
-  private nextTab(): void {
-    const idx = this.tabOrder.indexOf(this.settingsTab);
-    this.changeTab(this.tabOrder[(idx + 1) % this.tabOrder.length]);
-  }
-
-  /** Move to the previous tab (Other → Outputs → Inputs → Other) */
-  private prevTab(): void {
-    const idx = this.tabOrder.indexOf(this.settingsTab);
-    this.changeTab(this.tabOrder[(idx - 1 + this.tabOrder.length) % this.tabOrder.length]);
-  }
-
-  private changeTab(tab: 'inputs' | 'outputs' | 'other'): void {
-    const tabHadFocus = document.activeElement?.getAttribute('role') === 'tab';
-    this.settingsTab = tab;
-    if (tabHadFocus) {
-      window.requestAnimationFrame(() => {
-        document.getElementById(`settings-tab-${tab}`)?.focus();
-      });
-    }
-  }
 
   // ---- Save ----
 
