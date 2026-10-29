@@ -7,7 +7,7 @@
       }
       <div class="lens-stage">
         <div class="lens-char" [class.lens-prosign]="isProsign(frame)"
-             [class.lens-blurred]="isBlurred(frame)" [class.lens-pending]="!frame.char" aria-hidden="true">{{ displayChar(frame) }}</div>
+             [class.lens-blurred]="isBlurred(frame)" [class.lens-pending]="!frame.char" [class.lens-stale]="frame.stale" [style.color]="staleColorOf(frame)" [style.--fade]="(frame.fadeMs ?? 0) + 'ms'" aria-hidden="true">{{ displayChar(frame) }}</div>
         <svg class="lens-symbols" [attr.viewBox]="'0 0 ' + geometry(frame).viewWidth + ' 1'"
              fill="currentColor" aria-hidden="true" focusable="false">
           @for (el of geometry(frame).elements; track $index) {

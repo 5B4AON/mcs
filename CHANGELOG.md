@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.3] - 2026-10-29
+
+### Fixed
+
+- **Lens keeps the previous character while you key the next** — In Lens mode a keyed character no longer disappears as soon as you start the next one. It stays on screen, fading gradually (to 5% over 70% of an average letter at your speed), while the new symbols appear below it, and the new character replaces it once decoded. The same happens when the previous character was typed or received. With reduced motion the faded character is shown at a fixed 40% opacity. (#95)
+
 ## [2.2.2] - 2026-10-28
 
 ### Fixed

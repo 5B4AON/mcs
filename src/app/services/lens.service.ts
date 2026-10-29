@@ -32,7 +32,18 @@ export interface LensFrame {
   planned: string;
   /** The character, or null while a keyed character has not been decoded yet. */
   char: string | null;
+  /** True while `char` is the previous character and `pattern` already belongs to the next, not yet decoded one. */
+  stale?: boolean;
+  /** Source of the stale character itself, when it came from another input than the symbols below it. */
+  charSource?: 'rx' | 'tx';
+  /** Colour override of the stale character itself. */
+  charColor?: string;
+  /** How long the stale character takes to dim completely, fixed when it first goes stale. */
+  fadeMs?: number;
 }
+
+/** Average length of a letter in dit units, including its gap (the PARIS standard: 50 units for 5 letters). */
+const LETTER_UNITS = 10;
 
 /**
  * Lens Service — holds the one character shown by the fullscreen Lens mode.
@@ -41,7 +52,9 @@ export interface LensFrame {
  * text and the RTDB playback for received text) report each element and the
  * decoded character. The latest active input owns the frame. Nothing is
  * recorded while Lens is off, and spaces never reach this service, so the
- * last character stays on screen until the next one starts.
+ * last character stays on screen until the next one starts. Keyed (decoder)
+ * input is the exception: the previous character stays (dimming gradually) until the next
+ * one is decoded, while the symbols of the next one are revealed live.
  */
 @Injectable({ providedIn: 'root' })
 export class LensService {
@@ -67,10 +80,28 @@ export class LensService {
    * @param pattern  dots and dashes revealed so far
    * @param char     the character if already known, otherwise null
    * @param planned  the full pattern when known in advance
+   * @param ditMs    dit length of a keyed input; the previous character dims over 70% of an average letter
    */
-  show(owner: string, meta: LensMeta, pattern: string, char: string | null, planned: string = pattern): void {
+  show(owner: string, meta: LensMeta, pattern: string, char: string | null, planned: string = pattern, ditMs?: number): void {
     if (!this.enabled()) return;
     const prev = this.frame();
+    // A keyed character is being formed: the previous character (from any input) stays, marked stale, above the new symbols.
+    if (owner.startsWith('decoder:') && char === null && prev && prev.char !== null) {
+      this.frame.set({
+        ...prev,
+        owner,
+        source: meta.source,
+        charSource: prev.stale ? prev.charSource : prev.source,
+        charColor: prev.stale ? prev.charColor : prev.color,
+        name: this.displayBuffers.displayNameFor(meta.source, meta.name),
+        color: meta.color || undefined,
+        pattern,
+        planned: pattern,
+        stale: true,
+        fadeMs: prev.stale ? prev.fadeMs : (ditMs ?? 0) * LETTER_UNITS * 0.7,
+      });
+      return;
+    }
     const isNew = !prev
       || prev.owner !== owner
       || pattern.length <= prev.pattern.length
@@ -94,6 +125,10 @@ export class LensService {
   complete(owner: string, char: string): void {
     if (!this.enabled()) return;
     const prev = this.frame();
+    if (prev && prev.owner === owner && prev.stale) {
+      this.frame.set({ ...prev, id: this.nextId++, char, stale: false, fadeMs: undefined, charSource: undefined, charColor: undefined });
+      return;
+    }
     if (!prev || prev.owner !== owner || prev.char !== null) return;
     this.frame.set({ ...prev, char });
   }

@@ -401,13 +401,13 @@ export class MorseDecoderService {
     }
 
     this.updatePatternSignals(pipeline);
-    this.lens.show(`decoder:${path}`, this.lensMeta(pipeline), pipeline.pattern, null);
-
-    // Start silence timers for character/word boundary detection.
     // Use keyer WPM timing for perfect elements, adaptive dit average otherwise.
     const du = pipeline.perfectTiming
       ? timingsFromWpm(this.settings.settings().keyerWpm).dit
       : this.avgDitForSource(source);
+    this.lens.show(`decoder:${path}`, this.lensMeta(pipeline), pipeline.pattern, null, pipeline.pattern, du);
+
+    // Start silence timers for character/word boundary detection.
     const charTimeout = du * 2.5; // ~3 dit units
     const wordTimeout = du * 6;   // ~7 dit units
 
