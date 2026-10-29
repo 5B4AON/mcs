@@ -50,6 +50,14 @@
   visibility: hidden;
   animation: none;
 }
+.lens-char.lens-stale {
+  /* The previous character, kept until the one being keyed is decoded; dims over --fade */
+  animation: lens-dim var(--fade, 0ms) linear forwards;
+}
+@keyframes lens-dim {
+  from { opacity: 1; }
+  to { opacity: 0.05; }
+}
 .lens-char.lens-prosign {
   text-decoration: overline;
   text-decoration-thickness: 0.05em;
@@ -109,4 +117,5 @@
 }
 @media (prefers-reduced-motion: reduce) {
   .lens-char { animation: none; }
+  .lens-char.lens-stale { opacity: 0.4; }
 }

@@ -45,6 +45,13 @@ export class FsLensViewComponent {
     return frame.color || (frame.source === 'rx' ? d.rxForeground : d.txForeground);
   }
 
+  /** The stale character keeps the colour of the input it came from; null leaves the frame colour. */
+  staleColorOf(frame: LensFrame): string | null {
+    if (!frame.stale || !frame.charSource) return null;
+    const d = this.settings.modalDisplay();
+    return frame.charColor || (frame.charSource === 'rx' ? d.rxForeground : d.txForeground);
+  }
+
   /** Prosigns are shown without the angle brackets and with an overline. */
   isProsign(frame: LensFrame): boolean {
     return !!frame.char && frame.char.length > 1;
@@ -69,9 +76,9 @@ export class FsLensViewComponent {
     return layoutPattern(frame.pattern, frame.planned);
   }
 
-  /** Announced once, when the character is known; skipped while blurred. */
+  /** Announced once, when the character is known; skipped while blurred or while it is the previous character. */
   announcement(frame: LensFrame | null): string {
-    if (!frame || !frame.char || this.isBlurred(frame)) return '';
+    if (!frame || !frame.char || frame.stale || this.isBlurred(frame)) return '';
     const spoken = this.displayChar(frame);
     return frame.pattern ? `${spoken}, ${patternWords(frame.pattern)}` : spoken;
   }
