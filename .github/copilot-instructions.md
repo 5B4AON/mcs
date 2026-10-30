@@ -37,6 +37,7 @@ src/app/
 ├── app.routes.ts            — empty routes array (no routing)
 ├── firebase.config.ts       — Firebase RTDB credentials
 ├── morse-table.ts           — MORSE_TABLE, MORSE_REVERSE, timingsFromWpm()
+├── fullscreen-fonts.ts      — `FULLSCREEN_FONTS` (Typewriter, Classic, Readable, Cockpit), `fullscreenFontStack()`; bundled self-hosted Fontsource woff2 (latin 400/700, OFL-1.1) loaded by `angular.json` `styles` and cached lazily by `ngsw-config.json`; ids are historical, never rename without a migration
 ├── version.ts               — app version constant (keep in sync with package.json)
 ├── web-serial.d.ts          — Web Serial API type declarations
 ├── data/                    — static data files

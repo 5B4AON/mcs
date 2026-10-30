@@ -151,3 +151,7 @@ During a production build, Angular extracts all dependency license texts into:
 `dist/3rdpartylicenses.txt`
 
 This is enabled by setting `"extractLicenses": true` in `angular.json`, which is the recommended way to ensure all license obligations are met.
+
+### Third‑Party Fonts
+
+The fullscreen view bundles four fonts, self-hosted through [Fontsource](https://fontsource.org/) and licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/): Courier Prime, Merriweather, Atkinson Hyperlegible and B612 Mono. Each package's license file is kept in `node_modules/@fontsource/` and is part of `dist/3rdpartylicenses.txt`.

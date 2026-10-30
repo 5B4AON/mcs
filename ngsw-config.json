@@ -24,7 +24,8 @@
         "files": [
           "/icon-*.png",
           "/apple-touch-icon.png",
-          "/help/**"
+          "/help/**",
+          "/media/*.woff2"
         ]
       }
     }

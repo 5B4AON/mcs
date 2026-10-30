@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-10-30
+
+### Changed
+
+- **Bundled fullscreen fonts** — The fullscreen view now offers four fonts that are built into the app and look the same on Android, iOS, Windows, macOS and Linux: **Typewriter** (Courier Prime), **Classic** (Merriweather), **Readable** (Atkinson Hyperlegible) and **Cockpit** (B612 Mono). Each font is downloaded from the app itself the first time it is used and then works offline. The former Arial-style option is removed; a saved setting that used it falls back to Typewriter. (#93)
+
 ## [2.2.6] - 2026-10-30
 
 ### Fixed

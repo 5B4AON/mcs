@@ -32,7 +32,15 @@
               "src/app/components/settings-items/mapping/mapping-fields.css",
               "src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.css",
               "src/app/components/settings-modal/settings-outputs-tab/settings-outputs-tab.component.css",
-              "src/app/components/settings-modal/settings-other-tab/settings-other-tab.component.css"
+              "src/app/components/settings-modal/settings-other-tab/settings-other-tab.component.css",
+              "node_modules/@fontsource/courier-prime/latin-400.css",
+              "node_modules/@fontsource/courier-prime/latin-700.css",
+              "node_modules/@fontsource/merriweather/latin-400.css",
+              "node_modules/@fontsource/merriweather/latin-700.css",
+              "node_modules/@fontsource/atkinson-hyperlegible/latin-400.css",
+              "node_modules/@fontsource/atkinson-hyperlegible/latin-700.css",
+              "node_modules/@fontsource/b612-mono/latin-400.css",
+              "node_modules/@fontsource/b612-mono/latin-700.css"
             ],
             "scripts": []
           },
