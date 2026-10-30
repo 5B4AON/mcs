@@ -3,7 +3,7 @@
  */
 
 import { Component, Input, inject } from '@angular/core';
-import { MidiOutputMapping } from '../../../services/settings.service';
+import { MidiOutputMapping } from './midi-output-item.model';
 import { MidiOutputService, midiOutputNoteName } from '../../../services/midi-output.service';
 import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../settings-modal/midi-output-edit-modal/midi-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';

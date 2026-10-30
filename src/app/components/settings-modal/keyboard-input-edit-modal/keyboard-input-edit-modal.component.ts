@@ -3,7 +3,7 @@
  */
 
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { KeyboardInputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.model';
 import { MappingEditDialogComponent } from '../../settings-items/mapping/mapping-edit-dialog/mapping-edit-dialog.component';
 import {
   KeyboardInputEditSaveEvent, KeyboardMappingEditorComponent,

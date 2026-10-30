@@ -7,7 +7,9 @@
  */
 
 import { Component, Input, computed, inject } from '@angular/core';
-import { SettingsService, MidiInputMapping, DecoderSource } from '../../../services/settings.service';
+import { SettingsService } from '../../../services/settings.service';
+import { DecoderSource } from '../../../services/settings-common';
+import { MidiInputMapping } from './midi-input-item.model';
 import { MidiInputService, midiNoteName } from '../../../services/midi-input.service';
 import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../settings-modal/midi-input-edit-modal/midi-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';

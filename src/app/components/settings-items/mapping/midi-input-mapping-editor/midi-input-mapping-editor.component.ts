@@ -5,7 +5,8 @@
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges, TemplateRef } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MidiInputMapping, MidiInputMode, DecoderSource } from '../../../../services/settings.service';
+import { MidiInputMapping, MidiInputMode } from '../../midi-input/midi-input-item.model';
+import { DecoderSource } from '../../../../services/settings-common';
 import { MidiInputService, MidiLearnResult, midiNoteName } from '../../../../services/midi-input.service';
 import { CaptureSlot } from '../capture-slot';
 import { DetectButtonComponent } from '../detect-button/detect-button.component';

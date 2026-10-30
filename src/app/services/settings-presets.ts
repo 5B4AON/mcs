@@ -3,7 +3,7 @@
  */
 
 import { AppSettings } from './settings.service';
-import { PortableAppSettings, validatePortableSettings } from './settings-transfer';
+import { PortableAppSettings, validatePortableSettings } from './settings-snapshot';
 
 /** localStorage key for named presets; separate from the automatic `morseProfiles` */
 export const PRESETS_STORAGE_KEY = 'morsePresets';

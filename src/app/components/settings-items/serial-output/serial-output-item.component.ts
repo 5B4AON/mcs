@@ -3,7 +3,8 @@
  */
 
 import { Component, Input, computed, inject } from '@angular/core';
-import { SerialOutputMapping, OutputForward } from '../../../services/settings.service';
+import { OutputForward } from '../../../services/settings-common';
+import { SerialOutputMapping } from './serial-output-item.model';
 import { SerialKeyOutputService } from '../../../services/serial-key-output.service';
 import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../settings-modal/serial-output-edit-modal/serial-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';

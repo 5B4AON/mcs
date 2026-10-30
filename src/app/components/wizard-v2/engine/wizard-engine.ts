@@ -3,7 +3,8 @@
  */
 
 import { Signal, computed, signal } from '@angular/core';
-import { AppSettings, findChannelConflicts } from '../../../services/settings.service';
+import { AppSettings } from '../../../services/settings.service';
+import { findChannelConflicts } from '../../../services/audio-channel-conflicts';
 import { ExternalRouteChange, compareExternalRoutes } from '../../../services/output-change-checker';
 import { ItemDescriptor, ItemReviewLine } from '../../settings-items/item-descriptor';
 import { DraftSettingsScope } from '../../settings-items/draft-settings-scope';

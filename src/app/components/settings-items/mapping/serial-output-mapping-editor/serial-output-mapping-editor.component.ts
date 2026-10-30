@@ -4,7 +4,9 @@
 
 import { Component, Input, OnChanges, SimpleChanges, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { SerialOutputMapping, SerialInputMapping, SerialPin, OutputForward } from '../../../../services/settings.service';
+import { SerialOutputMapping, SerialPin } from '../../serial-output/serial-output-item.model';
+import { SerialInputMapping } from '../../serial-input/serial-input-item.model';
+import { OutputForward } from '../../../../services/settings-common';
 import { SerialKeyOutputService } from '../../../../services/serial-key-output.service';
 import { SETTINGS_SCOPE } from '../../settings-scope';
 

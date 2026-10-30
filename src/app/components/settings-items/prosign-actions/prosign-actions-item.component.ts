@@ -4,7 +4,7 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProsignAction, ProsignActionEntry } from '../../../services/settings.service';
+import { ProsignAction, ProsignActionEntry } from './prosign-actions-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 

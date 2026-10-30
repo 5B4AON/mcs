@@ -4,7 +4,7 @@
 
 import { Injectable, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
-import { createSettingsSnapshot, PortableAppSettings } from './settings-transfer';
+import { createSettingsSnapshot, PortableAppSettings } from './settings-snapshot';
 import {
   parsePresetStore,
   PRESETS_MAX_COUNT,

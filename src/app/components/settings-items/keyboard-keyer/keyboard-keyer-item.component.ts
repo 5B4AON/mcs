@@ -3,7 +3,8 @@
  */
 
 import { Component, Input, computed, inject } from '@angular/core';
-import { KeyboardInputMapping, DecoderSource, PaddleMode } from '../../../services/settings.service';
+import { KeyboardInputMapping } from './keyboard-keyer-item.model';
+import { DecoderSource, PaddleMode } from '../../../services/settings-common';
 import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../settings-modal/keyboard-input-edit-modal/keyboard-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';

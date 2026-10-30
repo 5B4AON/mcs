@@ -3,7 +3,8 @@
  */
 
 import { Injectable, signal } from '@angular/core';
-import { SettingsService, InputPath, OutputForward } from './settings.service';
+import { SettingsService, InputPath } from './settings.service';
+import { OutputForward } from './settings-common';
 import { MORSE_REVERSE, timingsFromWpm } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';

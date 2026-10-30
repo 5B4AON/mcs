@@ -3,7 +3,8 @@
  */
 
 import { Injectable, signal } from '@angular/core';
-import { SettingsService, ProsignAction } from './settings.service';
+import { SettingsService } from './settings.service';
+import { ProsignAction } from '../components/settings-items/prosign-actions/prosign-actions-item.model';
 import { PUNCTUATION_TO_PROSIGN } from '../morse-table';
 
 /**

@@ -2,18 +2,16 @@
  * Morse Code Studio
  */
 
-import {
-  AppSettings,
-  KeyboardInputMapping,
-  MidiInputMapping,
-  MidiOutputMapping,
-  SerialInputMapping,
-  SerialOutputMapping,
-} from './settings.service';
+import { AppSettings } from './settings.service';
+import { KeyboardInputMapping } from '../components/settings-items/keyboard-keyer/keyboard-keyer-item.model';
+import { MidiInputMapping } from '../components/settings-items/midi-input/midi-input-item.model';
+import { MidiOutputMapping } from '../components/settings-items/midi-output/midi-output-item.model';
+import { SerialInputMapping } from '../components/settings-items/serial-input/serial-input-item.model';
+import { SerialOutputMapping } from '../components/settings-items/serial-output/serial-output-item.model';
 import {
   PortableAppSettings,
-  SETTINGS_TRANSFER_FIELDS,
-} from './settings-transfer';
+  portableFields,
+} from './settings-snapshot';
 import { compareExternalRoutes, ExternalRouteChange } from './output-change-checker';
 
 export { compareExternalRoutes } from './output-change-checker';
@@ -33,7 +31,7 @@ export interface SettingsImportReview {
   unresolvedTargets: string[];
 }
 
-export interface SettingsTransferDevices {
+export interface SettingsSnapshotDevices {
   audioInputs: { deviceId: string; label: string }[];
   audioOutputs: { deviceId: string; label: string }[];
   audioLabelsAvailable: boolean;
@@ -50,7 +48,7 @@ export interface SettingsTransferDevices {
 export function prepareSettingsImport(
   current: AppSettings,
   imported: PortableAppSettings,
-  devices: SettingsTransferDevices,
+  devices: SettingsSnapshotDevices,
 ): SettingsImportReview {
   const proposed: AppSettings = {
     ...current,
@@ -236,7 +234,7 @@ export function prepareSettingsImport(
  * List every changed allow-listed field, grouped like the Settings tabs.
  */
 export function listSettingChanges(before: AppSettings, after: AppSettings): SettingChange[] {
-  return PORTABLE_FIELDS.flatMap(field => {
+  return portableFields(after).flatMap(field => {
     if (areEqual(before[field], after[field])) return [];
     return [{
       field,
@@ -247,13 +245,11 @@ export function listSettingChanges(before: AppSettings, after: AppSettings): Set
   });
 }
 
-const PORTABLE_FIELDS = SETTINGS_TRANSFER_FIELDS;
-
 function prepareAudioTarget(
   proposed: AppSettings,
   current: AppSettings,
   field: 'inputDeviceId' | 'cwInputDeviceId' | 'pilotOutputDeviceId' | 'optoOutputDeviceId' | 'sidetoneOutputDeviceId',
-  devices: SettingsTransferDevices,
+  devices: SettingsSnapshotDevices,
   label: string,
   unresolved: string[],
 ): void {
@@ -266,7 +262,7 @@ function prepareAudioTarget(
 }
 
 function hasUniqueAudioDevice(
-  devices: SettingsTransferDevices,
+  devices: SettingsSnapshotDevices,
   id: string,
   input: boolean,
 ): boolean {
@@ -278,7 +274,7 @@ function hasUniqueAudioDevice(
 function prepareMidiMappings<T extends MidiInputMapping | MidiOutputMapping>(
   imported: T[],
   current: T[],
-  devices: SettingsTransferDevices['midiInputs'],
+  devices: SettingsSnapshotDevices['midiInputs'],
   label: string,
   unresolved: string[],
 ): T[] {

@@ -4,9 +4,8 @@
 
 import { Component, Input, OnChanges, OnDestroy, OnInit, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import {
-  SerialInputMapping, KeyInputMode, SerialInputPin, DecoderSource, PaddleMode,
-} from '../../../../services/settings.service';
+import { SerialInputMapping, SerialInputPin } from '../../serial-input/serial-input-item.model';
+import { KeyInputMode, DecoderSource, PaddleMode } from '../../../../services/settings-common';
 import { SerialKeyInputService } from '../../../../services/serial-key-input.service';
 import { HelpLinkButtonComponent } from '../../help-link-button/help-link-button.component';
 import { MappingIdentityFieldsComponent } from '../identity-fields/mapping-identity-fields.component';

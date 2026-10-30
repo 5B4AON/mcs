@@ -4,7 +4,8 @@
 
 import { Injectable, signal, OnDestroy, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, OutputForward } from './settings.service';
+import { SettingsService } from './settings.service';
+import { OutputForward } from './settings-common';
 
 import { initializeApp, FirebaseApp, getApps } from 'firebase/app';
 import {

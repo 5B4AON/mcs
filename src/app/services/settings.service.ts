@@ -4,102 +4,35 @@
 
 import { Injectable, signal, computed } from '@angular/core';
 import { timingsFromWpm } from '../morse-table';
-import { DEFAULT_FULLSCREEN_FONT, FullscreenFontId } from '../fullscreen-fonts';
+import { DEFAULT_FULLSCREEN_FONT, FULLSCREEN_FONTS, FullscreenFontId } from '../fullscreen-fonts';
+import { findChannelConflicts } from './audio-channel-conflicts';
+import {
+  mergeFieldRules, PADDLE_MODES, PaddleMode, SettingsFieldRules,
+} from './settings-common';
+import { AUDIO_OUTPUT_DEFAULTS, AUDIO_OUTPUT_FIELD_RULES, AudioOutputSettings } from '../components/settings-items/audio-output/audio-output-item.model';
+import { CW_DETECTOR_DEFAULTS, CW_DETECTOR_FIELD_RULES, CwDetectorSettings } from '../components/settings-items/cw-detector/cw-detector-item.model';
+import { EMOJIS_DEFAULTS, EMOJIS_FIELD_RULES, EmojisSettings } from '../components/settings-items/emojis/emojis-item.model';
+import { ENCODER_DEFAULTS, ENCODER_FIELD_RULES, EncoderSettings } from '../components/settings-items/encoder/encoder-item.model';
+import { FARNSWORTH_DEFAULTS, FARNSWORTH_FIELD_RULES, FarnsworthSettings } from '../components/settings-items/farnsworth/farnsworth-item.model';
+import { KEYBOARD_KEYER_DEFAULTS, KEYBOARD_KEYER_FIELD_RULES, KeyboardKeyerSettings } from '../components/settings-items/keyboard-keyer/keyboard-keyer-item.model';
+import { MIC_DEFAULTS, MIC_FIELD_RULES, MicSettings } from '../components/settings-items/mic/mic-item.model';
+import { MIDI_INPUT_DEFAULTS, MIDI_INPUT_FIELD_RULES, MidiInputSettings } from '../components/settings-items/midi-input/midi-input-item.model';
+import { MIDI_OUTPUT_DEFAULTS, MIDI_OUTPUT_FIELD_RULES, MidiOutputSettings } from '../components/settings-items/midi-output/midi-output-item.model';
+import { MOUSE_KEYER_DEFAULTS, MOUSE_KEYER_FIELD_RULES, MouseKeyerSettings } from '../components/settings-items/mouse-keyer/mouse-keyer-item.model';
+import { PRACTICE_DEFAULTS, PRACTICE_FIELD_RULES, PracticeSettings } from '../components/settings-items/practice/practice-item.model';
+import { PROSIGN_ACTIONS_DEFAULTS, PROSIGN_ACTIONS_FIELD_RULES, ProsignActionsSettings } from '../components/settings-items/prosign-actions/prosign-actions-item.model';
+import { RTDB_INPUT_DEFAULTS, RTDB_INPUT_FIELD_RULES, RtdbInputSettings } from '../components/settings-items/rtdb-input/rtdb-input-item.model';
+import { RTDB_OUTPUT_DEFAULTS, RTDB_OUTPUT_FIELD_RULES, RtdbOutputSettings } from '../components/settings-items/rtdb-output/rtdb-output-item.model';
+import { SERIAL_INPUT_DEFAULTS, SERIAL_INPUT_FIELD_RULES, SerialInputSettings } from '../components/settings-items/serial-input/serial-input-item.model';
+import { SERIAL_OUTPUT_DEFAULTS, SERIAL_OUTPUT_FIELD_RULES, SerialOutputSettings } from '../components/settings-items/serial-output/serial-output-item.model';
+import { SHOW_PROSIGNS_DEFAULTS, ShowProsignsSettings } from '../components/settings-items/show-prosigns/show-prosigns-item.model';
+import { SIDETONE_DEFAULTS, SIDETONE_FIELD_RULES, SidetoneSettings } from '../components/settings-items/sidetone/sidetone-item.model';
+import { SPRITE_KEY_DEFAULTS, SPRITE_KEY_FIELD_RULES, SpriteKeySettings } from '../components/settings-items/sprite-key/sprite-key-item.model';
+import { TEXT_BLUR_DEFAULTS, TEXT_BLUR_FIELD_RULES, TextBlurSettings } from '../components/settings-items/text-blur/text-blur-item.model';
+import { TOUCH_KEYER_DEFAULTS, TOUCH_KEYER_FIELD_RULES, TouchKeyerSettings } from '../components/settings-items/touch-keyer/touch-keyer-item.model';
+import { VIBRATION_DEFAULTS, VIBRATION_FIELD_RULES, VibrationSettings } from '../components/settings-items/vibration/vibration-item.model';
+import { WINKEYER_DEFAULTS, WINKEYER_FIELD_RULES, WinkeyerSettings } from '../components/settings-items/winkeyer/winkeyer-item.model';
 
-/**
- * Detect whether the device has a touch-capable display.
- * Uses hardware capability (`maxTouchPoints`) plus the CSS `any-pointer: coarse`
- * media query so laptops with both trackpad and touchscreen are correctly
- * identified as touch devices.
- */
-export function isTouchDevice(): boolean {
-  return navigator.maxTouchPoints > 0
-    || matchMedia('(any-pointer: coarse)').matches;
-}
-
-/** Iambic keyer paddle mode */
-export type PaddleMode = 'iambic-b' | 'iambic-a' | 'ultimatic' | 'single-lever';
-/** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type, 'practice' for copy practice */
-export type EncoderMode = 'enter' | 'live' | 'practice';
-/** Copy practice content mode */
-export type PracticeContentMode = 'characters' | 'words' | 'callsigns';
-/** Copy practice feedback mode */
-export type PracticeFeedbackMode = 'listen' | 'blur' | 'typealong';
-/** Copy practice pipeline mode */
-export type PracticePipeline = 'local' | 'full';
-/** Mouse button action mapping */
-export type MouseButtonAction = 'straightKey' | 'dit' | 'dah' | 'none';
-/** Touch keyer operating mode */
-export type TouchKeyerMode = 'straight' | 'paddle';
-/** Paddle element */
-export type PaddleElement = 'dit' | 'dah';
-/** Stereo channel selection */
-export type AudioChannel = 'left' | 'right';
-
-/** Sidetone can also play on both stereo channels. */
-export type SidetoneChannel = AudioChannel | 'both';
-
-/** True when the sidetone channel choice shares a channel with another output. */
-function sidetoneOverlaps(sidetone: SidetoneChannel, other: AudioChannel): boolean {
-  return sidetone === 'both' || sidetone === other;
-}
-
-function sidetoneConflictMessage(other: string, sidetone: SidetoneChannel, otherChannel: AudioChannel): string {
-  return sidetone === 'both'
-    ? `Sidetone is set to play on both channels, which includes the ${otherChannel} channel used by ${other} on the same device. Set the Sidetone channel to ${otherChannel === 'left' ? 'Right' : 'Left'} or use a different device.`
-    : `Sidetone and ${other} both use ${sidetone} channel on the same device.`;
-}
-/**
- * Detect stereo channel conflicts on shared audio devices for the given settings.
- * Pure, so callers can check proposed settings before applying them.
- */
-export function findChannelConflicts(s: AppSettings): string[] | null {
-  const warnings: string[] = [];
-  const norm = (id: string) => id || 'default';
-  const sidetoneActive = s.sidetoneEnabled;
-  const optoActive = s.optoEnabled;
-  const pilotActive = s.micInputEnabled;
-  const sideId = norm(s.sidetoneOutputDeviceId);
-  const optoId = norm(s.optoOutputDeviceId);
-  const pilotId = norm(s.pilotOutputDeviceId);
-
-  // Triple conflict: all 3 outputs on one stereo device (only if pilot is active)
-  if (pilotActive && sidetoneActive && optoActive &&
-    sideId === optoId && optoId === pilotId) {
-    warnings.push(
-      'Stereo sound card has only 2 channels \u2014 cannot carry Sidetone + Key Out + Pilot simultaneously. Disable one or add a second sound card.'
-    );
-    return warnings;
-  }
-
-  if (sidetoneActive && optoActive && sideId === optoId &&
-    sidetoneOverlaps(s.sidetoneOutputChannel, s.optoOutputChannel)) {
-    warnings.push(sidetoneConflictMessage('Key Output', s.sidetoneOutputChannel, s.optoOutputChannel));
-  }
-  if (pilotActive && optoActive && pilotId === optoId &&
-    s.pilotOutputChannel === s.optoOutputChannel) {
-    warnings.push(`Pilot and Key Output both use ${s.pilotOutputChannel} channel on the same device.`);
-  }
-  if (pilotActive && sidetoneActive && pilotId === sideId &&
-    sidetoneOverlaps(s.sidetoneOutputChannel, s.pilotOutputChannel)) {
-    warnings.push(sidetoneConflictMessage('Pilot', s.sidetoneOutputChannel, s.pilotOutputChannel));
-  }
-  return warnings.length ? warnings : null;
-}
-
-
-/** Decoder source assignment — determines which calibration pool an input feeds */
-export type DecoderSource = 'rx' | 'tx';
-/** Opto-coupler drive mode: 'dc' = constant voltage, 'ac' = oscillator tone */
-export type OptoMode = 'ac' | 'dc';
-/** Serial port control pin used for keying */
-export type SerialPin = 'dtr' | 'rts';
-/** Serial port input signal name */
-export type SerialInputPin = 'dsr' | 'cts' | 'dcd' | 'ri';
-/** Output forwarding mode: which signal source (RX, TX, or both) drives an output */
-export type OutputForward = 'rx' | 'tx' | 'both';
-/** Action to perform when a prosign is decoded */
-export type ProsignAction = 'newLine' | 'newParagraph' | 'clearLastWord' | 'clearLine' | 'clearScreen';
 export type SettingsSaveResult = 'saved' | 'no-profile' | 'storage-error';
 
 /**
@@ -129,345 +62,20 @@ export type InputPath =
   | 'serialPaddle'          // Serial port input signal as paddle (external callers)
   | `serialPaddle:${number}`; // Per-mapping serial paddle pipeline
 
-/** Configuration for a single prosign action mapping */
-export interface ProsignActionEntry {
-  enabled: boolean;
-  action: ProsignAction;
-}
-
-/** Mode for a key input mapping entry (shared by keyboard and MIDI) */
-export type KeyInputMode = 'straightKey' | 'paddle';
-
-/** @deprecated Use KeyInputMode instead */
-export type MidiInputMode = KeyInputMode;
-
-/** Configuration for a single keyboard key input mapping */
-export interface KeyboardInputMapping {
-  enabled: boolean;
-  /** Mode: straight key or paddle */
-  mode: KeyInputMode;
-  /** KeyboardEvent.code for straight key, or dit paddle */
-  keyCode: string;
-  /** KeyboardEvent.code for dah paddle (only used when mode is 'paddle', '' if unused) */
-  dahKeyCode: string;
-  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
-  source: DecoderSource;
-  /** Reverse paddles (only used when mode is 'paddle') */
-  reversePaddles: boolean;
-  /** Paddle mode for this mapping (only used when mode is 'paddle') */
-  paddleMode: PaddleMode;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  name: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  color: string;
-}
-
-/** Mode for a MIDI output mapping entry */
-export type MidiOutputMode = 'straightKey' | 'paddle';
-
-/** Configuration for a single MIDI input mapping */
-export interface MidiInputMapping {
-  enabled: boolean;
-  /** MIDI input device ID (empty = any/first available) */
-  deviceId: string;
-  /** MIDI channel filter: 0 = omni (all channels), 1-16 = specific channel */
-  channel: number;
-  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
-  source: DecoderSource;
-  /** Mode: straight key or paddle */
-  mode: KeyInputMode;
-  /** MIDI note number for straight key, or dit paddle (-1 = not assigned) */
-  value: number;
-  /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
-  dahValue: number;
-  /** Reverse paddles (only used when mode is 'paddle') */
-  reversePaddles: boolean;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  name: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  color: string;
-}
-
-/** Configuration for a single MIDI output mapping */
-export interface MidiOutputMapping {
-  enabled: boolean;
-  /** MIDI output device ID (empty = any/first available) */
-  deviceId: string;
-  /** MIDI channel (1-16) */
-  channel: number;
-  /** Output forwarding mode: which signal source drives this mapping */
-  forward: OutputForward;
-  /** Mode: straight key or paddle */
-  mode: MidiOutputMode;
-  /** MIDI note number for straight key, or dit paddle */
-  value: number;
-  /** MIDI note number for dah paddle (only used when mode is 'paddle', -1 = not assigned) */
-  dahValue: number;
-  /** Indices into midiInputMappings that are allowed to relay through this output mapping */
-  relayInputIndices: number[];
-  /** When true, only relay sources (and encoder) drive this output — all other inputs are suppressed */
-  relaySuppressOtherInputs: boolean;
-}
-
-/** Configuration for a single serial input mapping */
-export interface SerialInputMapping {
-  enabled: boolean;
-  /** Mode: straight key or paddle */
-  mode: KeyInputMode;
-  /** Which input signal pin to use for straight key, or dit paddle */
-  pin: SerialInputPin;
-  /** Which input signal pin to use for dah paddle (only used when mode is 'paddle') */
-  dahPin: SerialInputPin;
-  /** Invert the signal (active-low instead of active-high) */
-  invert: boolean;
-  /** Decoder source: which calibration pool this input feeds ('rx' or 'tx') */
-  source: DecoderSource;
-  /** Reverse paddles (only used when mode is 'paddle') */
-  reversePaddles: boolean;
-  /** Paddle mode for this mapping (only used when mode is 'paddle') */
-  paddleMode: PaddleMode;
-  /** Serial port index (-1 = not assigned) */
-  portIndex: number;
-  /** Polling interval in ms (5–50) */
-  pollInterval: number;
-  /** Debounce duration in ms (2–10) */
-  debounceMs: number;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  name: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  color: string;
-}
-
-/** Configuration for a single serial output mapping */
-export interface SerialOutputMapping {
-  enabled: boolean;
-  /** Serial port index (-1 = not assigned) */
-  portIndex: number;
-  /** Which output pin to drive (DTR or RTS) */
-  pin: SerialPin;
-  /** Invert the signal (active-high instead of default active-low) */
-  invert: boolean;
-  /** Output forwarding mode: which signal source drives this mapping */
-  forward: OutputForward;
-  /** Indices into serialInputMappings that are allowed to relay through this output mapping */
-  relayInputIndices: number[];
-  /** When true, only relay sources (and encoder) drive this output — all other inputs are suppressed */
-  relaySuppressOtherInputs: boolean;
-}
-
-/** Configuration for a single emoji replacement mapping */
-export interface EmojiMapping {
-  enabled: boolean;
-  /** Match pattern — a character (e.g. '+'), prosign (e.g. '<AR>'), or sequence (e.g. 'TNX') */
-  match: string;
-  /** Replacement text — one or more emojis, characters, or any mix */
-  emoji: string;
-  /** Optional short description of the mapping's meaning */
-  meaning?: string;
-}
-
 /**
- * Complete application settings interface.
- *
- * Settings are organised into functional groups matching the UI panel layout.
- * All settings are persisted per-device-configuration (see StoredProfile).
+ * Settings that no single item owns: the speeds shared by the decoders,
+ * encoder and keyers, the global paddle mode, the fullscreen display and the
+ * screen wake lock.
  */
-export interface AppSettings {
-  // --- 1. Straight Key via Mic (pilot tone detection) ---
-  micInputEnabled: boolean;
-  /** Decoder source: which calibration pool mic input feeds ('rx' or 'tx') */
-  micInputSource: DecoderSource;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  micInputName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  micInputColor: string;
-  inputDeviceId: string;
-  inputThreshold: number;
-  inputInvert: boolean;
-  inputDebounceMs: number;
-
-  // --- Pilot Tone ---
-  pilotFrequency: number;
-  pilotAmplitude: number;
-  pilotOutputDeviceId: string;
-  pilotOutputChannel: AudioChannel;
-
-  // --- 1b. Straight Key via Audio Channel (CW tone detection) ---
-  cwInputEnabled: boolean;
-  /** Decoder source: which calibration pool CW input feeds ('rx' or 'tx') */
-  cwInputSource: DecoderSource;
-  cwInputDeviceId: string;
-  cwInputChannel: AudioChannel;
-  cwInputFrequency: number;
-  cwInputBandwidth: number;
-  cwInputDebounceMs: number;
-  cwInputAutoThreshold: boolean;
-  cwInputThreshold: number;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  cwInputName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  cwInputColor: string;
-
-  // --- 2. Key Output via Audio Channel (opto-coupler) ---
-  optoOutputDeviceId: string;
-  optoOutputChannel: AudioChannel;
-  optoMode: OptoMode;
-  optoFrequency: number;
-  optoAmplitude: number;
-  optoEnabled: boolean;
-  optoForward: OutputForward;
-
-  // --- 2b. Key Output via Serial Port (DTR/RTS) ---
-  serialEnabled: boolean;
-  /** Ordered list of serial output mappings (one per port+pin combination) */
-  serialOutputMappings: SerialOutputMapping[];
-
-  // --- Serial Input (read DSR/CTS/DCD/RI signals as keying source) ---
-  serialInputEnabled: boolean;
-  /** Ordered list of serial input mappings (straight key / paddle entries) */
-  serialInputMappings: SerialInputMapping[];
-
-  // --- 2c. WinKeyer Output (K1EL WinKeyer via serial port) ---
-  winkeyerEnabled: boolean;
-  winkeyerPortIndex: number;
-  winkeyerWpm: number;
-  winkeyerForward: OutputForward;
-
-  // --- 2d. Firebase RTDB Output ---
-  rtdbOutputEnabled: boolean;
-  rtdbOutputForward: OutputForward;
-  rtdbOutputChannelName: string;
-  rtdbOutputChannelSecret: string;
-  rtdbOutputName: string;
-  /** Optional text color (CSS color string) — sent as 'col' parameter to remote listeners */
-  rtdbOutputColor: string;
-  /** When true, always send rtdbOutputName — overriding any input-specific name */
-  rtdbOutputOverrideName: boolean;
-  /** When true, always send rtdbOutputColor — overriding any input-specific color */
-  rtdbOutputOverrideColor: boolean;
-  /** When true, allow RTDB input characters to be relayed to RTDB output (disables echo suppression) */
-  rtdbAllowInputRelay: boolean;
-  /** When true, RTDB output only forwards chars from RTDB input relay — all other inputs are suppressed */
-  rtdbRelaySuppressOtherInputs: boolean;
-
-  // --- 3. Audio Output (sidetone / headphone / speaker) ---
-  sidetoneOutputDeviceId: string;
-  sidetoneOutputChannel: SidetoneChannel;
-  sidetoneFrequency: number;
-  sidetoneAmplitude: number;
-  sidetoneEnabled: boolean;
-  sidetoneForward: OutputForward;
-
-  // --- 4. Vibration Output (Android only) ---
-  /** Enable haptic vibration feedback while keying (Android only) */
-  vibrateEnabled: boolean;
-  vibrateForward: OutputForward;
-  /** Enhanced haptic: pre-pulse on keydown + delayed cancel on keyup to compensate for motor lag */
-  vibrateEnhanced: boolean;
-
-  // --- Decoder ---
+export interface CommonSettings {
+  // --- Speeds (decoders, encoder, keyers) ---
   rxDecoderWpm: number;
   txDecoderWpm: number;
-
-  // --- Encoder ---
   encoderWpm: number;
-  encoderMode: EncoderMode;
-  /** Encoder source: which pool encoder text is tagged with ('rx' or 'tx') */
-  encoderSource: DecoderSource;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  encoderName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  encoderColor: string;
-
-  // --- Keyer ---
-  /** Enable/disable keyboard keyer input */
-  keyboardKeyerEnabled: boolean;
-  /** Ordered list of keyboard key input mappings (straight key / paddle entries) */
-  keyboardInputMappings: KeyboardInputMapping[];
-  /** Paddle mode for MIDI input (keyboard mappings each have their own paddleMode) */
-  paddleMode: PaddleMode;
   /** Keyer WPM for all paddle inputs (keyboard + MIDI) */
   keyerWpm: number;
-
-  // --- Mouse Keyer ---
-  mouseKeyerEnabled: boolean;
-  /** Decoder source: which calibration pool mouse keyer feeds ('rx' or 'tx') */
-  mouseKeyerSource: DecoderSource;
-  mouseLeftAction: MouseButtonAction;
-  mouseMiddleAction: MouseButtonAction;
-  mouseRightAction: MouseButtonAction;
-  mouseReversePaddles: boolean;
-  mousePaddleMode: PaddleMode;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  mouseKeyerName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  mouseKeyerColor: string;
-
-  // --- Touch Keyer ---
-  touchKeyerEnabled: boolean;
-  /** Decoder source: which calibration pool touch keyer feeds ('rx' or 'tx') */
-  touchKeyerSource: DecoderSource;
-  touchKeyerMode: TouchKeyerMode;
-  touchLeftPaddle: PaddleElement;
-  touchRightPaddle: PaddleElement;
-  touchReversePaddles: boolean;
-  touchPaddleMode: PaddleMode;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  touchKeyerName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  touchKeyerColor: string;
-
-  // --- MIDI Input ---
-  midiInputEnabled: boolean;
-  /** Ordered list of MIDI input mappings (straight key / paddle entries) */
-  midiInputMappings: MidiInputMapping[];
-  // --- MIDI Output ---
-  midiOutputEnabled: boolean;
-  /** Ordered list of MIDI output mappings (straight key / paddle entries) */
-  midiOutputMappings: MidiOutputMapping[];
-  /** When true, ignore remote WPM and use local encoder WPM for MIDI output */
-  midiOutputOverrideWpm: boolean;
-
-  // --- Firebase RTDB Input ---
-  rtdbInputEnabled: boolean;
-  /** Decoder source: which pool RTDB input characters are tagged with ('rx' or 'tx') */
-  rtdbInputSource: DecoderSource;
-  rtdbInputChannelName: string;
-  rtdbInputChannelSecret: string;
-  /** When true, ignore remote WPM and use local encoder WPM for playback */
-  rtdbInputOverrideWpm: boolean;
-  /** Optional override name — if non-empty, replaces the incoming sender name */
-  rtdbInputName: string;
-  /** Optional override color — if non-empty, replaces the incoming sender color */
-  rtdbInputColor: string;
-
-  // --- Sprite Key Button ---
-  /** Show the straight-key sprite button on the main screen */
-  spriteButtonEnabled: boolean;
-  /** Decoder source: which pool sprite keying feeds ('rx' or 'tx') */
-  spriteSource: DecoderSource;
-  /** Optional display name (e.g. callsign) — triggers line breaks in conversation views */
-  spriteName: string;
-  /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
-  spriteColor: string;
-  /** Animate the sprite when keyboard straight key is pressed */
-  spriteAnimateKeyboard: boolean;
-  /** Animate the sprite when keyboard encoder is sending elements */
-  spriteAnimateEncoder: boolean;
-  /** Animate the sprite when mouse straight key is pressed */
-  spriteAnimateMouse: boolean;
-  /** Animate the sprite when MIDI straight key is pressed */
-  spriteAnimateMidi: boolean;
-  /** Animate the sprite when serial straight key is pressed */
-  spriteAnimateSerial: boolean;
-  /** Animate the sprite when straight key via mic is pressed */
-  spriteAnimateMic: boolean;
-
-  // --- Text Blurring ---
-  /** Blur decoded text for training purposes */
-  textBlurEnabled: boolean;
-  /** Which text directions to blur: rx, tx, or both */
-  textBlurAppliesTo: 'rx' | 'tx' | 'both';
+  /** Paddle mode for MIDI input (keyboard mappings each have their own paddleMode) */
+  paddleMode: PaddleMode;
 
   // --- Fullscreen view ---
   /** Last chosen fullscreen input: mapped keying or typing */
@@ -494,67 +102,103 @@ export interface AppSettings {
   // --- Screen Wake Lock ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
-
-  // --- Display Options ---
-  /** Show prosigns (e.g., <AR>) instead of punctuation (e.g., +) in conversation logs */
-  showProsigns: boolean;
-
-  // --- Prosign Actions ---
-  /** Master toggle for prosign action handling */
-  prosignActionsEnabled: boolean;
-  /** Per-prosign action mappings */
-  prosignActions: Record<string, ProsignActionEntry>;
-
-  // --- Farnsworth / Wordsworth Timing ---
-  /** Master toggle for Farnsworth gap stretching */
-  farnsworthEnabled: boolean;
-  /** How the user specifies gap stretching: effective WPM or direct multiplier */
-  farnsworthInputMode: 'wpm' | 'multiplier';
-  /** Target effective WPM when inputMode is 'wpm' (range: 5 to encoderWpm) */
-  farnsworthEffectiveWpm: number;
-  /** Direct gap multiplier when inputMode is 'multiplier' (Farnsworth: whole numbers 1 to 10; Wordsworth: 1 to 4 in steps of 0.5) */
-  farnsworthMultiplier: number;
-  /** Wordsworth mode: stretch only word gaps (not inter-character gaps) */
-  farnsworthWordsworth: boolean;
-  /** Which direction Farnsworth timing applies to: tx, rx, or both */
-  farnsworthAppliesTo: 'tx' | 'rx' | 'both';
-
-  // --- Copy Practice ---
-  /** Master toggle — shows 'Practice' in encoder mode dropdown when enabled */
-  practiceEnabled: boolean;
-  /** Content mode: random characters, words, or callsigns */
-  practiceContentMode: PracticeContentMode;
-  /** Number of groups/words/callsigns per round (1–10) */
-  practiceGroupCount: number;
-  /** Group size for random characters mode (1–5) */
-  practiceCharGroupSize: number;
-  /** Character pool: include letters */
-  practiceIncludeLetters: boolean;
-  /** Character pool: include digits */
-  practiceIncludeNumbers: boolean;
-  /** Character pool: include punctuation */
-  practiceIncludePunctuation: boolean;
-  /** Word length filter (any combination of 3, 4, 5) */
-  practiceWordLengths: number[];
-  /** Feedback mode: listen-only, blurred reveal, or type-along */
-  practiceFeedbackMode: PracticeFeedbackMode;
-  /** Number of Type-along rounds in a transient practice session (1–5) */
-  practiceRounds: number;
-  /** Pipeline: local audio only or full (serial, MIDI, RTDB, etc.) */
-  practicePipeline: PracticePipeline;
-  /** Input direction: characters appear as RX or TX */
-  practiceSource: DecoderSource;
-  /** Optional display name for practice input */
-  practiceName: string;
-  /** Optional text color for practice input */
-  practiceColor: string;
-
-  // --- Emoji Replacements ---
-  /** Master toggle for emoji display in fullscreen modals */
-  emojisEnabled: boolean;
-  /** Ordered list of emoji replacement mappings */
-  emojiMappings: EmojiMapping[];
 }
+
+const COMMON_DEFAULTS: CommonSettings = {
+  rxDecoderWpm: 12,
+  txDecoderWpm: 12,
+  encoderWpm: 12,
+  keyerWpm: 12,
+  paddleMode: 'iambic-b',
+
+  fullscreenInputMode: 'key',
+  fullscreenLensEnabled: false,
+  fullscreenFont: DEFAULT_FULLSCREEN_FONT,
+  fullscreenFontSize: 24,
+  fullscreenFontBold: false,
+  fullscreenLineSpacing: 0.1,
+  fullscreenRxForeground: '#00ff88',
+  fullscreenRxBackground: '#0e1218',
+  fullscreenTxForeground: '#ffcc00',
+  fullscreenTxBackground: '#0d0d18',
+  fullscreenBufferForeground: '#666666',
+  fullscreenSendingForeground: '#ffff00',
+
+  wakeLockEnabled: false,
+};
+
+const COMMON_FIELD_RULES: SettingsFieldRules = {
+  enums: {
+    paddleMode: PADDLE_MODES,
+    fullscreenInputMode: ['key', 'type'],
+    fullscreenFont: FULLSCREEN_FONTS.map(f => f.id),
+  },
+  colors: [
+    'fullscreenRxForeground',
+    'fullscreenRxBackground',
+    'fullscreenTxForeground',
+    'fullscreenTxBackground',
+    'fullscreenBufferForeground',
+    'fullscreenSendingForeground',
+  ],
+  // Matching the fullscreen menu sliders
+  ranges: {
+    fullscreenFontSize: [24, 184],
+    fullscreenLineSpacing: [-0.3, 0.5],
+  },
+  integers: ['rxDecoderWpm', 'txDecoderWpm', 'encoderWpm', 'keyerWpm'],
+};
+
+/**
+ * Complete application settings: the settings of every item plus the common
+ * ones. To add a setting, add it to the model of the item that owns it; to add
+ * an item, extend this interface and the two compositions below.
+ *
+ * All settings are persisted per-device-configuration (see StoredProfile).
+ */
+export interface AppSettings extends
+  MicSettings, CwDetectorSettings, AudioOutputSettings, SerialOutputSettings, SerialInputSettings,
+  WinkeyerSettings, RtdbOutputSettings, SidetoneSettings, VibrationSettings, EncoderSettings,
+  KeyboardKeyerSettings, MouseKeyerSettings, TouchKeyerSettings, MidiInputSettings, MidiOutputSettings,
+  RtdbInputSettings, SpriteKeySettings, TextBlurSettings, ShowProsignsSettings, ProsignActionsSettings,
+  FarnsworthSettings, PracticeSettings, EmojisSettings, CommonSettings {}
+
+const DEFAULT_SETTINGS: AppSettings = {
+  ...MIC_DEFAULTS,
+  ...CW_DETECTOR_DEFAULTS,
+  ...AUDIO_OUTPUT_DEFAULTS,
+  ...SERIAL_OUTPUT_DEFAULTS,
+  ...SERIAL_INPUT_DEFAULTS,
+  ...WINKEYER_DEFAULTS,
+  ...RTDB_OUTPUT_DEFAULTS,
+  ...SIDETONE_DEFAULTS,
+  ...VIBRATION_DEFAULTS,
+  ...ENCODER_DEFAULTS,
+  ...KEYBOARD_KEYER_DEFAULTS,
+  ...MOUSE_KEYER_DEFAULTS,
+  ...TOUCH_KEYER_DEFAULTS,
+  ...MIDI_INPUT_DEFAULTS,
+  ...MIDI_OUTPUT_DEFAULTS,
+  ...RTDB_INPUT_DEFAULTS,
+  ...SPRITE_KEY_DEFAULTS,
+  ...TEXT_BLUR_DEFAULTS,
+  ...SHOW_PROSIGNS_DEFAULTS,
+  ...PROSIGN_ACTIONS_DEFAULTS,
+  ...FARNSWORTH_DEFAULTS,
+  ...PRACTICE_DEFAULTS,
+  ...EMOJIS_DEFAULTS,
+  ...COMMON_DEFAULTS,
+};
+
+/** How preset and settings-file values are checked, combined from every item. */
+export const SETTINGS_FIELD_RULES = mergeFieldRules(
+  MIC_FIELD_RULES, CW_DETECTOR_FIELD_RULES, AUDIO_OUTPUT_FIELD_RULES, SERIAL_OUTPUT_FIELD_RULES,
+  SERIAL_INPUT_FIELD_RULES, WINKEYER_FIELD_RULES, RTDB_OUTPUT_FIELD_RULES, SIDETONE_FIELD_RULES,
+  VIBRATION_FIELD_RULES, ENCODER_FIELD_RULES, KEYBOARD_KEYER_FIELD_RULES, MOUSE_KEYER_FIELD_RULES,
+  TOUCH_KEYER_FIELD_RULES, MIDI_INPUT_FIELD_RULES, MIDI_OUTPUT_FIELD_RULES, RTDB_INPUT_FIELD_RULES,
+  SPRITE_KEY_FIELD_RULES, TEXT_BLUR_FIELD_RULES, PROSIGN_ACTIONS_FIELD_RULES, FARNSWORTH_FIELD_RULES,
+  PRACTICE_FIELD_RULES, EMOJIS_FIELD_RULES, COMMON_FIELD_RULES,
+);
 
 /**
  * Stored profile: settings + device label map.
@@ -577,335 +221,7 @@ const DEVICE_SETTINGS_KEYS: (keyof AppSettings)[] = [
   'sidetoneOutputDeviceId',
 ];
 
-const DEFAULT_SETTINGS: AppSettings = {
-  micInputEnabled: false,
-  micInputSource: 'rx',
-  micInputName: '',
-  micInputColor: '',
-  inputDeviceId: 'default',
-  inputThreshold: 0.01,
-  inputInvert: false,
-  inputDebounceMs: 15,
-
-  pilotFrequency: 18000,
-  pilotAmplitude: 0.85,
-  pilotOutputDeviceId: 'default',
-  pilotOutputChannel: 'left',
-
-  cwInputEnabled: false,
-  cwInputSource: 'rx',
-  cwInputDeviceId: 'default',
-  cwInputChannel: 'left',
-  cwInputFrequency: 600,
-  cwInputBandwidth: 100,
-  cwInputDebounceMs: 10,
-  cwInputAutoThreshold: true,
-  cwInputThreshold: 0.01,
-  cwInputName: '',
-  cwInputColor: '',
-
-  optoOutputDeviceId: 'default',
-  optoOutputChannel: 'right',
-  optoMode: 'dc',
-  optoFrequency: 5000,
-  optoAmplitude: 1.0,
-  optoEnabled: false,
-  optoForward: 'tx',
-
-  serialEnabled: false,
-  serialOutputMappings: [
-    {
-      enabled: true,
-      portIndex: -1,
-      pin: 'dtr',
-      invert: false,
-      forward: 'tx',
-      relayInputIndices: [],
-      relaySuppressOtherInputs: false,
-    },
-  ],
-
-  serialInputEnabled: false,
-  serialInputMappings: [
-    {
-      enabled: true,
-      mode: 'straightKey',
-      pin: 'dsr',
-      dahPin: 'cts',
-      invert: false,
-      source: 'rx',
-      reversePaddles: false,
-      paddleMode: 'iambic-b',
-      portIndex: -1,
-      pollInterval: 10,
-      debounceMs: 5,
-      name: '',
-      color: '',
-    },
-    {
-      enabled: true,
-      mode: 'paddle',
-      pin: 'cts',
-      dahPin: 'dcd',
-      invert: false,
-      source: 'rx',
-      reversePaddles: false,
-      paddleMode: 'iambic-b',
-      portIndex: -1,
-      pollInterval: 10,
-      debounceMs: 5,
-      name: '',
-      color: '',
-    },
-  ],
-
-  winkeyerEnabled: false,
-  winkeyerPortIndex: -1,
-  winkeyerWpm: 20,
-  winkeyerForward: 'tx',
-
-  rtdbOutputEnabled: false,
-  rtdbOutputForward: 'tx',
-  rtdbOutputChannelName: '',
-  rtdbOutputChannelSecret: '',
-  rtdbOutputName: '',
-  rtdbOutputColor: '',
-  rtdbOutputOverrideName: false,
-  rtdbOutputOverrideColor: false,
-  rtdbAllowInputRelay: false,
-  rtdbRelaySuppressOtherInputs: false,
-
-  sidetoneOutputDeviceId: 'default',
-  sidetoneOutputChannel: 'both',
-  sidetoneFrequency: 650,
-  sidetoneAmplitude: 1,
-  sidetoneEnabled: true,
-  sidetoneForward: 'both',
-
-  vibrateEnabled: false,
-  vibrateForward: 'both',
-  vibrateEnhanced: true,
-
-  rxDecoderWpm: 12,
-  txDecoderWpm: 12,
-
-  encoderWpm: 12,
-  encoderMode: 'enter',
-  encoderSource: 'tx',
-  encoderName: '',
-  encoderColor: '',
-
-  keyboardKeyerEnabled: !isTouchDevice(),
-  keyboardInputMappings: [
-    {
-      enabled: true,
-      mode: 'straightKey',
-      keyCode: 'Space',
-      dahKeyCode: '',
-      source: 'tx',
-      reversePaddles: false,
-      paddleMode: 'iambic-b',
-      name: '',
-      color: '',
-    },
-    {
-      enabled: true,
-      mode: 'paddle',
-      keyCode: 'BracketLeft',
-      dahKeyCode: 'BracketRight',
-      source: 'tx',
-      reversePaddles: false,
-      paddleMode: 'iambic-b',
-      name: '',
-      color: '',
-    },
-  ],
-  paddleMode: 'iambic-b',
-  keyerWpm: 12,
-
-  mouseKeyerEnabled: false,
-  mouseKeyerSource: 'tx',
-  mouseLeftAction: 'straightKey',
-  mouseMiddleAction: 'none',
-  mouseRightAction: 'none',
-  mouseReversePaddles: false,
-  mousePaddleMode: 'iambic-b',
-  mouseKeyerName: '',
-  mouseKeyerColor: '',
-
-  touchKeyerEnabled: isTouchDevice(),
-  touchKeyerSource: 'tx',
-  touchKeyerMode: 'straight',
-  touchLeftPaddle: 'dit',
-  touchRightPaddle: 'dah',
-  touchReversePaddles: false,
-  touchPaddleMode: 'iambic-b',
-  touchKeyerName: '',
-  touchKeyerColor: '',
-
-  midiInputEnabled: false,
-  midiInputMappings: [
-    {
-      enabled: true,
-      deviceId: '',
-      channel: 0,
-      source: 'rx',
-      mode: 'straightKey',
-      value: 60,
-      dahValue: -1,
-      reversePaddles: false,
-      name: '',
-      color: '',
-    },
-    {
-      enabled: true,
-      deviceId: '',
-      channel: 0,
-      source: 'rx',
-      mode: 'paddle',
-      value: 62,
-      dahValue: 64,
-      reversePaddles: false,
-      name: '',
-      color: '',
-    },
-  ],
-
-  midiOutputEnabled: false,
-  midiOutputMappings: [
-    {
-      enabled: true,
-      deviceId: '',
-      channel: 1,
-      forward: 'tx',
-      mode: 'straightKey',
-      value: 80,
-      dahValue: -1,
-      relayInputIndices: [],
-      relaySuppressOtherInputs: false,
-    },
-    {
-      enabled: true,
-      deviceId: '',
-      channel: 1,
-      forward: 'tx',
-      mode: 'paddle',
-      value: 82,
-      dahValue: 84,
-      relayInputIndices: [],
-      relaySuppressOtherInputs: false,
-    },
-  ],
-  midiOutputOverrideWpm: false,
-
-  rtdbInputEnabled: false,
-  rtdbInputSource: 'rx',
-  rtdbInputChannelName: '',
-  rtdbInputChannelSecret: '',
-  rtdbInputOverrideWpm: false,
-  rtdbInputName: '',
-  rtdbInputColor: '',
-
-  spriteButtonEnabled: true,
-  spriteSource: 'tx',
-  spriteName: '',
-  spriteColor: '',
-  spriteAnimateKeyboard: false,
-  spriteAnimateEncoder: false,
-  spriteAnimateMouse: false,
-  spriteAnimateMidi: false,
-  spriteAnimateSerial: false,
-  spriteAnimateMic: false,
-
-  textBlurEnabled: false,
-  textBlurAppliesTo: 'rx',
-
-  fullscreenInputMode: 'key',
-  fullscreenLensEnabled: false,
-  fullscreenFont: DEFAULT_FULLSCREEN_FONT,
-  fullscreenFontSize: 24,
-  fullscreenFontBold: false,
-  fullscreenLineSpacing: 0.1,
-  fullscreenRxForeground: '#00ff88',
-  fullscreenRxBackground: '#0e1218',
-  fullscreenTxForeground: '#ffcc00',
-  fullscreenTxBackground: '#0d0d18',
-  fullscreenBufferForeground: '#666666',
-  fullscreenSendingForeground: '#ffff00',
-
-  farnsworthEnabled: false,
-  farnsworthInputMode: 'wpm',
-  farnsworthEffectiveWpm: 10,
-  farnsworthMultiplier: 2,
-  farnsworthWordsworth: false,
-  farnsworthAppliesTo: 'both',
-
-  practiceEnabled: false,
-  practiceContentMode: 'characters',
-  practiceGroupCount: 5,
-  practiceCharGroupSize: 1,
-  practiceIncludeLetters: true,
-  practiceIncludeNumbers: false,
-  practiceIncludePunctuation: false,
-  practiceWordLengths: [3, 4, 5],
-  practiceFeedbackMode: 'typealong',
-  practiceRounds: 1,
-  practicePipeline: 'local',
-  practiceSource: 'rx',
-  practiceName: '',
-  practiceColor: '',
-
-  wakeLockEnabled: false,
-
-  showProsigns: true,
-
-  prosignActionsEnabled: true,
-  prosignActions: {
-    '<AR>': { enabled: true, action: 'clearScreen' },
-    '<BK>': { enabled: true, action: 'newParagraph' },
-    '<BT>': { enabled: true, action: 'newLine' },
-    '<HH>': { enabled: true, action: 'clearLastWord' },
-  },
-
-  emojisEnabled: false,
-  emojiMappings: [
-    // Prosigns
-    { enabled: true, match: '<AR>', emoji: '✅', meaning: 'End of message' },
-    { enabled: true, match: '<SK>', emoji: '🔚', meaning: 'End of contact' },
-    { enabled: true, match: '<SOS>', emoji: '🆘', meaning: 'Distress' },
-    // Greetings & farewells
-    { enabled: true, match: 'GM', emoji: '🌅', meaning: 'Good morning' },
-    { enabled: true, match: 'GA', emoji: '☀️', meaning: 'Good afternoon' },
-    { enabled: true, match: 'GE', emoji: '🌆', meaning: 'Good evening' },
-    { enabled: true, match: 'GN', emoji: '🌙', meaning: 'Good night' },
-    // Common abbreviations
-    { enabled: true, match: 'CQ', emoji: '📡', meaning: 'Calling any station' },
-    { enabled: true, match: 'R', emoji: '👍', meaning: 'Roger / received' },
-    { enabled: true, match: 'K', emoji: '🎤', meaning: 'Go ahead' },
-    { enabled: true, match: '<KN>', emoji: '🎤🔒', meaning: 'Go ahead (named only)' },
-    { enabled: true, match: '<BK>', emoji: '🔙', meaning: 'Break / back to you' },
-    { enabled: true, match: '73', emoji: '👋', meaning: 'Best regards' },
-    { enabled: true, match: '88', emoji: '💋', meaning: 'Love and kisses' },
-    { enabled: true, match: 'TNX', emoji: '🙏', meaning: 'Thanks' },
-    { enabled: true, match: 'TKS', emoji: '🙏', meaning: 'Thanks' },
-    { enabled: true, match: 'TU', emoji: '🤝', meaning: 'Thank you' },
-    { enabled: true, match: 'FB', emoji: '✨', meaning: 'Fine business' },
-    { enabled: true, match: 'GL', emoji: '🍀', meaning: 'Good luck' },
-    { enabled: true, match: 'HI', emoji: '😄', meaning: 'Laughter' },
-    { enabled: true, match: 'WX', emoji: '⛅', meaning: 'Weather' },
-    // Q-codes
-    { enabled: true, match: 'QSL', emoji: '✔️', meaning: 'Confirmed' },
-    { enabled: true, match: 'QTH', emoji: '📍', meaning: 'Location' },
-    { enabled: true, match: 'QRT', emoji: '🔇', meaning: 'Going silent' },
-    { enabled: true, match: 'QRX', emoji: '⏳', meaning: 'Standby' },
-    { enabled: true, match: 'QRS', emoji: '🐢', meaning: 'Send slower' },
-    { enabled: true, match: 'QRQ', emoji: '🐇', meaning: 'Send faster' },
-  ],
-};
-
 const PROFILES_KEY = 'morseProfiles';
-/** Where fullscreen display settings were stored before they became part of AppSettings. */
-const LEGACY_MODAL_DISPLAY_KEY = 'morseModalDisplay';
 
 /**
  * Display settings of the fullscreen conversation modal, as one read-only view
@@ -938,7 +254,7 @@ const MODAL_DISPLAY_FIELDS: Record<keyof ModalDisplaySettings, keyof AppSettings
 };
 
 /**
- * Settings Service � centralized configuration store.
+ * Settings Service — centralized configuration store.
  *
  * Responsibilities:
  *  - Holds all application settings as reactive Angular signals
@@ -946,7 +262,10 @@ const MODAL_DISPLAY_FIELDS: Record<keyof ModalDisplaySettings, keyof AppSettings
  *    fingerprint (so different USB sound card combos get different configs)
  *  - Device ID remapping: stores device labels and re-resolves IDs on reload
  *  - Channel conflict detection: warns when outputs overlap on same channel
- *  - Fullscreen modal display settings with separate auto-persistence
+ *  - Fullscreen modal display settings as a view over the common settings
+ *
+ * What each setting is, its default and its allowed values belong to the item
+ * model that owns it (`components/settings-items/<item>/<item>-item.model.ts`).
  */
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
@@ -1002,25 +321,6 @@ export class SettingsService {
       norm(s.optoOutputDeviceId) === norm(s.pilotOutputDeviceId);
   });
 
-  /** Fullscreen display values saved before they became part of AppSettings, if any. */
-  private legacyDisplay: Partial<AppSettings> | null = null;
-
-  constructor() {
-    // Carry over display settings stored by earlier versions in their own key
-    try {
-      const raw = localStorage.getItem(LEGACY_MODAL_DISPLAY_KEY);
-      if (raw) {
-        const old = JSON.parse(raw) as Record<string, unknown>;
-        const patch: Record<string, unknown> = {};
-        for (const [key, field] of Object.entries(MODAL_DISPLAY_FIELDS)) {
-          if (typeof old[key] === typeof DEFAULT_SETTINGS[field]) patch[field] = old[key];
-        }
-        this.legacyDisplay = patch as Partial<AppSettings>;
-        this.settings.set({ ...DEFAULT_SETTINGS, ...this.legacyDisplay });
-      }
-    } catch { /* ignore */ }
-  }
-
   /**
    * Update fullscreen display settings in memory. Like other settings they are
    * saved with the profile by `save()`, which the caller runs afterwards.
@@ -1033,7 +333,7 @@ export class SettingsService {
     this.update(mapped as Partial<AppSettings>);
   }
 
-  /** Update in-memory settings (does NOT persist  use save() for that) */
+  /** Update in-memory settings (does NOT persist — use save() for that) */
   update(patch: Partial<AppSettings>): void {
     this.settings.set({ ...this.settings(), ...patch });
     this.isDirty.set(true);
@@ -1041,7 +341,8 @@ export class SettingsService {
 
   /**
    * Try to load a saved settings profile for the given device fingerprint.
-   * Remaps stored device IDs to current session IDs using labels.
+   * Remaps stored device IDs to current session IDs using labels. Settings
+   * missing from the stored profile take their default.
    * @returns true if a profile was found and loaded
    */
   loadForFingerprint(
@@ -1064,27 +365,13 @@ export class SettingsService {
           (remapped as any)[key] = match ? match.deviceId : 'default';
         }
       }
-      // Profiles saved before display settings joined AppSettings keep the old display values
-      const hasDisplay = Object.prototype.hasOwnProperty.call(remapped, 'fullscreenFontSize');
-      this.settings.set({
-        ...DEFAULT_SETTINGS,
-        ...(hasDisplay ? {} : this.legacyDisplay ?? {}),
-        ...remapped,
-      });
-      // Ensure nested collections have all expected keys (e.g. new prosign
-      // keys added after the profile was saved).
-      this.backfillProsignActions();
-      this.backfillMidiOutputMappings();
-      this.backfillKeyboardInputMappings();
-      this.backfillSerialInputMappings();
-      this.backfillSerialOutputMappings();
-      this.backfillIndependentPaddleModes();
+      this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
     }
 
-    // No profile found � reset device IDs to 'default' so selects show correctly
+    // No profile found — reset device IDs to 'default' so selects show correctly
     const s = this.settings();
     const resetPatch: Partial<AppSettings> = {};
     for (const key of DEVICE_SETTINGS_KEYS) {
@@ -1143,239 +430,8 @@ export class SettingsService {
     this.isDirty.set(true);
   }
 
-  /**
-   * Ensure every MIDI output mapping has a 'forward' field.
-   * Profiles saved before forward was moved from global to per-mapping
-   * will have mappings without it; default to 'tx'.
-   */
-  private backfillMidiOutputMappings(): void {
-    const s = this.settings();
-    let patched = false;
-    const mappings = s.midiOutputMappings.map(m => {
-      let updated = m;
-      if (!m.forward) {
-        patched = true;
-        updated = { ...updated, forward: ((s as any).midiOutputForward || 'tx') as OutputForward };
-      }
-      if (!Array.isArray(m.relayInputIndices)) {
-        patched = true;
-        updated = { ...updated, relayInputIndices: [], relaySuppressOtherInputs: false };
-      }
-      return updated;
-    });
-    if (patched) {
-      this.settings.set({ ...s, midiOutputMappings: mappings });
-    }
-  }
-
-  /**
-   * Ensure keyboardInputMappings exists. Profiles saved before the
-   * multi-mapping feature was added will have the old single-key fields
-   * instead; replace them with the new default mappings array.
-   */
-  private backfillKeyboardInputMappings(): void {
-    const s = this.settings();
-    if (!Array.isArray(s.keyboardInputMappings) || s.keyboardInputMappings.length === 0) {
-      this.settings.set({ ...s, keyboardInputMappings: [...DEFAULT_SETTINGS.keyboardInputMappings] });
-    }
-  }
-
-  /**
-   * Ensure prosignActions contains entries for every key present in
-   * DEFAULT_SETTINGS.  Profiles saved before a new prosign was added
-   * will be missing that key; back-fill it from the defaults.
-   */
-  private backfillProsignActions(): void {
-    const current = this.settings().prosignActions;
-    const defaults = DEFAULT_SETTINGS.prosignActions;
-    let patched = false;
-    const merged = { ...current };
-    for (const key of Object.keys(defaults)) {
-      if (!merged[key]) {
-        merged[key] = { ...defaults[key] };
-        patched = true;
-      }
-    }
-    if (patched) {
-      this.settings.set({ ...this.settings(), prosignActions: merged });
-    }
-  }
-
   getDefaults(): AppSettings {
     return { ...DEFAULT_SETTINGS };
-  }
-
-  /**
-   * Migrate old scalar serial input settings (serialStraightKeyPin etc.)
-   * to the new serialInputMappings array. Also ensure the array exists.
-   */
-  private backfillSerialInputMappings(): void {
-    const s = this.settings() as any;
-
-    // Phase 1: Migrate from ancient scalar fields (pre-mapping era)
-    if (!Array.isArray(s.serialInputMappings) || s.serialInputMappings.length === 0) {
-      const mappings: SerialInputMapping[] = [];
-      const portIndex = typeof s.serialInputPortIndex === 'number' ? s.serialInputPortIndex : -1;
-      const pollInterval = typeof s.serialInputPollInterval === 'number' ? s.serialInputPollInterval : 10;
-      const debounceMs = typeof s.serialInputDebounceMs === 'number' ? s.serialInputDebounceMs : 5;
-
-      if (s.serialStraightKeyPin && s.serialStraightKeyPin !== -1) {
-        mappings.push({
-          enabled: true,
-          mode: 'straightKey',
-          pin: s.serialStraightKeyPin,
-          dahPin: 'cts',
-          invert: !!s.serialStraightKeyInvert,
-          source: s.serialStraightKeySource || 'rx',
-          reversePaddles: false,
-          paddleMode: s.paddleMode || 'iambic-b',
-          portIndex,
-          pollInterval,
-          debounceMs,
-          name: '',
-          color: '',
-        });
-      }
-
-      if (s.serialPaddleDitPin && s.serialPaddleDitPin !== -1) {
-        mappings.push({
-          enabled: true,
-          mode: 'paddle',
-          pin: s.serialPaddleDitPin,
-          dahPin: s.serialPaddleDahPin || 'dcd',
-          invert: !!s.serialPaddleInvert,
-          source: s.serialPaddleSource || 'rx',
-          reversePaddles: !!s.serialReversePaddles,
-          paddleMode: s.paddleMode || 'iambic-b',
-          portIndex,
-          pollInterval,
-          debounceMs,
-          name: '',
-          color: '',
-        });
-      }
-
-      // If no legacy fields produced mappings, use defaults
-      if (mappings.length === 0) {
-        mappings.push(...DEFAULT_SETTINGS.serialInputMappings.map(m => ({ ...m })));
-      }
-
-      const patch: any = { serialInputMappings: mappings };
-      // Clean up legacy fields from the persisted object
-      delete s.serialInputPortIndex;
-      delete s.serialInputPollInterval;
-      delete s.serialInputDebounceMs;
-      delete s.serialStraightKeySource;
-      delete s.serialStraightKeyPin;
-      delete s.serialStraightKeyInvert;
-      delete s.serialPaddleSource;
-      delete s.serialPaddleDitPin;
-      delete s.serialPaddleDahPin;
-      delete s.serialPaddleInvert;
-      delete s.serialReversePaddles;
-      this.settings.set({ ...s, ...patch });
-      return;
-    }
-
-    // Phase 2: Ensure per-mapping portIndex/pollInterval/debounceMs exist
-    // (profiles saved before these moved from card-level to per-mapping)
-    let patched = false;
-    const fallbackPort = typeof s.serialInputPortIndex === 'number' ? s.serialInputPortIndex : -1;
-    const fallbackPoll = typeof s.serialInputPollInterval === 'number' ? s.serialInputPollInterval : 10;
-    const fallbackDebounce = typeof s.serialInputDebounceMs === 'number' ? s.serialInputDebounceMs : 5;
-    const mappings = (s.serialInputMappings as SerialInputMapping[]).map(m => {
-      const updated = { ...m };
-      if (typeof updated.portIndex !== 'number') {
-        updated.portIndex = fallbackPort;
-        patched = true;
-      }
-      if (typeof updated.pollInterval !== 'number') {
-        updated.pollInterval = fallbackPoll;
-        patched = true;
-      }
-      if (typeof updated.debounceMs !== 'number') {
-        updated.debounceMs = fallbackDebounce;
-        patched = true;
-      }
-      return updated;
-    });
-    if (patched) {
-      this.settings.set({ ...s, serialInputMappings: mappings });
-    }
-  }
-
-  /**
-   * Migrate old scalar serial output settings (serialPortIndex, serialPin, etc.)
-   * to the new serialOutputMappings array. Also ensure the array exists.
-   */
-  private backfillSerialOutputMappings(): void {
-    const s = this.settings() as any;
-
-    if (Array.isArray(s.serialOutputMappings) && s.serialOutputMappings.length > 0) {
-      // Ensure every mapping has all expected fields
-      let patched = false;
-      const mappings = (s.serialOutputMappings as SerialOutputMapping[]).map(m => {
-        const updated = { ...m };
-        if (typeof updated.forward !== 'string') {
-          updated.forward = 'tx';
-          patched = true;
-        }
-        if (!Array.isArray(updated.relayInputIndices)) {
-          (updated as any).relayInputIndices = [];
-          (updated as any).relaySuppressOtherInputs = false;
-          patched = true;
-        }
-        return updated;
-      });
-      if (patched) {
-        this.settings.set({ ...s, serialOutputMappings: mappings });
-      }
-      return;
-    }
-
-    // Migrate from scalar fields (pre-mapping era)
-    const portIndex = typeof s.serialPortIndex === 'number' ? s.serialPortIndex : -1;
-    const pin: SerialPin = s.serialPin === 'rts' ? 'rts' : 'dtr';
-    const invert = !!s.serialInvert;
-    const forward: OutputForward = ['rx', 'tx', 'both'].includes(s.serialForward) ? s.serialForward : 'tx';
-
-    const mappings: SerialOutputMapping[] = [{
-      enabled: true,
-      portIndex,
-      pin,
-      invert,
-      forward,
-      relayInputIndices: [],
-      relaySuppressOtherInputs: false,
-    }];
-
-    const patch: any = { serialOutputMappings: mappings };
-    delete s.serialPortIndex;
-    delete s.serialPin;
-    delete s.serialInvert;
-    delete s.serialForward;
-    this.settings.set({ ...s, ...patch });
-  }
-
-  /**
-   * Ensure mousePaddleMode and touchPaddleMode exist on profiles saved
-   * before these fields were added. Falls back to global paddleMode.
-   */
-  private backfillIndependentPaddleModes(): void {
-    const s = this.settings() as any;
-    let patched = false;
-    const patch: any = {};
-    if (typeof s.mousePaddleMode !== 'string') {
-      patch.mousePaddleMode = s.paddleMode || 'iambic-b';
-      patched = true;
-    }
-    if (typeof s.touchPaddleMode !== 'string') {
-      patch.touchPaddleMode = s.paddleMode || 'iambic-b';
-      patched = true;
-    }
-    if (patched) {
-      this.settings.set({ ...s, ...patch });
-    }
   }
 
   private _getProfiles(): Record<string, StoredProfile> {

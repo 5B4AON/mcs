@@ -3,7 +3,8 @@
  */
 
 import { computed, effect, Injectable, NgZone, signal } from '@angular/core';
-import { SerialOutputMapping, SettingsService } from './settings.service';
+import { SettingsService } from './settings.service';
+import { SerialOutputMapping } from '../components/settings-items/serial-output/serial-output-item.model';
 
 /**
  * Serial Key Output Service — keys transmitters via serial port DTR/RTS lines.

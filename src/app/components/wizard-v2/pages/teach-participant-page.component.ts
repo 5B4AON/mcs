@@ -4,7 +4,9 @@
 
 import { Component, Input, OnChanges, OnInit, SimpleChanges, ViewChild, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KeyboardInputMapping, MidiInputMapping, SerialInputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.model';
+import { MidiInputMapping } from '../../settings-items/midi-input/midi-input-item.model';
+import { SerialInputMapping } from '../../settings-items/serial-input/serial-input-item.model';
 import { MidiInputService } from '../../../services/midi-input.service';
 import { SerialKeyInputService } from '../../../services/serial-key-input.service';
 import { KeyboardMappingEditorComponent } from '../../settings-items/mapping/keyboard-mapping-editor/keyboard-mapping-editor.component';

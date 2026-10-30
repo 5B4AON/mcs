@@ -7,7 +7,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
-import { EmojiMapping } from '../../../services/settings.service';
+import { EmojiMapping } from '../../settings-items/emojis/emojis-item.model';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 import { BackdropClickDirective } from '../../backdrop-click.directive';
 

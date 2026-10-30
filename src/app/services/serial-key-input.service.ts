@@ -4,7 +4,9 @@
 
 import { Injectable, NgZone, OnDestroy, computed, effect, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, SerialInputPin, SerialInputMapping, InputPath } from './settings.service';
+import { SettingsService, InputPath } from './settings.service';
+import { PaddleMode } from './settings-common';
+import { SerialInputMapping, SerialInputPin } from '../components/settings-items/serial-input/serial-input-item.model';
 import { MorseDecoderService } from './morse-decoder.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { timingsFromWpm } from '../morse-table';

@@ -16,7 +16,7 @@ import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
-import * as practiceUi from '../../../practice-ui.utils';
+import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 
 /**
  * Fullscreen conversation view component.

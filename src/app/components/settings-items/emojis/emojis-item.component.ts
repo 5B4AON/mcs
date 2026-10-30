@@ -4,7 +4,7 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { EmojiMapping } from '../../../services/settings.service';
+import { EmojiMapping } from './emojis-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../settings-modal/emoji-edit-modal/emoji-edit-modal.component';

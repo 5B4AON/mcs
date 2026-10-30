@@ -3,7 +3,8 @@
  */
 
 import { Injectable, OnDestroy } from '@angular/core';
-import { SettingsService, MouseButtonAction } from './settings.service';
+import { SettingsService } from './settings.service';
+import { MouseButtonAction } from '../components/settings-items/mouse-keyer/mouse-keyer-item.model';
 import { KeyerService } from './keyer.service';
 
 /**
