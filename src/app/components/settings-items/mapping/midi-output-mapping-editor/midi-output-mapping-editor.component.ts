@@ -5,7 +5,9 @@
 import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MidiInputMapping, MidiOutputMapping, MidiOutputMode, OutputForward } from '../../../../services/settings.service';
+import { MidiInputMapping } from '../../midi-input/midi-input-item.model';
+import { MidiOutputMapping, MidiOutputMode } from '../../midi-output/midi-output-item.model';
+import { OutputForward } from '../../../../services/settings-common';
 import { MidiOutputService, midiOutputNoteName } from '../../../../services/midi-output.service';
 import { NoteField } from '../midi-input-mapping-editor/midi-input-mapping-editor.component';
 

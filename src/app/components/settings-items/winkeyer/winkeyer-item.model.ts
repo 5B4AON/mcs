@@ -2,7 +2,28 @@
  * Morse Code Studio
  */
 
+import { OUTPUT_FORWARDS, OutputForward, SettingsFieldRules } from '../../../services/settings-common';
 import { ItemDescriptor, labelledReview } from '../item-descriptor';
+
+/** The settings the WinKeyer Output (K1EL WinKeyer via serial port) item owns. */
+export interface WinkeyerSettings {
+  winkeyerEnabled: boolean;
+  winkeyerPortIndex: number;
+  winkeyerWpm: number;
+  winkeyerForward: OutputForward;
+}
+
+export const WINKEYER_DEFAULTS: WinkeyerSettings = {
+  winkeyerEnabled: false,
+  winkeyerPortIndex: -1,
+  winkeyerWpm: 20,
+  winkeyerForward: 'tx',
+};
+
+export const WINKEYER_FIELD_RULES: SettingsFieldRules = {
+  enums: { winkeyerForward: OUTPUT_FORWARDS },
+  integers: ['winkeyerWpm', 'winkeyerPortIndex'],
+};
 
 /** What the WinKeyer item edits and says in a review. */
 export const WINKEYER_DESCRIPTOR: ItemDescriptor = {

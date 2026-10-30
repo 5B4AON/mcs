@@ -3,7 +3,9 @@
  */
 
 import { Component, Input, computed, inject } from '@angular/core';
-import { SettingsService, SerialInputMapping, DecoderSource, SerialInputPin } from '../../../services/settings.service';
+import { SettingsService } from '../../../services/settings.service';
+import { DecoderSource } from '../../../services/settings-common';
+import { SerialInputMapping, SerialInputPin } from './serial-input-item.model';
 import { SerialKeyInputService } from '../../../services/serial-key-input.service';
 import { SerialInputEditModalComponent, SerialInputEditSaveEvent } from '../../settings-modal/serial-input-edit-modal/serial-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';

@@ -3,7 +3,7 @@
  */
 
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { MidiInputMapping } from '../../../services/settings.service';
+import { MidiInputMapping } from '../../settings-items/midi-input/midi-input-item.model';
 import { MappingEditDialogComponent } from '../../settings-items/mapping/mapping-edit-dialog/mapping-edit-dialog.component';
 import {
   MidiInputEditSaveEvent, MidiInputMappingEditorComponent,

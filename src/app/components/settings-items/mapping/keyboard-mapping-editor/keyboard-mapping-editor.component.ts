@@ -4,7 +4,8 @@
 
 import { Component, Input, OnChanges, OnDestroy, SimpleChanges } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KeyboardInputMapping, KeyInputMode, DecoderSource, PaddleMode } from '../../../../services/settings.service';
+import { KeyboardInputMapping } from '../../keyboard-keyer/keyboard-keyer-item.model';
+import { KeyInputMode, DecoderSource, PaddleMode } from '../../../../services/settings-common';
 import { CaptureSlot } from '../capture-slot';
 import { DetectButtonComponent } from '../detect-button/detect-button.component';
 import { MappingIdentityFieldsComponent } from '../identity-fields/mapping-identity-fields.component';

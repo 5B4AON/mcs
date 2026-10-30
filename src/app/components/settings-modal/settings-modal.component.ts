@@ -30,7 +30,7 @@ import {
   PortableAppSettings,
   SETTINGS_SNAPSHOT_MAX_BYTES,
   validateSettingsSnapshot,
-} from '../../services/settings-transfer';
+} from '../../services/settings-snapshot';
 import { PresetService } from '../../services/preset.service';
 import {
   PRESET_NAME_MAX_LENGTH,
@@ -43,8 +43,8 @@ import {
   prepareSettingsImport,
   SettingChange,
   SettingsImportReview,
-  SettingsTransferDevices,
-} from '../../services/settings-transfer-review';
+  SettingsSnapshotDevices,
+} from '../../services/settings-snapshot-review';
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
@@ -207,7 +207,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   ngAfterViewInit(): void {
     if (this.presetsOnly) {
-      window.setTimeout(() => this.openSettingsTransfer());
+      window.setTimeout(() => this.openPresets());
       return;
     }
     if (this.startLanding) {
@@ -398,7 +398,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Open the presets dialog */
-  openSettingsTransfer(event?: Event): void {
+  openPresets(event?: Event): void {
     this.settingsTransferTrigger = event ? event.currentTarget as HTMLButtonElement : null;
     this.presets.reload();
     this.resetPresetState();
@@ -407,7 +407,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Close the presets dialog without applying anything */
-  closeSettingsTransfer(): void {
+  closePresets(): void {
     this.showPresets = false;
     this.closePresetMenu();
     this.resetPresetState();
@@ -419,14 +419,14 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Keep keyboard focus inside the transfer dialog and support Escape to close */
-  onSettingsTransferKeydown(event: KeyboardEvent): void {
+  onPresetsKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape') {
       event.preventDefault();
       if (this.presetMenuId) {
         this.closePresetMenu(true);
         return;
       }
-      this.closeSettingsTransfer();
+      this.closePresets();
       return;
     }
     trapDialogTabKey(event, event.currentTarget as HTMLElement);
@@ -636,7 +636,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.transferReview = prepareSettingsImport(
       this.transferBaseSettings,
       preset.settings,
-      this.getTransferDevices(),
+      this.getSnapshotDevices(),
     );
     window.setTimeout(() => this.focusFirstTransferControl(), 0);
   }
@@ -820,7 +820,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     }, 0);
   }
 
-  private getTransferDevices(): SettingsTransferDevices {
+  private getSnapshotDevices(): SettingsSnapshotDevices {
     return {
       audioInputs: this.devices.inputDevices(),
       audioOutputs: this.devices.outputDevices(),

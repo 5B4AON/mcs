@@ -3,7 +3,11 @@
  */
 
 import { Component, Input, OnInit, ViewChild, inject } from '@angular/core';
-import { KeyboardInputMapping, MidiInputMapping, MidiOutputMapping, SerialInputMapping, SerialOutputMapping } from '../../../services/settings.service';
+import { KeyboardInputMapping } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.model';
+import { MidiInputMapping } from '../../settings-items/midi-input/midi-input-item.model';
+import { MidiOutputMapping } from '../../settings-items/midi-output/midi-output-item.model';
+import { SerialInputMapping } from '../../settings-items/serial-input/serial-input-item.model';
+import { SerialOutputMapping } from '../../settings-items/serial-output/serial-output-item.model';
 import { SerialInputMappingEditorComponent } from '../../settings-items/mapping/serial-input-mapping-editor/serial-input-mapping-editor.component';
 import { SerialOutputMappingEditorComponent } from '../../settings-items/mapping/serial-output-mapping-editor/serial-output-mapping-editor.component';
 import { MidiInputService } from '../../../services/midi-input.service';

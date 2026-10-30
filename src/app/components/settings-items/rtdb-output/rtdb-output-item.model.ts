@@ -2,7 +2,45 @@
  * Morse Code Studio
  */
 
+import { OUTPUT_FORWARDS, OutputForward, SettingsFieldRules } from '../../../services/settings-common';
 import { ItemDescriptor, labelledReview } from '../item-descriptor';
+
+/** The settings the Firebase RTDB Output item owns. */
+export interface RtdbOutputSettings {
+  rtdbOutputEnabled: boolean;
+  rtdbOutputForward: OutputForward;
+  rtdbOutputChannelName: string;
+  /** Never included in presets or settings files */
+  rtdbOutputChannelSecret: string;
+  rtdbOutputName: string;
+  /** Optional text color (CSS color string) — sent as 'col' parameter to remote listeners */
+  rtdbOutputColor: string;
+  /** When true, always send rtdbOutputName — overriding any input-specific name */
+  rtdbOutputOverrideName: boolean;
+  /** When true, always send rtdbOutputColor — overriding any input-specific color */
+  rtdbOutputOverrideColor: boolean;
+  /** When true, allow RTDB input characters to be relayed to RTDB output (disables echo suppression) */
+  rtdbAllowInputRelay: boolean;
+  /** When true, RTDB output only forwards chars from RTDB input relay — all other inputs are suppressed */
+  rtdbRelaySuppressOtherInputs: boolean;
+}
+
+export const RTDB_OUTPUT_DEFAULTS: RtdbOutputSettings = {
+  rtdbOutputEnabled: false,
+  rtdbOutputForward: 'tx',
+  rtdbOutputChannelName: '',
+  rtdbOutputChannelSecret: '',
+  rtdbOutputName: '',
+  rtdbOutputColor: '',
+  rtdbOutputOverrideName: false,
+  rtdbOutputOverrideColor: false,
+  rtdbAllowInputRelay: false,
+  rtdbRelaySuppressOtherInputs: false,
+};
+
+export const RTDB_OUTPUT_FIELD_RULES: SettingsFieldRules = {
+  enums: { rtdbOutputForward: OUTPUT_FORWARDS },
+};
 
 /** What the Firebase RTDB Output item edits. The channel secret is never shown in a review, only whether it is set. */
 export const RTDB_OUTPUT_DESCRIPTOR: ItemDescriptor = {

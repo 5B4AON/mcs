@@ -4,7 +4,8 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PracticeContentMode, PracticeFeedbackMode, PracticePipeline, DecoderSource } from '../../../services/settings.service';
+import { PracticeContentMode, PracticeFeedbackMode, PracticePipeline } from './practice-item.model';
+import { DecoderSource } from '../../../services/settings-common';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 

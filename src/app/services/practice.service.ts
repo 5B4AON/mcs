@@ -3,7 +3,8 @@
  */
 
 import { Injectable, signal, computed } from '@angular/core';
-import { SettingsService, DecoderSource } from './settings.service';
+import { SettingsService } from './settings.service';
+import { DecoderSource } from './settings-common';
 import { MorseEncoderService } from './morse-encoder.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { PRACTICE_WORDS } from '../data/practice-words';

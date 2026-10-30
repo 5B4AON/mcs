@@ -2,7 +2,12 @@
  * Morse Code Studio
  */
 
-import { AppSettings, SerialInputMapping, SerialOutputMapping, KeyboardInputMapping, MidiInputMapping, MidiOutputMapping } from '../../../services/settings.service';
+import { AppSettings } from '../../../services/settings.service';
+import { SerialInputMapping } from '../serial-input/serial-input-item.model';
+import { SerialOutputMapping } from '../serial-output/serial-output-item.model';
+import { KeyboardInputMapping } from '../keyboard-keyer/keyboard-keyer-item.model';
+import { MidiInputMapping } from '../midi-input/midi-input-item.model';
+import { MidiOutputMapping } from '../midi-output/midi-output-item.model';
 import { midiNoteName } from '../../../services/midi-input.service';
 import { midiOutputNoteName } from '../../../services/midi-output.service';
 import { ItemDescriptor } from '../item-descriptor';

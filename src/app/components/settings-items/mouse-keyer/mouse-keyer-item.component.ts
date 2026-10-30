@@ -4,7 +4,8 @@
 
 import { Component, Input, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppSettings, MouseButtonAction } from '../../../services/settings.service';
+import { AppSettings } from '../../../services/settings.service';
+import { MouseButtonAction } from './mouse-keyer-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';

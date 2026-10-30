@@ -30,8 +30,8 @@ import { SerialKeyOutputService } from '../../services/serial-key-output.service
 import { SettingsService } from '../../services/settings.service';
 import { WinkeyerOutputService } from '../../services/winkeyer-output.service';
 import { suggestPresetName } from '../../services/settings-presets';
-import { createSettingsSnapshot } from '../../services/settings-transfer';
-import { prepareSettingsImport } from '../../services/settings-transfer-review';
+import { createSettingsSnapshot } from '../../services/settings-snapshot';
+import { prepareSettingsImport } from '../../services/settings-snapshot-review';
 import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';

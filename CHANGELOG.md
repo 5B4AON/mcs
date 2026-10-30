@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.4] - 2026-10-30
+
+### Changed
+
+- **Settings are defined where they belong** — Each settings item now owns its settings, defaults, allowed values and mapping types in its own model file, instead of one large settings service. Behaviour is unchanged: the defaults are identical and presets and settings files keep the same format. The settings service now only composes them and holds the common settings (speeds, paddle mode, fullscreen display, wake lock). (#97)
+- **Preset and settings-file checks come from the items** — Every setting except the Firebase channel secrets is now included in presets and settings files automatically, and its allowed values are checked from the item that owns it. The snapshot files were renamed from "transfer" to "snapshot" and the Presets dialog code was renamed to match. (#97)
+
+### Fixed
+
+- **Invalid sprite key source in a preset** — Importing a preset or settings file whose sprite key source is not RX or TX is now rejected, like the other choice fields. (#97)
+
+### Removed
+
+- **Old settings migrations** — Profiles saved by much older versions are no longer converted. Settings missing from a saved profile or preset take their default value, and old mapping data from before the multi-mapping settings may be replaced by the defaults. (#97)
+
 ## [2.2.3] - 2026-10-29
 
 ### Fixed

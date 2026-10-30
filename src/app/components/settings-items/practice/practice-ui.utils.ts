@@ -2,8 +2,9 @@
  * Morse Code Studio
  */
 
-import { AppSettings, OutputForward } from './services/settings.service';
-import { PracticeState } from './services/practice.service';
+import { AppSettings } from '../../../services/settings.service';
+import { OutputForward } from '../../../services/settings-common';
+import { PracticeState } from '../../../services/practice.service';
 
 /**
  * Return a concise description of the currently configured practice content.

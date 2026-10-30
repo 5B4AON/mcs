@@ -13,8 +13,11 @@
  *  - The component wraps its content in `<app-item-shell>` (card look in
  *    Settings, flat in a wizard step) and reads/writes ONLY through the
  *    injected `SETTINGS_SCOPE`. It never calls `SettingsService.update()`.
- *  - The model file exports an `ItemDescriptor`: which settings the item edits,
- *    how to validate them and how to describe a change in plain language.
+ *  - The model file exports the item's settings slice (interface), its defaults
+ *    and its preset/file validation rules, and an `ItemDescriptor`: which
+ *    settings the item edits, how to validate them and how to describe a change
+ *    in plain language. Add the slice to `AppSettings`, `DEFAULT_SETTINGS` and
+ *    `SETTINGS_FIELD_RULES` in `settings.service.ts`.
  *  - Device actions (test tone, detect, request port) are explicit buttons and
  *    only work when `scope.isLive` is true.
  *  - Register the item in `item-registry.ts` so flows can refer to it by id.

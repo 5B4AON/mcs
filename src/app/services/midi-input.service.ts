@@ -4,7 +4,8 @@
 
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, DecoderSource, InputPath } from './settings.service';
+import { SettingsService, InputPath } from './settings.service';
+import { PaddleMode, DecoderSource } from './settings-common';
 import { MorseDecoderService } from './morse-decoder.service';
 import { MidiOutputService } from './midi-output.service';
 import { timingsFromWpm } from '../morse-table';

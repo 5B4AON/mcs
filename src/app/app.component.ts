@@ -29,7 +29,7 @@ import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.compon
 import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.component';
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
-import * as practiceUi from './practice-ui.utils';
+import * as practiceUi from './components/settings-items/practice/practice-ui.utils';
 
 /**
  * Morse Code Studio

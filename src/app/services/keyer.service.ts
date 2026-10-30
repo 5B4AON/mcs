@@ -4,7 +4,9 @@
 
 import { Injectable, OnDestroy, NgZone } from '@angular/core';
 import { Subject } from 'rxjs';
-import { SettingsService, PaddleMode, InputPath, KeyboardInputMapping } from './settings.service';
+import { SettingsService, InputPath } from './settings.service';
+import { PaddleMode } from './settings-common';
+import { KeyboardInputMapping } from '../components/settings-items/keyboard-keyer/keyboard-keyer-item.model';
 import { MorseDecoderService } from './morse-decoder.service';
 import { timingsFromWpm } from '../morse-table';
 

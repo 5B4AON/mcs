@@ -17,7 +17,7 @@
         <button (click)="confirmReset()" class="settings-action-btn" title="Reset all settings to defaults" aria-label="Reset all settings to defaults">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" overflow="visible" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M-2.2 12a14.2 14.2 0 1 1 14.2 14.2 14.85 14.85 0 0 1-10.4-4.3L-2.2 18.3" stroke-width="1.6"/><polygon points="-3.1 23.2 -3.1 18.3 2.3 18.3" fill="currentColor" stroke="none"/><g transform="translate(12,12) scale(0.828)"><circle cx="0" cy="0" r="3" stroke-width="2.2"/><path d="M7.4 3a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 3 7.32a1.65 1.65 0 0 0-1 1.51V9a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0-3 7.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0-7.32 3a1.65 1.65 0 0 0-1.51-1H-9a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0-7.4-3a1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0-3-7.32a1.65 1.65 0 0 0-1-1.51V-9a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 7.4-3a1.65 1.65 0 0 0 1.51 1H9a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2.2"/></g></svg>
         </button>
-        <button class="settings-action-btn" (click)="openSettingsTransfer($event)" title="Presets: save, import, export, apply" aria-label="Presets">
+        <button class="settings-action-btn" (click)="openPresets($event)" title="Presets: save, import, export, apply" aria-label="Presets">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4 4m-4-4 4-4"/></svg>
         </button>
         <button class="settings-close-btn" (click)="close()" title="Close settings" aria-label="Close settings">
@@ -195,11 +195,11 @@ This cannot be undone."
 }
 
 @if (showPresets) {
-  <div class="settings-transfer-overlay" (appBackdropClick)="closeSettingsTransfer()">
-    <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onSettingsTransferKeydown($event)">
+  <div class="settings-transfer-overlay" (appBackdropClick)="closePresets()">
+    <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onPresetsKeydown($event)">
       <header class="settings-transfer-header">
         <h2 id="settings-transfer-title" [class.preset-review-title]="transferReview && reviewPreset">{{ transferReview && reviewPreset ? reviewPreset.name : 'Presets' }}</h2>
-        <button type="button" class="settings-close-btn" (click)="closeSettingsTransfer()" aria-label="Close presets" title="Close presets">
+        <button type="button" class="settings-close-btn" (click)="closePresets()" aria-label="Close presets" title="Close presets">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
       </header>

@@ -3,7 +3,8 @@
  */
 
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
-import { SerialOutputMapping, SerialInputMapping } from '../../../services/settings.service';
+import { SerialOutputMapping } from '../../settings-items/serial-output/serial-output-item.model';
+import { SerialInputMapping } from '../../settings-items/serial-input/serial-input-item.model';
 import { MappingEditDialogComponent } from '../../settings-items/mapping/mapping-edit-dialog/mapping-edit-dialog.component';
 import {
   SerialOutputEditSaveEvent, SerialOutputMappingEditorComponent,
