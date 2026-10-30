@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.6] - 2026-10-30
+
+### Fixed
+
+- **Screen wake lock is reacquired automatically** — With Screen Wake Lock enabled, the lock is now requested as soon as your saved settings load, so it is active after you close and reopen the app. It is re-checked whenever you return to the app and every 10 seconds, and requested again if the browser dropped it. The browser releasing the lock no longer switches the setting off. (#101)
+
+### Added
+
+- **Wake lock warning** — If the browser refuses the request, an amber banner on the main screen shows the reason and a **Keep screen on** button to try again. The Screen Wake Lock card shows the same status and button. (#101)
+
 ## [2.2.5] - 2026-10-30
 
 ### Added
