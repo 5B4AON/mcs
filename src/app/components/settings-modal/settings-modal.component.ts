@@ -32,7 +32,15 @@ import {
   validateSettingsSnapshot,
 } from '../../services/settings-snapshot';
 import { PresetService } from '../../services/preset.service';
+import { PracticeService } from '../../services/practice.service';
+import { AudioInputService } from '../../services/audio-input.service';
+import { AudioOutputService } from '../../services/audio-output.service';
+import { CwInputService } from '../../services/cw-input.service';
+import { WakeLockService } from '../../services/wake-lock.service';
+import { compareExternalRoutes } from '../../services/output-change-checker';
 import {
+  EXPORT_FILE_NAME_MAX_LENGTH,
+  exportFileName,
   PRESET_NAME_MAX_LENGTH,
   presetFileName,
   SettingsPreset,
@@ -129,6 +137,10 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Whether the reset confirmation dialog is visible */
   showResetConfirm = false;
 
+  /** Whether the Revert confirmation is showing */
+  showRevertConfirm = false;
+  revertMessage = '';
+
   /** Whether the scan results overlay is visible */
   showScanResults = false;
 
@@ -140,6 +152,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Maximum characters in a preset name */
   readonly presetNameMaxLength = PRESET_NAME_MAX_LENGTH;
+  readonly exportFileNameMaxLength = EXPORT_FILE_NAME_MAX_LENGTH;
 
   /** Error shown in the presets dialog */
   transferError = '';
@@ -147,8 +160,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Confirmation shown in the presets dialog */
   presetNotice = '';
 
-  /** Name entry for saving, renaming, duplicating, or naming an imported file */
-  nameForm: { mode: 'save' | 'rename' | 'duplicate' | 'import'; id?: string; value: string } | null = null;
+  /** Name entry for saving, renaming, duplicating, exporting (file name), or naming an imported file */
+  nameForm: { mode: 'save' | 'rename' | 'duplicate' | 'export' | 'import'; id?: string; value: string } | null = null;
 
   /** Preset whose actions menu is open */
   presetMenuId: string | null = null;
@@ -203,6 +216,11 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     private serialInput: SerialKeyInputService,
     private serialOutput: SerialKeyOutputService,
     private winkeyerOutput: WinkeyerOutputService,
+    private practice: PracticeService,
+    private audioInput: AudioInputService,
+    private audioOutput: AudioOutputService,
+    private cwInput: CwInputService,
+    private wakeLock: WakeLockService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -371,6 +389,124 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Tab order used for keyboard navigation */
   private readonly tabOrder: ('inputs' | 'outputs' | 'other')[] = ['inputs', 'outputs', 'other'];
 
+  // ---- Revert ----
+
+  /** Ask before discarding unsaved changes; names any route that going back would switch on */
+  confirmRevert(): void {
+    const saved = this.settings.peekSavedSettings(this.devices.inputDevices(), this.devices.outputDevices());
+    if (!saved) return;
+    const routes = compareExternalRoutes(this.settings.settings(), saved);
+    let message = 'Discard your unsaved changes and go back to the settings last saved for this device?';
+    if (routes.length > 0) {
+      message += `\n\nThis will also switch on or redirect: ${routes.map(route => `${route.type} (${route.change})`).join('; ')}.`;
+    }
+    this.revertMessage = message;
+    this.showRevertConfirm = true;
+  }
+
+  /** Restore the last saved settings, then bring every running channel in line with them */
+  async onRevertConfirmed(confirmed: boolean): Promise<void> {
+    this.showRevertConfirm = false;
+    if (!confirmed) return;
+    const before = this.settings.settings();
+    const restored = this.settings.revertToSaved(this.devices.inputDevices(), this.devices.outputDevices());
+    if (!restored) return;
+
+    if (before.encoderMode === 'practice' && restored.encoderMode !== 'practice') this.practice.reset();
+    await this.syncLiveServices(before, restored);
+    window.setTimeout(() => this.focusSettingsClose());
+  }
+
+  /**
+   * Do what each Settings card does when its switch changes, for every channel
+   * that differs after a revert. The confirmation named the routes it would
+   * switch on, so the click is the user's explicit action; failures show in the cards.
+   * Services driven by their own effects (sidetone, opto, serial input) need nothing here.
+   */
+  private async syncLiveServices(before: AppSettings, restored: AppSettings): Promise<void> {
+    // RTDB: stop what is switched off or pointed elsewhere, then start what should run
+    const rtdbInputMoved = before.rtdbInputChannelName !== restored.rtdbInputChannelName
+      || before.rtdbInputChannelSecret !== restored.rtdbInputChannelSecret;
+    if (!restored.rtdbInputEnabled) {
+      if (before.rtdbInputEnabled) this.rtdbService.stopInput();
+    } else if (!before.rtdbInputEnabled || rtdbInputMoved) {
+      this.rtdbService.startInput();
+    }
+    const rtdbOutputMoved = before.rtdbOutputChannelName !== restored.rtdbOutputChannelName
+      || before.rtdbOutputChannelSecret !== restored.rtdbOutputChannelSecret;
+    if (!restored.rtdbOutputEnabled) {
+      if (before.rtdbOutputEnabled) this.rtdbService.stopOutput();
+    } else if (!before.rtdbOutputEnabled || rtdbOutputMoved) {
+      if (before.rtdbOutputEnabled) this.rtdbService.stopOutput();
+      this.rtdbService.startOutput();
+    }
+
+    // MIDI
+    if (before.midiInputEnabled && !restored.midiInputEnabled) this.midiInput.shutdown();
+    if (before.midiOutputEnabled && !restored.midiOutputEnabled) this.midiOutput.shutdown();
+    if (restored.midiInputEnabled) {
+      if (before.midiInputEnabled) this.midiInput.reattach();
+      else await this.midiInput.start();
+    }
+    if (restored.midiOutputEnabled) {
+      if (before.midiOutputEnabled) this.midiOutput.reattach();
+      else await this.midiOutput.start();
+    }
+
+    // Serial keying output (serial input attaches itself from the settings)
+    if (!restored.serialEnabled) {
+      if (before.serialEnabled) await this.serialOutput.closeAll();
+    } else {
+      await this.serialOutput.connectAllEnabled();
+    }
+
+    // WinKeyer
+    if (!restored.winkeyerEnabled) {
+      if (before.winkeyerEnabled) await this.winkeyerOutput.close();
+    } else if (restored.winkeyerPortIndex >= 0) {
+      if (before.winkeyerPortIndex !== restored.winkeyerPortIndex && this.winkeyerOutput.connected()) {
+        await this.winkeyerOutput.close();
+      }
+      if (!this.winkeyerOutput.connected()) await this.winkeyerOutput.open(restored.winkeyerPortIndex);
+      else if (before.winkeyerWpm !== restored.winkeyerWpm) await this.winkeyerOutput.setSpeed(restored.winkeyerWpm);
+    }
+
+    // Microphone and CW detector only run while audio is running
+    if (this.audioRunning) {
+      const micMoved = before.micInputEnabled && restored.micInputEnabled
+        && (before.inputDeviceId !== restored.inputDeviceId || before.pilotOutputDeviceId !== restored.pilotOutputDeviceId);
+      if (before.micInputEnabled && (!restored.micInputEnabled || micMoved)) {
+        await this.audioInput.stop();
+        await this.audioOutput.stopPilot();
+      }
+      if (restored.micInputEnabled) {
+        if (!before.micInputEnabled || micMoved) {
+          await this.audioInput.start();
+          await this.audioOutput.startPilot();
+        } else {
+          this.audioInput.updateParams();
+        }
+      }
+
+      const cwMoved = before.cwInputEnabled && restored.cwInputEnabled
+        && before.cwInputDeviceId !== restored.cwInputDeviceId;
+      if (before.cwInputEnabled && (!restored.cwInputEnabled || cwMoved)) await this.cwInput.stop();
+      if (restored.cwInputEnabled) {
+        if (!before.cwInputEnabled || cwMoved) await this.cwInput.start();
+        else this.cwInput.updateParams();
+      }
+    }
+
+    if (before.wakeLockEnabled !== restored.wakeLockEnabled) {
+      await this.wakeLock.onSettingChanged(restored.wakeLockEnabled);
+    }
+  }
+
+  /** Revert and Save both disable after use, so keyboard focus moves to the header close button */
+  private focusSettingsClose(): void {
+    if (this.settingsDialog) focusDialog(this.settingsDialog.nativeElement, '.settings-close-btn');
+  }
+
   // ---- Save ----
 
   /** Persist current settings to the active audio-device profile */
@@ -406,8 +542,12 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     window.setTimeout(() => this.focusFirstTransferControl(), 0);
   }
 
-  /** Close the presets dialog without applying anything */
+  /** Close the presets dialog without applying anything; an open review only steps back to the list */
   closePresets(): void {
+    if (this.transferReview) {
+      this.cancelReview();
+      return;
+    }
     this.showPresets = false;
     this.closePresetMenu();
     this.resetPresetState();
@@ -473,7 +613,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.closePresetMenu();
     if (action === 'apply') this.startReviewPreset(preset);
     else if (action === 'update') this.confirmUpdatePreset(preset);
-    else if (action === 'export') this.exportPreset(preset);
+    else if (action === 'export') this.startExportPreset(preset);
     else if (action === 'rename') this.startRenamePreset(preset);
     else if (action === 'duplicate') this.startDuplicatePreset(preset);
     else this.confirmDeletePreset(preset);
@@ -502,6 +642,13 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.focusNameInput();
   }
 
+  /** Offer the generated file name for editing; nothing downloads until Save */
+  startExportPreset(preset: SettingsPreset): void {
+    this.clearMessages();
+    this.nameForm = { mode: 'export', id: preset.id, value: presetFileName(preset.name) };
+    this.focusNameInput();
+  }
+
   cancelNameForm(): void {
     this.nameForm = null;
     this.pendingImport = null;
@@ -513,6 +660,16 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     const form = this.nameForm;
     if (!form) return;
     this.transferError = '';
+    if (form.mode === 'export') {
+      const preset = this.presets.presets().find(item => item.id === form.id);
+      if (!preset) {
+        this.transferError = 'That preset is no longer available.';
+        return;
+      }
+      this.nameForm = null;
+      this.exportPreset(preset, form.value);
+      return;
+    }
     const result = form.mode === 'save' ? this.presets.saveCurrent(form.value)
       : form.mode === 'rename' ? this.presets.rename(form.id ?? '', form.value)
       : form.mode === 'duplicate' ? this.presets.duplicate(form.id ?? '', form.value)
@@ -568,8 +725,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     else this.transferError = result.error;
   }
 
-  /** Download one preset as a versioned local JSON file, excluding RTDB secrets */
-  exportPreset(preset: SettingsPreset): void {
+  /** Download one preset as a versioned local JSON file named `fileName`, excluding RTDB secrets */
+  exportPreset(preset: SettingsPreset, fileName: string): void {
     this.clearMessages();
     try {
       const snapshot = {
@@ -581,12 +738,12 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
       const url = URL.createObjectURL(new Blob([JSON.stringify(snapshot, null, 2)], { type: 'application/json' }));
       const link = document.createElement('a');
       link.href = url;
-      link.download = presetFileName(preset.name);
+      link.download = exportFileName(fileName, preset.name);
       document.body.appendChild(link);
       link.click();
       link.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 0);
-      this.presetNotice = `Exported "${preset.name}" to a local file. It contains no RTDB secrets.`;
+      this.presetNotice = `Exported "${preset.name}" as ${link.download}. It contains no RTDB secrets.`;
     } catch {
       this.transferError = 'The preset file could not be created in this browser.';
     }
@@ -680,7 +837,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     this.reviewPreset = null;
     this.routeAcknowledgements = {};
     this.transferApplied = true;
-    this.presetNotice = `"${name}" is active now. Use Save Settings separately to store it for this device profile.`;
+    this.presetNotice = `"${name}" is active now. Use Save in Settings separately to store it for this device profile.`;
     window.setTimeout(() => this.focusFirstTransferControl(), 0);
   }
 

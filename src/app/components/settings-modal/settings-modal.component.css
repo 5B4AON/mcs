@@ -157,16 +157,21 @@
   padding: .75rem 1.25rem;
 }
 
-/* Modal footer (sticky save) */
+/* Modal footer (sticky): Revert on the left, Save Settings on the right; both always visible */
 .settings-modal-footer {
   display: flex;
+  flex-wrap: wrap;
+  align-items: center;
   justify-content: center;
+  gap: .75rem;
   padding: .65rem 1.25rem;
   border-top: 1px solid #333;
   flex-shrink: 0;
 }
-.settings-modal-footer .save-btn {
-  min-width: 160px;
+
+/* One fixed width so the footer never changes when Save turns into "Saved ✓" */
+.settings-modal-footer .pill-btn {
+  width: 8rem;
 }
 
 /* Conflict banner (used for parent-level channel conflicts) */
@@ -210,39 +215,12 @@
   border-left-color: #da2;
 }
 
-/* Save button */
-.save-btn {
-  background: linear-gradient(180deg, #3d8f84 0%, #2b6a62 100%);
-  color: #fff;
-  border: none;
-  font-weight: 600;
-  padding: .4rem 1.2rem;
-  font-size: .9rem;
-  min-height: 40px;
-  border-radius: 20px;
-}
-.save-btn:hover:not(:disabled) {
-  filter: brightness(1.15);
-}
-.save-btn:disabled {
-  background: #2a4a2a;
-  color: #8a8;
-  border: 1px solid #3a5a3a;
-  cursor: default;
-}
-
 /* ============================================================
    RESPONSIVE — TABLET (≤768px)
    ============================================================ */
 @media (max-width: 768px) {
   .settings-modal {
     max-height: 95vh;
-  }
-}
-
-@media (pointer: coarse) {
-  .settings-modal-footer .save-btn {
-    min-height: 44px;
   }
 }
 
@@ -280,10 +258,6 @@
   }
   .settings-modal-footer {
     padding: .5rem .75rem;
-  }
-  .settings-modal-footer .save-btn {
-    width: 100%;
-    max-width: 240px;
   }
 }
 
@@ -405,37 +379,9 @@
 
 .scan-results-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center;
   padding: .65rem 1.25rem .85rem;
   border-top: 1px solid #333;
-}
-
-.scan-results-ok-btn {
-  padding: .45rem 1.4rem;
-  font-size: .88rem;
-  font-weight: 600;
-  border-radius: 6px;
-  border: 1px solid #3a6a9a;
-  background: #1e4a6e;
-  color: #cdf;
-  cursor: pointer;
-  transition: background .12s, transform .08s;
-  min-height: 36px;
-}
-.scan-results-ok-btn:hover {
-  background: #285a80;
-}
-.scan-results-ok-btn:active {
-  transform: scale(0.96);
-}
-
-/* ===== Scan Results — Touch ===== */
-@media (pointer: coarse) {
-  .scan-results-ok-btn {
-    min-height: 44px;
-    padding: .55rem 1.6rem;
-    font-size: .92rem;
-  }
 }
 
 /* ===== Scan Results — Mobile ===== */
@@ -539,44 +485,13 @@
   line-height: 1.45;
 }
 
+/* Buttons are the shared .pill-btn pills; they wrap and stay centred */
 .transfer-actions,
 .settings-transfer-footer {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
   gap: .6rem;
-}
-
-/* Same look and width as the main-page kebab menu action buttons; they wrap and stay centered */
-.transfer-actions {
-  justify-content: center;
-}
-
-.transfer-actions .transfer-action-btn {
-  flex: 0 1 auto;
-  min-width: 7.5rem;
-  max-width: 240px;
-  min-height: 40px;
-  padding: .6rem 1.1rem;
-  border: none;
-  border-radius: 20px;
-  font-size: .9rem;
-  letter-spacing: .3px;
-  text-align: center;
-  color: #dde4ec;
-  background: linear-gradient(180deg, #506078 0%, #3a4858 100%);
-  box-shadow:
-    0 3px 6px rgba(0,0,0,.4),
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 -2px 4px rgba(0,0,0,.25);
-  transition: transform .1s, box-shadow .15s, filter .15s;
-  user-select: none;
-}
-
-.transfer-actions .transfer-action-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: .5rem;
 }
 
 .transfer-btn-icon {
@@ -587,43 +502,6 @@
 .transfer-btn-label {
   min-width: 4.5em;
   text-align: left;
-}
-
-.transfer-actions .transfer-action-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.15);
-}
-
-.transfer-actions .transfer-action-btn:active:not(:disabled) {
-  transform: translateY(1px);
-  box-shadow: 0 1px 3px rgba(0,0,0,.5), inset 0 2px 4px rgba(0,0,0,.3);
-}
-
-.transfer-action-btn,
-.transfer-cancel-btn,
-.transfer-apply-btn {
-  min-height: 40px;
-  padding: .5rem .85rem;
-  border: 1px solid #56718a;
-  border-radius: 6px;
-  color: #eef7ff;
-  background: #263b4c;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.transfer-apply-btn {
-  margin-left: auto;
-  border-color: #34835d;
-  background: #246341;
-}
-
-.transfer-apply-btn:disabled {
-  border-color: #555;
-  color: #aaa;
-  background: #333;
-  cursor: not-allowed;
 }
 
 .transfer-error {
@@ -791,7 +669,6 @@
 }
 
 .settings-transfer-footer {
-  justify-content: flex-end;
   border-top: 1px solid #38404a;
 }
 
@@ -869,7 +746,13 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: .5rem;
+}
+
+/* The question takes the full row so the pills sit centred below it */
+.preset-delete-confirm > span {
+  flex: 1 0 100%;
 }
 
 .preset-menu-btn {
@@ -944,11 +827,6 @@
   color: #f99;
 }
 
-.transfer-action-btn:disabled {
-  opacity: .5;
-  cursor: not-allowed;
-}
-
 .settings-transfer-dialog button:focus-visible,
 .settings-transfer-dialog input:focus-visible,
 .preset-menu-btn:focus-visible {
@@ -957,7 +835,7 @@
 }
 
 @media (pointer: coarse) {
-  .settings-transfer-dialog button:not(.settings-close-btn):not(.preset-menu-btn):not(.transfer-action-btn) {
+  .settings-transfer-dialog button:not(.settings-close-btn):not(.preset-menu-btn):not(.pill-btn) {
     min-height: 44px;
   }
   .settings-transfer-dialog .settings-close-btn,
@@ -983,8 +861,5 @@
   }
   .settings-transfer-footer {
     padding: .65rem .75rem;
-  }
-  .transfer-apply-btn {
-    margin-left: 0;
   }
 }

@@ -112,8 +112,10 @@
           Output needs
         }
         to be re-enabled after page refresh.
-        Open <a class="midi-reconnect-link" (click)="openSettings()">Settings</a>
-        and toggle the service off and on.
+        @if (midiReconnectError) {
+          <br><strong>{{ midiReconnectError }}</strong>
+        }
+        <br><button type="button" class="pill-btn pill-accent" (click)="reenableMidi()">Re-enable MIDI</button>
       </span>
       <button class="midi-reconnect-dismiss" (click)="dismissMidiReconnectBanner()" title="Dismiss" aria-label="Dismiss">&times;</button>
     </div>

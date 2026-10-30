@@ -36,7 +36,7 @@
   </label>
 
   <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
-  <div class="cw-hint">How loud the sidetone is, from 0% (silent) to 100% (full level).</div>
+  <div class="cw-hint">How loud the sidetone is, from silent to max.</div>
   <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
                label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 

@@ -8,6 +8,7 @@ import { PortableAppSettings, validatePortableSettings } from './settings-snapsh
 /** localStorage key for named presets; separate from the automatic `morseProfiles` */
 export const PRESETS_STORAGE_KEY = 'morsePresets';
 export const PRESET_NAME_MAX_LENGTH = 40;
+export const EXPORT_FILE_NAME_MAX_LENGTH = 100;
 export const PRESETS_STORAGE_MAX_BYTES = 2_097_152;
 export const PRESETS_MAX_COUNT = 50;
 
@@ -123,6 +124,21 @@ export function serializePresetStore(presets: readonly SettingsPreset[]): string
 export function presetFileName(name: string): string {
   const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
   return `morse-code-studio-preset-${slug || 'preset'}.json`;
+}
+
+/**
+ * Turn the file name typed in the export form into a safe `.json` name:
+ * path and reserved characters are removed, spaces become hyphens, and an empty
+ * result falls back to the name generated for the preset.
+ */
+export function exportFileName(input: string, presetName: string): string {
+  const base = input.trim()
+    .replace(/\.json$/i, '')
+    .replace(/[\\/:*?"<>|\x00-\x1f]+/g, '-')
+    .replace(/\s+/g, '-')
+    .replace(/^[-.]+|[-.]+$/g, '')
+    .slice(0, EXPORT_FILE_NAME_MAX_LENGTH);
+  return base ? `${base}.json` : presetFileName(presetName);
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

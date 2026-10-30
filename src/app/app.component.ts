@@ -174,13 +174,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private lastWordGapCount = 0;
 
   /**
-   * MIDI reconnect banner flags — set when the page loaded with MIDI
-   * services enabled but they had to be disabled because Chrome's MIDI
-   * subsystem cannot auto-reconnect reliably. Cleared when the user
-   * dismisses the banner or re-enables the service via settings.
+   * MIDI reconnect banner flags — set when the page loaded with MIDI enabled
+   * but it could not be started without the user: the browser had not yet
+   * granted MIDI access, or starting failed. Chrome's MIDI subsystem cannot
+   * always reconnect on its own. Cleared by the banner's re-enable button,
+   * when the user dismisses it, or when they re-enable the service in Settings.
    */
   midiInputNeedsReconnect = false;
   midiOutputNeedsReconnect = false;
+  /** Why the notice's re-enable button could not start MIDI */
+  midiReconnectError = '';
 
   /** Whether the main screen blurred text is being revealed (button held) */
   mainRevealing = false;
@@ -1519,6 +1522,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissMidiReconnectBanner(): void {
     this.midiInputNeedsReconnect = false;
     this.midiOutputNeedsReconnect = false;
+    this.midiReconnectError = '';
   }
 
   /** Open help modal */
@@ -1592,7 +1596,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       // After loading the device profile, check if MIDI was enabled.
       // The flat-format check in ngOnInit may have seen defaults (false)
       // because the real profile hadn't been loaded yet.
-      this.checkMidiReconnect();
+      await this.checkMidiReconnect();
       if (!found) {
         this.openSettings(); // auto-open settings for validation
       }
@@ -1600,23 +1604,69 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * Check if MIDI services were enabled before the page refresh and
-   * need to be manually re-enabled. Disables them and sets the banner
-   * flags so the user is informed.
+   * After a page refresh the profile says MIDI was on, but nothing has started it.
+   * If the browser has already granted MIDI access, start it silently. Otherwise
+   * (or if starting fails) switch the flags off and show the notice with a
+   * one-click re-enable button, so a permission prompt always follows a user click.
    *
    * Called after loadForFingerprint() loads the device profile — this is
    * the only time we have the real saved settings (settings start at
    * defaults until the profile is loaded asynchronously).
    */
-  private checkMidiReconnect(): void {
-    if (this.settings.settings().midiInputEnabled) {
+  private async checkMidiReconnect(): Promise<void> {
+    const wantInput = this.settings.settings().midiInputEnabled;
+    const wantOutput = this.settings.settings().midiOutputEnabled;
+    if (!wantInput && !wantOutput) return;
+
+    const granted = await this.midiPermissionGranted();
+    if (granted) {
+      if (wantInput) await this.midiInput.start();
+      if (wantOutput) await this.midiOutput.start();
+    }
+    if (wantInput && (!granted || this.midiInput.lastError())) {
       this.midiInputNeedsReconnect = true;
       this.settings.update({ midiInputEnabled: false });
     }
-    if (this.settings.settings().midiOutputEnabled) {
+    if (wantOutput && (!granted || this.midiOutput.lastError())) {
       this.midiOutputNeedsReconnect = true;
       this.settings.update({ midiOutputEnabled: false });
     }
+  }
+
+  /** True when the browser already allows MIDI access for this site, so starting it shows no prompt */
+  private async midiPermissionGranted(): Promise<boolean> {
+    try {
+      const status = await navigator.permissions.query({ name: 'midi' as PermissionName });
+      return status.state === 'granted';
+    } catch {
+      return false;
+    }
+  }
+
+  /** The notice's button: switch MIDI back on and start it, as the MIDI cards do */
+  async reenableMidi(): Promise<void> {
+    this.midiReconnectError = '';
+    if (this.midiInputNeedsReconnect) {
+      this.settings.update({ midiInputEnabled: true });
+      await this.midiInput.start();
+      if (this.midiInput.lastError()) {
+        this.midiReconnectError = this.midiInput.lastError();
+        this.settings.update({ midiInputEnabled: false });
+      } else {
+        this.midiInputNeedsReconnect = false;
+      }
+    }
+    if (this.midiOutputNeedsReconnect) {
+      this.settings.update({ midiOutputEnabled: true });
+      await this.midiOutput.start();
+      if (this.midiOutput.lastError()) {
+        this.midiReconnectError = this.midiOutput.lastError();
+        this.settings.update({ midiOutputEnabled: false });
+      } else {
+        this.midiOutputNeedsReconnect = false;
+      }
+    }
+    this.settings.clearDirtyIfSaved(this.devices.inputDevices(), this.devices.outputDevices());
   }
 
   saveSettings(): void {

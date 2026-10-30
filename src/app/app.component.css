@@ -1542,14 +1542,6 @@ select { max-width: 300px; }
 .midi-reconnect-text {
   flex: 1;
 }
-.midi-reconnect-link {
-  color: #6aadf0;
-  text-decoration: underline;
-  cursor: pointer;
-}
-.midi-reconnect-link:hover {
-  color: #a0ccf8;
-}
 .midi-reconnect-dismiss {
   background: none;
   border: 1px solid #4a90d9;

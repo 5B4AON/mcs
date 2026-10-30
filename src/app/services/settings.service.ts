@@ -355,17 +355,7 @@ export class SettingsService {
     const profile = profiles[fingerprint];
 
     if (profile) {
-      const remapped = { ...profile.settings };
-      for (const key of DEVICE_SETTINGS_KEYS) {
-        const savedLabel = profile.deviceLabels[key];
-        if (savedLabel && savedLabel !== 'System Default') {
-          const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
-          const devices = isInput ? currentInputs : currentOutputs;
-          const match = devices.find(d => d.label === savedLabel);
-          (remapped as any)[key] = match ? match.deviceId : 'default';
-        }
-      }
-      this.settings.set({ ...DEFAULT_SETTINGS, ...remapped });
+      this.settings.set(this._remapProfile(profile, currentInputs, currentOutputs));
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -423,6 +413,67 @@ export class SettingsService {
     this.isDirty.set(false);
     this.needsValidation.set(false);
     return 'saved';
+  }
+
+  /** Stored device ids are remapped to this session's ids by label; missing settings take their default */
+  private _remapProfile(
+    profile: StoredProfile,
+    currentInputs: { deviceId: string; label: string }[],
+    currentOutputs: { deviceId: string; label: string }[],
+  ): AppSettings {
+    const remapped = { ...profile.settings };
+    for (const key of DEVICE_SETTINGS_KEYS) {
+      const savedLabel = profile.deviceLabels[key];
+      if (savedLabel && savedLabel !== 'System Default') {
+        const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
+        const devices = isInput ? currentInputs : currentOutputs;
+        const match = devices.find(d => d.label === savedLabel);
+        (remapped as any)[key] = match ? match.deviceId : 'default';
+      }
+    }
+    return { ...DEFAULT_SETTINGS, ...remapped };
+  }
+
+  /** The last saved settings for the current device, or null when none are saved. Changes nothing. */
+  peekSavedSettings(
+    currentInputs: { deviceId: string; label: string }[],
+    currentOutputs: { deviceId: string; label: string }[],
+  ): AppSettings | null {
+    const profile = this._getProfiles()[this.currentFingerprint()];
+    return profile ? this._remapProfile(profile, currentInputs, currentOutputs) : null;
+  }
+
+  /**
+   * Discard unsaved changes by restoring the last saved settings for the
+   * current device. Returns the restored settings, or null when nothing is saved.
+   */
+  revertToSaved(
+    currentInputs: { deviceId: string; label: string }[],
+    currentOutputs: { deviceId: string; label: string }[],
+  ): AppSettings | null {
+    const saved = this.peekSavedSettings(currentInputs, currentOutputs);
+    if (!saved) return null;
+    this.settings.set(saved);
+    this.isDirty.set(false);
+    this.needsValidation.set(false);
+    return saved;
+  }
+
+  /** True when there are unsaved changes and a saved profile exists to go back to */
+  readonly canRevert = computed(() =>
+    this.isDirty() && !this.needsValidation() && this.currentFingerprint() !== '');
+
+  /** Clear the unsaved flag when the live settings turn out to match the saved profile again */
+  clearDirtyIfSaved(
+    currentInputs: { deviceId: string; label: string }[],
+    currentOutputs: { deviceId: string; label: string }[],
+  ): void {
+    const saved = this.peekSavedSettings(currentInputs, currentOutputs);
+    if (!saved || this.needsValidation()) return;
+    const live = this.settings() as unknown as Record<string, unknown>;
+    const same = Object.entries(saved as unknown as Record<string, unknown>)
+      .every(([key, value]) => JSON.stringify(live[key]) === JSON.stringify(value));
+    if (same) this.isDirty.set(false);
   }
 
   resetToDefaults(): void {
