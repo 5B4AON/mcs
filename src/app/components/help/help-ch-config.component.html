@@ -52,9 +52,13 @@
 
 <p>
   Settings changes take effect immediately. Saving keeps them for future
-  sessions on that device profile. The Settings window shows when changes are
-  active but not saved, and reports if a profile or browser storage is
-  unavailable.
+  sessions on that device profile. While there are unsaved changes, the
+  <strong>Save</strong> button at the bottom of Settings is active;
+  when everything is saved it reads "Saved ✓". Next to it, <strong>Revert</strong>
+  (after you confirm) discards the unsaved changes and goes back to the
+  settings last saved for this device profile. Revert is greyed out when there
+  is nothing to go back to. Settings also reports if a profile or browser
+  storage is unavailable.
 </p>
 
 <p>
@@ -78,18 +82,21 @@
   current setup as a preset (names are up to 40 characters and not case
   sensitive), update a preset with your current settings (after
   confirmation), rename, duplicate, delete, and export a preset to a local
-  JSON file. Presets are kept in this browser separately from device profiles.
+  JSON file. Export first shows the file name so you can change it, and
+  nothing downloads until you press <strong>Save</strong>. Presets are kept in this browser separately from device profiles.
 </p>
 <p>
   To move a setup to another browser, export the preset there and use
-  <strong>Import preset file</strong> here. Import only adds the file to your
+  <strong>Import</strong> here, then press <strong>Load</strong> after naming
+  it. Import only adds the file to your
   preset list; it never changes your running settings. To use a preset, choose
   <strong>Review and apply</strong>. You see a grouped before-and-after list
   first, showing only the parts that changed (larger structured settings are
   collapsed under <strong>Before:</strong> and <strong>After:</strong>), and
-  nothing changes until you apply. Applied settings become active
+  nothing changes until you press <strong>Apply</strong> (or <strong>Back</strong>
+  to return to the list). Applied settings become active
   immediately but are not saved to the current device profile; use
-  <strong>Save Settings</strong> separately to keep them.
+  <strong>Save</strong> in Settings separately to keep them.
 </p>
 <p>
   RTDB channel secrets are never saved in presets or files. Applying a preset

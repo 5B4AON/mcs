@@ -22,7 +22,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly in a 
 
 **Online Relay** — Relay Morse characters between app instances in real time over the internet via Firebase Realtime Database. Each character carries the sender's WPM and optional colour so the receiving station plays it back at the original rhythm. The channel name and secret together identify a database path; they are not user authentication or encryption. Input-specific names and colours are forwarded by default, with optional overrides on both the sending and receiving side.
 
-**Getting started** — Start audio safely, try an interactive Morse example, and use goal-based Settings to find the relevant controls. Settings distinguish live changes from the separate per-device **Save Settings** action.
+**Getting started** — Start audio safely, try an interactive Morse example, and use goal-based Settings to find the relevant controls. Settings distinguish live changes from the separate per-device **Save** action.
 
 **Setup Wizard** — Choose a goal for a guided, draft-and-review flow covering sending, typing, copy practice, decoding, MIDI or serial input, relay, and radio-keying hardware (the teaching guide is being redesigned). Start from a saved preset to seed only the relevant draft settings, or save the reviewed proposal as a named preset without applying it. Changes apply only after review; new hardware routes require a separate explicit action, and device permissions are requested only after you choose a device.
 
@@ -87,7 +87,7 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 1. Open the app in **Chrome** or **Edge** (required for full feature support including device selection and serial ports).
 2. Click **Start Audio** — grant microphone permission when prompted.
 3. Expand **Settings** to configure your input/output devices, keyer bindings, and WPM.
-4. Click **Save Settings** — your configuration is saved per device profile and persists across sessions.
+4. Click **Save** — your configuration is saved per device profile and persists across sessions.
 5. Click the **Help** button from the top-right kebab menu for detailed documentation covering every feature, wiring diagrams, and real-world use-case examples.
 
 ## Browser Compatibility

@@ -82,12 +82,10 @@
 
 .md-actions {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.6rem;
   padding: 0.65rem 1.25rem 0.85rem;
   border-top: 1px solid #333;
-}
-
-.md-spacer {
-  flex: 1;
 }

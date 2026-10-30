@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.5] - 2026-10-30
+
+### Added
+
+- **Revert in Settings** — A **Revert** button beside **Save** at the bottom of Settings (greyed out when there is nothing to go back to) discards unsaved changes after a confirmation and restores the settings last saved for this device. The confirmation names any keying or relay route it would switch back on. Running RTDB, MIDI, serial, WinKeyer, microphone, CW detector and wake-lock states are brought in line with the restored settings. (#99)
+- **Export file name** — Exporting a preset now shows the generated file name first so you can change it; nothing downloads until you press **Save**. (#99)
+- **Re-enable MIDI button** — The notice shown when MIDI could not be restarted after a page refresh now has a **Re-enable MIDI** button. (#99)
+
+### Changed
+
+- **Same pill buttons in every dialog** — Dialog buttons (Presets, confirmations, scan results, emoji and mapping editors, Settings footer) share one pill style, with a red-tinted pill for destructive actions. Preset labels are simpler: **Back** and **Apply** in the review, **Save** for name forms, **Load** when importing, and **Cancel** instead of "Keep". (#99)
+- **Save button** — "Save Settings" is now **Save** and, like Revert, keeps a fixed width; it is green only while there are unsaved changes. (#99)
+- **MIDI after a refresh** — If the browser has already granted MIDI access, MIDI that was on starts again automatically after a page refresh. (#99)
+- **Closing a preset review** — Closing the review (X, Escape or clicking outside) returns to the presets list instead of closing the dialog. (#99)
+
+### Removed
+
+- **"Active now, not saved" banner** — The banner at the top of Settings, which moved the layout, is gone; the Save and Revert buttons show the unsaved state instead. The "New device profile" banner stays. (#99)
+
 ## [2.2.4] - 2026-10-30
 
 ### Changed
