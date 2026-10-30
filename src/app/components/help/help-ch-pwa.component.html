@@ -135,6 +135,11 @@
   <li>Disabling the toggle releases the lock immediately.</li>
   <li>The app indicates whether the wake lock is currently
       <strong>active</strong> next to the toggle.</li>
+  <li>The app checks every few seconds, and whenever you return to it, that
+      the lock is really held, and requests it again if not.</li>
+  <li>If the browser refuses the request, an amber warning appears on the main
+      screen with a <strong>Keep screen on</strong> button to try again. The
+      toggle stays on; only you turn it off.</li>
 </ul>
 
 <h3>Browser Support</h3>

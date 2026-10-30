@@ -96,6 +96,21 @@
     </div>
   }
 
+  <!-- Screen wake lock warning banner -->
+  @if (wakeLock.needsAttention()) {
+    <div class="rtdb-warning-banner" role="status">
+      <span class="rtdb-warning-icon">&#x26A0;</span>
+      <span class="rtdb-warning-text">
+        Screen wake lock is on but not active, so the screen may turn off.
+        @if (wakeLock.lastError(); as reason) {
+          <br><strong>{{ reason }}</strong>
+        }
+        <br><button type="button" class="pill-btn pill-accent" (click)="wakeLock.acquire()">Keep screen on</button>
+      </span>
+      <button class="rtdb-warning-dismiss" (click)="wakeLock.dismissWarning()" title="Dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+  }
+
   <!-- MIDI reconnect banner -->
   @if (midiInputNeedsReconnect || midiOutputNeedsReconnect) {
     <div class="midi-reconnect-banner">

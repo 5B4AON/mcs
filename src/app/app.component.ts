@@ -608,8 +608,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.autoStartAudio();
     }
 
-    // Acquire screen wake lock if enabled (keeps mobile screen active)
-    this.wakeLock.acquire();
+    // The wake lock acquires itself once the saved profile enables it (WakeLockService effect)
   }
 
   ngOnDestroy(): void {
