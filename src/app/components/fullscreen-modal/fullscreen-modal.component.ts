@@ -49,6 +49,12 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Emitted when the user requests the symbols reference */
   @Output() symbolsRefRequested = new EventEmitter<void>();
 
+  /** Emitted when the user requests Settings (opened above this modal) */
+  @Output() settingsRequested = new EventEmitter<void>();
+
+  /** Emitted when the user requests the Setup Wizard (opened above this modal) */
+  @Output() wizardRequested = new EventEmitter<void>();
+
   /** True when the on-screen keyboard is likely open (viewport significantly shorter than window) */
   viewportKeyboardOpen = false;
 

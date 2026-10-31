@@ -28,8 +28,10 @@ export interface MappingKind {
   noun: string;
   /** A fresh mapping with the same defaults as Settings' "+ Add Mapping" */
   create(): unknown;
-  /** One short line describing a mapping, for the list page and the review */
+  /** One full line describing a mapping (device, channel, port), for the review */
   summary(mapping: unknown): string;
+  /** Shortest useful line for a list row, e.g. "Straight 76 (RX)" or "Paddle 82|84 (TX)" */
+  rowSummary(mapping: unknown): string;
   /** Other settings to change when mapping `index` is deleted (e.g. relay references) */
   onRemove?(settings: AppSettings, index: number): Partial<AppSettings>;
   /** Review/validation entry for the engine (keys are just the list) */
@@ -97,6 +99,38 @@ const midiOutputSummary = (raw: unknown): string => {
   return `${m.mode === 'paddle' ? 'Paddle' : 'Straight'} ${notes}, ch ${m.channel} (${fwd})`;
 };
 
+const modeLabel = (mode: string) => (mode === 'paddle' ? 'Paddle' : 'Straight');
+const namePrefix = (name: string | undefined) => (name ? `${name}: ` : '');
+
+const keyboardRow = (raw: unknown): string => {
+  const m = raw as KeyboardInputMapping;
+  const keys = m.mode === 'paddle' ? `${formatKeyCode(m.keyCode)}|${formatKeyCode(m.dahKeyCode)}` : formatKeyCode(m.keyCode);
+  return `${namePrefix(m.name)}${modeLabel(m.mode)} ${keys} (${m.source.toUpperCase()})`;
+};
+
+const midiInputRow = (raw: unknown): string => {
+  const m = raw as MidiInputMapping;
+  const notes = m.mode === 'paddle' ? `${m.value}|${m.dahValue}` : String(m.value);
+  return `${namePrefix(m.name)}${modeLabel(m.mode)} ${notes} (${m.source.toUpperCase()})`;
+};
+
+const serialInputRow = (raw: unknown): string => {
+  const m = raw as SerialInputMapping;
+  const pins = m.mode === 'paddle' ? `${m.pin.toUpperCase()}|${m.dahPin.toUpperCase()}` : m.pin.toUpperCase();
+  return `${namePrefix(m.name)}${modeLabel(m.mode)} ${pins} (${m.source.toUpperCase()})`;
+};
+
+const serialOutputRow = (raw: unknown): string => {
+  const m = raw as SerialOutputMapping;
+  return `${m.pin.toUpperCase()} (${m.forward === 'both' ? 'RX/TX' : m.forward.toUpperCase()})`;
+};
+
+const midiOutputRow = (raw: unknown): string => {
+  const m = raw as MidiOutputMapping;
+  const notes = m.mode === 'paddle' ? `${m.value}|${m.dahValue}` : String(m.value);
+  return `${modeLabel(m.mode)} ${notes} (${m.forward === 'both' ? 'RX/TX' : m.forward.toUpperCase()})`;
+};
+
 /** All mapping kinds by id. */
 export const MAPPING_REGISTRY: Record<string, MappingKind> = {
   'keyboard-mapping-editor': {
@@ -108,6 +142,7 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
       source: 'tx', reversePaddles: false, paddleMode: 'iambic-b', name: '', color: '',
     }),
     summary: keyboardSummary,
+    rowSummary: keyboardRow,
     descriptor: listDescriptor(
       'keyboard-mapping-editor', 'keyboardInputMappings', 'Keyboard keys', keyboardSummary),
   },
@@ -120,6 +155,7 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
       mode: 'straightKey', value: 60, dahValue: -1, reversePaddles: false, name: '', color: '',
     }),
     summary: midiInputSummary,
+    rowSummary: midiInputRow,
     // Output mappings refer to inputs by position, so deleting one shifts them
     onRemove: (settings, index) => ({
       midiOutputMappings: settings.midiOutputMappings.map(om => ({
@@ -143,6 +179,7 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
       debounceMs: 5, name: '', color: '',
     }),
     summary: serialInputSummary,
+    rowSummary: serialInputRow,
     // Output mappings refer to inputs by position, so deleting one shifts them
     onRemove: (settings, index) => ({
       serialOutputMappings: settings.serialOutputMappings.map(om => ({
@@ -164,6 +201,7 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
       relaySuppressOtherInputs: false,
     }),
     summary: serialOutputSummary,
+    rowSummary: serialOutputRow,
     descriptor: listDescriptor(
       'serial-output-mapping-editor', 'serialOutputMappings', 'Serial output mappings', serialOutputSummary),
   },
@@ -177,6 +215,7 @@ export const MAPPING_REGISTRY: Record<string, MappingKind> = {
       relaySuppressOtherInputs: false,
     }),
     summary: midiOutputSummary,
+    rowSummary: midiOutputRow,
     descriptor: listDescriptor(
       'midi-output-mapping-editor', 'midiOutputMappings', 'MIDI output mappings', midiOutputSummary),
   },

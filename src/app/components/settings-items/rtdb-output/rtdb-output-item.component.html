@@ -169,5 +169,6 @@
 
 @if (notice(); as message) {
   <app-confirm-dialog title="Cannot enable yet" [message]="message" confirmLabel="OK"
-                      [singleAction]="true" (confirmed)="notice.set(null)"></app-confirm-dialog>
+                      [singleAction]="true" (confirmed)="notice.set(null)"
+                      [appBackClose]="backNotice"></app-confirm-dialog>
 }

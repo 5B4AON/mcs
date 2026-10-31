@@ -53,6 +53,7 @@
         <span class="md-note-separator">or</span>
         <input type="number" class="md-raw-input" min="0" max="127"
                [(ngModel)]="note.raw" (ngModelChange)="note.fromRaw()" placeholder="0–127">
+        <app-help-link-button section="midi-notes" label="Help: note names, octaves and numbers" />
       </div>
       <span class="md-hint">{{ noteDisplay(note.value) }}</span>
     </div>

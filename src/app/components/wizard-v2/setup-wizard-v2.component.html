@@ -1,6 +1,7 @@
 <div class="wizard-overlay" (appBackdropClick)="requestClose()">
   <div #dialog class="wizard-dialog" role="dialog" aria-modal="true"
        aria-labelledby="wizard-title" tabindex="-1"
+       data-handles-escape
        (click)="$event.stopPropagation()">
 
     <header class="wizard-header">
@@ -157,20 +158,13 @@
                   <app-mapping-page [kind]="page.item" [mapping]="eng.mappings(page.list)[page.index]"
                                     [index]="page.index" [allMappings]="eng.mappings(page.list)" />
                 }
-                <div class="md-actions" style="margin-top: 1rem; padding-left: 0; padding-right: 0">
-                  <button type="button" class="pill-btn pill-danger" (click)="removeMapping(step, page.index)"
-                          [title]="'Delete this ' + kind.noun">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-                    Delete
-                  </button>
-                </div>
               } @else {
-                <app-mapping-list [mappings]="rows(eng.mappings(page.list))" addLabel="+ Add {{ kind.noun }}" [deletable]="true"
+                <app-mapping-list [mappings]="rows(eng.mappings(page.list))" addLabel="+ Add {{ kind.noun }}" [kindId]="page.item" [roomy]="true"
                                   (add)="addMapping()" (edit)="openMapping(step, $event)"
                                   (remove)="removeMapping(step, $event)"
                                   (enabledChange)="setMappingEnabled(step, $event.index, $event.enabled)">
                   <ng-template let-mapping let-i="index">
-                    <span class="midi-mapping-value">{{ kind.summary(mapping) }}</span>
+                    <span class="midi-mapping-value">{{ kind.rowSummary(mapping) }}</span>
                   </ng-template>
                 </app-mapping-list>
               }
@@ -281,12 +275,23 @@
   </div>
 </div>
 
+@if (confirmDiscardMapping()) {
+  <app-confirm-dialog
+    title="Discard your changes?"
+    message="The changes you made to this mapping are discarded and you return to the list."
+    confirmLabel="Discard"
+    cancelLabel="Stay"
+    [danger]="true"
+    (confirmed)="onDiscardMappingAnswer($event)">
+  </app-confirm-dialog>
+}
+
 @if (confirmDiscard()) {
   <app-confirm-dialog
     title="Discard your answers?"
     message="Leaving now discards the choices you made in this guide. Nothing has been changed in the app."
     confirmLabel="Discard"
-    cancelLabel="Keep editing"
+    cancelLabel="Stay"
     [danger]="true"
     (confirmed)="onDiscardAnswer($event)">
   </app-confirm-dialog>

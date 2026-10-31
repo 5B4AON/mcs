@@ -102,6 +102,40 @@
   background: #333;
 }
 
+/* Roomier rows for the Setup Wizard lists: easier to read and to touch */
+.midi-mapping-list-roomy {
+  gap: 0.6rem;
+}
+.midi-mapping-list-roomy .midi-mapping-row {
+  gap: 0.5rem;
+  padding: 0.65rem 0.6rem;
+}
+.midi-mapping-list-roomy .midi-mapping-enable input {
+  width: 22px;
+  height: 22px;
+  margin: 0;
+}
+.midi-mapping-list-roomy .midi-mapping-value {
+  font-size: 0.95rem;
+  min-width: 0;
+}
+.midi-mapping-list-roomy .midi-mapping-btn {
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 8px;
+  background: #262a36;
+  border: 1px solid #3a4150;
+}
+.midi-mapping-list-roomy .midi-mapping-btn svg {
+  width: 20px;
+  height: 20px;
+}
+.midi-mapping-add-roomy {
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+
 /* ===== Per-row connectivity icon (serial & MIDI) ===== */
 .midi-mapping-connected-icon {
   display: inline-flex;

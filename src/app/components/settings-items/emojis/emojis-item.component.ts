@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { EmojiMapping } from './emojis-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { ConfirmService } from '../../../services/confirm.service';
 import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../settings-modal/emoji-edit-modal/emoji-edit-modal.component';
 
 /**
@@ -27,6 +28,7 @@ export class EmojisItemComponent {
   @Input() mode: 'card' | 'embedded' = 'card';
 
   readonly scope = inject(SETTINGS_SCOPE);
+  private readonly confirm = inject(ConfirmService);
 
   /** Current values from the scope */
   readonly s = this.scope.value;
@@ -91,13 +93,18 @@ export class EmojisItemComponent {
     this.showEmojiEditModal = false;
   }
 
-  /** Handle delete from the emoji edit modal */
-  onEmojiEditDeleted(): void {
-    if (this.emojiEditIndex >= 0) {
-      const mappings = this.s().emojiMappings.filter((_, i) => i !== this.emojiEditIndex);
-      this.scope.update({ emojiMappings: mappings });
-    }
-    this.showEmojiEditModal = false;
+  /** Delete a mapping from its row, after asking */
+  async emojiDelete(index: number): Promise<void> {
+    const mapping = this.s().emojiMappings[index];
+    if (!mapping) return;
+    const confirmed = await this.confirm.ask({
+      title: 'Delete emoji mapping?',
+      message: `Delete the emoji mapping "${mapping.match} \u2192 ${mapping.emoji}"?`,
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (!confirmed) return;
+    this.scope.update({ emojiMappings: this.s().emojiMappings.filter((_, i) => i !== index) });
   }
 
   /** Master switch */

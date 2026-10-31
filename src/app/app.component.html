@@ -18,22 +18,19 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
       }
     </button>
-    <button class="header-icon-btn settings-btn" (click)="openSettings()" title="Settings" aria-label="Settings">
-      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-    </button>
     <div class="kebab-wrapper" (click)="$event.stopPropagation()">
       <button class="kebab-btn" (click)="toggleControlsKebab()" title="Speed controls" aria-label="Speed controls">
         <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
           <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
         </svg>
       </button>
-      <div class="kebab-items" [class.open]="controlsKebabOpen">
+      <div class="kebab-items kebab-compact" [class.open]="controlsKebabOpen" [style.max-height.px]="controlsKebabMaxHeight">
         <span class="wpm-pill wpm-pill-interactive">
           <button class="wpm-btn" aria-label="Decrease RX decoder speed" (click)="adjustWpm('rxDecoderWpm', -1)">-</button>
           <span class="wpm-pill-label">RX</span>
           <span class="wpm-pill-value">{{ decoder.rxEstimatedWpm() }}</span>
           <button class="wpm-btn" aria-label="Increase RX decoder speed" (click)="adjustWpm('rxDecoderWpm', 1)">+</button>
-          <button class="wpm-cal-btn" (click)="decoder.resetRxCalibration()" title="Reset RX Calibration" aria-label="Reset RX Calibration">
+          <button class="wpm-cal-btn" (click)="resetDecoderSpeed('rx')" title="Reset RX speed to the default" aria-label="Reset RX speed to the default">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           </button>
         </span>
@@ -42,7 +39,7 @@
           <span class="wpm-pill-label">TX</span>
           <span class="wpm-pill-value">{{ decoder.txEstimatedWpm() }}</span>
           <button class="wpm-btn" aria-label="Increase TX decoder speed" (click)="adjustWpm('txDecoderWpm', 1)">+</button>
-          <button class="wpm-cal-btn" (click)="decoder.resetTxCalibration()" title="Reset TX Calibration" aria-label="Reset TX Calibration">
+          <button class="wpm-cal-btn" (click)="resetDecoderSpeed('tx')" title="Reset TX speed to the default" aria-label="Reset TX speed to the default">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>
           </button>
         </span>
@@ -65,6 +62,10 @@
         <button class="kebab-help-btn" (click)="reopenTryMorseGuide(); controlsKebabOpen = false" title="Try Morse" aria-label="Try Morse">
           <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><polygon points="10 8 16 12 10 16" fill="currentColor"/></svg>
           <span>Try Morse</span>
+        </button>
+        <button class="kebab-help-btn" (click)="openSettings(); controlsKebabOpen = false" title="Settings" aria-label="Settings">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          <span>Settings</span>
         </button>
         <button class="kebab-help-btn" (click)="openGoals(); controlsKebabOpen = false" title="Setup Wizard" aria-label="Setup Wizard">
           <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-.9 2.100-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
@@ -369,8 +370,18 @@
     </div>
   }
 
-  <!-- Settings are now in a modal, opened via the gear icon in the header -->
+  <!-- Settings are a modal, opened from the kebab menus -->
 </div>
+
+<!-- ========== FULLSCREEN MODAL ==========
+     Declared before the dialogs that can open over it: Escape closes the last dialog in document order. -->
+@if (activeModal) {
+  <app-fullscreen-modal [focusReturnFallback]="fullscreenFocusFallback"
+                        (closed)="closeModal()" (helpRequested)="openHelp()"
+                        (symbolsRefRequested)="openSymbolsRef()"
+                        (settingsRequested)="openSettings()"
+                        (wizardRequested)="openGoals()"></app-fullscreen-modal>
+}
 
 <!-- ========== SETTINGS MODAL ========== -->
 @if (showSettings) {
@@ -378,19 +389,19 @@
                       (saved)="onSettingsSaved()" (closed)="closeSettings()"
                       (helpRequested)="onSettingsHelpRequested($event)"
                       [startLanding]="settingsStartLanding"
-                      (wizardOpenRequested)="settingsToGoals()"></app-settings-modal>
+                      [focusReturnFallback]="menuFocusFallback"></app-settings-modal>
 }
 
 <!-- ========== SETUP WIZARD GOALS ========== -->
 @if (showGoals) {
-  <app-goal-navigator-modal (closed)="closeGoals()" (settingsRequested)="goalsToSettings()"
+  <app-goal-navigator-modal (closed)="closeGoals()"
                             (presetsRequested)="openGoalPresets()"
                             (goalSelected)="goalsToSettings($event)"
                             (wizardRequested)="openWizard($event)"></app-goal-navigator-modal>
 }
 
 @if (showGoalPresets) {
-  <app-settings-modal [presetsOnly]="true" (presetsDismissed)="dismissGoalPresets()"
+  <app-settings-modal #goalPresets [presetsOnly]="true" (presetsDismissed)="dismissGoalPresets()"
                       (closed)="dismissGoalPresets()"></app-settings-modal>
 }
 
@@ -400,13 +411,6 @@
                        (tryRequested)="onWizardTry($event)"
                        (fullscreenRequested)="onWizardFullscreen()"
                        (detectorEnabled)="onWizardDetectorEnabled()"></app-setup-wizard-v2>
-}
-
-<!-- ========== FULLSCREEN MODAL ========== -->
-@if (activeModal) {
-  <app-fullscreen-modal [focusReturnFallback]="fullscreenFocusFallback"
-                        (closed)="closeModal()" (helpRequested)="openHelp()"
-                        (symbolsRefRequested)="openSymbolsRef()"></app-fullscreen-modal>
 }
 
 <!-- ========== SYMBOLS REFERENCE MODAL ========== -->

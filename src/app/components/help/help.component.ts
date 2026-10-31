@@ -110,7 +110,7 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
     }
     restoreDialogFocus(
       this.focusReturnTarget,
-      this.focusReturnFallback ?? document.querySelector<HTMLElement>('.settings-btn'),
+      this.focusReturnFallback ?? document.querySelector<HTMLElement>('.kebab-btn'),
     );
   }
 

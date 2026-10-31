@@ -4,7 +4,7 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { MidiOutputMapping } from './midi-output-item.model';
-import { MidiOutputService, midiOutputNoteName } from '../../../services/midi-output.service';
+import { MidiOutputService } from '../../../services/midi-output.service';
 import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../settings-modal/midi-output-edit-modal/midi-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -132,28 +132,18 @@ export class MidiOutputItemComponent {
     this.showEditModal = false;
   }
 
-  /** Handle delete from the edit modal */
-  onEditDeleted(): void {
-    if (this.editIndex >= 0) {
-      const mappings = this.s().midiOutputMappings.filter((_, i) => i !== this.editIndex);
+  /** Delete a mapping from its row (the list has already asked for confirmation) */
+  removeMapping(index: number): void {
+    if (index >= 0 && index < this.s().midiOutputMappings.length) {
+      const mappings = this.s().midiOutputMappings.filter((_, i) => i !== index);
       this.scope.update({ midiOutputMappings: mappings });
       this.reattach();
     }
-    this.showEditModal = false;
   }
 
-  /** Display a MIDI note as human-readable name */
-  noteDisplay(note: number): string {
-    if (note < 0) return '—';
-    return `${midiOutputNoteName(note)}(${note})`;
-  }
-
-  /** Get a short summary for a mapping row */
+  /** Short row summary: the MIDI note number, or dit|dah for a paddle (device and channel are in the editor) */
   mappingSummary(m: MidiOutputMapping): string {
-    if (m.mode === 'straightKey') {
-      return `${m.channel}/${this.noteDisplay(m.value)}`;
-    }
-    return `${m.channel}/${this.noteDisplay(m.value)}/${this.noteDisplay(m.dahValue)}`;
+    return m.mode === 'straightKey' ? String(m.value) : `${m.value}|${m.dahValue}`;
   }
 
   /** Get a device display name for a mapping */

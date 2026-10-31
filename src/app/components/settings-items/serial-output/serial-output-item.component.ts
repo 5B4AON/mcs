@@ -111,13 +111,13 @@ export class SerialOutputItemComponent {
     this.showEditModal = false;
   }
 
-  onEditDeleted(): void {
-    if (this.editIndex >= 0) {
+  /** Delete a mapping from its row (the list has already asked for confirmation) */
+  removeMapping(index: number): void {
+    if (index >= 0 && index < this.s().serialOutputMappings.length) {
       this.scope.update({
-        serialOutputMappings: this.s().serialOutputMappings.filter((_, i) => i !== this.editIndex),
+        serialOutputMappings: this.s().serialOutputMappings.filter((_, i) => i !== index),
       });
     }
-    this.showEditModal = false;
   }
 
   onEditCancelled(): void {

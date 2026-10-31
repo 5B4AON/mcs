@@ -2,8 +2,10 @@
  * Morse Code Studio
  */
 
-import { Component, ContentChild, EventEmitter, Input, Output, TemplateRef } from '@angular/core';
+import { Component, ContentChild, EventEmitter, Input, Output, TemplateRef, inject } from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
+import { ConfirmService } from '../../../../services/confirm.service';
+import { mappingKind } from '../mapping-registry';
 
 /** What every row needs from a mapping; the card supplies the rest through its row template. */
 export interface MappingListRow {
@@ -12,8 +14,8 @@ export interface MappingListRow {
 
 /**
  * The list of mappings in a settings card: an enable checkbox, the card's own
- * summary (given as an `<ng-template>` child), an edit button, an optional delete
- * button (`deletable`), and "+ Add Mapping".
+ * summary (given as an `<ng-template>` child), edit and delete buttons, and
+ * "+ Add Mapping". Delete asks for confirmation first and only then emits `remove`.
  * Clicking a row's summary opens it for editing. The list only reports what the
  * user did; the host decides where the mappings are stored (live settings or a
  * wizard draft). Row styles are the shared `.midi-mapping-*` classes.
@@ -38,8 +40,11 @@ export class MappingListComponent {
   /** Text of the add button */
   @Input() addLabel = '+ Add Mapping';
 
-  /** Show a delete button next to each edit button (the Settings popups have their own Delete) */
-  @Input() deletable = false;
+  /** Taller rows and larger buttons (the Setup Wizard lists) */
+  @Input() roomy = false;
+
+  /** Mapping kind id (see `mapping-registry.ts`), used to name the mapping in the delete question */
+  @Input() kindId = '';
 
   /** Row summary template; context is `$implicit` (the mapping) and `index` */
   @ContentChild(TemplateRef) rowTemplate?: TemplateRef<unknown>;
@@ -49,12 +54,32 @@ export class MappingListComponent {
   /** Index of the row to edit */
   @Output() edit = new EventEmitter<number>();
 
-  /** Index of the row to delete */
+  /** Index of the row to delete, emitted after the user confirmed */
   @Output() remove = new EventEmitter<number>();
 
   @Output() enabledChange = new EventEmitter<{ index: number; enabled: boolean }>();
 
   onEnabled(index: number, event: Event): void {
     this.enabledChange.emit({ index, enabled: (event.target as HTMLInputElement).checked });
+  }
+
+  private readonly confirm = inject(ConfirmService);
+
+  /** Ask before deleting row `index`, then emit `remove` */
+  async askDelete(index: number): Promise<void> {
+    const confirmed = await this.confirm.ask({
+      title: 'Delete mapping?',
+      message: this.deleteMessage(index),
+      confirmLabel: 'Delete',
+      danger: true,
+    });
+    if (confirmed) this.remove.emit(index);
+  }
+
+  private deleteMessage(index: number): string {
+    const mapping = this.mappings[index];
+    if (!mapping || !this.kindId) return 'Delete this mapping?';
+    const kind = mappingKind(this.kindId);
+    return `Delete the ${kind.noun} "${kind.rowSummary(mapping)}"?`;
   }
 }

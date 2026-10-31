@@ -116,19 +116,18 @@ export class SerialInputItemComponent {
     this.showEditModal = false;
   }
 
-  /** Delete the mapping and fix the relay references that point at later inputs. */
-  onEditDeleted(): void {
-    if (this.editIndex >= 0) {
-      const mappings = this.s().serialInputMappings.filter((_, i) => i !== this.editIndex);
+  /** Delete a mapping from its row (the list has already asked for confirmation) */
+  removeMapping(index: number): void {
+    if (index >= 0 && index < this.s().serialInputMappings.length) {
+      const mappings = this.s().serialInputMappings.filter((_, i) => i !== index);
       const outputMappings = this.s().serialOutputMappings.map(om => ({
         ...om,
         relayInputIndices: (om.relayInputIndices || [])
-          .filter(idx => idx !== this.editIndex)
-          .map(idx => idx > this.editIndex ? idx - 1 : idx),
+          .filter(idx => idx !== index)
+          .map(idx => idx > index ? idx - 1 : idx),
       }));
       this.scope.update({ serialInputMappings: mappings, serialOutputMappings: outputMappings });
     }
-    this.showEditModal = false;
   }
 
   pinLabel(pin: SerialInputPin): string {

@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-10-31
+
+### Added
+
+- **Same menu in both kebab menus** — The main menu and the full-screen menu now both offer Symbols Ref, **Settings**, **Setup Wizard** and Help (the main menu also has Try Morse; the full-screen menu has Lens and a collapsible **Styling** section that starts collapsed each time). Settings and the Setup Wizard open above the full screen and return to it when closed. The Settings gear in the header, the wand in Settings and the gear in the wizard goal list are gone. (#104)
+- **Back button closes popups one at a time** — In Settings, the browser Back button now closes the popup on top first: mapping editors, the emoji editor and picker, Reset, Revert and result dialogs, scan results, notices, and Presets (which first steps out of a menu or a review, also when opened from the wizard goal list). (#104)
+- **Delete from the list, with confirmation** — Every mapping list (keyboard, MIDI, serial and emoji) has a delete button beside Edit that asks before deleting and names the mapping. The Delete button is removed from the edit popups and from the wizard's mapping page. (#104)
+- **Help for MIDI notes** — A **?** button beside the note, octave and number fields of the MIDI editors opens a new Help section that explains how note names, octaves and the 0–127 number relate. (#104)
+
+### Changed
+
+- **Compact, scrollable kebab menus** — Less space between the speed controls and the buttons, and the menu uses all the height below its button. A scrollbar is always visible with a shaded edge where there is more to see. Tapping anywhere outside, including the sprite key, closes the menu. (#104)
+- **Short mapping rows** — Rows now read `Straight 76` or `Paddle 82|84` (and `Z|X`, `DSR|CTS`). Device, channel and port are in the editor, and the wizard Review still shows them. Wizard mapping lists have taller rows and larger buttons. (#104)
+- **Revert and Save follow the real state** — Putting a setting back by hand disables Revert and Save again. (#104)
+- **Speed reset button** — The reset button beside the RX and TX speed returns the speed to 12 WPM and saves it. (#104)
+- **Lens** — The character is 5% larger and sits closer to its symbols, the prosign bar is drawn right above the letters, and the user name keeps the same size. (#104)
+- **Preset review** — The hardware and relay acknowledgement checkboxes are shown above the list of changes. (#104)
+- **Presets icon** — A folder icon replaces the double arrows. (#104)
+- **Wizard Escape** — Escape (and Back) on a mapping's page returns to the mapping list and asks to discard only if you changed something. (#104)
+- **Dialog buttons on narrow screens** — Cancel and OK stay side by side down to 320 px; the wizard prompt reads **Stay** / **Discard**. (#104)
+
+### Fixed
+
+- **Straight-key sprite** — Only the key itself presses the key, not the empty sides of the image. (#104)
+- **Escape in mapping editors** — Escape now closes a Settings mapping popup. (#104)
+- **Help buttons** — The Help close and Help Home buttons no longer touch the desktop scrollbar. (#104)
+
 ## [2.3.0] - 2026-10-30
 
 ### Changed

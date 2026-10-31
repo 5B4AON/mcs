@@ -8,9 +8,6 @@
     <div class="settings-modal-header">
       <h2 id="settings-modal-title">Settings</h2>
       <div class="settings-header-actions">
-        <button type="button" class="settings-action-btn" (click)="wizardOpenRequested.emit()" title="Setup Wizard" aria-label="Setup Wizard">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="4" y1="20" x2="15" y2="9"/><line x1="14" y1="10" x2="16" y2="12" stroke-width="3.2"/><path d="M17.500 3l.9 2.100 2.100.9-2.100.9-.9 2.100-.9-2.100-2.100-.9 2.100-.9z" fill="currentColor" stroke="none"/><path d="M8 3.500l.6 1.400 1.400.6-1.400.6-.6 1.400-.6-1.400-1.400-.6 1.400-.6z" fill="currentColor" stroke="none"/><path d="M19 14.500l.5 1.100 1.100.5-1.100.5-.5 1.100-.5-1.100-1.100-.5 1.100-.5z" fill="currentColor" stroke="none"/></svg>
-        </button>
         <button (click)="onRefreshDevices()" class="settings-action-btn" title="Refresh audio devices" aria-label="Refresh audio devices">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="0" y="1" width="11" height="9" rx="1.5" stroke-width="2"/><line x1="3" y1="5" x2="8" y2="5" stroke-width="2"/><line x1="3" y1="7.5" x2="7" y2="7.5" stroke-width="2"/><circle cx="15.5" cy="13" r="6.5" stroke-width="2"/><line x1="20" y1="17.5" x2="23.5" y2="21" stroke-width="3"/></svg>
         </button>
@@ -18,7 +15,7 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" overflow="visible" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M-2.2 12a14.2 14.2 0 1 1 14.2 14.2 14.85 14.85 0 0 1-10.4-4.3L-2.2 18.3" stroke-width="1.6"/><polygon points="-3.1 23.2 -3.1 18.3 2.3 18.3" fill="currentColor" stroke="none"/><g transform="translate(12,12) scale(0.828)"><circle cx="0" cy="0" r="3" stroke-width="2.2"/><path d="M7.4 3a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06A1.65 1.65 0 0 0 3 7.32a1.65 1.65 0 0 0-1 1.51V9a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0-3 7.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0-7.32 3a1.65 1.65 0 0 0-1.51-1H-9a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0-7.4-3a1.65 1.65 0 0 0 .33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0-3-7.32a1.65 1.65 0 0 0-1-1.51V-9a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 7.4-3a1.65 1.65 0 0 0 1.51 1H9a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="2.2"/></g></svg>
         </button>
         <button class="settings-action-btn" (click)="openPresets($event)" title="Presets: save, import, export, apply" aria-label="Presets">
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 7h13m0 0-4-4m4 4-4 4M17 17H4m0 0 4 4m-4-4 4-4"/></svg>
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
         </button>
         <button class="settings-close-btn" (click)="close()" title="Close settings" aria-label="Close settings">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
@@ -106,7 +103,7 @@
     [message]="revertMessage"
     confirmLabel="Revert"
     cancelLabel="Cancel"
-    (confirmed)="onRevertConfirmed($event)">
+    (confirmed)="onRevertConfirmed($event)" [appBackClose]="backRevert">
   </app-confirm-dialog>
 }
 
@@ -118,7 +115,7 @@ This cannot be undone."
     confirmLabel="Reset"
     cancelLabel="Cancel"
     [danger]="true"
-    (confirmed)="onResetConfirmed($event)">
+    (confirmed)="onResetConfirmed($event)" [appBackClose]="backReset">
   </app-confirm-dialog>
 }
 
@@ -128,12 +125,12 @@ This cannot be undone."
     [message]="saveResultMessage"
     confirmLabel="OK"
     [singleAction]="true"
-    (confirmed)="dismissSaveResult()">
+    (confirmed)="dismissSaveResult()" [appBackClose]="backSaveResult">
   </app-confirm-dialog>
 }
 
 @if (showScanResults) {
-  <div class="scan-results-overlay" (appBackdropClick)="dismissScanResults()">
+  <div class="scan-results-overlay" (appBackdropClick)="dismissScanResults()" [appBackClose]="backScan">
     <div #scanDialog class="scan-results-dialog" (click)="$event.stopPropagation()" role="dialog"
          aria-modal="true" aria-labelledby="scan-results-title" tabindex="-1"
          (keydown)="onScanDialogKeydown($event)">
@@ -203,7 +200,8 @@ This cannot be undone."
 }
 
 @if (showPresets) {
-  <div class="settings-transfer-overlay" (appBackdropClick)="closePresets()">
+  <div class="settings-transfer-overlay" (appBackdropClick)="closePresets()"
+     [appBackClose]="backPresets" [backCloseDisabled]="presetsOnly">
     <section class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-transfer-title" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onPresetsKeydown($event)">
       <header class="settings-transfer-header">
         <h2 id="settings-transfer-title" [class.preset-review-title]="transferReview && reviewPreset">{{ transferReview && reviewPreset ? reviewPreset.name : 'Presets' }}</h2>
@@ -320,6 +318,19 @@ This cannot be undone."
               <p>Nothing changes until you apply. Applying can take effect immediately; it does not save or overwrite this browser's device profile.</p>
             }
 
+            @if (review.routeChanges.length > 0) {
+              <section class="transfer-route-acknowledgements" aria-labelledby="transfer-routes-title">
+                <h4 id="transfer-routes-title">Hardware and relay acknowledgements</h4>
+                <p>Each changed target must be acknowledged separately. Permissions and connections do not transfer. No route is activated during file selection or review.</p>
+                @for (route of review.routeChanges; track route.id) {
+                  <label class="transfer-route-ack">
+                    <input type="checkbox" [checked]="routeAcknowledgements[route.id] || false" (change)="acknowledgeRoute(route.id, $event)">
+                    <span><strong>{{ route.type }} — {{ route.change }}.</strong> Confirm destination: {{ describeRouteChange(route) }}.</span>
+                  </label>
+                }
+              </section>
+            }
+
             @if (review.unresolvedTargets.length > 0) {
               <div class="transfer-unresolved" role="status">
                 <h4>Targets not transferred</h4>
@@ -361,19 +372,6 @@ This cannot be undone."
                   }
                 </section>
               }
-            }
-
-            @if (review.routeChanges.length > 0) {
-              <section class="transfer-route-acknowledgements" aria-labelledby="transfer-routes-title">
-                <h4 id="transfer-routes-title">Hardware and relay acknowledgements</h4>
-                <p>Each changed target must be acknowledged separately. Permissions and connections do not transfer. No route is activated during file selection or review.</p>
-                @for (route of review.routeChanges; track route.id) {
-                  <label class="transfer-route-ack">
-                    <input type="checkbox" [checked]="routeAcknowledgements[route.id] || false" (change)="acknowledgeRoute(route.id, $event)">
-                    <span><strong>{{ route.type }} — {{ route.change }}.</strong> Confirm destination: {{ describeRouteChange(route) }}.</span>
-                  </label>
-                }
-              </section>
             }
           </section>
         }

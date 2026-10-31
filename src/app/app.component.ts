@@ -18,6 +18,7 @@ import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
+import { ModalBackService } from './services/modal-back.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { PracticeService } from './services/practice.service';
@@ -133,6 +134,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   // ---- Kebab menu state ----
   controlsKebabOpen = false;
+  controlsKebabMaxHeight: number | null = null;
+
+  /** Kebab button to focus when Settings or the goal list closes, because the menu item that opened it is hidden */
+  menuFocusFallback: HTMLElement | null = null;
 
   // ---- Clear context menu state ----
   clearMenuOpen = false;
@@ -142,6 +147,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   fullscreenFocusFallback: HTMLElement | null = null;
 
   @ViewChild(SetupWizardV2Component) private wizardRef?: SetupWizardV2Component;
+  @ViewChild('goalPresets') private goalPresetsRef?: SettingsModalComponent;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
@@ -156,6 +162,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private subs: Subscription[] = [];
   private readonly helpLinks = inject(HelpLinkService);
+  private readonly modalBack = inject(ModalBackService);
 
   /** Bound handler for visualViewport resize — stored for cleanup */
   private vvResizeHandler: (() => void) | null = null;
@@ -454,7 +461,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
   }
 
+  /**
+   * Close the speed menu when a press lands outside it. Listening for the press (not the click)
+   * in the capture phase also catches the sprite key and the keyers, which handle
+   * mouse/touch events themselves and may stop the click from ever firing.
+   */
+  private readonly outsidePressHandler = (event: PointerEvent): void => {
+    if (this.controlsKebabOpen && !(event.target as Element | null)?.closest?.('.kebab-wrapper')) {
+      this.controlsKebabOpen = false;
+    }
+  };
+
   ngOnInit(): void {
+    document.addEventListener('pointerdown', this.outsidePressHandler, true);
+    this.modalBack.host = {
+      push: () => this.pushModalState('dialog'),
+      pop: () => this.popModalState(),
+      restore: () => this.restoreModalState(),
+    };
     this.subs.push(this.helpLinks.requested$.subscribe(id => this.showHelpOnTop(id)));
     try {
       this.showTryMorseGuide = localStorage.getItem('mcsTryMorseGuideDismissed') !== '1';
@@ -612,6 +636,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('pointerdown', this.outsidePressHandler, true);
     this.subs.forEach(s => s.unsubscribe());
     this.mouseKeyer.detachAll();
     if (this.vvResizeHandler && window.visualViewport) {
@@ -633,6 +658,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.modalHistoryDepth++;
   }
 
+  /** Back left the entry of a popup that is still open: step forward onto it again */
+  private restoreModalState(): void {
+    this.modalHistoryDepth++;
+    this.ignoringPopState = true;
+    history.forward();
+  }
+
   /** Pop the history entry when closing a modal via UI (not back button) */
   private popModalState(): void {
     if (this.modalHistoryDepth > 0) {
@@ -649,10 +681,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.showHelp = false;
     } else if (this.showSymbolsRef) {
       this.showSymbolsRef = false;
+    } else if (this.modalBack.handleBack()) {
+      // a popup opened by a card (a mapping editor) closed itself
     } else if (this.showGoalPresets) {
-      this.dismissGoalPresets(false);
+      // A review, menu or confirmation inside Presets steps back first; the list closes on the next Back
+      if (this.goalPresetsRef?.stepBackInPresets()) this.restoreModalState();
+      else this.dismissGoalPresets(false);
     } else if (this.showWizard) {
-      if (this.wizardRef?.hasDraft()) {
+      if (this.wizardRef?.onMappingPage || this.wizardRef?.hasDraft()) {
         // Back was pressed with unapplied answers: keep the wizard and ask first.
         this.pushModalState('wizard');
         this.wizardRef.askDiscard();
@@ -765,6 +801,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onWindowResize(): void {
     this.correctHostHeight();
     this.checkSpriteSpace();
+    if (this.controlsKebabOpen) this.updateKebabMaxHeight();
   }
 
   /**
@@ -825,6 +862,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       document.querySelector<HTMLButtonElement>(menu.selector)?.focus();
       return;
     }
+
+    // The wizard decides itself what Escape does (a mapping page steps back to its list)
+    if (topmostDialog.hasAttribute('data-handles-escape')) return;
 
     const closeButton = Array.from(
       topmostDialog.querySelectorAll<HTMLButtonElement>(
@@ -1380,6 +1420,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleControlsKebab(): void {
     this.controlsKebabOpen = !this.controlsKebabOpen;
     this.clearMenuOpen = false;
+    if (this.controlsKebabOpen) this.updateKebabMaxHeight();
+  }
+
+  /** Let the open kebab menu use the whole height below its button; it scrolls only when the content is taller */
+  private updateKebabMaxHeight(): void {
+    const trigger = document.querySelector<HTMLElement>('.kebab-wrapper > .kebab-btn');
+    if (!trigger) return;
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    // 8px gap under the button plus 8px of breathing room at the bottom
+    this.controlsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 16));
   }
 
   toggleClearMenu(): void {
@@ -1406,6 +1456,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Open settings modal, optionally on the card of a Setup Wizard goal */
   openSettings(landing: string | null = null): void {
+    this.menuFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn');
     this.settingsStartLanding = landing;
     this.showSettings = true;
     this.pushModalState('settings');
@@ -1413,6 +1464,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Open the Setup Wizard goal list */
   openGoals(): void {
+    this.menuFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn');
     this.showGoals = true;
     this.pushModalState('goals');
   }
@@ -1421,6 +1473,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   closeGoals(): void {
     this.showGoals = false;
     this.popModalState();
+    const fallback = this.menuFocusFallback;
+    window.setTimeout(() => {
+      if (fallback?.isConnected && !this.showSettings && !this.showWizard) fallback.focus();
+    });
   }
 
   /** Swap the goal list for Settings (or a goal's card), keeping one history entry */
@@ -1428,14 +1484,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showGoals = false;
     this.settingsStartLanding = landing;
     this.showSettings = true;
-  }
-
-  /** Swap Settings for the goal list, keeping one history entry */
-  settingsToGoals(): void {
-    this.showSettings = false;
-    this.defaultsResetInSettings = false;
-    this.defaultsResetSaved = false;
-    this.showGoals = true;
   }
 
   /** Open Presets on top of the goal list */
@@ -1499,6 +1547,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * When the browser history is still being rewound, wait for that to finish first.
    */
   onWizardFullscreen(): void {
+    if (this.activeModal) return;
     if (this.ignoringPopState) this.fullscreenAfterWizard = true;
     else this.openModal();
   }
@@ -1527,7 +1576,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Open help modal */
   openHelp(initialSection: string | null = null): void {
     this.helpFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn')
-      ?? document.querySelector<HTMLElement>('.settings-btn');
+      ?? document.querySelector<HTMLElement>('.kebab-btn');
     this.helpInitialSection = initialSection;
     this.showHelp = true;
     this.pushModalState('help');
@@ -1557,7 +1606,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Open symbols reference modal */
   openSymbolsRef(): void {
     this.symbolsRefFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn')
-      ?? document.querySelector<HTMLElement>('.settings-btn');
+      ?? document.querySelector<HTMLElement>('.kebab-btn');
     this.showSymbolsRef = true;
     this.pushModalState('symbolsRef');
   }
@@ -1697,6 +1746,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.settings.update({ [key]: v } as Partial<AppSettings>);
     if (key === 'rxDecoderWpm') this.decoder.resetRxCalibration();
     if (key === 'txDecoderWpm') this.decoder.resetTxCalibration();
+    this.saveSettings();
+  }
+
+  /** Reset button next to an RX/TX speed: back to the app default start speed (saved), restarting the adaptive calibration */
+  resetDecoderSpeed(source: 'rx' | 'tx'): void {
+    const defaults = this.settings.getDefaults();
+    if (source === 'rx') {
+      this.settings.update({ rxDecoderWpm: defaults.rxDecoderWpm });
+      this.decoder.resetRxCalibration();
+    } else {
+      this.settings.update({ txDecoderWpm: defaults.txDecoderWpm });
+      this.decoder.resetTxCalibration();
+    }
     this.saveSettings();
   }
 

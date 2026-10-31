@@ -10,7 +10,7 @@ import { Component, Input, computed, inject } from '@angular/core';
 import { SettingsService } from '../../../services/settings.service';
 import { DecoderSource } from '../../../services/settings-common';
 import { MidiInputMapping } from './midi-input-item.model';
-import { MidiInputService, midiNoteName } from '../../../services/midi-input.service';
+import { MidiInputService } from '../../../services/midi-input.service';
 import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../settings-modal/midi-input-edit-modal/midi-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -162,37 +162,26 @@ export class MidiInputItemComponent {
     this.showEditModal = false;
   }
 
-  /** Handle delete from the edit modal */
-  onEditDeleted(): void {
-    if (this.editIndex >= 0) {
-      const mappings = this.s().midiInputMappings.filter((_, i) => i !== this.editIndex);
+  /** Delete a mapping from its row (the list has already asked for confirmation) */
+  removeMapping(index: number): void {
+    if (index >= 0 && index < this.s().midiInputMappings.length) {
+      const mappings = this.s().midiInputMappings.filter((_, i) => i !== index);
       // Clean up relay references in output mappings: remove the deleted index
       // and decrement any index greater than the deleted one.
       const outputMappings = this.s().midiOutputMappings.map(om => ({
         ...om,
         relayInputIndices: (om.relayInputIndices || [])
-          .filter(idx => idx !== this.editIndex)
-          .map(idx => idx > this.editIndex ? idx - 1 : idx),
+          .filter(idx => idx !== index)
+          .map(idx => idx > index ? idx - 1 : idx),
       }));
       this.scope.update({ midiInputMappings: mappings, midiOutputMappings: outputMappings });
       this.reattach();
     }
-    this.showEditModal = false;
   }
 
-  /** Display a MIDI note as human-readable name */
-  noteDisplay(note: number): string {
-    if (note < 0) return '—';
-    return `${midiNoteName(note)}(${note})`;
-  }
-
-  /** Get a short summary for a mapping row */
+  /** Short row summary: the MIDI note number, or dit|dah for a paddle (device and channel are in the editor) */
   mappingSummary(m: MidiInputMapping): string {
-    const ch = m.channel === 0 ? '*' : String(m.channel);
-    if (m.mode === 'straightKey') {
-      return `${ch}/${this.noteDisplay(m.value)}`;
-    }
-    return `${ch}/${this.noteDisplay(m.value)}/${this.noteDisplay(m.dahValue)}`;
+    return m.mode === 'straightKey' ? String(m.value) : `${m.value}|${m.dahValue}`;
   }
 
   /** Get a device display name for a mapping */

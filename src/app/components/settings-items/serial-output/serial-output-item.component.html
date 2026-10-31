@@ -35,7 +35,7 @@
 
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().serialOutputMappings"
-                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="serial-output-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
       <ng-template let-mapping>
         <span class="midi-mapping-mode">{{ mapping.pin === 'dtr' ? 'DTR' : 'RTS' }}</span>
@@ -86,7 +86,6 @@
     [allMappings]="s().serialOutputMappings"
     [serialInputMappings]="s().serialInputMappings"
     (saved)="onEditSaved($event)"
-    (cancelled)="onEditCancelled()"
-    (deleted)="onEditDeleted()">
+    (cancelled)="onEditCancelled()">
   </app-serial-output-edit-modal>
 }

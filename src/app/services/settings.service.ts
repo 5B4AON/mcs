@@ -290,6 +290,9 @@ export class SettingsService {
   /** True when in-memory settings differ from last save */
   readonly isDirty = signal(false);
 
+  /** The saved settings the live ones are compared with; null when no profile is saved for this device */
+  private savedBaseline: AppSettings | null = null;
+
   /** True when no saved profile exists for the current device configuration */
   readonly needsValidation = signal(false);
 
@@ -336,7 +339,20 @@ export class SettingsService {
   /** Update in-memory settings (does NOT persist — use save() for that) */
   update(patch: Partial<AppSettings>): void {
     this.settings.set({ ...this.settings(), ...patch });
-    this.isDirty.set(true);
+    this.refreshDirty();
+  }
+
+  /** Unsaved changes exist only while the live settings differ from the saved profile, so undoing a change by hand clears the flag */
+  private refreshDirty(): void {
+    const baseline = this.savedBaseline;
+    if (!baseline || this.needsValidation()) {
+      this.isDirty.set(true);
+      return;
+    }
+    const live = this.settings() as unknown as Record<string, unknown>;
+    const same = Object.entries(baseline as unknown as Record<string, unknown>)
+      .every(([key, value]) => live[key] === value || JSON.stringify(live[key]) === JSON.stringify(value));
+    this.isDirty.set(!same);
   }
 
   /**
@@ -355,7 +371,9 @@ export class SettingsService {
     const profile = profiles[fingerprint];
 
     if (profile) {
-      this.settings.set(this._remapProfile(profile, currentInputs, currentOutputs));
+      const loaded = this._remapProfile(profile, currentInputs, currentOutputs);
+      this.settings.set(loaded);
+      this.savedBaseline = structuredClone(loaded);
       this.isDirty.set(false);
       this.needsValidation.set(false);
       return true;
@@ -372,6 +390,7 @@ export class SettingsService {
     if (Object.keys(resetPatch).length) {
       this.settings.set({ ...s, ...resetPatch });
     }
+    this.savedBaseline = null;
     this.needsValidation.set(true);
     this.isDirty.set(true);
     return false;
@@ -410,6 +429,7 @@ export class SettingsService {
       return 'storage-error';
     }
 
+    this.savedBaseline = structuredClone(s);
     this.isDirty.set(false);
     this.needsValidation.set(false);
     return 'saved';
@@ -454,6 +474,7 @@ export class SettingsService {
     const saved = this.peekSavedSettings(currentInputs, currentOutputs);
     if (!saved) return null;
     this.settings.set(saved);
+    this.savedBaseline = structuredClone(saved);
     this.isDirty.set(false);
     this.needsValidation.set(false);
     return saved;

@@ -1,6 +1,6 @@
 <app-mapping-edit-dialog [title]="(editIndex >= 0 ? 'Edit' : 'Add') + ' MIDI Output Mapping'"
-                         ariaLabel="Edit MIDI Output Mapping" [canDelete]="editIndex >= 0"
-                         (confirmed)="save()" (cancelled)="cancelled.emit()" (deleted)="deleted.emit()">
+                         ariaLabel="Edit MIDI Output Mapping"
+                         (confirmed)="save()" (cancelled)="cancelled.emit()">
   <app-midi-output-mapping-editor [mapping]="mapping" [editIndex]="editIndex"
                                   [midiDevices]="midiDevices" [allMappings]="allMappings"
                                   [midiInputMappings]="midiInputMappings" />

@@ -10,7 +10,7 @@
 
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().keyboardInputMappings"
-                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="keyboard-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
       <ng-template let-mapping>
         @if (mapping.name) {
@@ -57,7 +57,6 @@
     [editIndex]="editIndex"
     [allMappings]="s().keyboardInputMappings"
     (saved)="onEditSaved($event)"
-    (cancelled)="onEditCancelled()"
-    (deleted)="onEditDeleted()">
+    (cancelled)="onEditCancelled()">
   </app-keyboard-input-edit-modal>
 }

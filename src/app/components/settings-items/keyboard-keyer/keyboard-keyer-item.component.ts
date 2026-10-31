@@ -128,13 +128,12 @@ export class KeyboardKeyerItemComponent {
     this.showEditModal = false;
   }
 
-  /** Handle delete from the edit modal */
-  onEditDeleted(): void {
-    if (this.editIndex >= 0) {
-      const mappings = this.s().keyboardInputMappings.filter((_, i) => i !== this.editIndex);
+  /** Delete a mapping from its row (the list has already asked for confirmation) */
+  removeMapping(index: number): void {
+    if (index >= 0 && index < this.s().keyboardInputMappings.length) {
+      const mappings = this.s().keyboardInputMappings.filter((_, i) => i !== index);
       this.scope.update({ keyboardInputMappings: mappings });
     }
-    this.showEditModal = false;
   }
 
   /** Get a short key summary for a mapping row */
@@ -157,7 +156,7 @@ export class KeyboardKeyerItemComponent {
     if (m.mode === 'straightKey') {
       return fmt(m.keyCode);
     }
-    return `${fmt(m.keyCode)} / ${fmt(m.dahKeyCode)}`;
+    return `${fmt(m.keyCode)}|${fmt(m.dahKeyCode)}`;
   }
 
   /** Get the display color for a mapping's name label */

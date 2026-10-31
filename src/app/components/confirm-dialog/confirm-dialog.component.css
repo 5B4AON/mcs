@@ -74,13 +74,17 @@
   .confirm-dialog {
     max-width: 100%;
   }
+  /* Cancel and the action sit side by side down to 320px; very long labels wrap to a second row */
   .confirm-actions {
-    flex-direction: column-reverse;
-    align-items: center;
     gap: .45rem;
+    padding-left: .75rem;
+    padding-right: .75rem;
   }
   .confirm-actions .pill-btn {
-    width: 100%;
-    max-width: 240px;
+    flex: 1 1 6.5rem;
+    min-width: 0;
+    padding-left: .6rem;
+    padding-right: .6rem;
+    font-size: .85rem;
   }
 }

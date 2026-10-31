@@ -9,6 +9,7 @@ import { MidiInputMapping, MidiInputMode } from '../../midi-input/midi-input-ite
 import { DecoderSource } from '../../../../services/settings-common';
 import { MidiInputService, MidiLearnResult, midiNoteName } from '../../../../services/midi-input.service';
 import { CaptureSlot } from '../capture-slot';
+import { HelpLinkButtonComponent } from '../../help-link-button/help-link-button.component';
 import { DetectButtonComponent } from '../detect-button/detect-button.component';
 import { MappingIdentityFieldsComponent } from '../identity-fields/mapping-identity-fields.component';
 
@@ -73,7 +74,7 @@ export class NoteField {
 @Component({
   selector: 'app-midi-input-mapping-editor',
   standalone: true,
-  imports: [FormsModule, NgTemplateOutlet, DetectButtonComponent, MappingIdentityFieldsComponent],
+  imports: [FormsModule, NgTemplateOutlet, DetectButtonComponent, MappingIdentityFieldsComponent, HelpLinkButtonComponent],
   templateUrl: './midi-input-mapping-editor.component.html',
   styles: [':host { display: block; }'],
 })

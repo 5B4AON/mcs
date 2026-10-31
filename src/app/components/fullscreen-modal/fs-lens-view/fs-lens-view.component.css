@@ -15,15 +15,15 @@
 
 /*
  * Sizes derive from the container (its own box, so they follow the window and
- * the space left above an on-screen keyboard): the letter is about 62% of the
+ * the space left above an on-screen keyboard): the letter is about 65% of the
  * height, or narrower if the width requires it, and the symbols sit below it.
  * The bottom padding lifts the pair slightly above the exact centre.
  */
 .lens-inner {
-  --lens-letter: min(62cqh, calc(100cqw / (var(--n, 1) * 1.15)));
+  --lens-letter: min(65.1cqh, calc(100cqw / (var(--n, 1) * 1.095)));
   height: 100%;
   box-sizing: border-box;
-  padding-bottom: 9cqh;
+  padding-bottom: 1cqh;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -33,7 +33,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 11cqh;
+  gap: 13cqh;
   width: 100%;
 }
 .lens-char {
@@ -58,9 +58,18 @@
   from { opacity: 1; }
   to { opacity: 0.05; }
 }
+/* The prosign bar is drawn rather than using text-decoration so it sits just above the capitals in every font */
 .lens-char.lens-prosign {
-  text-decoration: overline;
-  text-decoration-thickness: 0.05em;
+  position: relative;
+}
+.lens-char.lens-prosign::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.04em;
+  height: 0.05em;
+  background: currentColor;
 }
 .lens-char.lens-blurred {
   filter: blur(0.12em) brightness(1.4);
@@ -81,7 +90,7 @@
   top: 0.4rem;
   left: 0.5rem;
   max-width: 40%;
-  font-size: max(14px, calc(var(--lens-letter) * 0.1));
+  font-size: max(14px, 6.2cqh);
   line-height: 1.2;
   opacity: 0.85;
   white-space: nowrap;

@@ -28,7 +28,7 @@
 
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().midiInputMappings"
-                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="midi-input-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
       <ng-template let-mapping>
         @if (mapping.name) {
@@ -84,7 +84,6 @@
     [midiDevices]="midiInput.midiInputs()"
     [allMappings]="s().midiInputMappings"
     (saved)="onEditSaved($event)"
-    (cancelled)="onEditCancelled()"
-    (deleted)="onEditDeleted()">
+    (cancelled)="onEditCancelled()">
   </app-midi-input-edit-modal>
 }

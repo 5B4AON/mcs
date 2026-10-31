@@ -62,6 +62,12 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   /** Emitted when the user requests the symbols reference */
   @Output() symbolsRefRequested = new EventEmitter<void>();
 
+  /** Emitted when the user opens Settings from the menu */
+  @Output() settingsRequested = new EventEmitter<void>();
+
+  /** Emitted when the user opens the Setup Wizard from the menu */
+  @Output() wizardRequested = new EventEmitter<void>();
+
   /** Fonts offered in the kebab menu. */
   readonly fonts = FULLSCREEN_FONTS;
 
@@ -72,6 +78,10 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   // ---- Menu state ----
   fsKebabOpen = false;
+
+  /** Text styling controls are shown only while expanded; the menu always opens collapsed */
+  stylingOpen = false;
+  fsKebabMaxHeight: number | null = null;
   clearMenuOpen = false;
 
   private subs: Subscription[] = [];
@@ -88,7 +98,15 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private lens: LensService,
   ) {}
 
+  /** Close the menu when a press lands outside it, even on controls that stop the click (touch keyers) */
+  private readonly outsidePressHandler = (event: PointerEvent): void => {
+    if (this.fsKebabOpen && !(event.target as Element | null)?.closest?.('.fs-kebab-wrapper')) {
+      this.fsKebabOpen = false;
+    }
+  };
+
   ngOnInit(): void {
+    document.addEventListener('pointerdown', this.outsidePressHandler, true);
     // Subscribe to CW detector level for the inline level meter
     this.subs.push(
       this.cwInput.level$.subscribe((lvl: CwLevelEvent) => {
@@ -102,6 +120,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    document.removeEventListener('pointerdown', this.outsidePressHandler, true);
     this.subs.forEach(s => s.unsubscribe());
   }
 
@@ -110,6 +129,28 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   onDocumentClick(): void {
     this.fsKebabOpen = false;
     this.clearMenuOpen = false;
+  }
+
+  toggleFsKebab(): void {
+    this.fsKebabOpen = !this.fsKebabOpen;
+    if (this.fsKebabOpen) {
+      this.stylingOpen = false;
+      this.updateKebabMaxHeight();
+    }
+  }
+
+  @HostListener('window:resize')
+  onWindowResize(): void {
+    if (this.fsKebabOpen) this.updateKebabMaxHeight();
+  }
+
+  /** Let the open kebab menu use the whole height below its button; it scrolls only when the content is taller */
+  private updateKebabMaxHeight(): void {
+    const trigger = document.querySelector<HTMLElement>('.fs-kebab-wrapper > .kebab-btn');
+    if (!trigger) return;
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    // 4px gap under the button plus 8px of breathing room at the bottom
+    this.fsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 12));
   }
 
   /** Dismiss the open toolbar menu on Escape without closing fullscreen itself. */
@@ -152,6 +193,19 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     this.settings.update({ [key]: v } as Partial<AppSettings>);
     if (key === 'rxDecoderWpm') this.decoder.resetRxCalibration();
     if (key === 'txDecoderWpm') this.decoder.resetTxCalibration();
+    this.saveSettings();
+  }
+
+  /** Reset button next to an RX/TX speed: back to the app default start speed (saved), restarting the adaptive calibration */
+  resetDecoderSpeed(source: 'rx' | 'tx'): void {
+    const defaults = this.settings.getDefaults();
+    if (source === 'rx') {
+      this.settings.update({ rxDecoderWpm: defaults.rxDecoderWpm });
+      this.decoder.resetRxCalibration();
+    } else {
+      this.settings.update({ txDecoderWpm: defaults.txDecoderWpm });
+      this.decoder.resetTxCalibration();
+    }
     this.saveSettings();
   }
 

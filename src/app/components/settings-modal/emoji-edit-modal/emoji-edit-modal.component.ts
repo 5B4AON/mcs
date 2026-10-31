@@ -10,6 +10,7 @@ import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
 import { EmojiMapping } from '../../settings-items/emojis/emojis-item.model';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 import { BackdropClickDirective } from '../../backdrop-click.directive';
+import { BackCloseDirective } from '../../back-close.directive';
 
 /**
  * Result payload emitted when the user saves an emoji mapping.
@@ -27,13 +28,13 @@ export interface EmojiEditSaveEvent {
  * Contains fields for the trigger pattern, replacement text (which may
  * include multiple emojis and/or arbitrary characters), and an optional
  * description. The embedded emoji picker inserts a single emoji at the
- * cursor position within the replacement field. A delete button is
- * provided here instead of on the main emoji list to save space.
+ * cursor position within the replacement field. Deleting is done from the
+ * emoji list, not here.
  */
 @Component({
   selector: 'app-emoji-edit-modal',
   standalone: true,
-  imports: [FormsModule, EmojiPickerComponent, BackdropClickDirective],
+  imports: [FormsModule, EmojiPickerComponent, BackdropClickDirective, BackCloseDirective],
   templateUrl: './emoji-edit-modal.component.html',
   styleUrls: ['./emoji-edit-modal.component.css'],
 })
@@ -55,8 +56,6 @@ export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy
   /** Emitted when the user cancels the edit */
   @Output() cancelled = new EventEmitter<void>();
 
-  /** Emitted when the user deletes the mapping */
-  @Output() deleted = new EventEmitter<void>();
 
   /** Reference to the emoji/replacement text input */
   @ViewChild('emojiInput') emojiInputRef!: ElementRef<HTMLInputElement>;
@@ -126,10 +125,8 @@ export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy
     this.cancelled.emit();
   }
 
-  /** Delete this mapping */
-  delete(): void {
-    this.deleted.emit();
-  }
+  /** The browser Back button closes this popup like Cancel */
+  readonly backClose = (): void => { this.cancelled.emit(); };
 
   /** Open the emoji picker, remembering cursor position */
   openPicker(): void {

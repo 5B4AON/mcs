@@ -286,6 +286,11 @@
   box-shadow: 0 2px 8px rgba(0,0,0,.4);
   transition: background 0.15s, color 0.15s;
 }
+/* Desktop browsers draw a scrollbar (about 15px) at the right edge: keep both floating buttons clear of it */
+@media (pointer: fine) {
+  .help-close-btn { right: 36px; }
+  .help-home-btn { right: 38px; }
+}
 .help-home-btn:hover {
   background: #3a3f4b;
   color: #b8deff;
