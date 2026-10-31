@@ -43,7 +43,6 @@ export class SerialOutputEditModalComponent {
 
   @Output() saved = new EventEmitter<SerialOutputEditSaveEvent>();
   @Output() cancelled = new EventEmitter<void>();
-  @Output() deleted = new EventEmitter<void>();
 
   /** OK: save the editor's values. */
   save(): void {

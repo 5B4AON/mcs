@@ -8,6 +8,7 @@ import {
 import { FormsModule } from '@angular/forms';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 import { BackdropClickDirective } from '../../backdrop-click.directive';
+import { BackCloseDirective } from '../../back-close.directive';
 
 /** A named group of emojis displayed as a tab in the picker */
 interface EmojiCategory {
@@ -24,7 +25,7 @@ interface EmojiCategory {
 @Component({
   selector: 'app-emoji-picker',
   standalone: true,
-  imports: [FormsModule, BackdropClickDirective],
+  imports: [FormsModule, BackdropClickDirective, BackCloseDirective],
   templateUrl: './emoji-picker.component.html',
   styleUrls: ['./emoji-picker.component.css']
 })
@@ -33,6 +34,9 @@ export class EmojiPickerComponent implements AfterViewInit, OnDestroy {
 
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  /** The browser Back button closes the picker like Close */
+  readonly backClose = (): void => { this.close(); };
 
   /** Emitted when the user selects an emoji from the grid */
   @Output() emojiSelected = new EventEmitter<string>();

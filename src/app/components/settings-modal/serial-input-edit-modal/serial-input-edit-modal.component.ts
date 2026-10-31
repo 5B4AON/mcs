@@ -41,7 +41,6 @@ export class SerialInputEditModalComponent {
 
   @Output() saved = new EventEmitter<SerialInputEditSaveEvent>();
   @Output() cancelled = new EventEmitter<void>();
-  @Output() deleted = new EventEmitter<void>();
 
   /** OK: save only when the editor accepts its fields. */
   save(): void {

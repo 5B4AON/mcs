@@ -119,6 +119,9 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   readonly engine = signal<WizardEngine | null>(null);
   readonly flowTitle = signal('');
   readonly confirmDiscard = signal(false);
+
+  /** Edits on a mapping's own page are about to be discarded (Escape or Back from the page) */
+  readonly confirmDiscardMapping = signal(false);
   readonly presetPickerOpen = signal(false);
   readonly selectedPresetId = signal('');
   readonly presetNotice = signal('');
@@ -342,11 +345,13 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   addMapping(): void {
     this.engine()?.addMapping();
+    this.focusStep();
   }
 
   /** Open mapping `index` from the list page. */
   openMapping(step: WizardStep, index: number): void {
     if (step.page) this.engine()?.goTo(`${step.page.baseId}#${index}`);
+    this.focusStep();
   }
 
   removeMapping(step: WizardStep, index: number): void {
@@ -485,9 +490,40 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     else this.closed.emit();
   }
 
+  /** Escape: one step out. On a mapping's own page that is the list; otherwise the wizard closes. */
+  escapeOut(): void {
+    if (this.onMappingPage) this.leaveMappingPage();
+    else this.requestClose();
+  }
+
   /** Show the discard question (used by the browser Back button). */
   askDiscard(): void {
-    this.confirmDiscard.set(true);
+    if (this.onMappingPage) this.leaveMappingPage();
+    else this.confirmDiscard.set(true);
+  }
+
+  /** True while one mapping's own page is open: Escape and Back leave it for the list, not the wizard. */
+  get onMappingPage(): boolean {
+    const engine = this.engine();
+    return !!engine && this.stage() === 'steps' && engine.step().page?.kind === 'mapping';
+  }
+
+  /** Back to the mapping list, asking first when the page has edits that were not kept. */
+  private leaveMappingPage(): void {
+    if (this.mappingPage?.isDirty()) {
+      this.confirmDiscardMapping.set(true);
+    } else {
+      this.engine()?.back();
+      this.focusStep();
+    }
+  }
+
+  onDiscardMappingAnswer(discard: boolean): void {
+    this.confirmDiscardMapping.set(false);
+    if (!discard) return;
+    this.mappingPage?.reset();
+    this.engine()?.back();
+    this.focusStep();
   }
 
   onDiscardAnswer(discard: boolean): void {
@@ -498,8 +534,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   @HostListener('document:keydown.escape', ['$event'])
   onEscape(event: Event): void {
     // A dialog opened above the wizard (such as the emoji picker or Help) closes itself first
-    if (this.confirmDiscard() || event.defaultPrevented || this.dialogAboveWizard()) return;
-    this.requestClose();
+    if (this.confirmDiscard() || this.confirmDiscardMapping() || event.defaultPrevented || this.dialogAboveWizard()) return;
+    this.escapeOut();
   }
 
   /** True when another visible dialog sits on top of the wizard dialog. */

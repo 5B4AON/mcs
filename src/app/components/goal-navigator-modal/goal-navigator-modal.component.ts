@@ -23,9 +23,6 @@ import { BackdropClickDirective } from '../backdrop-click.directive';
 export class GoalNavigatorModalComponent implements AfterViewInit {
   @Output() readonly closed = new EventEmitter<void>();
 
-  /** Open Settings in place of this dialog. */
-  @Output() readonly settingsRequested = new EventEmitter<void>();
-
   /** Open the named presets on top of this dialog. */
   @Output() readonly presetsRequested = new EventEmitter<void>();
 

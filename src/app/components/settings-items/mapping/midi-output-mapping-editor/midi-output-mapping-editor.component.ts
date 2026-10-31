@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { MidiInputMapping } from '../../midi-input/midi-input-item.model';
 import { MidiOutputMapping, MidiOutputMode } from '../../midi-output/midi-output-item.model';
 import { OutputForward } from '../../../../services/settings-common';
+import { HelpLinkButtonComponent } from '../../help-link-button/help-link-button.component';
 import { MidiOutputService, midiOutputNoteName } from '../../../../services/midi-output.service';
 import { NoteField } from '../midi-input-mapping-editor/midi-input-mapping-editor.component';
 
@@ -33,7 +34,7 @@ export interface MidiOutputEditSaveEvent {
 @Component({
   selector: 'app-midi-output-mapping-editor',
   standalone: true,
-  imports: [FormsModule, NgTemplateOutlet],
+  imports: [FormsModule, NgTemplateOutlet, HelpLinkButtonComponent],
   templateUrl: './midi-output-mapping-editor.component.html',
   styles: [':host { display: block; }'],
 })

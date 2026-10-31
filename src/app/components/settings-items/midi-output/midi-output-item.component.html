@@ -23,7 +23,7 @@
 
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().midiOutputMappings"
-                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="midi-output-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
       <ng-template let-mapping>
         <span class="midi-mapping-mode">{{ mapping.mode === 'straightKey' ? 'Straight' : 'Paddle' }}</span>
@@ -85,7 +85,6 @@
     [allMappings]="s().midiOutputMappings"
     [midiInputMappings]="s().midiInputMappings"
     (saved)="onEditSaved($event)"
-    (cancelled)="onEditCancelled()"
-    (deleted)="onEditDeleted()">
+    (cancelled)="onEditCancelled()">
   </app-midi-output-edit-modal>
 }

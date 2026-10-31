@@ -11,7 +11,9 @@
       (closeRequest)="close()"
       (inputModeChange)="setInputMode($event)"
       (helpRequested)="requestHelp()"
-      (symbolsRefRequested)="requestSymbolsRef()">
+      (symbolsRefRequested)="requestSymbolsRef()"
+      (settingsRequested)="settingsRequested.emit()"
+      (wizardRequested)="wizardRequested.emit()">
     </app-fs-toolbar>
 
     <!-- Main content area -->

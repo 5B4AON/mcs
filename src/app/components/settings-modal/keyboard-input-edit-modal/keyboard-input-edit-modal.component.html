@@ -1,5 +1,5 @@
 <app-mapping-edit-dialog [title]="(editIndex >= 0 ? 'Edit' : 'Add') + ' Keyboard Mapping'"
-                         ariaLabel="Edit Keyboard Input Mapping" [canDelete]="editIndex >= 0"
-                         (confirmed)="save()" (cancelled)="cancelled.emit()" (deleted)="deleted.emit()">
+                         ariaLabel="Edit Keyboard Input Mapping"
+                         (confirmed)="save()" (cancelled)="cancelled.emit()">
   <app-keyboard-mapping-editor [mapping]="mapping" [editIndex]="editIndex" [allMappings]="allMappings" />
 </app-mapping-edit-dialog>

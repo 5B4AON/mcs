@@ -2,6 +2,7 @@
  * Morse Code Studio
  */
 
+import { BackCloseDirective } from '../../back-close.directive';
 import { Component, Input, OnDestroy, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
@@ -24,7 +25,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-rtdb-input-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent],
+  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent, BackCloseDirective],
   templateUrl: './rtdb-input-item.component.html',
   styles: [':host { display: contents; } .secret-mask { -webkit-text-security: disc; text-security: disc; }'],
 })
@@ -49,6 +50,9 @@ export class RtdbInputItemComponent implements OnDestroy {
 
   /** Message of the "cannot enable yet" dialog; null when closed */
   readonly notice = signal<string | null>(null);
+
+  /** The browser Back button dismisses the notice like OK */
+  readonly backNotice = (): void => { this.notice.set(null); };
 
   /** Debounce timer for restarting the input while the channel is typed */
   private restartTimer: ReturnType<typeof setTimeout> | null = null;

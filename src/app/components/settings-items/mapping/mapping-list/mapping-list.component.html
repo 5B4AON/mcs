@@ -1,4 +1,4 @@
-<div class="midi-mapping-list">
+<div class="midi-mapping-list" [class.midi-mapping-list-roomy]="roomy">
   @for (mapping of mappings; track $index) {
     <div class="midi-mapping-row" [class.midi-mapping-row-disabled]="!mapping.enabled">
       <label class="midi-mapping-enable">
@@ -11,13 +11,11 @@
       <button type="button" class="midi-mapping-btn midi-mapping-btn-edit" (click)="edit.emit($index)" title="Edit" aria-label="Edit">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>
       </button>
-      @if (deletable) {
-        <button type="button" class="midi-mapping-btn midi-mapping-btn-delete" (click)="remove.emit($index)"
-                title="Delete" aria-label="Delete">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
-        </button>
-      }
+      <button type="button" class="midi-mapping-btn midi-mapping-btn-delete" (click)="askDelete($index)"
+              title="Delete" aria-label="Delete">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+      </button>
     </div>
   }
 </div>
-<button type="button" class="midi-mapping-add-btn" (click)="add.emit()">{{ addLabel }}</button>
+<button type="button" class="midi-mapping-add-btn" [class.midi-mapping-add-roomy]="roomy" (click)="add.emit()">{{ addLabel }}</button>

@@ -43,6 +43,80 @@ button.kebab-help-btn:has(.pill-icon)::after {
   min-width: 0;
 }
 
+/*
+ * Kebab menus (main screen and fullscreen): compact speed pills, a scrollbar that
+ * is always visible (Android hides overlay bars until you scroll) and shading at
+ * the edge that still has content beyond it.
+ */
+.kebab-compact .wpm-pill.wpm-pill-interactive {
+  padding-block: .1rem;
+}
+.kebab-compact .wpm-pill .wpm-pill-value {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+.kebab-compact .wpm-pill .wpm-btn {
+  width: 1.5rem;
+  height: 1.5rem;
+  font-size: .85rem;
+}
+.kebab-compact .wpm-pill .wpm-cal-btn {
+  width: 1.7rem;
+  height: 1.7rem;
+}
+.kebab-compact .wpm-pill .wpm-cal-btn svg {
+  width: 16px;
+  height: 16px;
+}
+@media (pointer: coarse) {
+  .kebab-compact .wpm-pill.wpm-pill-interactive {
+    padding-block: .1rem;
+  }
+  .kebab-compact .wpm-pill .wpm-btn {
+    width: 1.2rem;
+    height: 1.2rem;
+    font-size: .75rem;
+  }
+  .kebab-compact .wpm-pill .wpm-cal-btn {
+    width: 1.3rem;
+    height: 1.3rem;
+  }
+  .kebab-compact .wpm-pill .wpm-cal-btn svg {
+    width: 14px;
+    height: 14px;
+  }
+}
+.kebab-compact {
+  background-image:
+    linear-gradient(var(--kebab-bg) 30%, transparent),
+    linear-gradient(transparent, var(--kebab-bg) 70%),
+    radial-gradient(farthest-side at 50% 0, rgba(0, 0, 0, .55), transparent),
+    radial-gradient(farthest-side at 50% 100%, rgba(136, 204, 255, .4), transparent);
+  background-position: center top, center bottom, center top, center bottom;
+  background-repeat: no-repeat;
+  background-size: 100% 2rem, 100% 2rem, 100% .6rem, 100% .6rem;
+  background-attachment: local, local, scroll, scroll;
+}
+.kebab-compact::-webkit-scrollbar {
+  width: 10px;
+}
+.kebab-compact::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, .08);
+  border-radius: 5px;
+}
+.kebab-compact::-webkit-scrollbar-thumb {
+  background: #6f8fb5;
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+@supports not selector(::-webkit-scrollbar) {
+  .kebab-compact {
+    scrollbar-width: thin;
+    scrollbar-color: #6f8fb5 rgba(255, 255, 255, .08);
+  }
+}
+
 /* Dialog pills: one look for every dialog action button (neutral by default) */
 .pill-btn {
   display: inline-flex;
@@ -107,4 +181,13 @@ button.kebab-help-btn:has(.pill-icon)::after {
 /* Re-enable button inside the MIDI reconnect notice (app.component.css is at its size budget) */
 .midi-reconnect-text .pill-btn {
   margin-top: .5rem;
+}
+
+/*
+ * Outline of the straight-key sprite (public/morse-key-sprite-transparent.png), measured from the
+ * image's transparency over both frames with a 3px margin. The button is exactly one 297 x 300
+ * frame, so the percentages are frame coordinates; the empty sides cannot be pressed.
+ */
+.touch-key-sprite {
+  clip-path: polygon(44.8% 14.7%, 44.8% 15.7%, 42.4% 16.7%, 42.1% 18.7%, 43.1% 20.0%, 46.1% 21.0%, 45.5% 25.3%, 21.5% 25.7%, 20.5% 28.7%, 17.2% 29.7%, 16.8% 37.0%, 17.8% 39.3%, 20.9% 40.0%, 20.9% 44.7%, 15.8% 45.3%, 14.5% 46.7%, 0.7% 81.7%, 1.3% 91.3%, 4.4% 93.3%, 6.1% 96.0%, 9.4% 97.3%, 15.5% 97.3%, 90.6% 97.0%, 93.9% 95.7%, 95.3% 93.0%, 98.7% 90.3%, 99.0% 81.3%, 95.3% 72.7%, 83.8% 47.0%, 82.2% 45.3%, 78.5% 44.7%, 79.1% 43.0%, 78.5% 42.7%, 78.8% 40.0%, 81.8% 39.3%, 82.5% 38.0%, 82.5% 31.3%, 81.8% 29.3%, 78.5% 28.7%, 77.4% 25.7%, 52.5% 25.3%, 52.5% 21.3%, 55.9% 19.7%, 55.2% 16.3%, 53.2% 15.7%);
 }

@@ -1,6 +1,6 @@
 <app-mapping-edit-dialog [title]="(editIndex >= 0 ? 'Edit' : 'Add') + ' Serial Output Mapping'"
-                         ariaLabel="Edit Serial Output Mapping" [canDelete]="editIndex >= 0"
-                         (confirmed)="save()" (cancelled)="cancelled.emit()" (deleted)="deleted.emit()">
+                         ariaLabel="Edit Serial Output Mapping"
+                         (confirmed)="save()" (cancelled)="cancelled.emit()">
   <app-serial-output-mapping-editor [mapping]="mapping" [editIndex]="editIndex" [allMappings]="allMappings"
                                     [serialInputMappings]="serialInputMappings" />
 </app-mapping-edit-dialog>

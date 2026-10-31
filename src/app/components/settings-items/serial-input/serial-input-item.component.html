@@ -35,7 +35,7 @@
 
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().serialInputMappings"
-                      (add)="addMapping()" (edit)="startEdit($event)"
+                      (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="serial-input-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
       <ng-template let-mapping>
         @if (mapping.name) {
@@ -46,7 +46,7 @@
           @if (mapping.mode === 'straightKey') {
             {{ pinLabel(mapping.pin) }}
           } @else {
-            {{ pinLabel(mapping.pin) }}/{{ pinLabel(mapping.dahPin) }}
+            {{ pinLabel(mapping.pin) }}|{{ pinLabel(mapping.dahPin) }}
           }
         </span>
         <span class="source-badge source-badge-sm" [class.source-rx]="mapping.source === 'rx'" [class.source-tx]="mapping.source === 'tx'">{{ mapping.source === 'rx' ? 'RX' : 'TX' }}</span>
@@ -95,7 +95,6 @@
     [editIndex]="editIndex"
     [allMappings]="s().serialInputMappings"
     (saved)="onEditSaved($event)"
-    (cancelled)="onEditCancelled()"
-    (deleted)="onEditDeleted()">
+    (cancelled)="onEditCancelled()">
   </app-serial-input-edit-modal>
 }

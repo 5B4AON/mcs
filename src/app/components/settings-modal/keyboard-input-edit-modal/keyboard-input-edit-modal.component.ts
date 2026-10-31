@@ -40,7 +40,6 @@ export class KeyboardInputEditModalComponent {
 
   @Output() saved = new EventEmitter<KeyboardInputEditSaveEvent>();
   @Output() cancelled = new EventEmitter<void>();
-  @Output() deleted = new EventEmitter<void>();
 
   /** OK: save only when the editor accepts its fields. */
   save(): void {

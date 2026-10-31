@@ -59,6 +59,7 @@ import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-t
 import { GoalTarget, goalTargetForLanding } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { BackdropClickDirective } from '../backdrop-click.directive';
+import { BackCloseDirective } from '../back-close.directive';
 
 /**
  * Settings modal component — modal chrome and tab navigation.
@@ -84,6 +85,7 @@ import { BackdropClickDirective } from '../backdrop-click.directive';
     FormsModule,
     DatePipe,
     BackdropClickDirective,
+    BackCloseDirective,
     ConfirmDialogComponent,
     SettingsInputsTabComponent,
     SettingsOutputsTabComponent,
@@ -116,8 +118,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Show only the Presets dialog (opened from the Setup Wizard), without the Settings dialog */
   @Input() presetsOnly = false;
 
-  /** Emitted when the user asks to go to the Setup Wizard */
-  @Output() wizardOpenRequested = new EventEmitter<void>();
+  /** Visible control to focus on close when the menu item that opened Settings is hidden */
+  @Input() focusReturnFallback: HTMLElement | null = null;
 
   /** Emitted when the Presets dialog closes in presets-only mode */
   @Output() presetsDismissed = new EventEmitter<void>();
@@ -282,8 +284,42 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    restoreDialogFocus(this.focusReturnTarget);
+    restoreDialogFocus(this.focusReturnTarget, this.focusReturnFallback);
   }
+
+  // ---- Browser Back button: each popup closes on its own before Settings does ----
+
+  readonly backRevert = (): void => { this.showRevertConfirm = false; };
+  readonly backReset = (): void => { this.showResetConfirm = false; };
+  readonly backSaveResult = (): void => { this.dismissSaveResult(); };
+  readonly backScan = (): void => { this.dismissScanResults(); };
+
+  /**
+   * Back inside Presets: step out of a menu, a confirmation or a review.
+   * Returns false when none of those is open, so Back should close the dialog itself.
+   */
+  stepBackInPresets(): boolean {
+    if (this.presetMenuId) {
+      this.closePresetMenu(true);
+      return true;
+    }
+    if (this.confirmDiscardDamagedPresets) {
+      this.confirmDiscardDamagedPresets = false;
+      return true;
+    }
+    if (this.transferReview) {
+      this.cancelReview();
+      return true;
+    }
+    return false;
+  }
+
+  /** Back for the Presets dialog opened from Settings; returns true while the dialog stays open */
+  readonly backPresets = (): boolean => {
+    if (this.stepBackInPresets()) return true;
+    this.closePresets();
+    return false;
+  };
 
   /** Close the settings modal */
   close(): void {

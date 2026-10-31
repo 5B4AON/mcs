@@ -5,6 +5,7 @@
 import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../../modal-accessibility';
 import { BackdropClickDirective } from '../../../backdrop-click.directive';
+import { BackCloseDirective } from '../../../back-close.directive';
 
 /**
  * Popup frame of the Settings mapping editors: overlay, title with close
@@ -16,7 +17,7 @@ import { BackdropClickDirective } from '../../../backdrop-click.directive';
 @Component({
   selector: 'app-mapping-edit-dialog',
   standalone: true,
-  imports: [BackdropClickDirective],
+  imports: [BackdropClickDirective, BackCloseDirective],
   templateUrl: './mapping-edit-dialog.component.html',
   styleUrls: ['./mapping-edit-dialog.component.css'],
 })
@@ -32,16 +33,14 @@ export class MappingEditDialogComponent implements AfterViewInit, OnDestroy {
   /** Accessible name of the dialog */
   @Input() ariaLabel = '';
 
-  /** Show Delete (an existing mapping is being edited) */
-  @Input() canDelete = false;
-
   /** OK pressed: the editor validates and emits the result */
   @Output() confirmed = new EventEmitter<void>();
 
   /** Cancel, the close button or a click outside the dialog */
   @Output() cancelled = new EventEmitter<void>();
 
-  @Output() deleted = new EventEmitter<void>();
+  /** The browser Back button closes this popup like Cancel */
+  readonly backClose = (): void => { this.cancelled.emit(); };
 
   ngAfterViewInit(): void {
     if (this.dialog) focusDialog(this.dialog.nativeElement, '.md-close-btn');

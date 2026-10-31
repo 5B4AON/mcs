@@ -4,8 +4,8 @@
 
 <p>
   <strong>Not sure where to start?</strong> Open <em>Setup Wizard</em> from the
-  main menu (&#8942;), the Try Morse box, or the wand button in the Settings
-  toolbar, and pick what you want to do. Every goal opens a step-by-step guide
+  main menu (&#8942;), the full-screen menu, or the Try Morse box, and pick
+  what you want to do. Every goal opens a step-by-step guide
   that keeps its answers in a draft, shows what would change, and applies only
   what you confirm. Configure keyboard, mouse and touch keyers, MIDI or serial
   inputs, RTDB relay, and hardware outputs without leaving the wizard. Device
@@ -201,6 +201,45 @@
   <li><strong>Colour</strong> &mdash; Optional text colour for fullscreen
       views. Overrides the default RX/TX colour.</li>
 </ul>
+
+<h3 id="midi-notes">MIDI Notes: Name, Octave and Number</h3>
+<p>
+  MIDI identifies every key, pad or pedal button with a <strong>note
+  number from 0 to 127</strong>. The note fields in a mapping show that one
+  value in two ways, and changing either one updates the other:
+</p>
+<ul>
+  <li><strong>Note name and octave</strong> &mdash; a letter (C, C&sharp;, D &hellip; B)
+      and an octave number, for example <code>C4</code> or <code>E5</code>.
+      This is how musicians name keys; middle C on a piano is C4.</li>
+  <li><strong>Number (0&ndash;127)</strong> &mdash; the raw value the device
+      actually sends, for example <code>60</code> for C4 or <code>76</code>
+      for E5. MIDI monitors and the documentation of pedals and Arduino
+      sketches usually give numbers.</li>
+</ul>
+<p>
+  The two are linked by <em>number = (octave + 1) &times; 12 + position of
+  the note in the octave</em>, where C is 0, C&sharp; is 1 and so on up to B
+  at 11. So E5 is (5 + 1) &times; 12 + 4 = 76, and the lowest note, C&minus;1,
+  is 0.
+</p>
+<table>
+  <thead><tr><th>Note</th><th>Number</th></tr></thead>
+  <tbody>
+    <tr><td>C4 (middle C)</td><td>60</td></tr>
+    <tr><td>E4</td><td>64</td></tr>
+    <tr><td>A4</td><td>69</td></tr>
+    <tr><td>C5</td><td>72</td></tr>
+    <tr><td>E5</td><td>76</td></tr>
+  </tbody>
+</table>
+<p>
+  Use whichever is easier. If you do not know the note of your key or pedal,
+  press <strong>Detect</strong> and then the key: both fields are filled in
+  for you. Some devices and programs number octaves differently (they call
+  middle C C3 or C5). If a name does not match your documentation, trust the
+  number: it is the same everywhere.
+</p>
 
 <div class="example-box">
   <div class="example-title">Assigning MIDI notes</div>
@@ -416,8 +455,8 @@
       Mapping</strong> button.</li>
   <li><strong>Edit</strong> any mapping via the pencil button to open the
       edit modal.</li>
-  <li><strong>Remove</strong> a mapping with the delete button in the edit
-      modal.</li>
+  <li><strong>Remove</strong> a mapping with the delete button on its row;
+      you are asked to confirm first.</li>
   <li><strong>Enable / disable</strong> individual mappings with the
       checkbox.</li>
 </ul>
