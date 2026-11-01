@@ -22,15 +22,24 @@
   opacity: .45;
   border-color: #2a2a35;
 }
-/* Disabled card with empty required fields: dim everything except those fields */
-.settings-card.disabled-card.show-required {
+/* Expanded disabled card: the border lights up like an enabled card so its start and end
+   are visible, while the header and content stay dimmed. Collapsing goes back to the dark border. */
+.settings-card.disabled-card.expanded {
+  border-color: #4a6a8a;
+}
+/* Disabled card with empty required fields (or expanded): dim everything except those fields */
+.settings-card.disabled-card.show-required,
+.settings-card.disabled-card.expanded {
   opacity: 1;
 }
 .settings-card.disabled-card.show-required > .settings-card-header,
-.settings-card.disabled-card.show-required > .settings-card-body > :not(.field-invalid) {
+.settings-card.disabled-card.show-required > .settings-card-body > :not(.field-invalid),
+.settings-card.disabled-card.expanded > .settings-card-header,
+.settings-card.disabled-card.expanded > .settings-card-body > :not(.field-invalid) {
   opacity: .45;
 }
-.settings-card.disabled-card.show-required > .settings-card-body > .field-invalid {
+.settings-card.disabled-card.show-required > .settings-card-body > .field-invalid,
+.settings-card.disabled-card.expanded > .settings-card-body > .field-invalid {
   font-weight: 600;
 }
 

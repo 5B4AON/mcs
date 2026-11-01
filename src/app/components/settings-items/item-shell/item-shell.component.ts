@@ -3,7 +3,9 @@
  */
 
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, inject } from '@angular/core';
+
+import { CardAccordionService } from './card-accordion.service';
 
 /**
  * Frame around a settings item.
@@ -22,7 +24,10 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
   templateUrl: './item-shell.component.html',
   styles: [':host { display: contents; }'],
 })
-export class ItemShellComponent {
+export class ItemShellComponent implements OnDestroy {
+  private readonly accordion = inject(CardAccordionService);
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
+
   /** Card id suffix; the DOM id becomes `settings-card-<cardId>` */
   @Input({ required: true }) cardId = '';
 
@@ -44,12 +49,25 @@ export class ItemShellComponent {
   /** Emitted when the user flips the enable switch */
   @Output() enabledChange = new EventEmitter<boolean>();
 
-  /** Whether the card body is open (card mode only) */
-  expanded = false;
+  /** Whether the card body is open (card mode only); only one card is open at a time */
+  get expanded(): boolean {
+    return this.accordion.openCardId() === this.cardId;
+  }
 
-  /** Open or close the card body (header click, or Enter/Space on the title button) */
+  /**
+   * Open or close the card body (header click, or Enter/Space on the title button).
+   * Opening collapses the other cards, which can move this one, so keep its header in view.
+   */
   toggleExpanded(): void {
-    this.expanded = !this.expanded;
+    this.accordion.toggle(this.cardId);
+    if (!this.expanded) return;
+    window.requestAnimationFrame(() => {
+      this.host.nativeElement.querySelector('.settings-card-header')?.scrollIntoView({ block: 'nearest' });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.accordion.close(this.cardId);
   }
 
   /** Forward the checkbox state */
