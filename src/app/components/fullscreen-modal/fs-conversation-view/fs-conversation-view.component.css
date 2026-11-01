@@ -16,7 +16,7 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   padding: .5rem;
-  padding-bottom: 2.5em;
+  padding-bottom: var(--fs-reserve, 60px);
   scroll-behavior: smooth;
   text-shadow: 0 0 6px currentColor, 0 1px 3px rgba(0, 0, 0, 0.4);
 }
@@ -33,12 +33,19 @@
   outline: none;
 }
 
-/* Line rendering */
+/* Line rendering: the gap follows the row spacing and shrinks when the text is large (see .fs-fit) */
 .fs-line {
-  margin-bottom: 0;
+  margin-bottom: var(--fs-gap, 0);
 }
 
-/* Blinking cursor for active decoding pattern */
+/* Key mode: one row below the text is kept for the symbols being keyed, so nothing shifts when they are decoded */
+.fs-pattern-row {
+  min-height: var(--fs-lh, 1.35em);
+}
+/* Blinking cursor for the active decoding pattern; Key mode shows the pattern without the bar */
+.fs-conversation.key-mode .cursor::after {
+  display: none;
+}
 .cursor {
   color: #8cf;
   opacity: .7;
@@ -71,14 +78,32 @@
    ::ng-deep required because spans are injected via innerHTML and don't get view encapsulation attributes */
 :host ::ng-deep .prosign-display {
   opacity: 0.85;
-  font-size: 0.8em;
+  /* The pill is about as tall as a capital letter of the row (0.63em of the row = 1.145em of its own,
+     smaller, text), so the letters inside have a margin above and below */
+  font-size: 0.55em;
+  height: 1.145em;
+  line-height: 1.145em;
+  box-sizing: border-box;
   font-weight: 600;
-  vertical-align: baseline;
+  /* overflow hidden makes the pill's bottom edge its baseline; the small drop reaches the visual
+     bottom of the letters (their glow extends below the baseline) */
+  overflow: hidden;
+  vertical-align: -0.03em;
   font-family: monospace;
   background: #3a3a52;
-  padding: 0.15em 0.5em;
+  padding: 0 0.4em;
   border-radius: 1em;
   display: inline-block;
+}
+/* Where supported, trim the text box to the capital height so the letters are centred
+   vertically whatever the font; the padding above and below gives the same margin */
+@supports (text-box: trim-both cap alphabetic) {
+  :host ::ng-deep .prosign-display {
+    height: auto;
+    line-height: normal;
+    text-box: trim-both cap alphabetic;
+    padding: 0.196em 0.4em;
+  }
 }
 
 /* Emoji display — scales with conversation font size, slightly larger for visibility
@@ -94,7 +119,7 @@
 @media (max-width: 480px) {
   .fs-conversation {
     padding: 0.3rem;
-    padding-bottom: 2em;
+    padding-bottom: var(--fs-reserve, 48px);
   }
 }
 

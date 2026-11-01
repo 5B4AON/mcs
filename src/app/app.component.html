@@ -138,7 +138,7 @@
   }
 
   <!-- ========== Output ========== -->
-  <section class="panel" #panelSection>
+  <section class="panel">
     <div class="panel-title-row">
       <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
         <!-- Base plate -->
@@ -370,7 +370,7 @@
   </section>
 
   <!-- ========== STRAIGHT-KEY SPRITE BUTTON ========== -->
-  @if (settings.settings().spriteButtonEnabled && !mainPracticeActive && !showTryMorseGuide && spriteSpaceAvailable && spriteReady) {
+  @if (spriteShown) {
     <div class="touch-key-sprite-wrapper">
       <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
               (touchstart)="onSpriteTouch(true, $event)"

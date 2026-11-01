@@ -17,6 +17,7 @@ import { DisplayBufferService } from '../../../services/display-buffer.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
 import { PracticeService } from '../../../services/practice.service';
 import { LensService } from '../../../services/lens.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 
 /**
@@ -96,6 +97,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private displayBuffers: DisplayBufferService,
     private practice: PracticeService,
     private lens: LensService,
+    private viewport: ViewportService,
   ) {}
 
   /** Close the menu when a press lands outside it, even on controls that stop the click (touch keyers) */
@@ -148,7 +150,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   private updateKebabMaxHeight(): void {
     const trigger = document.querySelector<HTMLElement>('.fs-kebab-wrapper > .kebab-btn');
     if (!trigger) return;
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const viewportHeight = this.viewport.height();
     // 4px gap under the button plus 8px of breathing room at the bottom
     this.fsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 12));
   }

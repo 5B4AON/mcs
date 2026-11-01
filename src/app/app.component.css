@@ -1551,13 +1551,13 @@ select { max-width: 300px; }
 .panel:has(+ .touch-key-sprite-wrapper) {
   margin-bottom: 0;
 }
+/* The wrapper is the size container: the sprite takes the room left over, at most one frame ratio tall */
 .touch-key-sprite-wrapper {
   display: flex;
   justify-content: center;
-  align-items: stretch;
-  flex: 1;
+  flex: 1 0 100px;
   position: relative;
-  min-height: 0;
+  container-type: size;
   margin-top: -0.75rem;
   animation: sprite-fade-in .4s ease-out both;
 }
@@ -1567,15 +1567,13 @@ select { max-width: 300px; }
 }
 /* One 297 x 300 frame of the two-frame image, centred; clip-path is in styles.css */
 .touch-key-sprite {
+  --img: url('/morse-key-sprite-transparent.png');
   position: absolute;
   top: 0;
-  bottom: 0;
   left: 50%;
   transform: translateX(-50%);
+  height: min(100cqh, 100cqw * 300 / 297);
   aspect-ratio: 297 / 300;
-  max-width: 100%;
-  background: url('/morse-key-sprite-transparent.png') no-repeat center top;
-  background-size: auto 200%;
   border: none;
   padding: 0;
   cursor: pointer;
@@ -1584,17 +1582,50 @@ select { max-width: 300px; }
   user-select: none;
   transition: none;
 }
+.touch-key-sprite,
 .touch-key-sprite:hover,
 .touch-key-sprite:active,
 .touch-key-sprite:focus {
-  background: url('/morse-key-sprite-transparent.png') no-repeat center top;
-  background-size: auto 200%;
+  background: var(--img) no-repeat center top / auto 200%;
 }
 .touch-key-sprite.pressed,
 .touch-key-sprite.pressed:hover,
 .touch-key-sprite.pressed:active {
-  background: url('/morse-key-sprite-transparent.png') no-repeat center bottom;
-  background-size: auto 200%;
+  background: var(--img) no-repeat center bottom / auto 200%;
+}
+
+/*
+ * Sprite fit (`spriteShown` puts `sprite-fit` on the host): the host is one viewport high and the
+ * output panel shrinks (text box first, down to 7rem) so the sprite keeps at least 100px; leftover
+ * output panel shrinks (text box first, down to 7rem) so the sprite keeps at least 100px; leftover
+ * room goes to the sprite. Screens shorter than 560px (including phone landscape) keep the natural
+ * layout and have no sprite.
+ */
+@media (min-height: 560px) {
+  :host(.sprite-fit) {
+    height: var(--host-h, 100dvh);
+  }
+  :host(.sprite-fit) .app-container {
+    min-height: 0;
+  }
+  :host(.sprite-fit) :is(.panel, .decoded-parchment) {
+    display: flex;
+    flex-direction: column;
+  }
+  :host(.sprite-fit) .panel {
+    min-height: 0;
+  }
+  :host(.sprite-fit) .decoded-parchment {
+    min-height: 7rem;
+  }
+  :host(.sprite-fit) .decoded-text {
+    flex: 1 1 12em;
+    height: auto;
+    min-height: 0;
+  }
+}
+@media (max-height: 559.98px) {
+  .touch-key-sprite-wrapper { display: none; }
 }
 
 /* ============================================================

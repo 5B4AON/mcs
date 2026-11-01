@@ -1,4 +1,4 @@
-<div class="fs-modal-overlay" [style.height]="overlayHeight" [style.top]="overlayTop">
+<div class="fs-modal-overlay" [style.height.px]="viewport.height()" [style.top.px]="viewport.offsetTop()">
   <div #fullscreenDialog class="fs-modal" role="dialog" aria-modal="true"
        aria-label="Full-screen conversation" tabindex="-1"
        (keydown)="onDialogKeydown($event)">
@@ -18,16 +18,19 @@
 
     <!-- Main content area -->
     <div class="fs-body"
-         [style.background]="settings.modalDisplay().rxBackground"
-         [style.fontSize.px]="settings.modalDisplay().fontSize"
-         [style.fontFamily]="fontStack"
-         [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'"
-         [style.lineHeight]="1.15 + settings.modalDisplay().lineSpacing">
+         [style.background]="settings.modalDisplay().rxBackground">
 
-      <app-fs-conversation-view [viewportKeyboardOpen]="viewportKeyboardOpen"
-                           [inputMode]="inputMode"
-                           [lensMode]="lensMode"
-                           (inputModeChange)="setInputMode($event)"></app-fs-conversation-view>
+      <!-- The text size is auto-fitted to the body box; the slider value is a multiplier (24 = 1x) -->
+      <div class="fs-fit" [class.touch-on]="touchKeysShown"
+           [style.--fs-mult]="settings.modalDisplay().fontSize / fontSizeBase"
+           [style.--fs-space]="settings.modalDisplay().lineSpacing"
+           [style.fontFamily]="fontStack"
+           [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'">
+        <app-fs-conversation-view [viewportKeyboardOpen]="viewport.keyboardOpen()"
+                             [inputMode]="inputMode"
+                             [lensMode]="lensMode"
+                             (inputModeChange)="setInputMode($event)"></app-fs-conversation-view>
+      </div>
 
     </div>
   </div>

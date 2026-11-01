@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, NgZone, effect, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -154,21 +154,25 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
   @ViewChild('practiceActionButton') private practiceActionButtonRef?: ElementRef<HTMLButtonElement>;
-  @ViewChild('panelSection') panelSectionRef?: ElementRef<HTMLElement>;
-
-  /** Whether there is at least 300px of space below the panel for the sprite button */
-  spriteSpaceAvailable = false;
 
   /** Delays sprite reveal until viewport has settled after page load */
   spriteReady = false;
+
+  /**
+   * True while the straight-key sprite is on the main screen. The CSS then
+   * fits the output panel and the sprite into the viewport (`sprite-fit`):
+   * the sprite takes the room left over and the text box gives way first.
+   */
+  @HostBinding('class.sprite-fit')
+  get spriteShown(): boolean {
+    return this.settings.settings().spriteButtonEnabled && !this.mainPracticeActive
+      && !this.showTryMorseGuide && this.spriteReady;
+  }
 
   private subs: Subscription[] = [];
   private readonly helpLinks = inject(HelpLinkService);
   private readonly modalBack = inject(ModalBackService);
   private readonly ngZone = inject(NgZone);
-
-  /** Bound handler for visualViewport resize — stored for cleanup */
-  private vvResizeHandler: (() => void) | null = null;
 
   /** Tracks how many modal history entries are currently pushed */
   private modalHistoryDepth = 0;
@@ -222,10 +226,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public viewport: ViewportService,
     public installHint: InstallHintService,
   ) {
-    // The install hint changes the Try Morse card height, so re-check the room left for the sprite
+    // Browser toolbars collapsing, rotation and zoom change the visual viewport without always firing
+    // a window resize, so the host height follows the service's signal.
     effect(() => {
-      this.installHint.hint();
-      requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
+      this.viewport.height();
+      this.correctHostHeight();
     });
 
     // Auto-scroll the main decoder box when new text arrives
@@ -458,18 +463,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.encoderInputHasText = false;
       }
     });
-
-    // Recheck sprite space when settings that affect panel height change
-    // (level-meter visibility, banner appearance, sprite button toggle).
-    effect(() => {
-      this.settings.settings().micInputEnabled;
-      this.settings.settings().cwInputEnabled;
-      this.settings.settings().spriteButtonEnabled;
-      this.loopDetection.loopDetected();
-      this.rtdbService.connectionWarning();
-      // Wait one frame for the DOM to settle after @if blocks toggle
-      requestAnimationFrame(() => this.checkSpriteSpace());
-    });
   }
 
   /**
@@ -656,9 +649,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     for (const type of this.gestureEvents) document.removeEventListener(type, this.gestureResumeHandler, true);
     this.subs.forEach(s => s.unsubscribe());
     this.mouseKeyer.detachAll();
-    if (this.vvResizeHandler && window.visualViewport) {
-      window.visualViewport.removeEventListener('resize', this.vvResizeHandler);
-    }
   }
 
   // ---- Browser back-button modal handling ----
@@ -793,24 +783,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.mouseKeyer.attach(this.decoderBoxRef.nativeElement);
     }
 
-    // On mobile browsers the visual viewport can change after the initial
-    // layout (e.g. URL bar animating away after a pull-to-refresh).  The
-    // standard window resize event does NOT fire for these changes, so we
-    // also listen to the VisualViewport resize event.
-    if (window.visualViewport) {
-      this.vvResizeHandler = () => {
-        this.correctHostHeight();
-        this.checkSpriteSpace();
-      };
-      window.visualViewport.addEventListener('resize', this.vvResizeHandler);
-    }
-
     // Delay the sprite reveal by 500ms so the mobile viewport has fully
-    // settled (URL bar animation, font loading) before we measure.  The
-    // sprite then fades in via CSS animation — no resize flicker.
+    // settled (URL bar animation, font loading).  The sprite then fades in
+    // via CSS animation — no resize flicker.
     setTimeout(() => {
       this.correctHostHeight();
-      this.checkSpriteSpace();
       this.spriteReady = true;
     }, 500);
   }
@@ -818,28 +795,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   @HostListener('window:resize')
   onWindowResize(): void {
     this.correctHostHeight();
-    this.checkSpriteSpace();
     if (this.controlsKebabOpen) this.updateKebabMaxHeight();
   }
 
   /**
    * On mobile browsers 100dvh can be stale after a pull-to-refresh (it may
    * include the URL bar height).  Explicitly set min-height to the real
-   * viewport height so the flex layout is computed correctly.
+   * viewport height so the flex layout is computed correctly; `--host-h` is
+   * the same height for the sprite layout, which fixes the host height.
    */
   private correctHostHeight(): void {
     const host = this.hostRef.nativeElement as HTMLElement;
     host.style.minHeight = window.innerHeight + 'px';
-  }
-
-  /** Check if at least 150px is available below the panel for the sprite button */
-  private checkSpriteSpace(): void {
-    if (!this.panelSectionRef) {
-      this.spriteSpaceAvailable = false;
-      return;
-    }
-    const panelBottom = this.panelSectionRef.nativeElement.getBoundingClientRect().bottom;
-    this.spriteSpaceAvailable = (window.innerHeight - panelBottom) >= 150;
+    host.style.setProperty('--host-h', window.innerHeight + 'px');
   }
 
   @HostListener('document:click')
@@ -1181,7 +1149,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     textarea.value = value;
     textarea.selectionStart = textarea.selectionEnd = pos;
     this.encoderInputHasText = textarea.value.trim().length > 0;
-    requestAnimationFrame(() => this.checkSpriteSpace());
     if (this.settings.settings().encoderMode === 'practice') {
       this.practice.userInput.set(textarea.value);
     } else if (this.settings.settings().encoderMode === 'live') {
@@ -1199,16 +1166,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissTryMorseGuide(): void {
     this.showTryMorseGuide = false;
     try { localStorage.setItem('mcsTryMorseGuideDismissed', '1'); } catch { }
-    // The guide changes the panel height; with coalesced change detection the
-    // DOM updates after the first frame, so measure on the following one.
-    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Reopen the guide and remember that it is wanted on the next visit. */
   reopenTryMorseGuide(): void {
     this.showTryMorseGuide = true;
     try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
-    requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
   }
 
   /** Load a supported sample into the text field without invoking live input. */
@@ -1480,7 +1443,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private updateKebabMaxHeight(): void {
     const trigger = document.querySelector<HTMLElement>('.kebab-wrapper > .kebab-btn');
     if (!trigger) return;
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const viewportHeight = this.viewport.height();
     // 8px gap under the button plus 8px of breathing room at the bottom
     this.controlsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 16));
   }

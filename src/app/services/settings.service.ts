@@ -143,7 +143,7 @@ const COMMON_FIELD_RULES: SettingsFieldRules = {
   ],
   // Matching the fullscreen menu sliders
   ranges: {
-    fullscreenFontSize: [24, 184],
+    fullscreenFontSize: [24, 240],
     fullscreenLineSpacing: [-0.3, 0.5],
   },
   integers: ['rxDecoderWpm', 'txDecoderWpm', 'encoderWpm', 'keyerWpm'],
@@ -240,6 +240,13 @@ export interface ModalDisplaySettings {
   sendingForeground: string;      // currently transmitting char colour
 }
 
+/**
+ * Smallest row spacing the full-screen view uses (em). Together with the 1.15 base line height it
+ * keeps rows at least 1.07 em apart, so lines never touch or overlap. Saved values below it
+ * (older versions allowed -0.3) are shown with this value.
+ */
+export const MIN_FULLSCREEN_LINE_SPACING = -0.04;
+
 /** AppSettings field behind each display setting. */
 const MODAL_DISPLAY_FIELDS: Record<keyof ModalDisplaySettings, keyof AppSettings> = {
   fontSize: 'fullscreenFontSize',
@@ -277,7 +284,7 @@ export class SettingsService {
     return {
       fontSize: s.fullscreenFontSize,
       fontBold: s.fullscreenFontBold,
-      lineSpacing: s.fullscreenLineSpacing,
+      lineSpacing: Math.max(s.fullscreenLineSpacing, MIN_FULLSCREEN_LINE_SPACING),
       rxForeground: s.fullscreenRxForeground,
       rxBackground: s.fullscreenRxBackground,
       txForeground: s.fullscreenTxForeground,

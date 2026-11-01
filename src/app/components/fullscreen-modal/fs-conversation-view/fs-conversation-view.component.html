@@ -5,6 +5,7 @@
        (keydown)="onTypeKeydown($event)">
 
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" [class.lens-on]="lensView"
+     [class.key-mode]="inputMode === 'key'"
      [style.--lens-side]="lensSideInset"
      [style.--lens-bottom]="lensBottomInset"
      [attr.tabindex]="inputMode === 'key' ? 0 : -1"
@@ -36,21 +37,24 @@
     <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
   } @else {
     @for (line of conversationLines; track $index) {
-      <div class="fs-line" [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
-           [style.marginBottom.em]="settings.modalDisplay().lineSpacing"
-           [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
+      <div class="fs-line"       [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
+      [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
            [innerHTML]="formatLine(line)"></div>
     }
-    @if (decoder.rxCurrentPattern()) {
-      <span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
-    }
-    @if (decoder.txCurrentPattern()) {
-      <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+    @if (inputMode === 'key') {
+      <!-- Key mode keeps one row for the symbols being keyed, so the text does not scroll back up when they are decoded -->
+      <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>}</div>
+    } @else {
+      @if (decoder.rxCurrentPattern()) {
+        <span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+      }
+      @if (decoder.txCurrentPattern()) {
+        <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+      }
     }
     @if (encoderPendingChars().length) {
       @if (encoderStartsNewLine()) {
-        <div class="fs-line fs-line-placeholder" aria-hidden="true"
-             [style.marginBottom.em]="settings.modalDisplay().lineSpacing">&nbsp;</div>
+        <div class="fs-line fs-line-placeholder" aria-hidden="true">&nbsp;</div>
       }
       <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
         [class.sending]="$first && encoder.isSending()"
