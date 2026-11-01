@@ -21,6 +21,7 @@ import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
+import { ViewportService } from './services/viewport.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { HelpComponent } from './components/help/help.component';
@@ -216,6 +217,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
     public practice: PracticeService,
+    private viewport: ViewportService,
   ) {
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
