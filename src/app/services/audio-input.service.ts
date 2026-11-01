@@ -2,9 +2,10 @@
  * Morse Code Studio
  */
 
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { AudioOutputService } from './audio-output.service';
+import { isContextPaused } from './audio-context-state';
 import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
 
@@ -55,6 +56,9 @@ export class AudioInputService {
   readonly calibration$ = new Subject<{ state: string; rms: number }>();
 
   private started = false;
+
+  /** True while the microphone context is paused (suspended, or interrupted on iOS) and has not recovered */
+  readonly paused = signal(false);
 
   /** True between a key-down and its key-up from the detector */
   private keyIsDown = false;
@@ -110,7 +114,16 @@ export class AudioInputService {
 
     this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-    const source = this.audioCtx.createMediaStreamSource(this.stream);
+    let source: MediaStreamAudioSourceNode;
+    try {
+      source = this.audioCtx.createMediaStreamSource(this.stream);
+    } catch {
+      // Some browsers (iOS) ignore the requested 48 kHz and then refuse a microphone at another rate: retry at the device's own rate
+      await this.audioCtx.close().catch(() => {});
+      this.audioCtx = new AudioContext();
+      await this.audioCtx.audioWorklet.addModule('key-detect-processor.js');
+      source = this.audioCtx.createMediaStreamSource(this.stream);
+    }
 
     this.workletNode = new AudioWorkletNode(this.audioCtx, 'key-detect-processor', {
       channelCount: 1,
@@ -134,7 +147,7 @@ export class AudioInputService {
       debounceMs: s.inputDebounceMs,
       channelIndex: 0,
       pilotFrequency: s.pilotFrequency,
-      sampleRate: 48000,
+      sampleRate: this.audioCtx.sampleRate,
     });
 
     source.connect(this.workletNode);
@@ -240,18 +253,28 @@ export class AudioInputService {
     } catch { /* older browser fallback */ }
 
     ctx.onstatechange = () => {
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (isContextPaused(ctx)) ctx.resume().catch(() => {});
+      this.paused.set(isContextPaused(ctx));
     };
     this.keepAliveTimer = setInterval(() => {
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (isContextPaused(ctx)) ctx.resume().catch(() => {});
+      this.paused.set(isContextPaused(ctx));
     }, 1000);
   }
 
+  /** Resume the microphone context. Call it from a user gesture: iOS refuses otherwise. */
+  async resumeFromGesture(): Promise<void> {
+    const ctx = this.audioCtx;
+    if (!ctx || !isContextPaused(ctx)) return;
+    try {
+      await ctx.resume();
+    } finally {
+      this.paused.set(isContextPaused(ctx));
+    }
+  }
+
   private clearKeepAlive(): void {
+    this.paused.set(false);
     if (this.keepAliveTimer !== null) {
       clearInterval(this.keepAliveTimer);
       this.keepAliveTimer = null;

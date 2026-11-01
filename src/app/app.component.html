@@ -154,10 +154,13 @@
         <circle cx="36" cy="38" r="1.5" fill="currentColor" opacity="0.4"/>
       </svg>
       <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
-           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping'"
-           [class.audio-status-running]="audioState === 'running'"
+           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
+           [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
            [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
-        <span>{{ audioStatusMessage }}</span>
+        <span>{{ audioNeedsTap ? 'Audio is paused.' : audioStatusMessage }}</span>
+        @if (audioNeedsTap) {
+          <button class="audio-retry-stop-btn" (click)="resumeAudio()">Tap to resume audio</button>
+        }
         @if (audioState === 'failed' && audioRunning) {
           <button class="audio-retry-stop-btn" (click)="retryStopAudio()" [disabled]="audioStarting">
             Retry stopping audio
