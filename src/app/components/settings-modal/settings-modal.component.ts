@@ -391,11 +391,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     }
     document.querySelectorAll('.settings-card.goal-opened')
       .forEach(el => el.classList.remove('goal-opened'));
-    // Collapse every other open card so only the chosen one is expanded.
-    document.querySelectorAll<HTMLElement>('.settings-tab-content .settings-card-title[aria-expanded="true"]')
-      .forEach(other => {
-        if (other !== title) other.click();
-      });
+    // Expanding a card collapses the others (CardAccordionService).
     if (title.getAttribute('aria-expanded') === 'false') {
       title.click();
     }

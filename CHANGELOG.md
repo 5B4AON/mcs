@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.4] - 2026-11-01
+
+### Changed
+
+- **Expanded disabled cards stand out** — In Settings, a disabled card that is expanded now has the same bright border as an enabled card, so you can see where it starts and ends. Its header and content stay dimmed so it still reads as off, and the border goes dark again when you collapse it. (#120)
+- **One card open at a time** — Expanding a Settings card collapses the others, and the opened card is scrolled into view if the collapse moved it. Cards opened from the Setup Wizard goal list follow the same rule. (#120)
+
 ## [2.7.3] - 2026-11-01
 
 ### Changed
