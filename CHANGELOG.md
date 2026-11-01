@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.2] - 2026-11-01
+
+### Added
+
+- **Auto full screen** — A new **Auto full screen** switch puts the whole browser page into full screen (not the app's own full-screen view). Browsers only allow it after a tap or key press, so after a reload the app waits for your first tap or key press, or you can use the **Tap for full screen** prompt on the main screen. If you leave full screen (Esc or a swipe) the app does not pull you back in; it asks again only when the switch is turned off and on, or at the next start. It does nothing in an installed app (already full screen), and on iPhone, which has no browser full screen, the card says "Not available on this device". The setting is off by default and is saved with the profile and in presets. (#113)
+
+### Changed
+
+- **Screen Settings card** — The "Screen Wake Lock" card in Settings → Other is now **Screen Settings**, with no header toggle. It holds two switches, **Keep screen on** (the existing wake lock, same setting and behaviour) and **Auto full screen**, each with one short line, a `?` button that opens Help, and the toggle at the right. The wake lock status and retry button stay, in a shorter form. Help 9.6 is now "Screen Settings". (#113)
+
 ## [2.7.1] - 2026-11-01
 
 ### Fixed

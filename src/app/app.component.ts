@@ -21,6 +21,7 @@ import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
+import { AutoFullscreenService } from './services/auto-fullscreen.service';
 import { ViewportService } from './services/viewport.service';
 import { InstallHintService } from './services/install-hint.service';
 import { PracticeService } from './services/practice.service';
@@ -222,6 +223,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public displayBuffers: DisplayBufferService,
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
+    public autoFullscreen: AutoFullscreenService,
     public practice: PracticeService,
     public viewport: ViewportService,
     public installHint: InstallHintService,
@@ -641,7 +643,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.autoStartAudio();
     }
 
-    // The wake lock acquires itself once the saved profile enables it (WakeLockService effect)
+    // The wake lock and auto full screen start themselves once the saved profile enables them (service effects)
   }
 
   ngOnDestroy(): void {

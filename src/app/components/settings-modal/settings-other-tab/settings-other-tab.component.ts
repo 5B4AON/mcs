@@ -4,7 +4,7 @@
 
 import { Component } from '@angular/core';
 import { SpeedItemComponent } from '../../settings-items/speed/speed-item.component';
-import { WakeLockCardComponent } from './wake-lock-card/wake-lock-card.component';
+import { ScreenSettingsCardComponent } from './screen-settings-card/screen-settings-card.component';
 import { TextBlurItemComponent } from '../../settings-items/text-blur/text-blur-item.component';
 import { FarnsworthItemComponent } from '../../settings-items/farnsworth/farnsworth-item.component';
 import { PracticeItemComponent } from '../../settings-items/practice/practice-item.component';
@@ -24,7 +24,7 @@ import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.com
   standalone: true,
   imports: [
     SpeedItemComponent,
-    WakeLockCardComponent,
+    ScreenSettingsCardComponent,
     TextBlurItemComponent,
     FarnsworthItemComponent,
     PracticeItemComponent,

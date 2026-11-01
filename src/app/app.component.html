@@ -112,6 +112,16 @@
     </div>
   }
 
+  <!-- Auto full screen prompt: the browser needs a tap before it allows full screen -->
+  @if (autoFullscreen.needsTap()) {
+    <div class="rtdb-warning-banner" role="status">
+      <span class="rtdb-warning-text">
+        <button type="button" class="pill-btn pill-accent" (click)="autoFullscreen.retry()">Tap for full screen</button>
+      </span>
+      <button class="rtdb-warning-dismiss" data-no-fullscreen (click)="autoFullscreen.dismissPrompt()" title="Dismiss" aria-label="Dismiss">&times;</button>
+    </div>
+  }
+
   <!-- MIDI reconnect banner -->
   @if (midiInputNeedsReconnect || midiOutputNeedsReconnect) {
     <div class="midi-reconnect-banner">
