@@ -207,3 +207,14 @@ html.ios-layout:has(
 ) body {
   overflow: hidden;
 }
+
+/*
+ * iOS only: keying surfaces. A long press must key, not open the callout
+ * menu or start a text selection. The sprite is a CSS-background button, not
+ * an image. Text outputs (decoder box, conversation) stay selectable.
+ */
+html.ios-layout :is(.touch-key-sprite-wrapper, .touch-key-sprite, .touch-overlay) {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
