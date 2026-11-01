@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2026-11-01
+
+### Changed
+
+- **Sprite and text box fit the screen** — The key sprite on the main screen no longer needs a fixed 150 px of free space. It takes the room left below the text box, at most as tall as before and at least 100 px, and on a small screen the text box shrinks first (down to a minimum height) to make room. Below 560 px of screen height (including a phone in landscape) the sprite is hidden and the layout is the same as before. (#106)
+- **Full-screen text fits its box** — The conversation text now sizes itself from the space it has: it shrinks on small phones, stays at its usual size up to a 1366 × 768 monitor, and grows in proportion on larger monitors, so the largest setting looks the same on a big screen as it did on 1366 × 768. (#106)
+- **Row spacing and three visible rows** — Lines in the full-screen view can no longer touch or overlap: the row spacing slider now starts at -0.04 (rows at least 1.07 times the text size apart); saved lower values are shown as -0.04. With very large text the spacing tightens automatically, and the text size is limited if needed, so that at least three lines stay visible above the touch keys (Key mode with the touch keyer on). The empty space below the text no longer grows with the text size, which used to hide the lines at the top at the largest sizes. (#106)
+- **No blinking cursor in Key mode** — The full-screen view no longer shows the blinking cursor bar in Key mode, where it appeared as a huge bar at large text sizes while keying with the touch keys. Type mode is unchanged. (#106)
+- **Prosign pill height** — In the full-screen view a prosign such as `<BT>` is drawn in a pill as tall as a capital letter of the text, sitting on the same baseline as the letters beside it, with the prosign letters drawn smaller inside so they have a margin. The angle brackets are kept. (#106)
+- **Steady text while keying** — In Key mode one row below the text is kept for the dots and dashes being keyed. When the symbols are decoded and the row empties, the text no longer scrolls back up, so the next symbols appear in the same place. That row counts as one of the three visible rows. (#106)
+- **Font size slider is a multiplier** — The full-screen font size slider now runs from ×1.0 (the fitted size) to ×10.0 and shows the multiplier instead of pixels. Saved sizes keep their look (the old maximum, 184, is ×7.7); presets and files with sizes up to 240 are accepted, so a file saved with a larger size is rejected by older versions. (#106)
+- **Full screen follows the shared viewport** — The full-screen view and the main-screen menus now take their visible height from the shared viewport service instead of their own listeners; the view still stays above the on-screen keyboard. (#106)
+- **Build budget** — The per-component stylesheet warning limit is now 40 kB (it was 30 kB). (#106)
+
 ## [2.6.0] - 2026-11-01
 
 ### Changed

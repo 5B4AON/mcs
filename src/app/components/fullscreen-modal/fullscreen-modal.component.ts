@@ -4,7 +4,7 @@
 
 import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
-  NgZone, ViewChild
+  ViewChild
 } from '@angular/core';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
@@ -13,6 +13,7 @@ import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
 import { PracticeService } from '../../services/practice.service';
 import { LensService } from '../../services/lens.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
+import { ViewportService } from '../../services/viewport.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
@@ -20,14 +21,13 @@ import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-
 /**
  * Fullscreen modal component (parent shell).
  *
- * Provides the modal overlay, visual viewport management for mobile
- * on-screen keyboards, and orchestrates child components:
+ * Provides the modal overlay and orchestrates child components:
  * - **FsToolbarComponent** — top bar with WPM controls, level meter, menus
  * - **FsConversationViewComponent** — combined conversation with keying and typing
  *
- * The overlay tracks the VisualViewport API so that on mobile devices
- * the modal shrinks above the on-screen keyboard, keeping all content
- * visible even in landscape where only one or two lines fit.
+ * The overlay follows the visual viewport published by `ViewportService`, so
+ * on mobile devices the modal shrinks above the on-screen keyboard, keeping
+ * all content visible even in landscape where only one or two lines fit.
  */
 @Component({
   selector: 'app-fullscreen-modal',
@@ -55,9 +55,6 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Emitted when the user requests the Setup Wizard (opened above this modal) */
   @Output() wizardRequested = new EventEmitter<void>();
 
-  /** True when the on-screen keyboard is likely open (viewport significantly shorter than window) */
-  viewportKeyboardOpen = false;
-
   /** Key or Type, remembered between sessions (saved with the settings and presets). */
   get inputMode(): 'key' | 'type' {
     return this.settings.settings().fullscreenInputMode;
@@ -68,18 +65,19 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     return this.settings.settings().fullscreenLensEnabled;
   }
 
+  /** Slider value that means "exactly the auto-fit size" (the slider's default and minimum). */
+  readonly fontSizeBase = 24;
+
+  /** True while the touch keys cover the bottom of the conversation (Key mode with the touch keyer on). */
+  get touchKeysShown(): boolean {
+    return this.inputMode === 'key' && this.settings.settings().touchKeyerEnabled;
+  }
+
   /** Font stack chosen in the fullscreen menu. */
   get fontStack(): string {
     return fullscreenFontStack(this.settings.settings().fullscreenFont);
   }
 
-  /** Controls overlay height so it stays above the on-screen keyboard */
-  overlayHeight: string | null = null;
-  /** Controls overlay top offset to track the visual viewport on iOS */
-  overlayTop: string | null = null;
-
-  /** VisualViewport event handler (for cleanup) */
-  private vvHandler: (() => void) | null = null;
   @ViewChild(FsConversationViewComponent) private conversationView?: FsConversationViewComponent;
   @ViewChild('fullscreenDialog') private fullscreenDialog?: ElementRef<HTMLElement>;
   private readonly focusReturnTarget =
@@ -92,13 +90,10 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private practice: PracticeService,
     private lens: LensService,
     private devices: AudioDeviceService,
-    private zone: NgZone,
+    public viewport: ViewportService,
   ) {}
 
   ngOnInit(): void {
-    // Subscribe to VisualViewport changes so the overlay shrinks when
-    // the on-screen keyboard appears on mobile devices.
-    this.setupVisualViewport();
     // Restore the remembered choices: mapped keys only act in Key mode, and Lens starts recording.
     this.keyer.setKeyboardMappingsEnabled(this.inputMode === 'key');
     this.lens.setEnabled(this.lensMode);
@@ -114,11 +109,6 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     this.lens.setEnabled(false);
     // Closing by any route (Back, Escape) must give mapped keys back to the main screen
     this.keyer.setKeyboardMappingsEnabled(true);
-    // Clean up VisualViewport listeners
-    if (window.visualViewport && this.vvHandler) {
-      window.visualViewport.removeEventListener('resize', this.vvHandler);
-      window.visualViewport.removeEventListener('scroll', this.vvHandler);
-    }
     restoreDialogFocus(
       this.focusReturnTarget,
       this.focusReturnFallback ?? document.querySelector<HTMLElement>('.expand-btn'),
@@ -195,35 +185,5 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Open the symbols reference (delegates to parent via output event) */
   requestSymbolsRef(): void {
     this.symbolsRefRequested.emit();
-  }
-
-  // ---- VisualViewport: keep overlay above the on-screen keyboard ----
-
-  /**
-   * Subscribe to VisualViewport resize/scroll events.
-   *
-   * On mobile devices the on-screen keyboard reduces the visual viewport
-   * height but does NOT resize `position: fixed` elements (which span
-   * the full layout viewport).  Explicitly setting the overlay height
-   * to the visual viewport height keeps the entire modal — toolbar,
-   * conversation area, and encoder buffer — above the keyboard so the
-   * user can always see what they are typing or receiving, even in
-   * landscape where only one or two text lines are visible.
-   */
-  private setupVisualViewport(): void {
-    if (!window.visualViewport) return;
-    this.vvHandler = () => this.zone.run(() => this.onVisualViewportChange());
-    window.visualViewport.addEventListener('resize', this.vvHandler);
-    window.visualViewport.addEventListener('scroll', this.vvHandler);
-  }
-
-  private onVisualViewportChange(): void {
-    const vv = window.visualViewport;
-    if (!vv) return;
-    this.overlayHeight = `${vv.height}px`;
-    this.overlayTop = `${vv.offsetTop}px`;
-    // Detect whether the on-screen keyboard is likely open:
-    // the visual viewport is significantly shorter than the layout viewport.
-    this.viewportKeyboardOpen = vv.height < window.innerHeight * 0.75;
   }
 }

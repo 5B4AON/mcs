@@ -119,16 +119,16 @@
       </button>
       @if (stylingOpen) {
       <div class="fs-toolbar-display">
-        <label class="fs-font-ctl" title="Font size">
+        <label class="fs-font-ctl" title="Font size: a multiplier of the size that fits the screen (×1 to ×10)">
           <span>Aa</span>
-          <input type="range" min="24" max="184" step="1"
+          <input type="range" min="24" max="240" step="1"
                  [value]="settings.modalDisplay().fontSize"
                  (input)="onModalDisplayChange('fontSize', $event)">
-          <span>{{ settings.modalDisplay().fontSize }}px</span>
+          <span>×{{ (settings.modalDisplay().fontSize / 24).toFixed(1) }}</span>
         </label>
         <label class="fs-font-ctl" title="Row spacing">
           <span>↕</span>
-          <input type="range" min="-0.3" max="0.5" step="0.02"
+          <input type="range" min="-0.04" max="0.5" step="0.02"
                  [value]="settings.modalDisplay().lineSpacing"
                  (input)="onModalDisplayChange('lineSpacing', $event)">
         </label>

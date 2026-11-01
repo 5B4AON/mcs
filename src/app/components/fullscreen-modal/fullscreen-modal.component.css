@@ -29,6 +29,42 @@
   line-height: 1.15;
   padding: .5rem;
   position: relative;
+  /* Size container: the text size below is measured against this box, like Lens */
+  container-type: size;
+}
+
+/*
+ * Auto-fit text size: the base follows the smaller side of the body box, and the
+ * font-size slider multiplies it. Small screens shrink it (24px at the 360 x 800
+ * phone, never below 14px); it stays 24px up to a 1366 x 768 monitor (box 701px
+ * high) so the 184px maximum looks as it always did there; bigger monitors grow
+ * it in proportion (3.424cqmin = 24px / 701px). Carries the inheritable text styles.
+ *
+ * Rows: the row spacing slider (--fs-space, em) sets the line height (1.15 + space) and the gap
+ * between rows (space). When the text is large, three rows must stay visible above the bottom
+ * reserve (the touch keys in Key mode), so first the spacing shrinks (never below 1.07em between
+ * rows, so lines never touch) and then the font size itself is limited. All values are lengths:
+ *   avail = body height - top padding - reserve; three rows (3 line heights + 2 gaps) must fit in it.
+ */
+.fs-fit {
+  --fs-base: clamp(14px, 6.8cqmin, max(24px, 3.424cqmin));
+  --fs-reserve: 60px;
+  --fs-avail: calc(100cqh - 0.5rem - var(--fs-reserve));
+  --fs-f: max(10px, min(calc(var(--fs-base) * var(--fs-mult, 1)), calc(var(--fs-avail) / 3.25)));
+  --fs-lh: max(
+    calc(var(--fs-f) * 1.11),
+    min(calc(var(--fs-f) * (1.15 + var(--fs-space, 0.1))), calc((var(--fs-avail) + var(--fs-f) * 2.3) / 5))
+  );
+  --fs-gap: calc(var(--fs-lh) - var(--fs-f) * 1.15);
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: var(--fs-f);
+  line-height: var(--fs-lh);
+}
+.fs-fit.touch-on {
+  --fs-reserve: 96px;
 }
 
 /* ---- Responsive ---- */
