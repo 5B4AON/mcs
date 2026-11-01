@@ -169,6 +169,10 @@ button.kebab-help-btn:has(.pill-icon)::after {
   color: #ffe3e3;
   background: linear-gradient(180deg, #a34444 0%, #6e2626 100%);
 }
+.pill-btn.pill-note {
+  color: #2b2204;
+  background: linear-gradient(180deg, #f0cc78 0%, #c99a2e 100%);
+}
 .pill-btn svg {
   flex-shrink: 0;
 }
@@ -181,6 +185,30 @@ button.kebab-help-btn:has(.pill-icon)::after {
 /* Re-enable button inside the MIDI reconnect notice (app.component.css is at its size budget) */
 .midi-reconnect-text .pill-btn {
   margin-top: .5rem;
+}
+
+/* Install pill inside the Try Morse hint line, with the Help link beside it. Sized like the neighbouring Try Morse pills (.kebab-help-btn). The extra selectors beat the component-level `button` rule (square border, grey hover) and the 40/44px pill minimum. */
+.try-morse-note .pill-btn.pill-note {
+  margin-right: .6rem;
+  vertical-align: middle;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  border-radius: 999px;
+  padding: .45rem 1rem;
+  font-size: .78rem;
+  line-height: normal;
+  background: linear-gradient(180deg, #f0cc78 0%, #c99a2e 100%);
+}
+.try-morse-note .pill-btn.pill-note:hover:not(:disabled) {
+  background: linear-gradient(180deg, #f0cc78 0%, #c99a2e 100%);
+}
+/* iOS: the pill is alone on its line, so centre it */
+.try-morse-note.hint-centered {
+  text-align: center;
+}
+.try-morse-note.hint-centered .pill-btn.pill-note {
+  margin-right: 0;
 }
 
 /*

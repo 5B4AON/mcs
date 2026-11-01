@@ -4,7 +4,8 @@
  * Viewport and iOS-layout variables (global; see ViewportService).
  * Defaults only: ViewportService overwrites --vv-h and --vv-top on <html>.
  * Rules that must apply on iOS only are scoped to `.ios-layout` (set by the
- * service from a capability check or the ?ios=1 test override).
+ * service from a capability check or the ?ios=1 test override). The few
+ * shared rules at the end (such as `.hint-link`) say so in their comment.
  */
 :root {
   --vv-h: 100vh;
@@ -217,4 +218,13 @@ html.ios-layout :is(.touch-key-sprite-wrapper, .touch-key-sprite, .touch-overlay
   -webkit-touch-callout: none;
   -webkit-user-select: none;
   user-select: none;
+}
+
+/* Inline text link (shared, all platforms): the "More in Help" link in the Try Morse guide's install hint */
+.hint-link {
+  padding: .2rem .15rem;
+  color: #8cf;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
 }

@@ -22,6 +22,7 @@ import { ModalBackService } from './services/modal-back.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { ViewportService } from './services/viewport.service';
+import { InstallHintService } from './services/install-hint.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { HelpComponent } from './components/help/help.component';
@@ -219,7 +220,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public wakeLock: WakeLockService,
     public practice: PracticeService,
     public viewport: ViewportService,
+    public installHint: InstallHintService,
   ) {
+    // The install hint changes the Try Morse card height, so re-check the room left for the sprite
+    effect(() => {
+      this.installHint.hint();
+      requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
+    });
+
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
       this.displayBuffers.mainOutput.lines();

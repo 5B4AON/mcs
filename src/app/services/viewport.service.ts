@@ -79,6 +79,7 @@ export class ViewportService implements OnDestroy {
     this.iosLayout = ViewportService.detectIos();
     document.documentElement.classList.toggle('ios-layout', this.iosLayout);
     if (this.iosLayout) ViewportService.enableViewportFitCover();
+    if (this.iosLayout) ViewportService.addIosWebAppMeta();
     this.update();
 
     // Listeners run outside Angular's zone: only signal changes should trigger change detection.
@@ -130,6 +131,27 @@ export class ViewportService implements OnDestroy {
     const content = meta?.getAttribute('content') ?? '';
     if (meta && !content.includes('viewport-fit')) {
       meta.setAttribute('content', `${content}, viewport-fit=cover`);
+    }
+  }
+
+  /**
+   * Home-screen web app tags for "Add to Home Screen" in Safari: standalone
+   * window, the short name MCS and an opaque black status bar (nothing can
+   * end up under it). Added from code on iOS only, so other platforms never
+   * see these tags. iOS reads them when the user adds the app.
+   */
+  private static addIosWebAppMeta(): void {
+    const tags: Record<string, string> = {
+      'apple-mobile-web-app-capable': 'yes',
+      'apple-mobile-web-app-title': 'MCS',
+      'apple-mobile-web-app-status-bar-style': 'black',
+    };
+    for (const [name, content] of Object.entries(tags)) {
+      if (document.querySelector(`meta[name="${name}"]`)) continue;
+      const meta = document.createElement('meta');
+      meta.name = name;
+      meta.content = content;
+      document.head.appendChild(meta);
     }
   }
 

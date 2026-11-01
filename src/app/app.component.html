@@ -253,6 +253,17 @@
           </button>
         </div>
         <p>Type below to turn text into Morse. Load the example, then choose the send control. Live mode sends as you type. Setup Wizard helps you choose the right settings.</p>
+        @if (installHint.hint(); as hint) {
+          <p class="try-morse-note" [class.hint-centered]="hint === 'ios'">
+            <!-- Android: opens the browser's install dialog. iOS has no install API, so the same pill opens the Add to Home Screen steps in Help. -->
+            <button type="button" class="pill-btn pill-note"
+                    [title]="hint === 'ios' ? 'How to add Morse Code Studio to your Home Screen' : 'Install Morse Code Studio as an app'"
+                    (click)="hint === 'ios' ? openHelp('s9-2') : installHint.install()">{{ hint === 'ios' ? 'Add to Home Screen' : 'Use it as an app' }}</button>
+            @if (hint === 'prompt') {
+              <a href="#" class="hint-link" (click)="$event.preventDefault(); openHelp('s9-2')">More in Help</a>
+            }
+          </p>
+        }
         <div class="try-morse-actions">
           <button class="kebab-help-btn try-morse-load" (click)="loadTryMorseExample()"
                   [disabled]="encoder.isSending()">
