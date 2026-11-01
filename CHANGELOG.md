@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.1] - 2026-11-01
+
+### Fixed
+
+- **No page scrolling in mobile browsers** — In Chrome on Android (and possibly on iPhone) the page was taller than the visible area while the browser address bar was showing, so the main screen could scroll up and down and the full-screen view could scroll slightly. The page height now follows the visible area, and the page no longer scrolls while the full-screen view is open or while the main screen shows the sprite layout (from 560 px of screen height). Page scrolling stays available when the on-screen keyboard is open and on shorter screens. The installed app and desktop are unchanged. (#112)
+
 ## [2.7.0] - 2026-11-01
 
 ### Changed

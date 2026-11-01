@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, NgZone, OnDestroy, computed, signal } from '@angular/core';
+import { Injectable, NgZone, OnDestroy, computed, effect, signal } from '@angular/core';
 
 /** Layout viewport fraction below which the visual viewport counts as "keyboard open" */
 const KEYBOARD_RATIO = 0.75;
@@ -28,6 +28,8 @@ export interface SafeAreaInsets {
  * insets, both as signals and as CSS variables on `<html>`:
  *
  *  - `--vv-h`, `--vv-top`: visual viewport height and offset (px)
+ *  - `html.keyboard-open`: class mirroring `keyboardOpen`, used by the global
+ *    no-page-scroll rules in `src/viewport.css`
  *  - `--safe-top/right/bottom/left`: safe-area insets (declared in
  *    `src/viewport.css` from `env(safe-area-inset-*)`; this service only
  *    measures them)
@@ -81,6 +83,9 @@ export class ViewportService implements OnDestroy {
     if (this.iosLayout) ViewportService.enableViewportFitCover();
     if (this.iosLayout) ViewportService.addIosWebAppMeta();
     this.update();
+
+    // `keyboard-open` on <html> lets global CSS keep the page scrollable while the keyboard is up.
+    effect(() => document.documentElement.classList.toggle('keyboard-open', this.keyboardOpen()));
 
     // Listeners run outside Angular's zone: only signal changes should trigger change detection.
     this.zone.runOutsideAngular(() => {
