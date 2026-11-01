@@ -14,6 +14,11 @@
     }
   </span>
 
+  <div class="cw-hint">
+    Sends decoded text to a K1EL WinKeyer, which does the timing itself.
+    <app-help-link-button section="s7-3" label="Help: WinKeyer" />
+  </div>
+
   @if (mode === 'embedded') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().winkeyerEnabled" [disabled]="unavailable"
@@ -22,9 +27,9 @@
     </label>
     <div class="keyer-hint">
       @if (s().winkeyerEnabled) {
-        WinKeyer output is on. If you leave this box unchecked it will be turned off.
+        WinKeyer output is on. Untick the box to turn it off.
       } @else {
-        Tick the box to choose its port, speed and direction.
+        Tick the box to set it up.
       }
     </div>
   }
@@ -54,6 +59,7 @@
         <option value="tx" [selected]="s().winkeyerForward === 'tx'">TX only &mdash; transmitted morse</option>
         <option value="both" [selected]="s().winkeyerForward === 'both'">Both RX and TX</option>
       </select>
+      <app-help-link-button section="s5-1" label="Help: RX and TX" />
     </label>
 
     <label>WinKeyer Port:
@@ -72,18 +78,6 @@
       <input type="number" min="5" max="99" [value]="s().winkeyerWpm" (change)="onWpmChange($event)">
     </label>
   }
-
-  <div class="cw-hint">
-    Forwards decoded text to a K1EL WinKeyer (WK2/WK3/WKUSB) device.
-    WinKeyer generates perfectly timed CW keying on its output &mdash; the host
-    sends plain ASCII characters and WinKeyer handles the morse timing internally.<br><br>
-    <strong>Connection:</strong> 1200 baud, 8N2. The WinKeyer appears as a virtual
-    COM port (USB-serial). Select which decoded text to forward: RX (received),
-    TX (transmitted by the encoder/keyer), or both.<br><br>
-    <strong>Use case:</strong> Re-key received or transmitted morse through a
-    WinKeyer for relay, practice, or driving an external transmitter with
-    clean timing.
-  </div>
 
   @if (winkeyerOutput.lastError()) {
     <div class="conflict-warning">{{ winkeyerOutput.lastError() }}</div>

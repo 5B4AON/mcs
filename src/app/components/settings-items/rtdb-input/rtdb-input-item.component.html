@@ -14,10 +14,8 @@
   </span>
 
   <div class="cw-hint">
-    Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
-    The secret is hidden on screen only, and channel values may be saved in this browser.
-    Don’t reuse sensitive credentials or send sensitive content.
-    <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
+    Plays letters from a shared channel. Needs internet.
+    <app-help-link-button section="s10-3" label="Help: Firebase input" />
   </div>
 
   @if (mode === 'embedded' && !forceEnabled) {
@@ -28,9 +26,9 @@
     </label>
     <div class="keyer-hint">
       @if (s().rtdbInputEnabled) {
-        Firebase input is on. If you leave this box unchecked it will be turned off.
+        Firebase input is on. Untick the box to turn it off.
       } @else {
-        Tick the box to enter the channel name and secret.
+        Tick the box to set it up.
       }
     </div>
   }
@@ -50,6 +48,7 @@
           <option value="rx">RX &mdash; received morse</option>
           <option value="tx">TX &mdash; transmitted morse</option>
         </select>
+        <app-help-link-button section="s5-1" label="Help: RX and TX" />
       </label>
     }
 
@@ -69,13 +68,8 @@
     </label>
 
     <div class="cw-hint">
-      Subscribe to a Firebase Realtime Database channel to receive morse letters
-      from remote stations. Letters arrive as already-decoded characters and are
-      fed into the encoder as if typed on the keyboard.<br><br>
-      Both sender and receiver must share the same <strong>Channel Name</strong>
-      and <strong>Channel Secret</strong>. Only the latest letter per channel
-      is written; the app does not automatically delete stored data.<br><br>
-      <strong>Requires an internet connection.</strong> Offline caching is disabled.
+      Anyone with these can join. Never use a real password.
+      <app-help-link-button section="s10-2" label="Help: Firebase channel privacy" />
     </div>
 
     <label class="checkbox-label">
@@ -83,12 +77,7 @@
              (change)="onBoolChange('rtdbInputOverrideWpm', $event)">
       Override remote WPM with local encoder WPM
     </label>
-    <div class="cw-hint">
-      Each character sent via RTDB carries the WPM speed that was used to
-      generate it. By default, received characters are played back at the
-      sender's original speed for realistic timing. Enable this option to
-      ignore the remote WPM and use your local Encoder WPM instead.
-    </div>
+    <div class="cw-hint">Plays at your own speed, not the sender's.</div>
 
     <div class="card-section-divider"></div>
 
@@ -98,7 +87,7 @@
              placeholder="empty = keep sender's name"
              maxlength="20">
     </label>
-    <div class="cw-hint">If set, replaces the incoming sender name. Leave empty to preserve the remote name.</div>
+    <div class="cw-hint">Replaces the sender's name. Leave empty to keep it.</div>
 
     <label>Override Color:
       <div class="card-color-row">
@@ -112,7 +101,7 @@
         <span class="card-color-preview" [style.color]="s().rtdbInputColor || 'inherit'">Sample</span>
       </div>
     </label>
-    <div class="cw-hint">If set, overrides the incoming colour. Leave cleared to use the sender's colour (or default RX/TX colour).</div>
+    <div class="cw-hint">Replaces the sender's colour. Leave empty to keep it.</div>
 
     @if (rtdbService.lastError()) {
       <div class="conflict-warning">{{ rtdbService.lastError() }}</div>

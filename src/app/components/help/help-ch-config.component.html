@@ -213,10 +213,10 @@
 <h2 id="s8-4">8.4 &nbsp;Text Blurring</h2>
 
 <p>
-  Found in <strong>Settings &rarr; Other</strong>. When enabled, decoded and/or
-  encoded text is blurred in both the main screen and fullscreen views,
-  turning Morse Code Studio into a copy-receiving trainer. You hear the
-  morse and write what you think was sent, then reveal the answer to check.
+  Found in <strong>Settings &rarr; Other</strong>. When this is on, text is
+  blurred on the main screen and in the full-screen views. It turns the app
+  into a copy trainer: you listen, write down what you heard, then reveal the
+  text to check.
 </p>
 
 <p>
@@ -242,36 +242,34 @@
 <h2 id="s8-5">8.5 &nbsp;Farnsworth / Wordsworth Timing</h2>
 
 <p>
-  Found in <strong>Settings &rarr; Other</strong>. Farnsworth timing is a
-  learning technique that sends individual characters at full speed (your
-  normal Encoder WPM) but inserts exaggerated pauses between characters and
-  words, lowering the <em>effective</em> speed. Named after Donald&nbsp;R.
-  &ldquo;Russ&rdquo; Farnsworth (W6TTB), it helps you recognise characters at
-  real operating speed while giving you extra time to process what you hear.
+  Found in <strong>Settings &rarr; Other</strong>. Farnsworth timing is a way
+  to learn Morse. Each letter is sent at full speed (your Encoder WPM), but
+  the pauses between letters and words are longer, so the overall
+  (<em>effective</em>) speed is lower. You learn the sound of letters at real
+  speed and still have time to think. It is named after Donald&nbsp;R.
+  &ldquo;Russ&rdquo; Farnsworth (W6TTB).
 </p>
 
 <p>
-  <strong>Wordsworth mode</strong> is a variation that keeps whole characters
-  <em>and</em> inter-character spacing at full speed and only stretches the gaps
-  between words. This is useful for operators who have achieved instant character
-  recognition but need a little more time to recognise each word.
+  <strong>Wordsworth mode</strong> makes only the pauses between
+  <em>words</em> longer. Letters and the gaps between letters stay at full
+  speed. It suits people who know every letter on sight but need a moment to
+  recognise each word.
 </p>
 
 <h3>Controls</h3>
 <ul>
-  <li><strong>Applies to</strong> &mdash; choose Both, RX Only, or TX Only (Both is the default). TX
-      affects the encoder and keyed outputs (sidetone, serial, MIDI, vibration).
-      RX affects playback of received characters (e.g.&nbsp;from Firebase RTDB).</li>
-  <li><strong>Mode: Effective WPM</strong> &mdash; set a target overall WPM
-      (5 to your encoder WPM). The app calculates the correct gap durations so
-      the average word throughput matches your target.</li>
-  <li><strong>Mode: Gap Multiplier</strong> &mdash; directly multiply gap
-      durations by a whole-number factor from 1&times; to 10&times;. Element durations
-      (dit, dah) are never changed.</li>
-  <li><strong>Wordsworth mode</strong> checkbox &mdash; when ticked, only the
-      word gaps are stretched; inter-character gaps remain at normal speed. In
-      Gap Multiplier mode the standard word gap (7 dits) is multiplied by 1 to 4
-      in steps of 0.5.</li>
+  <li><strong>Applies to</strong> &mdash; Both (the default), RX Only or TX Only.
+      TX covers the encoder and keyed outputs (sidetone, serial, MIDI,
+      vibration). RX covers playback of received letters (for example from
+      Firebase RTDB).</li>
+  <li><strong>Mode: Effective WPM</strong> &mdash; the overall speed you want,
+      from 5 up to your Encoder WPM. The app works out the pauses for you.</li>
+  <li><strong>Mode: Gap Multiplier</strong> &mdash; makes the pauses longer by a
+      factor from 1&times; to 10&times;. Dots and dashes never change.</li>
+  <li><strong>Wordsworth mode</strong> &mdash; when ticked, only the pauses
+      between words get longer. In Gap Multiplier mode the normal word pause
+      (7 dots long) is multiplied by 1 to 4, in steps of 0.5.</li>
 </ul>
 
 <p>
@@ -298,29 +296,40 @@
 <h2 id="s8-6">8.6 &nbsp;Show Prosigns</h2>
 
 <p>
-  Found in <strong>Settings &rarr; Other</strong>. When enabled, punctuation
-  characters that share morse patterns with prosigns are displayed as their
-  prosign names in the fullscreen conversation logs. For example,
-  <code>+</code> appears as <code>&lt;AR&gt;</code>, and <code>=</code>
-  appears as <code>&lt;BT&gt;</code>.
+  Found in <strong>Settings &rarr; Other</strong>. Some prosigns (procedural
+  signals, such as <code>&lt;AR&gt;</code> for &ldquo;end of message&rdquo;)
+  have the same Morse pattern as a punctuation mark. When this is on, the
+  full-screen conversation shows the prosign name instead of the punctuation
+  mark. For example, <code>+</code> appears as <code>&lt;AR&gt;</code>.
 </p>
+
+<table class="prosign-table">
+  <thead>
+    <tr><th>Punctuation</th><th>Prosign</th><th>Morse pattern</th><th>Meaning</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>+</strong></td><td><span class="prosign-example">&lt;AR&gt;</span></td><td><code>.-.-.</code></td><td>End of message</td></tr>
+    <tr><td><strong>&amp;</strong></td><td><span class="prosign-example">&lt;AS&gt;</span></td><td><code>.-...</code></td><td>Wait</td></tr>
+    <tr><td><strong>=</strong></td><td><span class="prosign-example">&lt;BT&gt;</span></td><td><code>-...-</code></td><td>Break / new paragraph</td></tr>
+    <tr><td><strong>(</strong></td><td><span class="prosign-example">&lt;KN&gt;</span></td><td><code>-.--.</code></td><td>Go ahead (one named station)</td></tr>
+  </tbody>
+</table>
+
 <p>
-  This is a <em>display-only</em> transformation &mdash; the application
-  continues to work with punctuation characters internally. The conversion
-  applies to the full-screen conversation window only;
-  main screen log panels show the raw punctuation. Prosigns that do not
-  share a pattern with punctuation (e.g. <code>&lt;SK&gt;</code>,
-  <code>&lt;HH&gt;</code>) are always shown in their prosign form
-  regardless of this setting.
+  This changes only what you see. The app still sends and receives the
+  punctuation mark. It applies to the full-screen conversation only; the
+  main screen shows the punctuation. Prosigns with no matching punctuation
+  (for example <code>&lt;SK&gt;</code> and <code>&lt;HH&gt;</code>) are always
+  shown as prosigns.
 </p>
 
 <!-- 8.7 Prosign Actions -->
 <h2 id="s8-7">8.7 &nbsp;Prosign Actions</h2>
 
 <p>
-  Found in <strong>Settings &rarr; Other</strong>. When the master toggle is
-  enabled, decoded prosigns automatically trigger formatting actions in the
-  fullscreen conversation logs.
+  Found in <strong>Settings &rarr; Other</strong>. When this is on, a decoded
+  prosign can change the full-screen text, for example start a new line or
+  clear the last word.
 </p>
 
 <p>
@@ -395,12 +404,11 @@
 <h2 id="s8-8">8.8 &nbsp;Emoji Replacements</h2>
 
 <p>
-  When enabled, emoji replacements substitute common morse abbreviations,
-  prosigns, Q-codes, and 92 codes with emoji graphics in the
-  <strong>fullscreen</strong> decoder and encoder conversation logs.
-  This adds visual context at a glance &mdash; a greeting, a farewell,
-  a signal report &mdash; without affecting the underlying text or
-  the morse encoding itself.
+  When this is on, common Morse short forms, prosigns, Q-codes and 92 codes
+  are shown as emoji in the <strong>full-screen</strong> conversation. This
+  gives a quick picture of a greeting, a farewell or a signal report. The
+  underlying text and the Morse are not changed. Emojis grow and shrink with
+  the conversation font size.
 </p>
 
 <p>

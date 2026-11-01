@@ -7,6 +7,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { WinkeyerOutputService } from '../../../services/winkeyer-output.service';
 import { ViewportService } from '../../../services/viewport.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -21,7 +22,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-winkeyer-item',
   standalone: true,
-  imports: [ItemShellComponent],
+  imports: [ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './winkeyer-item.component.html',
   styles: [':host { display: contents; }'],
 })

@@ -9,6 +9,7 @@ import { SerialKeyOutputService } from '../../../services/serial-key-output.serv
 import { ViewportService } from '../../../services/viewport.service';
 import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../settings-modal/serial-output-edit-modal/serial-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
@@ -23,7 +24,7 @@ import { MappingListComponent } from '../mapping/mapping-list/mapping-list.compo
 @Component({
   selector: 'app-serial-output-item',
   standalone: true,
-  imports: [ItemShellComponent, MappingListComponent, SerialOutputEditModalComponent],
+  imports: [ItemShellComponent, MappingListComponent, SerialOutputEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './serial-output-item.component.html',
   styles: [':host { display: contents; }'],
 })

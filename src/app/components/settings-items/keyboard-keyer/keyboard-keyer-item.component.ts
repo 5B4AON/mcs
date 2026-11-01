@@ -7,6 +7,7 @@ import { KeyboardInputMapping } from './keyboard-keyer-item.model';
 import { DecoderSource, PaddleMode } from '../../../services/settings-common';
 import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../settings-modal/keyboard-input-edit-modal/keyboard-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
@@ -23,7 +24,7 @@ import { MappingListComponent } from '../mapping/mapping-list/mapping-list.compo
 @Component({
   selector: 'app-keyboard-keyer-item',
   standalone: true,
-  imports: [ItemShellComponent, MappingListComponent, KeyboardInputEditModalComponent],
+  imports: [ItemShellComponent, MappingListComponent, KeyboardInputEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './keyboard-keyer-item.component.html',
   styles: [':host { display: contents; }'],
 })

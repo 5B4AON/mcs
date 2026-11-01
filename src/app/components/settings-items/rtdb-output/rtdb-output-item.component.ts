@@ -7,9 +7,9 @@ import { Component, Input, OnDestroy, OnInit, signal, computed, inject } from '@
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
-import { HelpLinkService } from '../../../services/help-link.service';
 import { ConfirmDialogComponent } from '../../confirm-dialog/confirm-dialog.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /** Text settings that the publisher needs; clearing one switches the output off. */
@@ -27,14 +27,11 @@ type RequiredKey = 'rtdbOutputChannelName' | 'rtdbOutputChannelSecret' | 'rtdbOu
 @Component({
   selector: 'app-rtdb-output-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent, BackCloseDirective],
+  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent, BackCloseDirective, HelpLinkButtonComponent],
   templateUrl: './rtdb-output-item.component.html',
   styles: [':host { display: contents; } .secret-mask { -webkit-text-security: disc; text-security: disc; }'],
 })
 export class RtdbOutputItemComponent implements OnInit, OnDestroy {
-  /** Help section targeted by the contextual Help link. */
-  readonly helpSection = 'ch10';
-
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
@@ -50,7 +47,6 @@ export class RtdbOutputItemComponent implements OnInit, OnDestroy {
   readonly s = this.scope.value;
 
   readonly rtdbService = inject(FirebaseRtdbService);
-  private readonly help = inject(HelpLinkService);
 
   /** Message of the "cannot enable yet" dialog; null when closed */
   readonly notice = signal<string | null>(null);
@@ -92,11 +88,6 @@ export class RtdbOutputItemComponent implements OnInit, OnDestroy {
     return !s.rtdbOutputEnabled
       && (!s.rtdbOutputChannelName.trim() || !s.rtdbOutputChannelSecret.trim()
         || (!s.rtdbOutputName.trim() && !this.suggestedName.trim()));
-  }
-
-  openHelp(event: Event): void {
-    event.preventDefault();
-    this.help.open(this.helpSection);
   }
 
   onForwardChange(event: Event): void {

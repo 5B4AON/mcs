@@ -8,6 +8,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
 import { AudioOutputService } from '../../../services/audio-output.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { StepperComponent } from '../stepper/stepper.component';
 import { playTestTone } from '../test-tone';
@@ -22,7 +23,7 @@ import { playTestTone } from '../test-tone';
 @Component({
   selector: 'app-sidetone-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, StepperComponent],
+  imports: [FormsModule, ItemShellComponent, StepperComponent, HelpLinkButtonComponent],
   templateUrl: './sidetone-item.component.html',
   styles: [':host { display: contents; } .amplitude-value { font-weight: 600; margin-top: .6rem; }'],
 })

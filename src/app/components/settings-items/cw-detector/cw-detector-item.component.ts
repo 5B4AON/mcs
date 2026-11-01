@@ -9,6 +9,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
 import { CwInputService, CwLevelEvent } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -22,7 +23,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-cw-detector-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './cw-detector-item.component.html',
   styles: [':host { display: contents; }'],
 })

@@ -9,6 +9,7 @@ import { SerialInputMapping } from '../../serial-input/serial-input-item.model';
 import { OutputForward } from '../../../../services/settings-common';
 import { SerialKeyOutputService } from '../../../../services/serial-key-output.service';
 import { SETTINGS_SCOPE } from '../../settings-scope';
+import { HelpLinkButtonComponent } from '../../help-link-button/help-link-button.component';
 
 /** Result of a validated serial output mapping edit (one mapping, ready to store). */
 export interface SerialOutputEditSaveEvent {
@@ -32,7 +33,7 @@ export interface SerialOutputEditSaveEvent {
 @Component({
   selector: 'app-serial-output-mapping-editor',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, HelpLinkButtonComponent],
   templateUrl: './serial-output-mapping-editor.component.html',
   styles: [':host { display: block; }'],
 })

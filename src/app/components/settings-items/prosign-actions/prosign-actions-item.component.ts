@@ -6,6 +6,7 @@ import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProsignAction, ProsignActionEntry } from './prosign-actions-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -18,7 +19,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-prosign-actions-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './prosign-actions-item.component.html',
   styles: [':host { display: contents; }'],
 })

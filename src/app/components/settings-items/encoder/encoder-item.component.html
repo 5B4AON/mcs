@@ -11,8 +11,8 @@
     </select>
   </label>
   <div class="keyer-hint">
-    <strong>Send on Enter</strong>: type your message first, and it is played as Morse when you press Enter
-    or the transmit button. <strong>Live</strong>: each letter is played as soon as you type it.
+    Send on Enter plays after you press Enter. Live plays each letter as you type.
+    <app-help-link-button section="s3-1" label="Help: sending modes" />
   </div>
 </app-item-shell>
 } @else {
@@ -20,11 +20,8 @@
   <span item-badges class="source-badge" [class.source-rx]="s().encoderSource === 'rx'" [class.source-tx]="s().encoderSource === 'tx'">{{ s().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
 
   <div class="cw-hint">
-    Text typed via the keyboard is encoded into Morse code and played
-    through all enabled outputs. Use the source selector below to tag
-    this text as received (RX) or transmitted (TX) — this controls
-    which outputs carry the signal and how it appears in conversation
-    views.
+    Plays the text you type as Morse.
+    <app-help-link-button section="s3-1" label="Help: typing and sending modes" />
   </div>
 
   <label>Used for:
@@ -32,6 +29,7 @@
       <option value="rx">RX &mdash; received morse</option>
       <option value="tx">TX &mdash; transmitted morse</option>
     </select>
+    <app-help-link-button section="s5-1" label="Help: RX and TX" />
   </label>
 
   <div class="card-section-divider"></div>
@@ -42,7 +40,7 @@
            placeholder="e.g. callsign (optional)"
            maxlength="20">
   </label>
-  <div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+  <div class="keyer-hint">Optional. A new name starts a new line.</div>
 
   <label>Color:
     <div class="card-color-row">
@@ -56,6 +54,6 @@
       <span class="card-color-preview" [style.color]="s().encoderColor || 'inherit'">Sample</span>
     </div>
   </label>
-  <div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+  <div class="keyer-hint">Optional. Colours this input's text.</div>
 </app-item-shell>
 }

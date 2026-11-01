@@ -67,7 +67,7 @@ export function farnsworthStep(options: FarnsworthStepOptions = {}): WizardStep 
   return {
     id: 'farnsworth',
     title: 'Farnsworth timing',
-    intro: options.intro ?? 'Optional. Farnsworth timing keeps each character at full speed but stretches the gaps between characters and words, so the Morse is easier to follow. Leave it off for normal timing.',
+    intro: options.intro ?? 'Optional. Makes the gaps longer so Morse is easier to follow.',
     helpSection: options.helpSection ?? 's8-5',
     when: options.when,
     items: [{ item: 'farnsworth', hint }],

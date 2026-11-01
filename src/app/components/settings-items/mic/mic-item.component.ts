@@ -10,6 +10,7 @@ import { AudioDeviceService } from '../../../services/audio-device.service';
 import { AudioInputService } from '../../../services/audio-input.service';
 import { AudioOutputService } from '../../../services/audio-output.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -23,7 +24,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-mic-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './mic-item.component.html',
   styles: [':host { display: contents; }'],
 })

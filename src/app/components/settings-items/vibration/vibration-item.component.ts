@@ -7,6 +7,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { VibrationOutputService } from '../../../services/vibration-output.service';
 import { ViewportService } from '../../../services/viewport.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -18,7 +19,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-vibration-item',
   standalone: true,
-  imports: [ItemShellComponent],
+  imports: [ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './vibration-item.component.html',
   styles: [':host { display: contents; }'],
 })

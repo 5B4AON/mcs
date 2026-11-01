@@ -22,12 +22,12 @@
   <tr>
     <td><strong>DC Offset</strong></td>
     <td>Steady DC voltage when keyed, zero when not keyed.</td>
-    <td>USB sound cards that pass DC. Simplest wiring — try this first.</td>
+    <td>Sound cards that pass DC (rare). Simplest wiring.</td>
   </tr>
   <tr>
     <td><strong>AC Tone</strong></td>
     <td>Square wave at the configured frequency when keyed.</td>
-    <td>Sound cards that block DC (capacitor-coupled outputs).</td>
+    <td>Most sound cards. They block DC, so use this mode.</td>
   </tr>
 </table>
 
@@ -73,13 +73,37 @@
       wiring.</li>
 </ul>
 
+<h3 id="s7-1-wiring">Wiring and low voltage</h3>
+<ul>
+  <li><strong>AC Tone wiring</strong> — Connect the sound card channel to the
+      optocoupler LED anode. Connect the cathode to the sound card ground.
+      Set the amplitude to 100%.</li>
+  <li><strong>Only 100–200 mV in DC Offset mode?</strong> Most sound cards
+      block DC with a small capacitor, so the output fades to nearly zero. This
+      is the hardware, not the app. Switch to AC Tone mode.</li>
+  <li><strong>Low voltage in AC Tone mode (under 2 V)?</strong> Headphone outputs
+      are often only 1–2 V, and the LED needs about 1.1 V. These steps help:
+    <ul>
+      <li>Remove any series resistor. The sound card already limits the
+          current, so connect the LED directly.</li>
+      <li>Add a bridge of four small Schottky diodes (for example BAT43). It
+          uses both halves of the wave and is the best fix.</li>
+      <li>Or use a transistor (2N2222 or BC547): base through 1&nbsp;kΩ from the
+          audio output, collector to the LED, then to a 5&nbsp;V supply, emitter
+          to ground. It works at any audio voltage.</li>
+      <li>A 1N4148 diode across the LED, facing the other way, protects it.</li>
+    </ul>
+  </li>
+</ul>
+
 <div class="example-box">
   <div class="example-title">Example — Simple DC wiring</div>
   <p>
     Get a PC817 or 4N25 optocoupler. Connect the sound card's audio output
     to the LED anode (pin 1) and GND to the cathode (pin 2). Connect the
-    phototransistor pins (4 and 5) to your radio's key jack. Set mode to
-    DC Offset, amplitude 100%. Click "Test Output" — your radio should key.
+    phototransistor pins (4 and 5) to your radio's key jack. Set the mode to
+    AC Tone (or DC Offset if your card passes DC) and the amplitude to 100%.
+    Click "Test Output" — your radio should key.
   </p>
 </div>
 

@@ -8,6 +8,11 @@
     }
   </span>
 
+  <div class="keyer-hint">
+    Use keyboard keys as a straight key or paddles.
+    <app-help-link-button section="s4-1" label="Help: keyboard keyer" />
+  </div>
+
   @if (mode === 'card') {
     <app-mapping-list [mappings]="s().keyboardInputMappings"
                       (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="keyboard-mapping-editor"
@@ -37,17 +42,12 @@
     </label>
     <div class="keyer-hint">
       @if (s().keyboardKeyerEnabled) {
-        Keyboard keying is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+        Keyboard keying is on. Untick the box to turn it off. Saved mappings are kept.
       } @else {
-        Tick the box to set up its mappings on the next pages.
+        Tick the box to set it up.
       }
     </div>
   }
-
-  <div class="keyer-hint">
-    Map one or more keyboard keys as a straight key or paddle.
-    Each paddle mapping has its own mode and independent keyer.
-  </div>
 </app-item-shell>
 
 <!-- Keyboard input edit modal (hosted here because it's triggered from this card) -->

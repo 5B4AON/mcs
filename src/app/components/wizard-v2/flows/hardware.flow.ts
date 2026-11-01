@@ -13,7 +13,7 @@ const HARDWARE_UNAVAILABLE = !MIDI_SUPPORTED && !SERIAL_SUPPORTED;
 const UNAVAILABLE_STEP: WizardStep = {
   id: 'unavailable',
   title: 'Not available on this device',
-  intro: 'This guide connects MIDI, WinKeyer and serial radio-keying hardware. This device and browser do not support any of them, so nothing here can be set up and nothing is changed. Choose Back to pick another goal, or close the guide.',
+  intro: 'This device cannot use MIDI, WinKeyer or serial keying. Nothing is changed. Choose Back to pick another goal.',
   validate: () => ['Not available on this device.'],
 };
 
@@ -38,7 +38,7 @@ export const HARDWARE_FLOW: WizardFlow = {
     {
       id: 'midiOut',
       title: 'MIDI output',
-      intro: 'Sends keying to a MIDI device. Tick the box to set up mappings on the next page, or leave it to skip this route.',
+      intro: 'Keys a MIDI device. Tick the box to set it up.',
       helpSection: 's7-4',
       items: [{ item: 'midi-output' }],
     },
@@ -60,14 +60,14 @@ export const HARDWARE_FLOW: WizardFlow = {
     {
       id: 'winkeyer',
       title: 'WinKeyer',
-      intro: 'Keys through a WinKeyer device, which times the Morse itself. Tick the box to choose its port and speed, or leave it to skip this route.',
+      intro: 'Keys through a WinKeyer device, which does the timing itself. Tick the box to set it up.',
       helpSection: 's7-3',
       items: [{ item: 'winkeyer' }],
     },
     {
       id: 'serialOut',
       title: 'Serial DTR/RTS keying',
-      intro: 'Keys a radio through a USB-serial adapter. Tick the box to set up mappings on the next page, or leave it to skip this route.',
+      intro: 'Keys a radio through a USB-serial adapter. Tick the box to set it up.',
       helpSection: 's7-2',
       items: [{ item: 'serial-output' }],
     },

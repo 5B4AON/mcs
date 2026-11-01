@@ -3,10 +3,8 @@
                 [enabled]="s().practiceEnabled"
                 (enabledChange)="onEnabledChange($event)">
   <div class="cw-hint">
-    Copy practice plays random Morse sequences for you to decode
-    by ear. When enabled, choose &ldquo;Practice&rdquo; in the encoder
-    mode dropdown, then press Start when you are ready. Choosing
-    Practice alone does not start a round.
+    Plays random Morse for you to copy by ear. Choose Practice mode, then press Start.
+    <app-help-link-button section="s3-5" label="Help: Copy practice" />
   </div>
 
   <!-- Content mode -->
@@ -95,16 +93,11 @@
   </label>
   <div class="cw-hint">
     @if (s().practiceFeedbackMode === 'listen') {
-      Listen only: audio plays and decoded text appears in the output area.
+      You hear it. Text appears as it plays.
     } @else if (s().practiceFeedbackMode === 'blur') {
-      Blurred: audio plays and decoded text appears blurred. Use the reveal button to peek.
+      Text is blurred. Hold the eye button to peek.
     } @else {
-      Type-along: audio plays with text blurred. Type what you hear in
-      the input box, then validate your answer when the sequence ends.
-    }
-    @if (s().practiceFeedbackMode !== 'typealong') {
-      Typing is unavailable in Listen and Blurred practice so the answer
-      stays hidden. Choose Type-along to enter what you hear.
+      Type what you hear, then check it.
     }
   </div>
 
@@ -117,18 +110,11 @@
         }
       </select>
     </label>
-    <div class="cw-hint">
-      Choose 2 to 5 rounds for a short Type-along session. The first Enter
-      shows a session briefing; after the final round, you can view each
-      round's score and the average.
-    </div>
+    <div class="cw-hint">More than one round gives a score for each round and an average.</div>
   }
 
   @if (forceLocalPipeline) {
-    <div class="cw-hint">
-      This guide keeps practice local. It will not drive serial, MIDI,
-      WinKeyer or RTDB outputs.
-    </div>
+    <div class="cw-hint">This guide keeps practice on this device.</div>
   } @else {
     <!-- Pipeline -->
     <label>
@@ -140,17 +126,16 @@
     </label>
     <div class="cw-hint">
       @if (s().practicePipeline === 'local') {
-        Practice audio and vibration are played locally only &mdash; serial,
-        MIDI, WinKeyer, and RTDB outputs are not driven.
+        Plays on this device only.
       } @else {
-        Practice uses configured audio, serial, MIDI, RTDB, and vibration
-        outputs through the full output pipeline.
+        Also sends to your switched-on outputs.
       }
+      <app-help-link-button section="s3-5" label="Help: practice and outputs" />
     </div>
   }
 
   @if (forceReceivedMorse) {
-    <div class="cw-hint">Practice receives decoded Morse (RX).</div>
+    <div class="cw-hint">Practice plays as received Morse (RX).</div>
   } @else {
     <!-- Direction (RX/TX) -->
     <label>

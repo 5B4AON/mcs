@@ -14,10 +14,8 @@
   </span>
 
   <div class="cw-hint">
-    Firebase RTDB uses the channel name and secret together as a database path—not as protected account credentials.
-    The secret is hidden on screen only, and channel values may be saved in this browser.
-    Don’t reuse sensitive credentials or send sensitive content.
-    <a [href]="'#' + helpSection" (click)="openHelp($event)">Read Firebase Help</a>.
+    Sends the letters you decode to a shared channel. Needs internet.
+    <app-help-link-button section="s10-4" label="Help: Firebase output" />
   </div>
 
   @if (mode === 'embedded' && !forceEnabled) {
@@ -28,9 +26,9 @@
     </label>
     <div class="keyer-hint">
       @if (s().rtdbOutputEnabled) {
-        Firebase output is on. If you leave this box unchecked it will be turned off.
+        Firebase output is on. Untick the box to turn it off.
       } @else {
-        Tick the box to enter the channel name, secret and your name.
+        Tick the box to set it up.
       }
     </div>
   }
@@ -45,6 +43,7 @@
           <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
           <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
         </select>
+        <app-help-link-button section="s5-1" label="Help: RX and TX" />
       </label>
     }
 
@@ -68,6 +67,10 @@
              placeholder="shared secret"
              maxlength="50">
     </label>
+    <div class="cw-hint">
+      Anyone with these can join. Never use a real password.
+      <app-help-link-button section="s10-2" label="Help: Firebase channel privacy" />
+    </div>
 
     <label [class.field-invalid]="!s().rtdbOutputName.trim() && !suggestedName.trim()">Name@if (!suggestedName) {<span class="required-mark">*</span>}:
       <input type="text" [value]="s().rtdbOutputName"
@@ -84,7 +87,7 @@
              (change)="onBoolChange('rtdbOutputOverrideName', $event)">
       Always use this name (override input-specific names)
     </label>
-    <div class="cw-hint">When unchecked, input-specific names (e.g. from Mouse Keyer or CW Detector) are sent if defined; otherwise this name is used as fallback.</div>
+    <div class="cw-hint">Off: an input's own name is used first. This name fills in when it has none.</div>
 
     <label>Color:
       <div class="card-color-row">
@@ -104,7 +107,7 @@
              (change)="onBoolChange('rtdbOutputOverrideColor', $event)">
       Always use this color (override input-specific colors)
     </label>
-    <div class="cw-hint">When unchecked, input-specific colors are sent if defined; otherwise this color is used as fallback.</div>
+    <div class="cw-hint">Off: an input's own colour is used first. This colour fills in when it has none.</div>
 
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbAllowInputRelay && !isSameChannel()"
@@ -113,15 +116,11 @@
       Allow relay from RTDB input to RTDB output
     </label>
     @if (isSameChannel()) {
-      <div class="cw-hint">
-        Relay is not available when input and output use the same channel and
-        secret, as this would create a feedback loop.
-      </div>
+      <div class="cw-hint">Not available: the input and output use the same channel, which would loop.</div>
     } @else {
       <div class="cw-hint">
-        Enable when RTDB input and output use different channel/secret
-        combinations. Characters received on the input channel will be
-        relayed to the output channel.
+        Passes Morse received on the input to the output channel.
+        <app-help-link-button section="s10-6" label="Help: relaying between channels" />
       </div>
     }
 
@@ -131,25 +130,8 @@
                (change)="onBoolChange('rtdbRelaySuppressOtherInputs', $event)">
         Suppress other inputs
       </label>
-      <div class="cw-hint">
-        When enabled, only characters received from the RTDB input channel
-        are forwarded to RTDB output. All other local input paths are
-        suppressed.
-      </div>
+      <div class="cw-hint">Sends only relayed Morse. Everything else is held back.</div>
     }
-
-    <div class="cw-hint">
-      Publishes decoded morse characters to a Firebase Realtime Database channel.
-      Remote stations subscribed to the same channel and secret will receive
-      each letter as it is decoded.<br><br>
-      <strong>User Name</strong> is attached to each posted letter (typically your
-      callsign). Select which decoded text to forward: RX (received), TX
-      (transmitted by the encoder/keyer), or both.<br><br>
-      Only the <strong>latest letter</strong> per channel is written; the app
-      does not automatically clean up stored data. See the project README for
-      developer guidance on security and data retention.<br><br>
-      <strong>Requires an internet connection.</strong> Offline caching is disabled.
-    </div>
 
     @if (rtdbService.lastError()) {
       <div class="conflict-warning">{{ rtdbService.lastError() }}</div>

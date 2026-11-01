@@ -4,6 +4,13 @@
                 (enabledChange)="scope.update({ sidetoneEnabled: $event })">
   <span item-badges class="source-badge" [class.source-rx]="s().sidetoneForward === 'rx'" [class.source-tx]="s().sidetoneForward === 'tx'" [class.source-both]="s().sidetoneForward === 'both'">{{ s().sidetoneForward === 'rx' ? 'RX' : s().sidetoneForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
 
+  @if (mode === 'card') {
+    <div class="cw-hint">
+      The beep you hear while Morse is sent or played.
+      <app-help-link-button section="s7-5" label="Help: sidetone" />
+    </div>
+  }
+
   <label>Active on:
     <select [value]="s().sidetoneForward"
             (change)="onSettingChange('sidetoneForward', $event)">
@@ -11,6 +18,7 @@
       <option value="tx" [selected]="s().sidetoneForward === 'tx'">TX only &mdash; transmitted morse</option>
       <option value="rx" [selected]="s().sidetoneForward === 'rx'">RX only &mdash; received morse</option>
     </select>
+    <app-help-link-button section="s5-1" label="Help: RX and TX" />
   </label>
 
   <label>Audio Device:
@@ -36,7 +44,6 @@
   </label>
 
   <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
-  <div class="cw-hint">How loud the sidetone is, from silent to max.</div>
   <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
                label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 
@@ -46,6 +53,6 @@
     </button>
   } @else {
     <button type="button" (click)="testDraft()" class="settings-pill-btn">Test Output (1s)</button>
-    <div class="keyer-hint">The test plays your choices above on their own; nothing is applied yet.</div>
+    <div class="keyer-hint">Test only. Nothing is applied yet.</div>
   }
 </app-item-shell>

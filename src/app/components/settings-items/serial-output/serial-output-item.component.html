@@ -16,6 +16,11 @@
     }
   </span>
 
+  <div class="keyer-hint">
+    Keys a radio through a USB-serial adapter's DTR or RTS pin.
+    <app-help-link-button section="s7-2" label="Help: serial output" />
+  </div>
+
   @if (!webSerialSupported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
@@ -69,18 +74,12 @@
     </label>
     <div class="keyer-hint">
       @if (s().serialEnabled) {
-        Serial output is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+        Serial output is on. Untick the box to turn it off. Saved mappings are kept.
       } @else {
-        Tick the box to set up its mappings on the next pages.
+        Tick the box to set it up.
       }
     </div>
   }
-
-  <div class="keyer-hint">
-    Connects to a USB-serial adapter (e.g. FTDI, CH340, CP2102).
-    DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.
-    Each mapping specifies its own port, output pin, and forward direction.
-  </div>
 </app-item-shell>
 
 <!-- Serial output edit modal (hosted here because it is opened from this card) -->

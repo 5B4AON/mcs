@@ -14,6 +14,7 @@ import { MidiInputService } from '../../../services/midi-input.service';
 import { ViewportService } from '../../../services/viewport.service';
 import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../settings-modal/midi-input-edit-modal/midi-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
@@ -30,7 +31,7 @@ import { MappingListComponent } from '../mapping/mapping-list/mapping-list.compo
 @Component({
   selector: 'app-midi-input-item',
   standalone: true,
-  imports: [ItemShellComponent, MappingListComponent, MidiInputEditModalComponent],
+  imports: [ItemShellComponent, MappingListComponent, MidiInputEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './midi-input-item.component.html',
   styles: [':host { display: contents; }'],
 })

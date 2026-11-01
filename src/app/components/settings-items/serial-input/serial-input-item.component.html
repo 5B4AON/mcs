@@ -16,6 +16,11 @@
     }
   </span>
 
+  <div class="keyer-hint">
+    Reads a key or paddles wired to a USB-serial adapter.
+    <app-help-link-button section="s6-3" label="Help: serial input" />
+  </div>
+
   @if (!webSerialSupported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
@@ -79,18 +84,12 @@
     </label>
     <div class="keyer-hint">
       @if (s().serialInputEnabled) {
-        Serial input is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+        Serial input is on. Untick the box to turn it off. Saved mappings are kept.
       } @else {
-        Tick the box to set up its mappings on the next pages.
+        Tick the box to set it up.
       }
     </div>
   }
-
-  <div class="keyer-hint">
-    Connect a straight key or paddles via a USB-serial adapter (FTDI, CH340, CP2102).
-    Each mapping specifies its own port, pin assignment, and polling parameters.
-    Wire your key between the adapter&rsquo;s signal pin and ground.
-  </div>
 </app-item-shell>
 
 <!-- Serial input edit modal (hosted here because it is opened from this card) -->

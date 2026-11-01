@@ -66,7 +66,7 @@
   <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>cw-audio-input.mmd</code></p>
 </figure>
 
-<h3>Settings</h3>
+<h3 id="s6-1-settings">Settings</h3>
 <ul>
   <li><strong>Audio Input Device</strong> — The sound card receiving radio
       audio.</li>
@@ -680,13 +680,16 @@
   unreliable on some hardware.
 </p>
 
-<h3>How It Works</h3>
+<h3 id="s6-4-how">How It Works</h3>
 <ol>
   <li>The application sends a constant high-frequency tone (default 18 kHz —
       inaudible to most people) out of one audio channel to a simple external
       circuit.</li>
   <li>The circuit routes the tone through your Morse key and into the mic
       input.</li>
+  <li>Wire the sound card channel that carries the pilot tone through a
+      10&nbsp;kΩ resistor to a junction. Connect the junction to the microphone
+      input, and connect your Morse key from the junction to ground.</li>
   <li>When the key is closed, the tone reaches the microphone. When the key
       is open — silence. A Goertzel filter detects the tone with high
       precision.</li>
@@ -733,7 +736,7 @@
 </p>
 
 <div class="example-box">
-  <div class="example-title">Calibrating the threshold</div>
+  <div class="example-title" id="s6-4-calibration">Calibrating the threshold</div>
   <p>
     1. Click <strong>Start Audio</strong>.
     2. Ensure your key is <em>open</em> (not pressed) and click
