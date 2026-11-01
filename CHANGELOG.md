@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-11-01
+
+### Changed
+
+- **Main-screen top bar matches the full-screen bar** — The bar on the main screen now has the same height (48 px minimum), background, bottom border and spacing above and below the buttons as the full-screen bar, and sits flush at the top of the screen. The bar no longer appears to shift or resize when you switch between the main screen and full screen. It uses less vertical space, so the cards and the sprite below move up and the sprite can use the extra room. (#109)
+- **Smaller gap under the top bar** — The space between the top bar and the first card on the main screen is half of what it was (also in short landscape). (#109)
+- **RTDB status icon** — The RTDB icon in the main bar is the same size as in the full-screen bar (16 px icon, 6 px label), so it no longer looks smaller after switching to full screen. (#109)
+
 ## [2.5.0] - 2026-11-01
 
 ### Added
