@@ -166,3 +166,82 @@
   <strong>Safari 16.4+</strong> (including iOS). If the browser lacks
   support, a note is shown when the card is expanded.
 </p>
+
+<!-- 9.7 Using Morse Code Studio on iPhone -->
+<h2 id="s9-7">9.7 &nbsp;Using Morse Code Studio on iPhone</h2>
+
+<p>
+  Morse Code Studio runs on iPhone. The sections below cover what is
+  different there.
+</p>
+
+<h3>Which browser to use</h3>
+<p>
+  <strong>Chrome</strong> is recommended for everyday use. Every browser on
+  iPhone, Chrome included, is built on Apple's WebKit, so the features
+  available are the same as in Safari. Only <strong>Safari</strong> can
+  install the app as a full-screen app (see 9.2); Chrome's "Add to Home
+  Screen" makes a shortcut that opens inside Chrome.
+</p>
+
+<h3>Starting and resuming audio</h3>
+<ul>
+  <li>Press the <strong>Start audio</strong> button. iOS only allows sound to
+      start after a touch, so the app never starts audio by itself without
+      one.</li>
+  <li>After a phone call, an app switch or a page refresh, iOS pauses web
+      audio. The status line then reads <strong>Audio is paused</strong>.
+      The app retries by itself; if iOS still refuses, <strong>tap anywhere
+      on the page or press a key</strong> (or tap <strong>Tap to resume
+      audio</strong>) and audio continues.</li>
+</ul>
+
+<h3>No sound?</h3>
+<p>
+  The <strong>ring/silent switch</strong> on the side of an iPhone can mute
+  web audio. A web page cannot detect this switch, so the app cannot warn you
+  when it is set to silent. If audio is running but you hear nothing, flip
+  the switch so the orange mark is hidden and raise the volume. When no
+  microphone input is in use, the app asks iOS to play sound like a media
+  player, which usually avoids the problem, but not on every iOS version.
+</p>
+
+<h3>What is not available on iPhone</h3>
+<p>
+  iPhone browsers do not offer these features, so their cards in Settings
+  show <strong>Not available on this device</strong> and cannot be switched
+  on:
+</p>
+<ul>
+  <li><strong>MIDI</strong> input and output (no Web MIDI).</li>
+  <li><strong>Serial</strong> input and output and <strong>WinKeyer</strong>
+      (no Web Serial).</li>
+  <li><strong>Vibration</strong> (no Vibration API).</li>
+</ul>
+<p>
+  The Setup Wizard follows suit: the <em>MIDI keyer</em> choice in the send
+  guide is greyed out, and the <em>Connect output hardware</em> guide only
+  explains that nothing can be set up here. Keyboard, mouse, touch and
+  straight-key sprite keying, the sidetone, the CW tone detector, the
+  microphone key and the online relay are available.
+</p>
+
+<h3>Keyboard, notch and rotation</h3>
+<ul>
+  <li>Dialogs follow the visible screen, so a field you tap stays above the
+      on-screen keyboard and no empty gap is left when the keyboard closes.
+      Content stays clear of the notch and the home bar, also when you rotate
+      the phone.</li>
+  <li>Text fields use at least 16 px type, so iOS does not zoom the page when
+      you tap one. Pinch-zoom still works.</li>
+  <li>Long-pressing the key sprite or the on-screen touch keys keys Morse; it
+      does not open a copy or selection menu. Text areas stay selectable.</li>
+</ul>
+
+<h3>Keeping the screen on and the relay</h3>
+<p>
+  Screen Wake Lock works on iOS 16.4 and later (see 9.6). When you switch to
+  another app or lock the phone, iOS can pause sound and network connections,
+  including the online relay, until you return. Keep the app in the foreground
+  during a session.
+</p>

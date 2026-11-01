@@ -80,7 +80,8 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 - **Copy Practice** — Built-in CW copy trainer. The app plays random Morse sequences (characters, words, or callsigns) and scores Type-along input with per-character colour-coded feedback and accuracy percentage. Three feedback modes (listen only, blurred reveal, type-along), optional 2–5 round Type-along sessions with a transient results summary, and a local/full pipeline selector support solo or externally routed practice.
 - **Haptic Vibration** — The device vibrates in sync with the sidetone while the key is down. Configurable for TX only, RX only, or both. Enhanced haptic timing compensates for Android motor spin-up latency. Android only (Chrome, Firefox, Edge).
 - **Screen Wake Lock** — Prevents the screen from locking during operation. Important on mobile where screen lock suspends network connectivity, interrupting Firebase relay. Uses the Screen Wake Lock API (Chrome 84+, Edge 84+, Safari 16.4+).
-- **Progressive Web App** — Installable as a standalone app on desktop (Chrome, Edge) and mobile (Android Chrome, iOS Safari). The Angular service worker caches the app shell and assets for offline access.
+- **Progressive Web App** — Installable as a standalone app on desktop (Chrome, Edge) and mobile (Android Chrome, iOS Safari). The Angular service worker caches the app shell and assets for offline access. A short install hint in the Try Morse guide appears only when the app is not yet installed.
+- **iPhone support** — The layout follows the visible screen on iPhone (on-screen keyboard, notch, rotation), audio resumes after iOS pauses it, and features iPhone browsers lack are shown as "Not available on this device". All iPhone-specific behaviour is switched on only by an iOS capability check, so Android and desktop are unchanged.
 
 ## Getting Started
 
@@ -98,6 +99,7 @@ Every output (optocoupler, serial port, WinKeyer, sidetone, vibration, Firebase 
 | Edge    | Yes | Full support including Web Serial and Web MIDI |
 | Firefox | Partial | No Web Serial or Web MIDI — serial/MIDI unavailable |
 | Safari  | Partial | No Web Serial or Web MIDI — serial/MIDI unavailable |
+| Chrome on iPhone | Partial | Built on Apple's WebKit, so it behaves like Safari: no Web Serial, Web MIDI or vibration (those cards show "Not available on this device"). Audio resumes after a tap when iOS pauses it, and the ring/silent switch can mute sound. Install the full-screen app from Safari. See Help → Install & Offline Use → Using Morse Code Studio on iPhone |
 
 
 ## AI-Generation Notice
