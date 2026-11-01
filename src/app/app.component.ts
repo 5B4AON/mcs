@@ -707,7 +707,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     } else if (this.showWizard) {
       if (this.wizardRef?.onMappingPage || this.wizardRef?.hasDraft()) {
         // Back was pressed with unapplied answers: keep the wizard and ask first.
-        this.pushModalState('wizard');
+        // Step forward onto the entry Back just left: a pushState inside popstate may be skipped by the next Back
+        this.restoreModalState();
         this.wizardRef.askDiscard();
       } else {
         this.showWizard = false;
