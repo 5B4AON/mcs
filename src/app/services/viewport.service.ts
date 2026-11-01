@@ -46,7 +46,9 @@ export interface SafeAreaInsets {
  * offset, scrolls the page back to the top. It never scrolls to
  * `scrollHeight`. Android and desktop never run it.
  *
- * Publishing the viewport values changes no layout by itself.
+ * Safe areas: on iOS the service also adds `viewport-fit=cover` to the
+ * viewport meta, so the `--safe-*` insets are real; `src/viewport.css` pads
+ * the shell, overlays and dialogs with them (iOS only).
  */
 @Injectable({ providedIn: 'root' })
 export class ViewportService implements OnDestroy {
@@ -76,6 +78,7 @@ export class ViewportService implements OnDestroy {
   constructor(private zone: NgZone) {
     this.iosLayout = ViewportService.detectIos();
     document.documentElement.classList.toggle('ios-layout', this.iosLayout);
+    if (this.iosLayout) ViewportService.enableViewportFitCover();
     this.update();
 
     // Listeners run outside Angular's zone: only signal changes should trigger change detection.
@@ -115,6 +118,19 @@ export class ViewportService implements OnDestroy {
       this.frame = 0;
       this.update();
     });
+  }
+
+  /**
+   * Lets the page extend under the notch and home indicator so the safe-area
+   * insets become real values. Added from code on iOS only, so the viewport
+   * of Android and desktop stays exactly as declared in index.html.
+   */
+  private static enableViewportFitCover(): void {
+    const meta = document.querySelector('meta[name="viewport"]');
+    const content = meta?.getAttribute('content') ?? '';
+    if (meta && !content.includes('viewport-fit')) {
+      meta.setAttribute('content', `${content}, viewport-fit=cover`);
+    }
   }
 
   private scheduleKeyboardReset(): void {

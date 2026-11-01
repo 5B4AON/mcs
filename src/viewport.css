@@ -65,3 +65,91 @@ html.ios-layout :is(.confirm-dialog, .emoji-edit-dialog) {
   max-height: 100%;
   overflow-y: auto;
 }
+
+/*
+ * iOS only: page height and safe areas. `viewport-fit=cover` is added to the
+ * viewport meta by ViewportService on iOS only, so the safe-area insets are
+ * non-zero only there (notch, home indicator, landscape side cutouts).
+ * Android keeps its existing 100vh / 100dvh rules.
+ */
+html.ios-layout,
+html.ios-layout body {
+  min-height: 100dvh;
+}
+
+/* Main shell: same padding as the component rules (1.5rem; .6rem/.5rem at 480px; .4rem/.5rem short landscape), never under a cutout */
+html.ios-layout app-root {
+  padding:
+    max(1.5rem, var(--safe-top))
+    max(1.5rem, var(--safe-right))
+    max(1.5rem, var(--safe-bottom))
+    max(1.5rem, var(--safe-left));
+}
+@media (max-width: 480px) {
+  html.ios-layout app-root {
+    padding:
+      max(.6rem, var(--safe-top))
+      max(.5rem, var(--safe-right))
+      max(.6rem, var(--safe-bottom))
+      max(.5rem, var(--safe-left));
+  }
+}
+@media (max-height: 500px) and (orientation: landscape) {
+  html.ios-layout app-root {
+    padding:
+      max(.4rem, var(--safe-top))
+      max(.5rem, var(--safe-right))
+      max(.4rem, var(--safe-bottom))
+      max(.5rem, var(--safe-left));
+  }
+}
+
+/* Fullscreen view: the conversation and toolbar stay inside the safe area */
+html.ios-layout .fs-modal-overlay {
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+
+/* Modal overlays: keep each frame's usual gap, but never closer to the edge than the safe area */
+html.ios-layout :is(.settings-overlay, .wizard-overlay, .settings-transfer-overlay) {
+  padding:
+    max(1rem, var(--safe-top))
+    max(1rem, var(--safe-right))
+    max(1rem, var(--safe-bottom))
+    max(1rem, var(--safe-left));
+}
+html.ios-layout :is(.scan-results-overlay, .confirm-overlay, .md-overlay, .emoji-edit-overlay) {
+  padding:
+    max(1.5rem, var(--safe-top))
+    max(1.5rem, var(--safe-right))
+    max(1.5rem, var(--safe-bottom))
+    max(1.5rem, var(--safe-left));
+}
+html.ios-layout .emoji-picker-overlay {
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+@media (max-width: 480px) {
+  /* Settings is full-screen here: the frame fills the safe area */
+  html.ios-layout .settings-overlay {
+    padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+  }
+  html.ios-layout :is(.wizard-overlay, .settings-transfer-overlay) {
+    padding:
+      max(.75rem, var(--safe-top))
+      max(.75rem, var(--safe-right))
+      max(.75rem, var(--safe-bottom))
+      max(.75rem, var(--safe-left));
+  }
+}
+
+/* Help and Symbols: full-page overlays with fixed buttons */
+html.ios-layout :is(.help-overlay, .ref-overlay) {
+  padding: var(--safe-top) var(--safe-right) var(--safe-bottom) var(--safe-left);
+}
+html.ios-layout :is(.help-close-btn, .ref-close-btn) {
+  top: calc(14px + var(--safe-top));
+  right: calc(18px + var(--safe-right));
+}
+html.ios-layout :is(.help-home-btn, .ref-home-btn) {
+  bottom: calc(20px + var(--safe-bottom));
+  right: calc(20px + var(--safe-right));
+}
