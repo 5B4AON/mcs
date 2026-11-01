@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.0] - 2026-11-01
+
+### Added
+
+- **Trivia cards in Help** — Help has a new "Did you know?" card style with a yellow accent, a lightbulb icon and a short title, so short Morse code stories stand apart from examples and notes. There are 19 cards spread through the chapters, each of 2–4 short sentences: the first long-distance message (1844), the "fist" every operator has, why PARIS measures speed, why E is a single dit, how SOS differs from CQD, callsign prefixes, the Koch method, straight keys, bugs and "iambic" paddles, left- and right-handed keying, why Morse is called CW, Morse by light, sound or touch, QRP low-power operating, the "Victorian Internet", Morse in aircraft navigation beacons, what AR, SK, BT and KN meant, 73, 88 and CQ, American versus International Morse, and the end of SOS at sea. (#115)
+
+### Changed
+
+- **Farnsworth story** — The note about Donald R. "Russ" Farnsworth (W6TTB) in Help 8.5 moved out of the instructions into a trivia card. (#115)
+
 ## [2.7.4] - 2026-11-01
 
 ### Changed
