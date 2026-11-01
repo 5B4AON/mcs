@@ -1,7 +1,8 @@
 ﻿:host {
+  --shell-pad-x: 1.5rem;
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
+  padding: 0 var(--shell-pad-x) 1.5rem;
   max-width: 940px;
   margin: 0 auto;
   min-height: 100vh;
@@ -16,11 +17,16 @@
   flex: 1;
 }
 
+/* Same look and spacing as .fs-toolbar so the bar does not shift when entering full screen */
 .app-header {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 0 0 1rem;
+  min-height: 48px;
+  margin: 0 calc(-1 * var(--shell-pad-x)) .5rem;
+  padding: .3rem 10px;
+  background: #111120;
+  border-bottom: 1px solid #333;
 }
 
 .app-header h1 {
@@ -1213,7 +1219,7 @@
   align-items: center;
   justify-content: center;
   color: #556;
-  margin-right: .4rem;
+  margin-right: .3rem;
   flex-shrink: 0;
   line-height: 1;
   transition: color .3s;
@@ -1225,7 +1231,7 @@
   display: block;
 }
 .rtdb-label {
-  font-size: 7px;
+  font-size: 6px;
   font-weight: 700;
   letter-spacing: .5px;
   margin-top: 1px;
@@ -1342,9 +1348,13 @@ select { max-width: 300px; }
    ============================================================ */
 @media (max-width: 480px) {
   :host {
-    padding: 0.6rem 0.5rem;
+    --shell-pad-x: 0.5rem;
+    padding: 0 var(--shell-pad-x) 0.6rem;
   }
 
+  .app-header {
+    padding: .2rem 10px;
+  }
   .app-header h1 {
     font-size: 0.88rem;
     letter-spacing: 0;
@@ -1402,11 +1412,13 @@ select { max-width: 300px; }
    ============================================================ */
 @media (max-height: 500px) and (orientation: landscape) {
   :host {
-    padding: 0.4rem 0.5rem;
+    --shell-pad-x: 0.5rem;
+    padding: 0 var(--shell-pad-x) 0.4rem;
   }
 
   .app-header {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.25rem;
+    padding: .15rem 10px;
   }
   .app-header h1 {
     font-size: 1rem;
