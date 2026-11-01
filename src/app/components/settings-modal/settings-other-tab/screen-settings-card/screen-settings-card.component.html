@@ -1,0 +1,64 @@
+<!-- Screen Settings: Keep screen on (wake lock) and Auto full screen (browser) -->
+<app-item-shell cardId="screen-settings-card" title="Screen Settings">
+  <div class="screen-row">
+    <span class="screen-name">Keep screen on</span>
+    <app-help-link-button section="s9-6-wake-lock" label="Help: Keep screen on" />
+    <label class="toggle-switch">
+      <input type="checkbox" aria-label="Keep screen on"
+             [checked]="settings.settings().wakeLockEnabled"
+             [disabled]="!wakeLock.supported && !settings.settings().wakeLockEnabled"
+             (change)="onWakeLockChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <div class="cw-hint">
+    Stops the screen from locking while the app is open.
+    @if (!wakeLock.supported) {
+      <div class="screen-status"><strong>Not available on this device.</strong></div>
+    } @else if (settings.settings().wakeLockEnabled) {
+      <div class="screen-status">
+        @if (wakeLock.active) {
+          <strong>Active</strong>
+        } @else {
+          <strong>Not active yet</strong> — the app keeps trying.
+          @if (wakeLock.lastError(); as reason) {
+            <br>{{ reason }}
+          }
+          <br><button type="button" class="pill-btn pill-accent" (click)="wakeLock.acquire()">Keep screen on</button>
+        }
+      </div>
+    }
+  </div>
+
+  <div class="screen-row">
+    <span class="screen-name">Auto full screen</span>
+    <app-help-link-button section="s9-6-auto-fullscreen" label="Help: Auto full screen" />
+    <label class="toggle-switch">
+      <input type="checkbox" aria-label="Auto full screen"
+             [checked]="settings.settings().autoFullscreen"
+             [disabled]="!fullscreen.supported && !settings.settings().autoFullscreen"
+             (change)="onAutoFullscreenChange($event)">
+      <span class="toggle-slider"></span>
+    </label>
+  </div>
+  <div class="cw-hint">
+    Shows the browser in full screen, after a tap or key press.
+    @if (!fullscreen.supported) {
+      <div class="screen-status"><strong>Not available on this device.</strong></div>
+    } @else if (settings.settings().autoFullscreen) {
+      <div class="screen-status">
+        @if (fullscreen.installed) {
+          <strong>Not needed:</strong> the installed app is already full screen.
+        } @else if (fullscreen.isFullscreen()) {
+          <strong>Full screen</strong>
+        } @else {
+          <strong>Not full screen</strong>
+          @if (fullscreen.lastError(); as reason) {
+            — {{ reason }}
+          }
+          <br><button type="button" class="pill-btn pill-accent" (click)="fullscreen.retry()">Go full screen</button>
+        }
+      </div>
+    }
+  </div>
+</app-item-shell>

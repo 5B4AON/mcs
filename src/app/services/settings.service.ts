@@ -65,7 +65,7 @@ export type InputPath =
 /**
  * Settings that no single item owns: the speeds shared by the decoders,
  * encoder and keyers, the global paddle mode, the fullscreen display and the
- * screen wake lock.
+ * screen settings (wake lock, auto full screen).
  */
 export interface CommonSettings {
   // --- Speeds (decoders, encoder, keyers) ---
@@ -99,9 +99,11 @@ export interface CommonSettings {
   /** Colour of the character being transmitted */
   fullscreenSendingForeground: string;
 
-  // --- Screen Wake Lock ---
+  // --- Screen settings ---
   /** Keep the screen active to prevent idle sleep (mobile devices) */
   wakeLockEnabled: boolean;
+  /** Put the browser page into full screen (Fullscreen API), not the app's fullscreen view */
+  autoFullscreen: boolean;
 }
 
 const COMMON_DEFAULTS: CommonSettings = {
@@ -125,6 +127,7 @@ const COMMON_DEFAULTS: CommonSettings = {
   fullscreenSendingForeground: '#ffff00',
 
   wakeLockEnabled: false,
+  autoFullscreen: false,
 };
 
 const COMMON_FIELD_RULES: SettingsFieldRules = {

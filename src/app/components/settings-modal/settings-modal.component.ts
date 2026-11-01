@@ -37,6 +37,7 @@ import { AudioInputService } from '../../services/audio-input.service';
 import { AudioOutputService } from '../../services/audio-output.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { WakeLockService } from '../../services/wake-lock.service';
+import { AutoFullscreenService } from '../../services/auto-fullscreen.service';
 import { compareExternalRoutes } from '../../services/output-change-checker';
 import {
   EXPORT_FILE_NAME_MAX_LENGTH,
@@ -223,6 +224,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     private audioOutput: AudioOutputService,
     private cwInput: CwInputService,
     private wakeLock: WakeLockService,
+    private autoFullscreen: AutoFullscreenService,
   ) {}
 
   ngAfterViewInit(): void {
@@ -535,6 +537,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
     if (before.wakeLockEnabled !== restored.wakeLockEnabled) {
       await this.wakeLock.onSettingChanged(restored.wakeLockEnabled);
+    }
+    if (before.autoFullscreen !== restored.autoFullscreen) {
+      await this.autoFullscreen.onSettingChanged(restored.autoFullscreen);
     }
   }
 

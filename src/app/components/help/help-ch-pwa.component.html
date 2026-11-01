@@ -111,9 +111,17 @@
   next time you restart the app — no reinstall needed.
 </p>
 
-<!-- 9.6 Screen Wake Lock -->
-<h2 id="s9-6">9.6 &nbsp;Screen Wake Lock</h2>
+<!-- 9.6 Screen Settings -->
+<h2 id="s9-6">9.6 &nbsp;Screen Settings</h2>
 
+<p>
+  Open <strong>Settings</strong> → <strong>Other</strong> tab and expand
+  <strong>Screen Settings</strong>. It has two switches, each saved per device
+  profile and included in presets: <strong>Keep screen on</strong> and
+  <strong>Auto full screen</strong>.
+</p>
+
+<h3 id="s9-6-wake-lock">Keep screen on (Screen Wake Lock)</h3>
 <p>
   Mobile devices and laptops dim and lock the screen after a period of
   inactivity. During a CW session — especially when decoding or waiting for
@@ -137,34 +145,61 @@
       sunlight without it dimming mid-QSO.</li>
 </ul>
 
-<h3>Enabling Screen Wake Lock</h3>
-<p>
-  Open <strong>Settings</strong> → <strong>Other</strong> tab and toggle
-  <strong>Screen Wake Lock</strong> on. The setting is saved per device
-  profile and persists across sessions.
-</p>
-
-<h3>How It Works</h3>
+<h4>How it works</h4>
 <ul>
   <li>When enabled, the app requests a wake lock as soon as it starts.</li>
   <li>If you switch to another app or tab, the lock is automatically
       released by the browser. When you return, the app re-acquires it.</li>
-  <li>Disabling the toggle releases the lock immediately.</li>
-  <li>The app indicates whether the wake lock is currently
-      <strong>active</strong> next to the toggle.</li>
+  <li>Switching it off releases the lock immediately.</li>
+  <li>The card shows whether the wake lock is currently
+      <strong>active</strong> below the switch.</li>
   <li>The app checks every few seconds, and whenever you return to it, that
       the lock is really held, and requests it again if not.</li>
   <li>If the browser refuses the request, an amber warning appears on the main
       screen with a <strong>Keep screen on</strong> button to try again. The
-      toggle stays on; only you turn it off.</li>
+      switch stays on; only you turn it off.</li>
 </ul>
 
-<h3>Browser Support</h3>
+<h4>Browser support</h4>
 <p>
   The Screen Wake Lock API is supported in <strong>Chrome</strong>,
   <strong>Edge</strong>, <strong>Firefox 126+</strong> and
   <strong>Safari 16.4+</strong> (including iOS). If the browser lacks
-  support, a note is shown when the card is expanded.
+  support, the card says <em>Not available on this device</em>.
+</p>
+
+<h3 id="s9-6-auto-fullscreen">Auto full screen (browser)</h3>
+<p>
+  <strong>Auto full screen (browser)</strong> puts the whole browser page into
+  full screen, hiding the address bar and tabs. It is not the same as the
+  app's own <strong>full screen view</strong> (the conversation view opened
+  from the menu), which works inside the page.
+</p>
+
+<h4>How it works</h4>
+<ul>
+  <li>Switching it on asks the browser for full screen; switching it off
+      leaves full screen.</li>
+  <li>Browsers allow full screen only after a tap or key press. Right after
+      the app starts or reloads with the switch on, the app waits for your
+      first tap or key press, or you can use the
+      <strong>Tap for full screen</strong> button shown on the main screen.
+      Its × closes the prompt without going full screen.</li>
+  <li>If you leave full screen yourself (<strong>Esc</strong> or a swipe), the
+      app does <em>not</em> pull you back in. It asks again only when you
+      switch the setting off and on, or the next time the app starts.</li>
+  <li>The card follows the real state of the browser, so it is correct even
+      when you enter or leave full screen another way.</li>
+  <li>An <strong>installed app</strong> (see 9.2 and 9.3) already runs in its
+      own window or full screen, so nothing is requested.</li>
+</ul>
+
+<h4>Browser support</h4>
+<p>
+  It works in desktop browsers and in most mobile browsers, including Chrome
+  on Android and iPad. The iPhone browsers have no full screen for web pages;
+  there the card says <em>Not available on this device</em>. On iPhone, add the
+  app to the Home Screen instead (see 9.7).
 </p>
 
 <!-- 9.7 Using Morse Code Studio on iPhone -->
