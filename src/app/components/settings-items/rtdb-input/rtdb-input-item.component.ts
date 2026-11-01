@@ -7,9 +7,9 @@ import { Component, Input, OnDestroy, signal, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
-import { HelpLinkService } from '../../../services/help-link.service';
 import { ConfirmDialogComponent } from '../../confirm-dialog/confirm-dialog.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -25,14 +25,11 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-rtdb-input-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent, BackCloseDirective],
+  imports: [FormsModule, ItemShellComponent, ConfirmDialogComponent, BackCloseDirective, HelpLinkButtonComponent],
   templateUrl: './rtdb-input-item.component.html',
   styles: [':host { display: contents; } .secret-mask { -webkit-text-security: disc; text-security: disc; }'],
 })
 export class RtdbInputItemComponent implements OnDestroy {
-  /** Help section targeted by the contextual Help link. */
-  readonly helpSection = 'ch10';
-
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
@@ -46,7 +43,6 @@ export class RtdbInputItemComponent implements OnDestroy {
   readonly s = this.scope.value;
 
   readonly rtdbService = inject(FirebaseRtdbService);
-  private readonly help = inject(HelpLinkService);
 
   /** Message of the "cannot enable yet" dialog; null when closed */
   readonly notice = signal<string | null>(null);
@@ -65,11 +61,6 @@ export class RtdbInputItemComponent implements OnDestroy {
   get missingRequired(): boolean {
     const s = this.s();
     return !s.rtdbInputEnabled && (!s.rtdbInputChannelName.trim() || !s.rtdbInputChannelSecret.trim());
-  }
-
-  openHelp(event: Event): void {
-    event.preventDefault();
-    this.help.open(this.helpSection);
   }
 
   onSourceChange(event: Event): void {

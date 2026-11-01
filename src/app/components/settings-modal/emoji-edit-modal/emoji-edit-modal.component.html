@@ -19,7 +19,7 @@
         <input id="emojiEditMatch" type="text" class="emoji-edit-input mono"
                [(ngModel)]="editMatch" placeholder="e.g. 73, <AR>, CQ"
                maxlength="20" (keydown.enter)="save()">
-        <span class="emoji-edit-hint">Character sequence or prosign that triggers replacement</span>
+        <span class="emoji-edit-hint">Text that triggers the emoji.</span>
       </div>
 
       <!-- Replacement text -->
@@ -33,7 +33,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
           </button>
         </div>
-        <span class="emoji-edit-hint">Emojis, characters, or any mix — replaces the trigger in display</span>
+        <span class="emoji-edit-hint">What is shown instead.</span>
       </div>
 
       <!-- Description -->

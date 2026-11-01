@@ -6,6 +6,7 @@ import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -20,7 +21,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-sprite-key-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './sprite-key-item.component.html',
   styles: [':host { display: contents; }'],
 })

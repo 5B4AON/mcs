@@ -6,18 +6,25 @@
 <h2 id="s5-1">5.1 &nbsp;What Are RX and TX?</h2>
 
 <p>
-  Every input in Morse Code Studio feeds its timing events into the decoder.
-  The decoder needs to know whether each input represents
-  <strong>received Morse</strong> (from another operator) or
-  <strong>transmitted Morse</strong> (your own sending). This distinction is
-  called the <em>decoder source</em> and it determines two things:
+  <strong>RX</strong> means <em>received</em> Morse: Morse sent by another
+  person, which the app hears or reads (for example a radio tone, a
+  Firebase channel or a MIDI key that someone else plays). <strong>TX</strong>
+  means <em>transmitted</em> Morse: the Morse you send yourself (for example
+  with your keyboard, mouse or paddles).
+</p>
+
+<p>
+  The app keeps the two apart because people send at different speeds and
+  with different rhythm. Each input has a <strong>Used for</strong> setting
+  (RX or TX). That choice decides two things:
 </p>
 <ol>
-  <li><strong>Calibration pool</strong> — Which set of adaptive timing averages
-      the input feeds into (RX pool or TX pool).</li>
-  <li><strong>Colour tag</strong> — Whether decoded text appears as RX
-      (green by default) or TX (yellow by default) in the fullscreen
-      conversation view.</li>
+  <li><strong>Which speed memory it uses</strong> — The decoder keeps one set
+      of timing averages for RX and a separate one for TX (the
+      <em>calibration pools</em>). Your own sending never confuses the
+      decoder's guess for the other station.</li>
+  <li><strong>The colour of the text</strong> — RX text is green and TX text
+      is yellow by default in the full-screen conversation.</li>
 </ol>
 
 <!-- 5.2 Per-Input Source Assignment -->

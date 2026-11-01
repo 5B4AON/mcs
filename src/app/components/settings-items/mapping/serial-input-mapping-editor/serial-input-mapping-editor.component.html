@@ -83,7 +83,7 @@
       <input type="checkbox" [(ngModel)]="editInvert">
       Invert Signal
     </label>
-    <span class="md-hint">Swap active-high and active-low for this mapping.</span>
+    <span class="md-hint">Reverses on and off for this key.</span>
   </div>
 
   <div class="md-field">
@@ -121,6 +121,5 @@
   }
 
   <app-mapping-identity-fields [idPrefix]="idPrefix"
-                               colorHint="Optional. Overrides the default RX/TX colour in fullscreen views."
                                [(name)]="editName" [(color)]="editColor" />
 </div>

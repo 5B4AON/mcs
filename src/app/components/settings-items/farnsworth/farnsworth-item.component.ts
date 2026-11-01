@@ -6,6 +6,7 @@ import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { StepperComponent } from '../stepper/stepper.component';
 
@@ -21,7 +22,7 @@ import { StepperComponent } from '../stepper/stepper.component';
 @Component({
   selector: 'app-farnsworth-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, StepperComponent],
+  imports: [FormsModule, ItemShellComponent, StepperComponent, HelpLinkButtonComponent],
   templateUrl: './farnsworth-item.component.html',
   styles: [':host { display: contents; } .farnsworth-value { font-weight: 600; margin-top: .6rem; }'],
 })

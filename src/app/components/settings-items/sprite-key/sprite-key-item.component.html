@@ -7,11 +7,8 @@
   </span>
 
 <div class="cw-hint">
-  Shows an interactive straight-key button at the bottom of the
-  screen when there is enough space. Tap or click it to key Morse
-  code just like a physical straight key &mdash; press and hold for dashes,
-  tap briefly for dots. This is especially useful on touch-screen
-  devices but works with a mouse on desktop too.
+  Shows an on-screen straight key. Hold for a dash, tap for a dot.
+  <app-help-link-button section="s4-6" label="Help: on-screen key" />
 </div>
 
 <label>Used for:
@@ -19,6 +16,7 @@
     <option value="rx">RX &mdash; received morse</option>
     <option value="tx">TX &mdash; transmitted morse</option>
   </select>
+  <app-help-link-button section="s5-1" label="Help: RX and TX" />
 </label>
 
 <div class="card-section-divider"></div>
@@ -29,7 +27,7 @@
          placeholder="e.g. callsign (optional)"
          maxlength="20">
 </label>
-<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+<div class="keyer-hint">Optional. A new name starts a new line.</div>
 
 <label>Color:
   <div class="card-color-row">
@@ -43,16 +41,11 @@
     <span class="card-color-preview" [style.color]="s().spriteColor || 'inherit'">Sample</span>
   </div>
 </label>
-<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+<div class="keyer-hint">Optional. Colours this input's text.</div>
 
 <div class="card-section-divider"></div>
 
-<div class="cw-hint">
-  You can also have the button visually animate (depress) when a
-  key press is detected from other input sources. This
-  provides a satisfying visual indicator of keying activity. Check
-  the sources below whose key presses should animate the sprite:
-</div>
+<div class="cw-hint">Also press down when these inputs key:</div>
 
 <div class="settings-row">
   <label class="settings-checkbox">

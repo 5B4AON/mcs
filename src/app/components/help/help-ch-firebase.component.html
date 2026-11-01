@@ -60,12 +60,13 @@
 </p>
 
 <p>
-  RTDB is accessed by a public browser client. Under the repository's example
-  rules, anyone who can reach a channel path may read or write its data.
-  These are examples, not verified production rules. Channel values may be
-  saved in this browser's settings profile, and the password field only hides
-  the secret on screen. Do not reuse sensitive credentials or send sensitive
-  content.
+  The channel name and secret are not a password. Anyone who knows both can
+  read and send on the channel, and the app does not encrypt messages. Under
+  the repository's example rules, anyone who can reach a channel path may read
+  or write its data (these are examples, not verified production rules). The
+  secret is only hidden on screen, and this browser may save both values in
+  its settings profile. Never use a real password or send private
+  information.
 </p>
 
 <!-- 10.3 Input (Receive) -->

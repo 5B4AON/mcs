@@ -3,12 +3,8 @@
                 [enabled]="s().farnsworthEnabled"
                 (enabledChange)="scope.update({ farnsworthEnabled: $event })">
   <div class="cw-hint">
-    Farnsworth timing sends individual characters at full speed but
-    stretches the gaps between characters and words, lowering the
-    effective overall speed. This is a proven learning technique
-    named after Donald R. &ldquo;Russ&rdquo; Farnsworth (W6TTB)
-    that helps you recognise characters at real speed while giving
-    you extra thinking time.
+    Makes the gaps between letters and words longer, so Morse is easier to learn.
+    <app-help-link-button section="s8-5" label="Help: Farnsworth timing" />
   </div>
 
   @if (mode === 'embedded') {
@@ -39,12 +35,7 @@
 
     @if (s().farnsworthInputMode === 'wpm') {
       <div class="farnsworth-value">Effective WPM: {{ s().farnsworthEffectiveWpm }}&thinsp;WPM</div>
-      <div class="cw-hint">
-        Characters are sent at {{ s().encoderWpm }}&thinsp;WPM
-        but the overall effective speed is
-        {{ s().farnsworthEffectiveWpm }}&thinsp;WPM.
-        The lower the effective WPM, the longer the gaps.
-      </div>
+      <div class="cw-hint">Letters are sent at {{ s().encoderWpm }}&thinsp;WPM.</div>
       <app-stepper [value]="s().farnsworthEffectiveWpm" [min]="5" [max]="s().encoderWpm"
                    label="Effective WPM" (valueChange)="scope.update({ farnsworthEffectiveWpm: $event })" />
     }
@@ -52,20 +43,12 @@
     @if (s().farnsworthInputMode === 'multiplier') {
       @if (s().farnsworthWordsworth) {
         <div class="farnsworth-value">Word gap multiplier: {{ multiplier }}&times;</div>
-        <div class="cw-hint">
-          The gap between words (normally 7 dits) is multiplied by
-          {{ multiplier }}. Gaps between characters and the dits and dahs
-          themselves stay unchanged.
-        </div>
+        <div class="cw-hint">Only the space between words is longer.</div>
         <app-stepper [value]="multiplier" [min]="1" [max]="4" [step]="0.5"
                      label="Word gap multiplier" (valueChange)="scope.update({ farnsworthMultiplier: $event })" />
       } @else {
         <div class="farnsworth-value">Gap multiplier: {{ multiplier }}&times;</div>
-        <div class="cw-hint">
-          Gaps between characters and words are multiplied by
-          {{ multiplier }}.
-          Element durations (dit, dah) remain unchanged.
-        </div>
+        <div class="cw-hint">Gaps between letters and words are longer. Dots and dashes keep their speed.</div>
         <app-stepper [value]="multiplier" [min]="1" [max]="10"
                      label="Gap multiplier" (valueChange)="scope.update({ farnsworthMultiplier: $event })" />
       }
@@ -77,11 +60,8 @@
       Wordsworth mode
     </label>
     <div class="cw-hint">
-      When enabled, only the gaps between <em>words</em> are stretched
-      &mdash; the gaps between characters remain at the normal character
-      speed. Wordsworth timing is useful for operators who have achieved
-      instant character recognition but need extra time to recognise and
-      process each word.
+      Only the gaps between words get longer.
+      <app-help-link-button section="s8-5" label="Help: Wordsworth mode" />
     </div>
   }
 </app-item-shell>

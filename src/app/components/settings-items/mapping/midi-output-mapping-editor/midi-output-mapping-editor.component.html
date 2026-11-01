@@ -75,9 +75,8 @@
     <div class="md-field">
       <span class="md-label">Relay from MIDI Input</span>
       <span class="md-hint">
-        Select MIDI input mappings to relay through this output. Only inputs
-        whose source matches the forward direction are shown.
-        Enable when input and output use separate hardware with no shared bus.
+        Choose inputs to relay through this output.
+        <app-help-link-button section="s7-4" label="Help: relaying from MIDI input" />
       </span>
       <div class="md-checkbox-row">
         @for (input of midiInputMappings; track $index) {
@@ -97,10 +96,7 @@
         }
       </div>
       @if (editRelayInputIndices.length > 0) {
-        <span class="md-hint">
-          When enabled, this output will only forward signals from the explicitly
-          selected relay sources above. All other input paths are suppressed.
-        </span>
+        <span class="md-hint">Only the relay sources above are sent. Other inputs are held back.</span>
       }
     </div>
   }

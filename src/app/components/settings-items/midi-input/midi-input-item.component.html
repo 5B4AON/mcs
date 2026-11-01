@@ -16,6 +16,11 @@
       }
     </span>
 
+  <div class="keyer-hint">
+    Reads a MIDI pedal, keyboard or controller as a key or paddles.
+    <app-help-link-button section="s6-2" label="Help: MIDI input" />
+  </div>
+
   @if (!midiInput.supported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
@@ -67,18 +72,12 @@
     </label>
     <div class="keyer-hint">
       @if (s().midiInputEnabled) {
-        MIDI input is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+        MIDI input is on. Untick the box to turn it off. Saved mappings are kept.
       } @else {
-        Tick the box to set up its mappings on the next pages.
+        Tick the box to set it up.
       }
     </div>
   }
-
-<div class="keyer-hint">
-    MIDI input works even when the app is in the background, another window
-    is focused, or the screen is locked. Connect a MIDI pedal, keyboard, or
-    controller and assign notes to straight key or paddles.
-  </div>
 </app-item-shell>
 
 <!-- MIDI input edit modal (hosted here because it's triggered from this card) -->

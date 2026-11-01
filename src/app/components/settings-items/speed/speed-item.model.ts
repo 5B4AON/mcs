@@ -11,26 +11,34 @@ export const SPEED_RANGE = { min: 5, max: 50 } as const;
 export type SpeedKind = 'encoder' | 'keyer' | 'rx' | 'tx';
 
 /** Setting key and label of each speed */
-export const SPEED_INFO: Record<SpeedKind, { key: 'encoderWpm' | 'keyerWpm' | 'rxDecoderWpm' | 'txDecoderWpm'; label: string; hint: string }> = {
+export const SPEED_INFO: Record<SpeedKind, { key: 'encoderWpm' | 'keyerWpm' | 'rxDecoderWpm' | 'txDecoderWpm'; label: string; hint: string; help: string; helpLabel: string }> = {
   encoder: {
     key: 'encoderWpm',
     label: 'Encoder speed',
-    hint: 'How fast the app itself sends Morse: text you type, copy practice and relayed text. Slower is easier to follow.',
+    hint: 'How fast the app sends Morse.',
+    help: 's3-2',
+    helpLabel: 'Help: encoder speed',
   },
   keyer: {
     key: 'keyerWpm',
     label: 'Keyer speed',
-    hint: 'The speed of the keyer you operate with paddles (iambic or single lever): it sets the length of the dots and dashes it generates. A straight key has no keyer speed, because you make the timing by hand.',
+    hint: 'The speed of your paddle keyer. A straight key has none.',
+    help: 's4-4',
+    helpLabel: 'Help: keyer speed',
   },
   rx: {
     key: 'rxDecoderWpm',
     label: 'RX decoder start speed',
-    hint: 'The speed the receive decoder expects for incoming Morse (audio, relay). It adapts to what it hears, and the main menu shows its current estimate. Set it near the speed you expect. The reset button beside RX in the main menu forgets what it learned and starts again from this value.',
+    hint: 'Where the receive decoder starts. It adapts as it listens.',
+    help: 's2-2',
+    helpLabel: 'Help: decoder start speed',
   },
   tx: {
     key: 'txDecoderWpm',
     label: 'TX decoder start speed',
-    hint: 'The same for the Morse you key yourself. It adapts to your keying, and the TX reset button in the main menu starts again from this value.',
+    hint: 'The same for the Morse you key.',
+    help: 's2-2',
+    helpLabel: 'Help: decoder start speed',
   },
 };
 

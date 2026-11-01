@@ -10,6 +10,7 @@ import { SerialKeyInputService } from '../../../services/serial-key-input.servic
 import { ViewportService } from '../../../services/viewport.service';
 import { SerialInputEditModalComponent, SerialInputEditSaveEvent } from '../../settings-modal/serial-input-edit-modal/serial-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
@@ -29,7 +30,7 @@ const PIN_LABELS: Record<SerialInputPin, string> = { dsr: 'DSR', cts: 'CTS', dcd
 @Component({
   selector: 'app-serial-input-item',
   standalone: true,
-  imports: [ItemShellComponent, MappingListComponent, SerialInputEditModalComponent],
+  imports: [ItemShellComponent, MappingListComponent, SerialInputEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './serial-input-item.component.html',
   styles: [':host { display: contents; }'],
 })

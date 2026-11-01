@@ -6,6 +6,11 @@
     <span class="source-badge" [class.source-rx]="(forceSource ?? s().mouseKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().mouseKeyerSource) === 'tx'">{{ (forceSource ?? s().mouseKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+  <div class="keyer-hint">
+    Clicks key Morse in the decoder area and in full-screen Key mode.
+    <app-help-link-button section="s4-2" label="Help: mouse keyer" />
+  </div>
+
 @if (forceEnabled) {
   <p class="keyer-hint">This guide enables mouse keying.</p>
 }
@@ -18,6 +23,7 @@
     <option value="rx">RX &mdash; received morse</option>
     <option value="tx">TX &mdash; transmitted morse</option>
   </select>
+  <app-help-link-button section="s5-1" label="Help: RX and TX" />
 </label>
 }
 
@@ -71,11 +77,6 @@
   <app-help-link-button section="paddle-modes" />
 </label>
 
-<div class="keyer-hint">
-  Mouse clicks are captured in the Morse Decoder area and the full-screen conversation (Key mode).
-  Right-click context menu is suppressed when mapped.
-</div>
-
 <div class="card-section-divider"></div>
 
 <label>Name:
@@ -84,7 +85,7 @@
          placeholder="e.g. callsign (optional)"
          maxlength="20">
 </label>
-<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+<div class="keyer-hint">Optional. A new name starts a new line.</div>
 
 <label>Color:
   <div class="card-color-row">
@@ -98,5 +99,5 @@
     <span class="card-color-preview" [style.color]="s().mouseKeyerColor || 'inherit'">Sample</span>
   </div>
 </label>
-<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+<div class="keyer-hint">Optional. Colours this input's text.</div>
 </app-item-shell>

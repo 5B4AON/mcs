@@ -5,6 +5,11 @@
     <span class="source-badge" [class.source-rx]="s().micInputSource === 'rx'" [class.source-tx]="s().micInputSource === 'tx'">{{ s().micInputSource === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+  <div class="cw-hint">
+    Reads a straight key through the mic input.
+    <app-help-link-button section="s6-4" label="Help: straight key via mic" />
+  </div>
+
   @if (mode === 'embedded') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().micInputEnabled"
@@ -13,9 +18,9 @@
     </label>
     <div class="keyer-hint">
       @if (s().micInputEnabled) {
-        Mic key input is on. If you leave this box unchecked it will be turned off.
+        Mic key input is on. Untick the box to turn it off.
       } @else {
-        Tick the box to choose the devices and pilot tone.
+        Tick the box to set it up.
       }
     </div>
   }
@@ -27,6 +32,7 @@
         <option value="rx">RX &mdash; received morse</option>
         <option value="tx">TX &mdash; transmitted morse</option>
       </select>
+      <app-help-link-button section="s5-1" label="Help: RX and TX" />
     </label>
 
     <label>Mic Device:
@@ -69,8 +75,8 @@
       </label>
 
       <div class="pilot-wiring-hint">
-        Wire: Pilot output → 10kΩ resistor → junction → mic input.
-        Morse key from junction to ground.
+        The key connects the pilot tone to the mic input.
+        <app-help-link-button section="s6-4-how" label="Help: mic wiring" />
       </div>
     </div>
 
@@ -100,7 +106,10 @@
       }
     </div>
   } @else {
-    <div class="cw-hint">Calibration measures the real key, so it is only available in Settings once audio is running.</div>
+    <div class="cw-hint">
+      Calibration works in Settings, with audio running.
+      <app-help-link-button section="s6-4-calibration" label="Help: calibrating the threshold" />
+    </div>
   }
 
     <label>Debounce (ms):
@@ -122,7 +131,7 @@
              placeholder="e.g. callsign (optional)"
              maxlength="20">
     </label>
-    <div class="cw-hint">Triggers a line break in conversation views when a different name appears.</div>
+    <div class="cw-hint">Optional. A new name starts a new line.</div>
 
     <label>Color:
       <div class="card-color-row">
@@ -136,6 +145,6 @@
         <span class="card-color-preview" [style.color]="s().micInputColor || 'inherit'">Sample</span>
       </div>
     </label>
-    <div class="cw-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+    <div class="cw-hint">Optional. Colours this input's text.</div>
   }
 </app-item-shell>

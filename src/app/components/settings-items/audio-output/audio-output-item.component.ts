@@ -7,6 +7,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
 import { AudioOutputService } from '../../../services/audio-output.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { StepperComponent } from '../stepper/stepper.component';
 
@@ -20,7 +21,7 @@ import { StepperComponent } from '../stepper/stepper.component';
 @Component({
   selector: 'app-audio-output-item',
   standalone: true,
-  imports: [ItemShellComponent, StepperComponent],
+  imports: [ItemShellComponent, StepperComponent, HelpLinkButtonComponent],
   templateUrl: './audio-output-item.component.html',
   styles: [':host { display: contents; } .amplitude-value { font-weight: 600; margin-top: .6rem; }'],
 })

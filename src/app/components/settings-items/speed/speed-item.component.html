@@ -2,8 +2,7 @@
 <app-item-shell cardId="speeds-card" title="Morse Speeds" [mode]="mode">
   @if (mode === 'card') {
     <div class="cw-hint">
-      The same speeds as in the main menu, in words per minute (WPM).
-      Open one for an explanation.
+      Speeds in words per minute (WPM).
     </div>
   }
 
@@ -23,7 +22,10 @@
         }
         @if (isOpen) {
           <div class="speed-sub-body">
-            <div class="cw-hint">{{ info[kind].hint }}</div>
+            <div class="cw-hint">
+              {{ info[kind].hint }}
+              <app-help-link-button [section]="info[kind].help" [label]="info[kind].helpLabel" />
+            </div>
             <app-stepper [value]="s()[info[kind].key]" [min]="range.min" [max]="range.max"
                          [label]="info[kind].label" (valueChange)="setSpeed(kind, $event)" />
           </div>
@@ -33,9 +35,6 @@
   }
 
   @if (mode === 'card') {
-    <div class="cw-hint">
-      Changing an RX or TX start speed resets that decoder's calibration
-      straight away.
-    </div>
+    <div class="cw-hint">Changing RX or TX start speed restarts that decoder.</div>
   }
 </app-item-shell>

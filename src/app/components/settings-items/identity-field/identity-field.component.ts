@@ -26,7 +26,7 @@ export class IdentityFieldComponent {
   @Input() color = '';
 
   /** Text for the name hint line; empty hides it */
-  @Input() hint = 'Triggers a line break in conversation views when a different name appears.';
+  @Input() hint = 'Optional. A new name starts a new line.';
 
   /** Placeholder of the name box */
   @Input() placeholder = 'e.g. callsign (optional)';

@@ -5,6 +5,11 @@
               (enabledChange)="scope.update({ vibrateEnabled: $event })">
   <span item-badges class="source-badge" [class.source-rx]="s().vibrateForward === 'rx'" [class.source-tx]="s().vibrateForward === 'tx'" [class.source-both]="s().vibrateForward === 'both'">{{ s().vibrateForward === 'rx' ? 'RX' : s().vibrateForward === 'tx' ? 'TX' : 'RX/TX' }}</span>
 
+  <div class="cw-hint">
+    The phone vibrates while the key is down. Android only.
+    <app-help-link-button section="s7-6" label="Help: vibration" />
+  </div>
+
   @if (!vibration.supported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
@@ -23,26 +28,13 @@
       <option value="tx" [selected]="s().vibrateForward === 'tx'">TX only &mdash; transmitted morse</option>
       <option value="rx" [selected]="s().vibrateForward === 'rx'">RX only &mdash; received morse</option>
     </select>
+    <app-help-link-button section="s5-1" label="Help: RX and TX" />
   </label>
-
-  <div class="cw-hint">
-    Haptic vibration feedback while keying, mirroring the sidetone output.
-    Works for both TX and RX key events from any input source.<br><br>
-    <strong>Android only.</strong> The Vibration API is supported in most
-    Android browsers (Chrome, Firefox, Edge). iOS Safari and most desktop
-    browsers do not support haptic vibration.
-  </div>
 
   <label class="checkbox-row">
     <input type="checkbox" [checked]="s().vibrateEnhanced"
            (change)="onBoolChange('vibrateEnhanced', $event)">
     Enhanced haptic timing
   </label>
-  <div class="cw-hint">
-    Compensates for the physical spin-up delay of vibration motors on
-    Android devices. Fires a short pre-pulse when the key goes down to
-    prime the motor, and extends vibration slightly past key-up so short
-    elements (dits) are more perceptible. Disable this if vibration feels
-    out of sync or you prefer the standard behaviour.
-  </div>
+  <div class="cw-hint">Helps short dots feel clear. Turn off if it feels out of step.</div>
 </app-item-shell>

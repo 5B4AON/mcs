@@ -6,6 +6,7 @@ import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { EmojiMapping } from './emojis-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { ConfirmService } from '../../../services/confirm.service';
 import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../settings-modal/emoji-edit-modal/emoji-edit-modal.component';
@@ -19,7 +20,7 @@ import { EmojiEditModalComponent, EmojiEditSaveEvent } from '../../settings-moda
 @Component({
   selector: 'app-emojis-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, EmojiEditModalComponent],
+  imports: [FormsModule, ItemShellComponent, EmojiEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './emojis-item.component.html',
   styles: [':host { display: contents; }'],
 })

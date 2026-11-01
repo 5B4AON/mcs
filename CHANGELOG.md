@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.3] - 2026-11-01
+
+### Changed
+
+- **Shorter card text** — Settings cards and their wizard steps now show one short line instead of paragraphs. Each card starts with a short description and a `?` button that opens the matching Help section. More specific `?` buttons sit beside the field they explain: Firebase channel privacy under the secret, tone and bandwidth, mic wiring and calibration, audio key output wiring, and the RX/TX selectors. The Name and Colour hints use the same wording on every card, and the on/off lines in wizard steps are shorter. Cards without any text, such as Straight Key via Mic and Sidetone, now have a short description. (#114)
+- **RX and TX help** — Every "Used for", "Forward" and "Active on" selector has a `?` after it that opens Help 5.1, which now explains what RX and TX mean and why the decoder keeps separate speed memories. The Type wizard's RX/TX step opens the same section. (#114)
+- **Help wording** — Help sections 2.2, 5.1, 6.4, 7.1, 8.4–8.8 and 10.2 are reworded in plain language. The audio key output wiring and low-voltage tips moved from the card into Help 7.1, the prosign table into Help 8.6, and the mic wiring into Help 6.4. Help 7.1 no longer says to try DC mode first; most sound cards need AC Tone. (#114)
+- **Wizard text** — Step introductions and the preset and review notes in the Setup Wizard are shorter. (#114)
+
+### Removed
+
+- The "Read Firebase Help" text link on the Firebase RTDB cards, replaced by the `?` button.
+
 ## [2.7.2] - 2026-11-01
 
 ### Added

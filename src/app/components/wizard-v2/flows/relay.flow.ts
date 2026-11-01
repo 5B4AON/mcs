@@ -21,14 +21,14 @@ export const RELAY_FLOW: WizardFlow = {
     {
       id: 'relayIn',
       title: 'Receive from a shared channel',
-      intro: 'Tick the box to hear Morse that others send to a shared channel. Anyone with the same channel name and secret can take part.',
+      intro: 'Tick the box to hear Morse from a shared channel.',
       helpSection: 's10-3',
       items: [{ item: 'rtdb-input' }],
     },
     {
       id: 'relayOut',
       title: 'Send to a shared channel',
-      intro: 'Tick the box to publish the Morse you send to a shared channel, under your own name.',
+      intro: 'Tick the box to share the Morse you send, under your name.',
       helpSection: 's10-4',
       items: [{ item: 'rtdb-output' }],
       validate: ctx => {

@@ -3,8 +3,8 @@
                 [enabled]="s().prosignActionsEnabled"
                 (enabledChange)="onEnabledChange($event)">
   <div class="cw-hint">
-    Assign an action to each prosign. When a prosign is decoded (or encoded),
-    the selected action is triggered in the conversation log.
+    Choose what happens when a prosign is decoded or sent.
+    <app-help-link-button section="s8-7" label="Help: prosign actions" />
   </div>
   <div class="prosign-actions-list">
     @for (key of prosignKeys; track key) {

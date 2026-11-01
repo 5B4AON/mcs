@@ -23,15 +23,15 @@ export const TYPE_FLOW: WizardFlow = {
     {
       id: 'typing-mode',
       title: 'How your text is sent',
-      intro: 'Choose when typed text is played as Morse. In Send on Enter you write the message first and send it with Enter; in Live every letter is played as you type it.',
+      intro: 'Choose when typed text is played as Morse.',
       helpSection: 's3-1',
       items: [{ item: 'encoder-mode' }],
     },
     {
       id: 'encoder',
       title: 'Keyboard encoder',
-      intro: 'Say whether the text you type counts as sent (TX) or received (RX) Morse, and optionally give it a name and colour for the conversation views.',
-      helpSection: 's3-1',
+      intro: 'Choose whether typed text counts as sent (TX) or received (RX).',
+      helpSection: 's5-1',
       items: [{ item: 'encoder' }],
     },
     speedStep({ encoder: true }, {

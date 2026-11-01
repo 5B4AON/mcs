@@ -6,6 +6,11 @@
     <span class="source-badge" [class.source-rx]="(forceSource ?? s().touchKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().touchKeyerSource) === 'tx'">{{ (forceSource ?? s().touchKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+  <div class="keyer-hint">
+    On-screen touch buttons key Morse.
+    <app-help-link-button section="s4-3" label="Help: touch keyer" />
+  </div>
+
 @if (forceEnabled) {
   <p class="keyer-hint">This guide enables touch keying.</p>
 }
@@ -18,6 +23,7 @@
     <option value="rx">RX &mdash; received morse</option>
     <option value="tx">TX &mdash; transmitted morse</option>
   </select>
+  <app-help-link-button section="s5-1" label="Help: RX and TX" />
 </label>
 }
 
@@ -31,19 +37,13 @@
 
 <div class="keyer-hint">
   @if (s().touchKeyerMode === 'straight') {
-    Shows a single touch button in the full-screen conversation (Key mode).
-    Press and hold to key down, release to key up.
+    One touch button. Hold to key down.
   } @else {
-    Shows two touch buttons in the full-screen conversation (Key mode).
+    Two touch buttons: left sends dots, right sends dashes.
   }
 </div>
 
 @if (s().touchKeyerMode === 'paddle') {
-  <div class="keyer-hint">
-    Left button sends dits, right button sends dahs.
-    Use <strong>Reverse Paddles</strong> to swap.
-  </div>
-
   <label>
     <input type="checkbox" [checked]="s().touchReversePaddles"
            (change)="onBoolChange('touchReversePaddles', $event)">
@@ -69,7 +69,7 @@
          placeholder="e.g. callsign (optional)"
          maxlength="20">
 </label>
-<div class="keyer-hint">Triggers a line break in conversation views when a different name appears.</div>
+<div class="keyer-hint">Optional. A new name starts a new line.</div>
 
 <label>Color:
   <div class="card-color-row">
@@ -83,5 +83,5 @@
     <span class="card-color-preview" [style.color]="s().touchKeyerColor || 'inherit'">Sample</span>
   </div>
 </label>
-<div class="keyer-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+<div class="keyer-hint">Optional. Colours this input's text.</div>
 </app-item-shell>

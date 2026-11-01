@@ -34,7 +34,7 @@
       <input type="checkbox" [(ngModel)]="editInvert">
       Invert Output
     </label>
-    <span class="md-hint">By default, the pin is held LOW when idle and driven HIGH when keyed. Check to reverse polarity.</span>
+    <span class="md-hint">Reverses the pin: high when idle, low when keyed.</span>
   </div>
 
   <div class="md-field">
@@ -46,8 +46,6 @@
     </select>
   </div>
 
-  <div class="md-hint">DTR/RTS lines switch at sub-millisecond speeds &mdash; easily supports 50+ WPM.</div>
-
   @if (warning) {
     <div class="md-warning">{{ warning }}</div>
   }
@@ -56,9 +54,8 @@
     <div class="md-field">
       <span class="md-label">Relay from Serial Input</span>
       <span class="md-hint">
-        Select serial input mappings to relay through this output. Only inputs
-        whose source matches the forward direction are shown.
-        Enable when input and output use separate adapters or ports with no electrical connection.
+        Choose inputs to relay through this output.
+        <app-help-link-button section="s7-2" label="Help: relaying from serial input" />
       </span>
       <div class="md-checkbox-row">
         @for (input of serialInputMappings; track $index) {
@@ -78,10 +75,7 @@
         }
       </div>
       @if (editRelayInputIndices.length > 0) {
-        <span class="md-hint">
-          When enabled, this output will only forward signals from the explicitly
-          selected relay sources above. All other input paths are suppressed.
-        </span>
+        <span class="md-hint">Only the relay sources above are sent. Other inputs are held back.</span>
       }
     </div>
   }

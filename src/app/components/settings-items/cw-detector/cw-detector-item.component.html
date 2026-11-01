@@ -6,6 +6,11 @@
     <span class="source-badge" [class.source-rx]="s().cwInputSource === 'rx'" [class.source-tx]="s().cwInputSource === 'tx'">{{ s().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+  <div class="cw-hint">
+    Reads Morse tones from an audio input, such as a radio.
+    <app-help-link-button section="s6-1" label="Help: CW tone detector" />
+  </div>
+
   @if (mode === 'embedded' && !tuneOnly) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().cwInputEnabled" [disabled]="!!cwInputConflict()"
@@ -14,9 +19,9 @@
     </label>
     <div class="keyer-hint">
       @if (s().cwInputEnabled) {
-        The CW detector is on. If you leave this box unchecked it will be turned off.
+        The CW detector is on. Untick the box to turn it off.
       } @else {
-        Tick the box to choose the audio input and tone settings.
+        Tick the box to set it up.
       }
     </div>
     @if (!s().cwInputEnabled && cwInputConflict()) {
@@ -34,6 +39,7 @@
         <option value="rx">RX &mdash; received morse</option>
         <option value="tx">TX &mdash; transmitted morse</option>
       </select>
+      <app-help-link-button section="s5-1" label="Help: RX and TX" />
     </label>
 
     <label>Audio Input Device:
@@ -65,11 +71,8 @@
     </label>
 
     <div class="cw-hint">
-      Typical CW audio tone: 500–700 Hz. Match to your radio's sidetone or BFO offset.
-      The bandwidth controls how selective the detector is around the centre frequency.
-      At {{ s().cwInputBandwidth }} Hz bandwidth, the passband is
-      {{ s().cwInputFrequency - s().cwInputBandwidth / 2 }}–{{ s().cwInputFrequency + s().cwInputBandwidth / 2 }} Hz.
-      Narrower = more selective but requires a more precise frequency setting.
+      Typical tone: 500–700 Hz. Passband: {{ s().cwInputFrequency - s().cwInputBandwidth / 2 }}–{{ s().cwInputFrequency + s().cwInputBandwidth / 2 }} Hz.
+      <app-help-link-button section="s6-1-settings" label="Help: tone and bandwidth" />
     </div>
 
     <label>
@@ -101,11 +104,6 @@
              (change)="onCwParamChange('cwInputDebounceMs', $event)">
     </label>
 
-    <div class="cw-hint">
-      Feed audio from your radio receiver, virtual audio cable, or any audio source carrying CW tones.
-      The detector uses a narrow Goertzel filter at the configured frequency with automatic gain tracking.
-    </div>
-
     <div class="card-section-divider"></div>
 
     <label>Name:
@@ -114,7 +112,7 @@
              placeholder="e.g. callsign (optional)"
              maxlength="20">
     </label>
-    <div class="cw-hint">Triggers a line break in conversation views when a different name appears.</div>
+    <div class="cw-hint">Optional. A new name starts a new line.</div>
 
     <label>Color:
       <div class="card-color-row">
@@ -128,6 +126,6 @@
         <span class="card-color-preview" [style.color]="s().cwInputColor || 'inherit'">Sample</span>
       </div>
     </label>
-    <div class="cw-hint">Optional. Overrides the default RX/TX colour in fullscreen views.</div>
+    <div class="cw-hint">Optional. Colours this input's text.</div>
   }
 </app-item-shell>

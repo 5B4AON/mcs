@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { PracticeContentMode, PracticeFeedbackMode, PracticePipeline } from './practice-item.model';
 import { DecoderSource } from '../../../services/settings-common';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
@@ -19,7 +20,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-practice-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
   templateUrl: './practice-item.component.html',
   styles: [':host { display: contents; }'],
 })

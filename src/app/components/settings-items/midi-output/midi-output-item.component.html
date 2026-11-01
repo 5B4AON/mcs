@@ -53,18 +53,16 @@
     </label>
     <div class="keyer-hint">
       @if (s().midiOutputEnabled) {
-        MIDI output is on. If you leave this box unchecked it will be turned off, and its saved mappings are skipped (not deleted).
+        MIDI output is on. Untick the box to turn it off. Saved mappings are kept.
       } @else {
-        Tick the box to set up its mappings on the next pages.
+        Tick the box to set it up.
       }
     </div>
   }
 
   <div class="cw-hint">
-    Characters from any input are played as morse elements (dits/dahs) at
-    Encoder WPM. <strong>Straight Key</strong> fires on every element.
-    <strong>Paddle</strong> fires dit/dah notes separately. Both
-    straight-key and element-specific notes fire simultaneously.
+    Plays Morse as MIDI notes at the Encoder speed.
+    <app-help-link-button section="s7-4" label="Help: MIDI output" />
   </div>
 
   <label class="checkbox-label">
@@ -72,13 +70,7 @@
            (change)="scope.update({ midiOutputOverrideWpm: $any($event.target).checked })">
     Override input WPM with local encoder WPM
   </label>
-  <div class="cw-hint">
-    By default the MIDI output repeats the timing of the morse it receives, so
-    morse arriving at 20 WPM leaves at 20 WPM. Enable this to play everything at
-    your own Encoder WPM instead. This is useful when you receive morse at one
-    speed (for example from a fast sender or a relay input) and want the connected
-    MIDI device to play it back at a different, slower or faster, speed.
-  </div>
+  <div class="cw-hint">Plays at your Encoder speed, not the speed it arrived at.</div>
 </app-item-shell>
 
 <!-- MIDI output edit modal (hosted here because it's triggered from this card) -->

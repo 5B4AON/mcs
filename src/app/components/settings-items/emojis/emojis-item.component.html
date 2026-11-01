@@ -3,11 +3,8 @@
                 [enabled]="s().emojisEnabled"
                 (enabledChange)="onEnabledChange($event)">
   <div class="cw-hint">
-    Replace character sequences or prosigns with emoji graphics in the
-    full-screen conversation log. Matching is
-    case-insensitive. Prosign patterns (e.g., &lt;AR&gt;) also match
-    their punctuation equivalents (e.g., +).<br><br>
-    Emojis scale with the conversation font size setting.
+    Shows an emoji instead of matching text in the full screen.
+    <app-help-link-button section="s8-8" label="Help: emoji replacements" />
   </div>
   <div class="emoji-list">
     @for (mapping of s().emojiMappings; track $index) {

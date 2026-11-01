@@ -3,6 +3,7 @@
  */
 
 import { Component, Input, computed, inject } from '@angular/core';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { feedbackRiskOutputs } from './audio-feedback-guard-item.model';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
@@ -14,6 +15,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-audio-feedback-guard-item',
   standalone: true,
+  imports: [HelpLinkButtonComponent],
   templateUrl: './audio-feedback-guard-item.component.html',
   styles: [`
     :host { display: contents; }

@@ -6,6 +6,7 @@ import { Component, Input, inject, signal } from '@angular/core';
 import { AppSettings } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { StepperComponent } from '../stepper/stepper.component';
 import { SPEED_INFO, SPEED_RANGE, SpeedKind } from './speed-item.model';
@@ -27,7 +28,7 @@ import { SPEED_INFO, SPEED_RANGE, SpeedKind } from './speed-item.model';
 @Component({
   selector: 'app-speed-item',
   standalone: true,
-  imports: [ItemShellComponent, StepperComponent],
+  imports: [ItemShellComponent, StepperComponent, HelpLinkButtonComponent],
   templateUrl: './speed-item.component.html',
   styleUrl: './speed-item.component.css',
 })

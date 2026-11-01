@@ -69,7 +69,7 @@ export const SEND_FLOW: WizardFlow = {
     {
       id: 'methods',
       title: 'Choose how you will send',
-      intro: 'Keyboard, mouse, touch and MIDI keyers are inputs that key Morse on this device. They do not start audio or enable radio, serial or online outputs. A MIDI keyer reads a MIDI key or paddle you connect; the browser may ask for MIDI access when you press Apply.',
+      intro: 'These keyers send Morse from this device. Nothing else is switched on. The browser may ask for MIDI access when you press Apply.',
       helpSection: 's4-1',
       questions: [{
         id: 'methods',

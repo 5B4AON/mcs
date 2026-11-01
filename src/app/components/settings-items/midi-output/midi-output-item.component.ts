@@ -8,6 +8,7 @@ import { MidiOutputService } from '../../../services/midi-output.service';
 import { ViewportService } from '../../../services/viewport.service';
 import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../settings-modal/midi-output-edit-modal/midi-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { MappingListComponent } from '../mapping/mapping-list/mapping-list.component';
 
@@ -25,7 +26,7 @@ import { MappingListComponent } from '../mapping/mapping-list/mapping-list.compo
 @Component({
   selector: 'app-midi-output-item',
   standalone: true,
-  imports: [ItemShellComponent, MappingListComponent, MidiOutputEditModalComponent],
+  imports: [ItemShellComponent, MappingListComponent, MidiOutputEditModalComponent, HelpLinkButtonComponent],
   templateUrl: './midi-output-item.component.html',
   styles: [':host { display: contents; }'],
 })

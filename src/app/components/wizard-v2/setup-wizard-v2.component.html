@@ -27,7 +27,7 @@
               <section class="wizard-preset-start" aria-labelledby="wizard-preset-start-title">
                 @if (presetPickerOpen()) {
                   <h3 id="wizard-preset-start-title">Start from a saved preset</h3>
-                  <p class="wizard-note">Only settings covered by this guide are copied into its draft; other preset settings stay as they are. Choosing a different preset replaces this guide's draft answers, but never changes live settings or the saved preset.</p>
+                  <p class="wizard-note">Only settings in this guide are copied. Live settings are never changed.</p>
                   @if (presets.loadError()) {
                     <p class="wizard-error" role="alert">
                       {{ presets.loadError() }} Nothing was loaded. Close this guide, then use Presets in Settings to download or remove damaged saved preset data before reopening the guide.
@@ -200,7 +200,7 @@
             @if (eng.routeChanges().length) {
               <section class="wizard-route-review">
                 <h4>External routes that will change</h4>
-                <p class="wizard-note">Inputs and outputs that use a device, port or channel outside this app are listed here for your information. Nothing connects until you use its own Connect, Join or Enable action.</p>
+                <p class="wizard-note">Nothing connects until you use its own Connect, Join or Enable button.</p>
                 <ul class="wizard-route-list">
                   @for (route of eng.routeChanges(); track route.id) {
                     <li>{{ routeLabel(route) }}</li>

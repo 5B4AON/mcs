@@ -20,7 +20,7 @@ import { FormsModule } from '@angular/forms';
       <input [id]="idPrefix + 'Name'" type="text" class="md-input" maxlength="20"
              [ngModel]="name" (ngModelChange)="nameChange.emit($event)"
              placeholder="e.g. callsign (optional)">
-      <span class="md-hint">Triggers a line break in conversation views when a different name appears.</span>
+      <span class="md-hint">Optional. A new name starts a new line.</span>
     </div>
 
     <div class="md-field">
@@ -45,7 +45,7 @@ export class MappingIdentityFieldsComponent {
   @Input() name = '';
   @Input() color = '';
 
-  @Input() colorHint = 'Optional. Overrides the default RX/TX colour in fullscreen views.';
+  @Input() colorHint = 'Optional. Colours this input\'s text.';
 
   @Output() nameChange = new EventEmitter<string>();
   @Output() colorChange = new EventEmitter<string>();
