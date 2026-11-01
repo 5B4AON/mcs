@@ -10,6 +10,8 @@ html, body {
   color: #e0e0e0;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   min-height: 100vh;
+  /* 100vh is the tall viewport (address bar hidden) on mobile browsers; 100dvh is what is visible */
+  min-height: 100dvh;
 }
 
 :focus-visible {

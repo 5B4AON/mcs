@@ -228,3 +228,24 @@ html.ios-layout :is(.touch-key-sprite-wrapper, .touch-key-sprite, .touch-overlay
   text-decoration: underline;
   cursor: pointer;
 }
+
+/*
+ * Shared, all platforms: no page scrolling while the app already fits the screen.
+ * Mobile browsers scroll the page (and move the address bar) on any touch drag, which
+ * is never needed here. Two cases:
+ *  - the fullscreen view covers the whole screen (page behind it never needs to scroll);
+ *  - the main screen in its sprite layout, whose host is exactly one viewport high
+ *    (`sprite-fit`, only from 560px of height; shorter screens keep the natural layout).
+ * Not while the on-screen keyboard is open (`keyboard-open`, set by ViewportService),
+ * so a focused field can always be scrolled into view.
+ */
+html:has(.fs-modal-overlay):not(.keyboard-open),
+html:has(.fs-modal-overlay):not(.keyboard-open) body {
+  overflow: hidden;
+}
+@media (min-height: 560px) {
+  html:has(app-root.sprite-fit):not(.keyboard-open),
+  html:has(app-root.sprite-fit):not(.keyboard-open) body {
+    overflow: hidden;
+  }
+}
