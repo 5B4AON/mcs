@@ -18,3 +18,50 @@
 @supports (height: 100dvh) {
   :root { --vv-h: 100dvh; }
 }
+
+/*
+ * iOS only: fixed overlays follow the visual viewport, so a focused field
+ * stays above the on-screen keyboard and no gap is left when it closes.
+ * Android and desktop keep the component-level `inset: 0` / `92dvh` rules.
+ */
+html.ios-layout :is(
+  .settings-overlay,
+  .wizard-overlay,
+  .settings-transfer-overlay,
+  .scan-results-overlay,
+  .confirm-overlay,
+  .md-overlay,
+  .emoji-edit-overlay,
+  .emoji-picker-overlay
+) {
+  inset: auto;
+  top: var(--vv-top);
+  left: 0;
+  right: 0;
+  height: var(--vv-h);
+}
+
+/* Settings-scale frames: 92% of the visual viewport, never taller than the overlay's content box */
+html.ios-layout :is(.settings-modal, .wizard-modal, .wizard-dialog, .settings-transfer-dialog) {
+  height: calc(var(--vv-h) * .92);
+  max-height: 100%;
+}
+
+/* Settings is full-screen at 480px and below */
+@media (max-width: 480px) {
+  html.ios-layout .settings-modal {
+    height: var(--vv-h);
+  }
+}
+
+/* Small dialogs keep their own max sizes, now measured against the visual viewport */
+html.ios-layout .md-dialog {
+  max-height: min(calc(var(--vv-h) * .9), 100%);
+}
+html.ios-layout :is(.scan-results-dialog, .emoji-picker-modal) {
+  max-height: min(calc(var(--vv-h) * .8), 100%);
+}
+html.ios-layout :is(.confirm-dialog, .emoji-edit-dialog) {
+  max-height: 100%;
+  overflow-y: auto;
+}
