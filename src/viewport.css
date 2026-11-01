@@ -153,3 +153,57 @@ html.ios-layout :is(.help-home-btn, .ref-home-btn) {
   bottom: calc(20px + var(--safe-bottom));
   right: calc(20px + var(--safe-right));
 }
+
+/*
+ * iOS only: text and zoom quirks.
+ */
+
+/* Keep text at the size the CSS says when the phone is rotated */
+html.ios-layout {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Fields below 16px make iOS zoom the page on focus. Checkbox, radio, range and colour inputs are not text fields. */
+@media (pointer: coarse) {
+  html.ios-layout :is(
+    input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='button']):not([type='submit']),
+    select,
+    textarea
+  ) {
+    font-size: 16px;
+  }
+}
+
+/* No double-tap zoom delay on controls. :where() keeps zero specificity, so keying surfaces that set `touch-action: none` keep it. */
+html.ios-layout :where(button, select, input, summary, label, [role='button']) {
+  touch-action: manipulation;
+}
+
+/* Scrolling inside a dialog never drags the page behind it */
+html.ios-layout :is(
+  .settings-tab-content,
+  .scan-results-body,
+  .settings-transfer-content,
+  .wizard-body,
+  .md-dialog,
+  .help-overlay,
+  .ref-overlay,
+  .emoji-picker-modal
+) {
+  overscroll-behavior: contain;
+}
+
+/* Page scroll is locked while any overlay is open (:has() is supported on iOS 15.4 and later) */
+html.ios-layout:has(
+  .settings-overlay, .wizard-overlay, .settings-transfer-overlay, .scan-results-overlay,
+  .confirm-overlay, .md-overlay, .emoji-edit-overlay, .emoji-picker-overlay,
+  .help-overlay, .ref-overlay, .fs-modal-overlay
+),
+html.ios-layout:has(
+  .settings-overlay, .wizard-overlay, .settings-transfer-overlay, .scan-results-overlay,
+  .confirm-overlay, .md-overlay, .emoji-edit-overlay, .emoji-picker-overlay,
+  .help-overlay, .ref-overlay, .fs-modal-overlay
+) body {
+  overflow: hidden;
+}
