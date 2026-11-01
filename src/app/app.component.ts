@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, effect, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostListener, NgZone, effect, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -21,6 +21,8 @@ import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
+import { ViewportService } from './services/viewport.service';
+import { InstallHintService } from './services/install-hint.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { HelpComponent } from './components/help/help.component';
@@ -163,6 +165,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private subs: Subscription[] = [];
   private readonly helpLinks = inject(HelpLinkService);
   private readonly modalBack = inject(ModalBackService);
+  private readonly ngZone = inject(NgZone);
 
   /** Bound handler for visualViewport resize — stored for cleanup */
   private vvResizeHandler: (() => void) | null = null;
@@ -216,7 +219,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
     public practice: PracticeService,
+    public viewport: ViewportService,
+    public installHint: InstallHintService,
   ) {
+    // The install hint changes the Try Morse card height, so re-check the room left for the sprite
+    effect(() => {
+      this.installHint.hint();
+      requestAnimationFrame(() => requestAnimationFrame(() => this.checkSpriteSpace()));
+    });
+
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
       this.displayBuffers.mainOutput.lines();
@@ -474,6 +485,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnInit(): void {
     document.addEventListener('pointerdown', this.outsidePressHandler, true);
+    if (this.viewport.iosLayout) {
+      this.ngZone.runOutsideAngular(() => {
+        for (const type of this.gestureEvents) document.addEventListener(type, this.gestureResumeHandler, true);
+      });
+    }
     this.modalBack.host = {
       push: () => this.pushModalState('dialog'),
       pop: () => this.popModalState(),
@@ -637,6 +653,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     document.removeEventListener('pointerdown', this.outsidePressHandler, true);
+    for (const type of this.gestureEvents) document.removeEventListener(type, this.gestureResumeHandler, true);
     this.subs.forEach(s => s.unsubscribe());
     this.mouseKeyer.detachAll();
     if (this.vvResizeHandler && window.visualViewport) {
@@ -690,7 +707,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     } else if (this.showWizard) {
       if (this.wizardRef?.onMappingPage || this.wizardRef?.hasDraft()) {
         // Back was pressed with unapplied answers: keep the wizard and ask first.
-        this.pushModalState('wizard');
+        // Step forward onto the entry Back just left: a pushState inside popstate may be skipped by the next Back
+        this.restoreModalState();
         this.wizardRef.askDiscard();
       } else {
         this.showWizard = false;
@@ -893,6 +911,34 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
+   * iOS only: audio is running but a context is paused (autostart after a refresh,
+   * a phone call, an app switch) and the background retries have not recovered it.
+   */
+  get audioNeedsTap(): boolean {
+    return this.viewport.iosLayout && this.audioRunning
+      && (this.audioOutput.paused() || this.audioInput.paused() || this.cwInput.paused());
+  }
+
+  /**
+   * iOS only: resumes paused audio on the next touch or key press anywhere. iOS accepts
+   * resume() only inside a user gesture, so the next tap (typically the first key
+   * press) does it and no button needs to be found. The "Tap to resume audio"
+   * button calls the same method. Registered only on iOS and outside Angular's
+   * zone, so other platforms see no extra change detection.
+   */
+  private readonly gestureResumeHandler = (): void => {
+    if (this.audioNeedsTap) void this.resumeAudio();
+  };
+  private readonly gestureEvents = ['touchend', 'click', 'keydown'];
+  async resumeAudio(): Promise<void> {
+    await Promise.allSettled([
+      this.audioOutput.resumeFromGesture(),
+      this.audioInput.resumeFromGesture(),
+      this.cwInput.resumeFromGesture(),
+    ]);
+  }
+
+  /**
    * Auto-start audio and MIDI after a browser refresh.
    * Called from ngOnInit when we detect the session was previously running.
    * Chrome remembers granted permissions so this works without a user gesture.
@@ -916,6 +962,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         const unsupportedError = new Error();
         unsupportedError.name = 'UnsupportedAudioError';
         throw unsupportedError;
+      }
+
+      // iOS: treat output as media playback so the ring/silent switch does not mute it.
+      // With a microphone in use, iOS manages the session itself.
+      const audioSession = (navigator as { audioSession?: { type: string } }).audioSession;
+      if (this.viewport.iosLayout && audioSession && !needsInput) {
+        try { audioSession.type = 'playback'; } catch { /* not settable here */ }
       }
 
       if (settings.micInputEnabled) {

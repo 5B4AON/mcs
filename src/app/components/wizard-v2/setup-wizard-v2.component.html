@@ -90,7 +90,7 @@
                     @for (opt of questionOptions(eng, q); track opt.value) {
                       <label class="wizard-check">
                         <input type="radio" [name]="q.id" [checked]="answer(q) === opt.value"
-                               (change)="setSingle(q, opt.value)">
+                               [disabled]="opt.disabled" (change)="setSingle(q, opt.value)">
                         {{ opt.label }}
                         @if (opt.hint) { <span class="wizard-note">{{ opt.hint }}</span> }
                       </label>
@@ -109,7 +109,7 @@
                     @for (opt of questionOptions(eng, q); track opt.value) {
                       <label class="wizard-check">
                         <input type="checkbox" [checked]="isChosen(q, opt.value)"
-                               (change)="toggleMulti(q, opt.value, $event)">
+                               [disabled]="opt.disabled" (change)="toggleMulti(q, opt.value, $event)">
                         {{ opt.label }}
                         @if (opt.hint) { <span class="wizard-note">{{ opt.hint }}</span> }
                       </label>

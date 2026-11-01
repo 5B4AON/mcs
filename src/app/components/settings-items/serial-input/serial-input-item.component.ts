@@ -7,6 +7,7 @@ import { SettingsService } from '../../../services/settings.service';
 import { DecoderSource } from '../../../services/settings-common';
 import { SerialInputMapping, SerialInputPin } from './serial-input-item.model';
 import { SerialKeyInputService } from '../../../services/serial-key-input.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { SerialInputEditModalComponent, SerialInputEditSaveEvent } from '../../settings-modal/serial-input-edit-modal/serial-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -43,6 +44,8 @@ export class SerialInputItemComponent {
 
   readonly settings = inject(SettingsService);
   readonly serialInput = inject(SerialKeyInputService);
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   /** Index of the mapping being edited, or -1 for a new one */
   editIndex = -1;

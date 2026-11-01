@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-11-01
+
+### Added
+
+- **iPhone support** — The app is now adapted for iPhone, in Chrome (recommended) and Safari. Everything iPhone-specific switches on only when the browser is detected as iOS WebKit, so Android and desktop behave as before. (#94)
+  - **Keyboard and screen** — Settings, the Setup Wizard, Presets, Help and all dialogs follow the visible screen, so a tapped field stays above the on-screen keyboard and no empty gap is left when it closes. Content stays clear of the notch and the home bar, also in landscape. The page behind a dialog no longer scrolls, and text fields are at least 16 px so iOS does not zoom when you tap one. (#94)
+  - **Keying surfaces** — Long-pressing the key sprite or the fullscreen touch keys no longer opens a copy or selection menu. Text outputs stay selectable. (#94)
+  - **Audio** — When iOS pauses audio (a phone call, an app switch, a page refresh) the status line shows **Audio is paused** and the next tap or key press anywhere resumes it; a **Tap to resume audio** button is also shown. On iPhone the app asks iOS to play sound like a media player, which usually avoids the ring/silent switch muting it. The microphone and CW detector now use the real audio sample rate and fall back to the device's own rate if iOS refuses 48 kHz. (#94)
+  - **Not available on this device** — MIDI, Serial, WinKeyer and Vibration cards say so, with a reason that names iPhone browsers on iOS. In the Setup Wizard the MIDI keyer choice is disabled when MIDI is unsupported, and the Connect output hardware guide shows a single "Not available on this device" step when none of MIDI, WinKeyer or Serial is supported. (#94)
+  - **Install hint** — The Try Morse guide shows a yellow pill when the app is not installed: **Add to Home Screen** on iPhone (opens the steps in Help) and **Use it as an app** on Android (opens Chrome's install dialog, with a **More in Help** link). It never shows in the installed app. The home-screen tags (standalone, name MCS, black status bar) are added on iPhone only. (#94)
+  - **Help** — New section 9.7, **Using Morse Code Studio on iPhone**: which browser to use, audio resume, the silent switch, what is unavailable, keyboard and notch behaviour, and screen-on and relay notes. Section 9.2 now says that only Safari can install the full-screen app. The two iPhone audio rows in Troubleshooting point to it. (#94)
+
+### Changed
+
+- **Compatibility notes** — The README and Help compatibility notes now cover Chrome on iPhone, which uses Apple's WebKit and behaves like Safari. (#94)
+- **Touch button sizing** — The main coarse-pointer button rule now excludes the shared pill buttons, as the project convention says, so any pill in the main screen uses the shared pill size on touch screens. (#94)
+- **Audio recovery** — The audio keep-alives also recover the iOS-only `interrupted` state, and a failed resume no longer raises an unhandled promise error. (#94)
+
 ## [2.4.0] - 2026-10-31
 
 ### Added

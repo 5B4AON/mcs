@@ -28,6 +28,7 @@
             ],
             "styles": [
               "src/styles.css",
+              "src/viewport.css",
               "src/app/components/settings-modal/settings-shared.css",
               "src/app/components/settings-items/mapping/mapping-fields.css",
               "src/app/components/settings-modal/settings-inputs-tab/settings-inputs-tab.component.css",

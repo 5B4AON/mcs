@@ -5,6 +5,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { MidiOutputMapping } from './midi-output-item.model';
 import { MidiOutputService } from '../../../services/midi-output.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { MidiOutputEditModalComponent, MidiOutputEditSaveEvent } from '../../settings-modal/midi-output-edit-modal/midi-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -51,6 +52,8 @@ export class MidiOutputItemComponent {
   showEditModal = false;
 
   readonly midiOutput = inject(MidiOutputService);
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   /** Handle MIDI output enabled toggle — starts/stops MIDI output access */
   async onMidiOutputEnabledChange(checked: boolean): Promise<void> {

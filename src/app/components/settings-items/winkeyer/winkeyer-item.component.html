@@ -31,8 +31,13 @@
 
   @if (!webSerialSupported) {
     <div class="conflict-warning">
-      Web Serial API is not supported in this browser. WinKeyer features require a
-      Chromium-based browser (Chrome or Edge).
+      <strong>Not available on this device.</strong>
+      @if (ios) {
+        iPhone and iPad browsers, including Chrome, do not support Web Serial.
+      } @else {
+        Web Serial API is not supported in this browser. WinKeyer features require a
+        Chromium-based browser (Chrome or Edge).
+      }
     </div>
   } @else if (isAndroid) {
     <div class="conflict-warning">

@@ -154,10 +154,13 @@
         <circle cx="36" cy="38" r="1.5" fill="currentColor" opacity="0.4"/>
       </svg>
       <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
-           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping'"
-           [class.audio-status-running]="audioState === 'running'"
+           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
+           [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
            [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
-        <span>{{ audioStatusMessage }}</span>
+        <span>{{ audioNeedsTap ? 'Audio is paused.' : audioStatusMessage }}</span>
+        @if (audioNeedsTap) {
+          <button class="audio-retry-stop-btn" (click)="resumeAudio()">Tap to resume audio</button>
+        }
         @if (audioState === 'failed' && audioRunning) {
           <button class="audio-retry-stop-btn" (click)="retryStopAudio()" [disabled]="audioStarting">
             Retry stopping audio
@@ -250,6 +253,17 @@
           </button>
         </div>
         <p>Type below to turn text into Morse. Load the example, then choose the send control. Live mode sends as you type. Setup Wizard helps you choose the right settings.</p>
+        @if (installHint.hint(); as hint) {
+          <p class="try-morse-note" [class.hint-centered]="hint === 'ios'">
+            <!-- Android: opens the browser's install dialog. iOS has no install API, so the same pill opens the Add to Home Screen steps in Help. -->
+            <button type="button" class="pill-btn pill-note"
+                    [title]="hint === 'ios' ? 'How to add Morse Code Studio to your Home Screen' : 'Install Morse Code Studio as an app'"
+                    (click)="hint === 'ios' ? openHelp('s9-2') : installHint.install()">{{ hint === 'ios' ? 'Add to Home Screen' : 'Use it as an app' }}</button>
+            @if (hint === 'prompt') {
+              <a href="#" class="hint-link" (click)="$event.preventDefault(); openHelp('s9-2')">More in Help</a>
+            }
+          </p>
+        }
         <div class="try-morse-actions">
           <button class="kebab-help-btn try-morse-load" (click)="loadTryMorseExample()"
                   [disabled]="encoder.isSending()">

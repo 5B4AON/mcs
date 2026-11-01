@@ -4,6 +4,8 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { AppSettings } from '../../../services/settings.service';
+import { VibrationOutputService } from '../../../services/vibration-output.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
@@ -28,6 +30,12 @@ export class VibrationItemComponent {
 
   /** Current values from the scope */
   readonly s = this.scope.value;
+
+  /** Vibration support of this device */
+  readonly vibration = inject(VibrationOutputService);
+
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   /** Handle a string or numeric setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {

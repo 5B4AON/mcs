@@ -18,7 +18,12 @@
 
   @if (!midiInput.supported) {
     <div class="conflict-warning">
-      Web MIDI API is not supported in this browser. Use Chrome or Edge.
+      <strong>Not available on this device.</strong>
+      @if (ios) {
+        iPhone and iPad browsers, including Chrome, do not support Web MIDI.
+      } @else {
+        Web MIDI API is not supported in this browser. Use Chrome or Edge.
+      }
     </div>
   }
 

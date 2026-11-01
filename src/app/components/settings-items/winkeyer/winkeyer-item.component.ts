@@ -5,6 +5,7 @@
 import { Component, Input, inject } from '@angular/core';
 import { AppSettings } from '../../../services/settings.service';
 import { WinkeyerOutputService } from '../../../services/winkeyer-output.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
@@ -34,6 +35,8 @@ export class WinkeyerItemComponent {
   readonly s = this.scope.value;
 
   readonly winkeyerOutput = inject(WinkeyerOutputService);
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   readonly webSerialSupported = 'serial' in navigator;
   readonly isAndroid = /android/i.test(navigator.userAgent);

@@ -2,8 +2,9 @@
  * Morse Code Studio
  */
 
-import { Injectable, NgZone } from '@angular/core';
+import { Injectable, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
+import { isContextPaused } from './audio-context-state';
 import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
 
@@ -69,6 +70,9 @@ export class CwInputService {
 
   private started = false;
 
+  /** True while the CW input context is paused (suspended, or interrupted on iOS) and has not recovered */
+  readonly paused = signal(false);
+
   /** True between a key-down and its key-up from the detector */
   private keyIsDown = false;
 
@@ -122,7 +126,16 @@ export class CwInputService {
 
     this.stream = await navigator.mediaDevices.getUserMedia(constraints);
 
-    const source = this.audioCtx.createMediaStreamSource(this.stream);
+    let source: MediaStreamAudioSourceNode;
+    try {
+      source = this.audioCtx.createMediaStreamSource(this.stream);
+    } catch {
+      // Some browsers (iOS) ignore the requested 48 kHz and then refuse an input at another rate: retry at the device's own rate
+      await this.audioCtx.close().catch(() => {});
+      this.audioCtx = new AudioContext();
+      await this.audioCtx.audioWorklet.addModule('cw-detect-processor.js');
+      source = this.audioCtx.createMediaStreamSource(this.stream);
+    }
 
     // Split stereo input and pick the selected channel (left=0, right=1)
     const splitter = this.audioCtx.createChannelSplitter(2);
@@ -158,7 +171,7 @@ export class CwInputService {
     this.workletNode.port.postMessage({
       frequency: s.cwInputFrequency,
       bandwidth: s.cwInputBandwidth,
-      sampleRate: 48000,
+      sampleRate: this.audioCtx.sampleRate,
       debounceMs: s.cwInputDebounceMs,
       autoThreshold: s.cwInputAutoThreshold,
       threshold: s.cwInputThreshold,
@@ -256,18 +269,28 @@ export class CwInputService {
    */
   private installKeepAlive(ctx: AudioContext): void {
     ctx.onstatechange = () => {
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (isContextPaused(ctx)) ctx.resume().catch(() => {});
+      this.paused.set(isContextPaused(ctx));
     };
     this.keepAliveTimer = setInterval(() => {
-      if (ctx.state === 'suspended') {
-        ctx.resume();
-      }
+      if (isContextPaused(ctx)) ctx.resume().catch(() => {});
+      this.paused.set(isContextPaused(ctx));
     }, 3000);
   }
 
+  /** Resume the CW input context. Call it from a user gesture: iOS refuses otherwise. */
+  async resumeFromGesture(): Promise<void> {
+    const ctx = this.audioCtx;
+    if (!ctx || !isContextPaused(ctx)) return;
+    try {
+      await ctx.resume();
+    } finally {
+      this.paused.set(isContextPaused(ctx));
+    }
+  }
+
   private clearKeepAlive(): void {
+    this.paused.set(false);
     if (this.keepAliveTimer !== null) {
       clearInterval(this.keepAliveTimer);
       this.keepAliveTimer = null;

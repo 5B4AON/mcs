@@ -2,7 +2,8 @@
  * Morse Code Studio
  */
 
-import { Injectable, effect } from '@angular/core';
+import { Injectable, effect, signal } from '@angular/core';
+import { isContextPaused } from './audio-context-state';
 import { SettingsService } from './settings.service';
 
 /**
@@ -57,6 +58,9 @@ export class AudioOutputService {
   private pilotOsc: OscillatorNode | null = null;
   private pilotGain: GainNode | null = null;
   private pilotMerger: ChannelMergerNode | null = null;
+
+  /** True while any output context is paused (suspended, or interrupted on iOS) and has not recovered */
+  readonly paused = signal(false);
 
   // ---- Keep-alive: prevents browser from suspending idle audio contexts ----
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
@@ -502,7 +506,7 @@ export class AudioOutputService {
    */
   private ensureResumed(): void {
     for (const ctx of this.allContexts()) {
-      if (ctx && ctx.state === 'suspended') {
+      if (ctx && isContextPaused(ctx)) {
         ctx.resume();
       }
     }
@@ -511,7 +515,7 @@ export class AudioOutputService {
   /** Check if any context is currently suspended */
   private anyContextSuspended(): boolean {
     for (const ctx of this.allContexts()) {
-      if (ctx && ctx.state === 'suspended') return true;
+      if (isContextPaused(ctx)) return true;
     }
     return false;
   }
@@ -519,10 +523,23 @@ export class AudioOutputService {
   /** Awaitable version of ensureResumed for test/diagnostic methods */
   private async ensureResumedAsync(): Promise<void> {
     for (const ctx of this.allContexts()) {
-      if (ctx && ctx.state === 'suspended') {
+      if (ctx && isContextPaused(ctx)) {
         await ctx.resume();
       }
     }
+  }
+
+  /** Resume every paused context. Call it from a user gesture: iOS refuses otherwise. */
+  async resumeFromGesture(): Promise<void> {
+    try {
+      await this.ensureResumedAsync();
+    } finally {
+      this.updatePaused();
+    }
+  }
+
+  private updatePaused(): void {
+    this.paused.set(this.allContexts().some(ctx => isContextPaused(ctx)));
   }
 
   /** All active AudioContexts */
@@ -562,29 +579,34 @@ export class AudioOutputService {
       } catch { /* context may be closed */ }
 
       ctx.onstatechange = () => {
-        if (ctx.state === 'suspended') ctx.resume();
+        if (isContextPaused(ctx)) ctx.resume().catch(() => {});
+        this.updatePaused();
       };
     }
 
     // More aggressive polling — 500 ms catches suspension faster
     this.keepAliveTimer = setInterval(() => {
       for (const ctx of this.allContexts()) {
-        if (ctx && ctx.state === 'suspended') ctx.resume();
+        if (isContextPaused(ctx)) ctx!.resume().catch(() => {});
       }
+      this.updatePaused();
     }, 500);
 
     // Resume immediately when tab becomes visible again
     this.visibilityHandler = () => {
       if (document.visibilityState === 'visible') {
         for (const ctx of this.allContexts()) {
-          if (ctx && ctx.state === 'suspended') ctx.resume();
+          if (isContextPaused(ctx)) ctx!.resume().catch(() => {});
         }
+        this.updatePaused();
       }
     };
     document.addEventListener('visibilitychange', this.visibilityHandler);
+    this.updatePaused();
   }
 
   private clearKeepAlive(): void {
+    this.paused.set(false);
     if (this.keepAliveTimer) {
       clearInterval(this.keepAliveTimer);
       this.keepAliveTimer = null;
