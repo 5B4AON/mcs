@@ -3,8 +3,19 @@
  */
 
 import { settingIs } from '../engine/conditions';
-import { WizardFlow } from '../engine/flow-types';
+import { WizardFlow, WizardStep } from '../engine/flow-types';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
+import { MIDI_SUPPORTED, SERIAL_SUPPORTED } from './device-support';
+
+/** On a device with no MIDI, WinKeyer or serial support (for example an iPhone) there is nothing to set up. */
+const HARDWARE_UNAVAILABLE = !MIDI_SUPPORTED && !SERIAL_SUPPORTED;
+
+const UNAVAILABLE_STEP: WizardStep = {
+  id: 'unavailable',
+  title: 'Not available on this device',
+  intro: 'This guide connects MIDI, WinKeyer and serial radio-keying hardware. This device and browser do not support any of them, so nothing here can be set up and nothing is changed. Choose Back to pick another goal, or close the guide.',
+  validate: () => ['Not available on this device.'],
+};
 
 /**
  * Goal "Connect output hardware": encoder speed, Farnsworth, then one step per
@@ -21,7 +32,7 @@ export const HARDWARE_FLOW: WizardFlow = {
   id: 'hardware',
   title: 'Connect output hardware',
   goal: 'hardware',
-  steps: [
+  steps: HARDWARE_UNAVAILABLE ? [UNAVAILABLE_STEP] : [
     speedStep({ encoder: true }),
     farnsworthStep({ applies: 'tx' }),
     {

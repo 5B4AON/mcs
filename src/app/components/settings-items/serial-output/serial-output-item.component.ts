@@ -6,6 +6,7 @@ import { Component, Input, computed, inject } from '@angular/core';
 import { OutputForward } from '../../../services/settings-common';
 import { SerialOutputMapping } from './serial-output-item.model';
 import { SerialKeyOutputService } from '../../../services/serial-key-output.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { SerialOutputEditModalComponent, SerialOutputEditSaveEvent } from '../../settings-modal/serial-output-edit-modal/serial-output-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -36,6 +37,8 @@ export class SerialOutputItemComponent {
   readonly s = this.scope.value;
 
   readonly serialOutput = inject(SerialKeyOutputService);
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   /** Index of the mapping being edited, or -1 for a new one */
   editIndex = -1;

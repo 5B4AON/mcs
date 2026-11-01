@@ -11,6 +11,7 @@ import { SettingsService } from '../../../services/settings.service';
 import { DecoderSource } from '../../../services/settings-common';
 import { MidiInputMapping } from './midi-input-item.model';
 import { MidiInputService } from '../../../services/midi-input.service';
+import { ViewportService } from '../../../services/viewport.service';
 import { MidiInputEditModalComponent, MidiInputEditSaveEvent } from '../../settings-modal/midi-input-edit-modal/midi-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -67,6 +68,8 @@ export class MidiInputItemComponent {
 
   readonly settings = inject(SettingsService);
   readonly midiInput = inject(MidiInputService);
+  /** iPhone/iPad layout: only changes the wording of the "not available" note */
+  readonly ios = inject(ViewportService).iosLayout;
 
   /** Handle MIDI input enabled toggle */
   async onMidiEnabledChange(checked: boolean): Promise<void> {

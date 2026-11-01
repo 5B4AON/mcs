@@ -6,6 +6,7 @@ import { all, answerIncludes, any, not } from '../engine/conditions';
 import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
 import { screenForced, screenStep, soundStep, speedStep } from './shared-steps';
+import { MIDI_SUPPORTED, NOT_AVAILABLE_HINT } from './device-support';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
 const METHODS: {
@@ -20,6 +21,9 @@ const METHODS: {
   { id: 'touch', label: 'Touch keyer', phrase: 'touch keyer', key: 'touchKeyerEnabled' },
   { id: 'midi', label: 'MIDI keyer', phrase: 'MIDI keyer', key: 'midiInputEnabled' },
 ];
+
+/** True when this device cannot use the keyer (only MIDI depends on the browser) */
+const methodUnavailable = (id: string): boolean => id === 'midi' && !MIDI_SUPPORTED;
 
 /** Each chosen keyer is switched on, each unchosen one off. */
 const FORCED: ForcedSetting[] = [...METHODS.flatMap(m => [
@@ -72,8 +76,10 @@ export const SEND_FLOW: WizardFlow = {
         label: 'Local keyers',
         kind: 'multi',
         default: [],
-        defaultFrom: (s: AppSettings) => METHODS.filter(m => s[m.key]).map(m => m.id),
-        options: METHODS.map(m => ({ value: m.id, label: m.label })),
+        defaultFrom: (s: AppSettings) => METHODS.filter(m => s[m.key] && !methodUnavailable(m.id)).map(m => m.id),
+        options: METHODS.map(m => methodUnavailable(m.id)
+          ? { value: m.id, label: m.label, hint: NOT_AVAILABLE_HINT, disabled: true }
+          : { value: m.id, label: m.label }),
       }],
       validate: ctx => Array.isArray(ctx.answers['methods']) && ctx.answers['methods'].length
         ? []

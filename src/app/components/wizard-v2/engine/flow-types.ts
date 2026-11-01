@@ -34,6 +34,8 @@ export interface QuestionOption {
   value: string;
   label: string;
   hint?: string;
+  /** Shown but not selectable (for example a keyer this device does not support) */
+  disabled?: boolean;
 }
 
 /**
