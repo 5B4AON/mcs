@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.2] - 2026-11-02
+
+### Fixed
+
+- **Help tables wrap normally again** — The 2.8.1 fix for Help scrolling sideways also let table cells break words anywhere, so tables wrapped heavily. Only paragraphs, lists, headings, preformatted text and note boxes break long words now. Table cells wrap at spaces only, and on phones table text is smaller (about 11 px at 360 px wide) so tables fit without wrapping. A table that is still wider than the screen scrolls inside its own box; the Help page still never scrolls sideways.
+
 ## [2.8.1] - 2026-11-02
 
 ### Added

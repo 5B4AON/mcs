@@ -29,8 +29,9 @@
   color: #66ccff;
 }
 
-/* Long words, code and preformatted text wrap instead of widening the page sideways */
-::ng-deep .help-chapter {
+/* Long words, code and preformatted text wrap instead of widening the page sideways.
+   Tables are left out: their cells wrap at spaces only, and shrink their text on phones instead. */
+::ng-deep .help-chapter :is(p, li, h2, h3, h4, pre, .example-box, .trivia-card) {
   overflow-wrap: anywhere;
 }
 ::ng-deep .help-chapter pre {
@@ -354,5 +355,21 @@
   }
   ::ng-deep .diagram-figure {
     padding: 8px 10px;
+  }
+  /* Smaller table text so tables fit without wrapping; the user can zoom in. A table that is
+     still wider than the screen scrolls on its own instead of widening the page. */
+  ::ng-deep .help-chapter table {
+    display: block;
+    max-width: 100%;
+    overflow-x: auto;
+    font-size: clamp(10px, 3vw, 14px);
+  }
+  ::ng-deep .help-chapter th,
+  ::ng-deep .help-chapter td {
+    padding: 4px 5px;
+  }
+  ::ng-deep .help-chapter table code {
+    font-size: inherit;
+    padding: 0 3px;
   }
 }
