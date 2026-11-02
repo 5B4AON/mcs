@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.1] - 2026-11-02
+
+### Added
+
+- **Smooth expand and collapse** — Settings cards, the Morse Speeds sections, the fullscreen menu's Styling block and the setup guide's "More goals" now slide open and closed instead of jumping. Nothing animates when the device is set to reduce motion, and a section toggled mid-slide reverses from where it is.
+- **Clear menus fade** — The Clear menus on the main and fullscreen screens fade in and out. The two kebab menus appear and disappear instantly.
+
+### Changed
+
+- **Shorter setup guide names** — "Type text and hear it as Morse" is now "Type and hear Morse", and "Talk to other people over the internet" is now "Talk over the internet" (goal list, guide title and Help).
+- **Help "?" buttons stay beside their text** — In Settings cards and setup guides, the "?" no longer drops onto a line of its own on narrow screens. It sits in a fixed column at the right of each hint box with the text centred beside it, and the "?" next to a dropdown lines up with the one above. The setup guide's step title is level with its "?" too, and the mapping editors' hints keep text and "?" on one row.
+- **Both kebab menus have the same width** — The main and fullscreen menus are now 260 px wide (or the screen width minus a small margin), and no longer change width when Styling is expanded or the font size slider reaches ×10.0. The fullscreen menu always opens with Styling collapsed.
+- **Quieter keep-alive tone** — The inaudible tone that keeps the audio device awake is now at −80 dB instead of −100 dB, because at −100 dB it rounds to silence on a 16-bit output and the device could power down and pop on the next beep. Sidetone latency is unchanged.
+
+### Fixed
+
+- **Loading a preset now switches live inputs and outputs** — Applying a preset that turns MIDI input (or MIDI output, serial, WinKeyer, RTDB, microphone or CW detector) off used to change only the switch while the running input kept working. The preset now starts and stops the running channels the same way Revert does.
+- **Help no longer scrolls sideways** — On narrow phones, wide tables, long words and preformatted text could make Help scroll left and right. They now wrap, and Help scrolls only up and down.
+- **Possible crackle after a tone** — Released tones now fade to exactly zero instead of an ever-smaller value, which some mobile processors handle slowly and which may cause a short crackle.
+- **No blue tap rectangle on buttons** — Pill buttons, dialog buttons, kebab pills, icon buttons and toggles no longer flash the browser's blue tap highlight on touch screens.
+
 ## [2.8.0] - 2026-11-01
 
 ### Added

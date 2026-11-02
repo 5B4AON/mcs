@@ -216,7 +216,7 @@ export class AudioOutputService {
     const ramp = 0.003;
     this.optoGain.gain.cancelScheduledValues(now);
     this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
-    this.optoGain.gain.setTargetAtTime(0, now + dur, ramp);
+    this.releaseGain(this.optoGain.gain, now + dur, ramp);
   }
 
   /** Test the sidetone output � plays a short burst */
@@ -230,7 +230,19 @@ export class AudioOutputService {
     const ramp = 0.003;
     this.sidetoneGain.gain.cancelScheduledValues(now);
     this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-    this.sidetoneGain.gain.setTargetAtTime(0, now + dur, ramp);
+    this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+  }
+
+  /**
+   * Fade a gain to silence and then snap it to exactly 0.
+   * An exponential fade alone never reaches 0: the value keeps shrinking into denormal
+   * floats, which some mobile CPUs process very slowly (a possible cause of crackles).
+   * The snap happens ten time constants later, about -87 dB below the tone, so it is inaudible.
+   * A later cancelScheduledValues() removes the snap if a new tone starts first.
+   */
+  private releaseGain(gain: AudioParam, at: number, ramp: number): void {
+    gain.setTargetAtTime(0, at, ramp);
+    gain.setValueAtTime(0, at + ramp * 10);
   }
 
   /** Key down */
@@ -286,13 +298,13 @@ export class AudioOutputService {
       const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
       const now = ctx.currentTime;
       this.sidetoneGain.gain.cancelScheduledValues(now);
-      this.sidetoneGain.gain.setTargetAtTime(0, now, ramp);
+      this.releaseGain(this.sidetoneGain.gain, now, ramp);
     }
     if (this.optoGain) {
       const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
       const now = ctx.currentTime;
       this.optoGain.gain.cancelScheduledValues(now);
-      this.optoGain.gain.setTargetAtTime(0, now, ramp);
+      this.releaseGain(this.optoGain.gain, now, ramp);
     }
   }
 
@@ -311,7 +323,7 @@ export class AudioOutputService {
         const dur = durationMs / 1000;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-        this.sidetoneGain.gain.setTargetAtTime(0, now + dur, ramp);
+        this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
       }
       if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
         const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
@@ -319,7 +331,7 @@ export class AudioOutputService {
         const dur = durationMs / 1000;
         this.optoGain.gain.cancelScheduledValues(now);
         this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
-        this.optoGain.gain.setTargetAtTime(0, now + dur, ramp);
+        this.releaseGain(this.optoGain.gain, now + dur, ramp);
       }
     };
 
@@ -352,7 +364,7 @@ export class AudioOutputService {
         const dur = durationMs / 1000;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-        this.sidetoneGain.gain.setTargetAtTime(0, now + dur, ramp);
+        this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
       }
     };
 
@@ -551,7 +563,7 @@ export class AudioOutputService {
    * Keep-alive: prevent browser from suspending output AudioContexts.
    *
    * Strategy (three layers):
-   * 1. **Ultrasonic oscillator**: A 20 kHz sine at -100 dB (gain 0.00001)
+   * 1. **Ultrasonic oscillator**: A 20 kHz sine at -80 dB (gain 0.0001)
    *    on each context. This is inaudible but produces real non-zero audio
    *    samples, which prevents Chrome's silence-detection from auto-suspending.
    *    (A zero-offset ConstantSourceNode gets optimised away by Chrome.)
@@ -571,7 +583,10 @@ export class AudioOutputService {
         osc.type = 'sine';
         osc.frequency.value = 20000;  // 20 kHz — at/above hearing limit
         const g = ctx.createGain();
-        g.gain.value = 0.00001;       // -100 dB, completely inaudible
+        // -80 dB: about 3 steps of a 16-bit output, so the DAC / Bluetooth link sees real
+        // signal and stays awake (at -100 dB it rounds to digital silence and the amplifier
+        // can power down, then pops on the next tone). Still inaudible.
+        g.gain.value = 0.0001;
         osc.connect(g);
         g.connect(ctx.destination);
         osc.start();

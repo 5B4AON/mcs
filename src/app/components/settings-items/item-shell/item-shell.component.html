@@ -18,11 +18,9 @@
         </label>
       }
     </div>
-    @if (expanded) {
-      <div class="settings-card-body">
-        <ng-container *ngTemplateOutlet="body"></ng-container>
-      </div>
-    }
+    <div class="settings-card-body" *appCollapse="expanded">
+      <ng-container *ngTemplateOutlet="body"></ng-container>
+    </div>
   </div>
 } @else {
   <div class="settings-card" [id]="'settings-card-' + cardId">

@@ -4,6 +4,7 @@
 
 import { NgTemplateOutlet } from '@angular/common';
 import { Component, EventEmitter, Output } from '@angular/core';
+import { CollapseDirective } from '../../collapse.directive';
 import { MAIN_GOALS, MORE_GOALS, SetupGoal, WizardGoalId } from './setup-goals';
 
 export type { GoalTab, GoalTarget, GoalLanding, WizardGoalId } from './setup-goals';
@@ -18,7 +19,7 @@ export type { GoalTab, GoalTarget, GoalLanding, WizardGoalId } from './setup-goa
 @Component({
   selector: 'app-goal-navigator',
   standalone: true,
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, CollapseDirective],
   templateUrl: './goal-navigator.component.html',
   styleUrls: ['./goal-navigator.component.css'],
 })

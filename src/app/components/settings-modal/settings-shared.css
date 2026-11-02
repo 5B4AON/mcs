@@ -645,6 +645,44 @@
   outline: 2px solid #8cf;
   outline-offset: 2px;
 }
+/* Help "?" in a hint: reserved column at the right, so the text wraps beside it and the
+   button never drops onto a line of its own. The button is centred on the box and the text
+   block gets matching vertical padding, so a one-line hint sits level with the button. */
+:is(.cw-hint, .keyer-hint, .pilot-wiring-hint):has(> app-help-link-button),
+.settings-card-body > :is(.cw-hint, .keyer-hint):has(> app-help-link-button) {
+  position: relative;
+  display: block;
+  padding-block: .7rem;
+  padding-right: 3rem;
+  min-height: calc(32px + .5rem);
+}
+:is(.cw-hint, .keyer-hint, .pilot-wiring-hint) > app-help-link-button {
+  position: absolute;
+  top: 50%;
+  right: .3rem;
+  transform: translateY(-50%);
+}
+/* Hint without a box (mapping editors): text and button share a row, both centred */
+.md-hint:has(> app-help-link-button) {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.md-hint > app-help-link-button {
+  margin-left: auto;
+}
+/* Help "?" beside a select: the row never wraps, the select shrinks instead, and the same
+   right inset as the hint boxes keeps the buttons in one column */
+.settings-card-body label:has(> app-help-link-button) {
+  flex-wrap: nowrap;
+  padding-right: .3rem;
+}
+.settings-card-body label:has(> app-help-link-button) > select {
+  min-width: 0;
+}
+.settings-card-body label:has(> app-help-link-button) > app-help-link-button {
+  margin-left: auto;
+}
 .cw-auto-info {
   font-size: .75rem;
   color: #acd;

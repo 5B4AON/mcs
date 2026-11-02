@@ -868,7 +868,10 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     if (!this.canApplySettingsImport()) return;
 
     const name = this.reviewPreset?.name ?? 'preset';
+    const before = this.transferBaseSettings;
     this.settings.update(this.transferReview.settings);
+    // Like Revert: switch running channels (MIDI, serial, RTDB, ...) to match the new settings
+    void this.syncLiveServices(before, this.settings.settings()).catch(err => console.warn('Could not apply preset to running services:', err));
     this.transferReview = null;
     this.transferBaseSettings = null;
     this.reviewPreset = null;

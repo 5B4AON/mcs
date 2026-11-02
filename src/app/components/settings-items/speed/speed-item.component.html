@@ -20,16 +20,14 @@
         } @else {
           <div class="speed-sub-title">{{ info[kind].label }}: {{ s()[info[kind].key] }}&thinsp;WPM</div>
         }
-        @if (isOpen) {
-          <div class="speed-sub-body">
-            <div class="cw-hint">
-              {{ info[kind].hint }}
-              <app-help-link-button [section]="info[kind].help" [label]="info[kind].helpLabel" />
-            </div>
-            <app-stepper [value]="s()[info[kind].key]" [min]="range.min" [max]="range.max"
-                         [label]="info[kind].label" (valueChange)="setSpeed(kind, $event)" />
+        <div class="speed-sub-body" *appCollapse="isOpen">
+          <div class="cw-hint">
+            {{ info[kind].hint }}
+            <app-help-link-button [section]="info[kind].help" [label]="info[kind].helpLabel" />
           </div>
-        }
+          <app-stepper [value]="s()[info[kind].key]" [min]="range.min" [max]="range.max"
+                       [label]="info[kind].label" (valueChange)="setSpeed(kind, $event)" />
+        </div>
       </div>
     }
   }

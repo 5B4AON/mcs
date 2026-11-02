@@ -6,7 +6,7 @@ import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
 
 /**
- * Goal "Type text and hear it as Morse": choose whether text is sent on Enter or live,
+ * Goal "Type and hear Morse": choose whether text is sent on Enter or live,
  * set up the keyboard encoder, pick the speed, optionally add
  * Farnsworth spacing, and set the sidetone. Typed text plays as sent (TX) Morse,
  * so the Farnsworth step reminds the user to apply it to TX. The last step
@@ -16,7 +16,7 @@ import { farnsworthStep, screenForced, screenStep, soundStep, speedStep } from '
  */
 export const TYPE_FLOW: WizardFlow = {
   id: 'type',
-  title: 'Type text and hear it as Morse',
+  title: 'Type and hear Morse',
   goal: 'type',
   forced: screenForced('type'),
   steps: [

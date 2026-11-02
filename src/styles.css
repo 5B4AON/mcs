@@ -19,6 +19,16 @@ html, body {
   outline-offset: 2px;
 }
 
+/* No blue tap rectangle over buttons on touch screens: every button already has its own pressed
+   look, and keyboard focus keeps the outline above */
+button,
+[role="button"],
+summary,
+select,
+.toggle-switch {
+  -webkit-tap-highlight-color: transparent;
+}
+
 /* Kebab pills with an icon: icon at the left edge, label centred in the remaining space */
 button.kebab-help-btn.kebab-help-btn:has(.pill-icon) {
   display: flex;
@@ -89,6 +99,8 @@ button.kebab-help-btn:has(.pill-icon)::after {
   }
 }
 .kebab-compact {
+  /* Both kebab menus (main and fullscreen) share one fixed width, whatever they show */
+  width: min(260px, calc(100vw - 1rem));
   background-image:
     linear-gradient(var(--kebab-bg) 30%, transparent),
     linear-gradient(transparent, var(--kebab-bg) 70%),
@@ -117,6 +129,37 @@ button.kebab-help-btn:has(.pill-icon)::after {
     scrollbar-width: thin;
     scrollbar-color: #6f8fb5 rgba(255, 255, 255, .08);
   }
+}
+
+/* Clear menus: they fade in and fade out before they are hidden (the kebab menus do not fade).
+ * The menu's own CSS keeps `display: none` and sets `display: flex` under `.open`; `display` is
+ * transitioned (allow-discrete) so the hide waits for the fade. Browsers without that support just
+ * show and hide at once. */
+.popup-anim {
+  opacity: 0;
+  will-change: opacity;
+  transition: opacity .18s ease, display .18s allow-discrete;
+}
+.popup-anim.open {
+  opacity: 1;
+  animation: popup-in .18s ease;
+}
+@keyframes popup-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .popup-anim, .popup-anim.open {
+    transition: none;
+    animation: none;
+  }
+}
+/* No focus ring on a menu that is fading out (it was just closed by a press) */
+.popup-anim:not(.open) :focus,
+.popup-anim:not(.open) :focus-visible {
+  outline: none;
+}
+.popup-anim:not(.open) {
+  pointer-events: none;
 }
 
 /* Dialog pills: one look for every dialog action button (neutral by default) */

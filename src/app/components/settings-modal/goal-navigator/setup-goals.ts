@@ -85,14 +85,14 @@ export const LANDINGS: Record<string, GoalLanding> = {
 };
 
 export const MAIN_GOALS: SetupGoal[] = [
-  { label: 'Type text and hear it as Morse', landing: 'encoder', icon: 'keyboard', wizard: 'type' },
+  { label: 'Type and hear Morse', landing: 'encoder', icon: 'keyboard', wizard: 'type' },
   { label: 'Practice sending Morse', landing: 'keyboard-keyer', icon: 'key', wizard: 'send' },
   { label: 'Practice receiving Morse', landing: 'practice', icon: 'headphones', wizard: 'practice' },
   { label: 'Teach or demonstrate Morse', landing: 'teach', icon: 'graduationCap', wizard: 'teach' },
 ];
 
 export const MORE_GOALS: SetupGoal[] = [
-  { label: 'Talk to other people over the internet', landing: 'rtdb-input', icon: 'globe', wizard: 'relay' },
+  { label: 'Talk over the internet', landing: 'rtdb-input', icon: 'globe', wizard: 'relay' },
   { label: 'Connect output hardware', landing: 'midi-output', icon: 'radio', wizard: 'hardware' },
   { label: 'Decode Morse from sound', landing: 'cw-detector', icon: 'waveform', wizard: 'decode' },
 ];

@@ -10,6 +10,7 @@
   background: #181c20;
   color: #e0e0e0;
   overflow-y: auto;
+  overflow-x: hidden;
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 15px;
   line-height: 1.65;
@@ -26,6 +27,19 @@
   margin: 0 0 24px;
   font-size: 22px;
   color: #66ccff;
+}
+
+/* Long words, code and preformatted text wrap instead of widening the page sideways */
+::ng-deep .help-chapter {
+  overflow-wrap: anywhere;
+}
+::ng-deep .help-chapter pre {
+  white-space: pre-wrap;
+  max-width: 100%;
+}
+::ng-deep .help-chapter img,
+::ng-deep .help-chapter svg {
+  max-width: 100%;
 }
 
 /* ---- Table of Contents ---- */

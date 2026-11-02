@@ -7,6 +7,7 @@ import {
   HostListener
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { CollapseDirective } from '../../collapse.directive';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, ModalDisplaySettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
@@ -38,7 +39,7 @@ import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 @Component({
   selector: 'app-fs-toolbar',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, CollapseDirective],
   templateUrl: './fs-toolbar.component.html',
   styleUrls: ['./fs-toolbar.component.css'],
 })
@@ -78,7 +79,30 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   cwThreshold = 0;
 
   // ---- Menu state ----
-  fsKebabOpen = false;
+  private kebabOpen = false;
+  private stylingResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  get fsKebabOpen(): boolean {
+    return this.kebabOpen;
+  }
+
+  /**
+   * Closing the menu collapses Styling again, one tick later, when the menu is already hidden,
+   * so the section never visibly slides shut. The menu always opens with Styling collapsed.
+   */
+  set fsKebabOpen(open: boolean) {
+    this.kebabOpen = open;
+    if (this.stylingResetTimer) {
+      clearTimeout(this.stylingResetTimer);
+      this.stylingResetTimer = null;
+    }
+    if (!open && this.stylingOpen) {
+      this.stylingResetTimer = setTimeout(() => {
+        this.stylingOpen = false;
+        this.stylingResetTimer = null;
+      }, 0);
+    }
+  }
 
   /** Text styling controls are shown only while expanded; the menu always opens collapsed */
   stylingOpen = false;
@@ -122,6 +146,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.stylingResetTimer) clearTimeout(this.stylingResetTimer);
     document.removeEventListener('pointerdown', this.outsidePressHandler, true);
     this.subs.forEach(s => s.unsubscribe());
   }

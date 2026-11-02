@@ -5,6 +5,7 @@
 import { Component, Input, inject, signal } from '@angular/core';
 import { AppSettings } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
+import { CollapseDirective } from '../../collapse.directive';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -28,7 +29,7 @@ import { SPEED_INFO, SPEED_RANGE, SpeedKind } from './speed-item.model';
 @Component({
   selector: 'app-speed-item',
   standalone: true,
-  imports: [ItemShellComponent, StepperComponent, HelpLinkButtonComponent],
+  imports: [ItemShellComponent, StepperComponent, HelpLinkButtonComponent, CollapseDirective],
   templateUrl: './speed-item.component.html',
   styleUrl: './speed-item.component.css',
 })

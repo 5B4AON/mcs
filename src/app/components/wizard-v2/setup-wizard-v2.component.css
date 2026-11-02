@@ -93,11 +93,16 @@
 .wizard-step-title:focus {
   outline: none;
 }
-/* Step title with the optional Help button beside it */
+/* Step title with the optional Help button beside it; the spacing sits on the row (not on the
+   title) so the title text stays level with the button */
 .wizard-step-head {
   display: flex;
   align-items: center;
   gap: .25rem;
+  margin: .25rem 0 .6rem;
+}
+.wizard-step-head .wizard-step-title {
+  margin: 0;
 }
 
 .wizard-hint {

@@ -13,13 +13,11 @@
       </button>
     </li>
   </ul>
-  @if (moreOpen) {
-    <ul id="goal-nav-more" class="goal-list">
-      @for (goal of moreGoals; track goal.landing) {
-        <li><ng-container *ngTemplateOutlet="goalRow; context: { $implicit: goal }"></ng-container></li>
-      }
-    </ul>
-  }
+  <ul id="goal-nav-more" class="goal-list" *appCollapse="moreOpen">
+    @for (goal of moreGoals; track goal.landing) {
+      <li><ng-container *ngTemplateOutlet="goalRow; context: { $implicit: goal }"></ng-container></li>
+    }
+  </ul>
 </section>
 
 <ng-template #goalRow let-goal>
