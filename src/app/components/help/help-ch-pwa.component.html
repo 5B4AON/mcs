@@ -117,9 +117,34 @@
 <h2 id="s9-5">9.5 &nbsp;Updating the App</h2>
 
 <p>
-  When you open the app while online, the service worker checks for updates
-  automatically. New versions download in the background and activate the
-  next time you restart the app — no reinstall needed.
+  The app checks for a new version by itself when it starts, whenever you
+  come back to it, and every 30 minutes while it is open. A new version is
+  downloaded in the background; your settings and presets are kept and no
+  reinstall is needed.
+</p>
+
+<p>
+  A new version is never installed on its own, so it cannot interrupt keying
+  or a relay session. When one is ready, a notice with an
+  <strong>Update now</strong> button appears on the main screen (you can
+  dismiss it and update later). Pressing the button restarts the app with the
+  new version.
+</p>
+
+<h3 id="s9-5-check">Check for updates</h3>
+<p>
+  To look for a new version right away, for example just after a new release,
+  open <strong>Settings</strong> → <strong>Other</strong> tab and expand
+  <strong>App Updates</strong>. It shows the installed version and a
+  <strong>Check for updates</strong> button. The status line tells you whether
+  the app is checking, downloading a new version, or up to date. When a
+  version is ready the button becomes <strong>Update now</strong>.
+</p>
+<p>
+  Reloading the page or dragging down to refresh is not needed, and by itself
+  often shows the old version again, because a reload only starts the
+  download. The check needs a connection. It is not available in the
+  development server or in a browser without service worker support.
 </p>
 
 <!-- 9.6 Screen Settings -->

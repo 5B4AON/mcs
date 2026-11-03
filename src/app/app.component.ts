@@ -19,6 +19,7 @@ import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
+import { UpdateService } from './services/update.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
 import { AutoFullscreenService } from './services/auto-fullscreen.service';
@@ -136,7 +137,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private defaultsResetSaved = false;
 
   // ---- Kebab menu state ----
-  controlsKebabOpen = false;
+  private kebabOpen = false;
+  private releaseKebabBack: (() => void) | null = null;
   controlsKebabMaxHeight: number | null = null;
 
   /** Kebab button to focus when Settings or the goal list closes, because the menu item that opened it is hidden */
@@ -173,6 +175,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private subs: Subscription[] = [];
   private readonly helpLinks = inject(HelpLinkService);
   private readonly modalBack = inject(ModalBackService);
+  readonly updates = inject(UpdateService);
   private readonly ngZone = inject(NgZone);
 
   /** Tracks how many modal history entries are currently pushed */
@@ -479,6 +482,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   };
 
   ngOnInit(): void {
+    this.dropStaleModalEntries();
     document.addEventListener('pointerdown', this.outsidePressHandler, true);
     if (this.viewport.iosLayout) {
       this.ngZone.runOutsideAngular(() => {
@@ -653,6 +657,25 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.mouseKeyer.detachAll();
   }
 
+  /** Whether the main kebab menu is open; while open, the browser Back button closes it */
+  get controlsKebabOpen(): boolean {
+    return this.kebabOpen;
+  }
+
+  set controlsKebabOpen(open: boolean) {
+    if (open === this.kebabOpen) return;
+    this.kebabOpen = open;
+    if (open) {
+      this.releaseKebabBack = this.modalBack.open(() => {
+        this.kebabOpen = false;
+        this.releaseKebabBack = null;
+      });
+    } else {
+      this.releaseKebabBack?.();
+      this.releaseKebabBack = null;
+    }
+  }
+
   // ---- Browser back-button modal handling ----
 
   /** Open the full screen once the wizard has left the history (set by the wizard's screen choice) */
@@ -661,10 +684,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Guard to ignore the popstate event triggered by our own history.back() */
   private ignoringPopState = false;
 
+  /**
+   * A reload (pull-to-refresh, update) with a dialog open leaves that dialog's history entries behind
+   * while the app starts with no dialog open, so each would need its own Back press. Walk back to
+   * the base entry once. With no dialog open the popstate this causes is ignored.
+   */
+  private dropStaleModalEntries(): void {
+    const stale = (history.state as { depth?: unknown } | null)?.depth;
+    if (typeof stale === 'number' && stale > 0) history.go(-stale);
+  }
+
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
-    history.pushState({ modal }, '');
     this.modalHistoryDepth++;
+    // `depth` lets a reloaded page know how many entries the previous page left on top of the base entry
+    history.pushState({ modal, depth: this.modalHistoryDepth }, '');
   }
 
   /** Back left the entry of a popup that is still open: step forward onto it again */
@@ -747,7 +781,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onPopState(_event: PopStateEvent): void {
     if (!this.ignoringPopState && this.modalHistoryDepth > 0 && this.leftwardMouseDragRecent) {
       // Not a real Back press: restore the entry and leave the dialogs open.
-      history.pushState({ modal: 'restored' }, '');
+      history.pushState({ modal: 'restored', depth: this.modalHistoryDepth }, '');
       return;
     }
     if (this.ignoringPopState) {

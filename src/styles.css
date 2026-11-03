@@ -100,7 +100,9 @@ button.kebab-help-btn:has(.pill-icon)::after {
 }
 .kebab-compact {
   /* Both kebab menus (main and fullscreen) share one fixed width, whatever they show */
-  width: min(260px, calc(100vw - 1rem));
+  width: min(234px, calc(100vw - 1rem));
+  /* Space for the scrollbar is always reserved (equally on both sides), so the items keep their width when it appears */
+  scrollbar-gutter: stable both-edges;
   background-image:
     linear-gradient(var(--kebab-bg) 30%, transparent),
     linear-gradient(transparent, var(--kebab-bg) 70%),

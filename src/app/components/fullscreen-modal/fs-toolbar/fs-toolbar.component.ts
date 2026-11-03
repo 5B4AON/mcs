@@ -19,6 +19,7 @@ import { FirebaseRtdbService } from '../../../services/firebase-rtdb.service';
 import { PracticeService } from '../../../services/practice.service';
 import { LensService } from '../../../services/lens.service';
 import { ViewportService } from '../../../services/viewport.service';
+import { ModalBackService } from '../../../services/modal-back.service';
 import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 
 /**
@@ -80,6 +81,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   // ---- Menu state ----
   private kebabOpen = false;
+  private releaseKebabBack: (() => void) | null = null;
   private stylingResetTimer: ReturnType<typeof setTimeout> | null = null;
 
   get fsKebabOpen(): boolean {
@@ -91,7 +93,25 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
    * so the section never visibly slides shut. The menu always opens with Styling collapsed.
    */
   set fsKebabOpen(open: boolean) {
+    if (open !== this.kebabOpen) {
+      // While the menu is open, the browser Back button closes it
+      if (open) {
+        this.releaseKebabBack = this.modalBack.open(() => {
+          this.kebabOpen = false;
+          this.releaseKebabBack = null;
+          this.scheduleStylingReset();
+        });
+      } else {
+        this.releaseKebabBack?.();
+        this.releaseKebabBack = null;
+      }
+    }
     this.kebabOpen = open;
+    this.scheduleStylingReset();
+  }
+
+  private scheduleStylingReset(): void {
+    const open = this.kebabOpen;
     if (this.stylingResetTimer) {
       clearTimeout(this.stylingResetTimer);
       this.stylingResetTimer = null;
@@ -122,6 +142,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private practice: PracticeService,
     private lens: LensService,
     private viewport: ViewportService,
+    private modalBack: ModalBackService,
   ) {}
 
   /** Close the menu when a press lands outside it, even on controls that stop the click (touch keyers) */
@@ -146,6 +167,8 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.releaseKebabBack?.();
+    this.releaseKebabBack = null;
     if (this.stylingResetTimer) clearTimeout(this.stylingResetTimer);
     document.removeEventListener('pointerdown', this.outsidePressHandler, true);
     this.subs.forEach(s => s.unsubscribe());

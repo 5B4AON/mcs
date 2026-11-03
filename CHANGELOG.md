@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.3] - 2026-11-03
+
+### Added
+
+- **Check for updates** — Settings → Other has a new **App Updates** card with the installed version, a status line and a **Check for updates** button, which becomes **Update now** once a new version has been downloaded. The app also checks by itself when it starts, when you come back to it and every 30 minutes, and shows a dismissible notice with **Update now** on the main screen. A new version is never installed without you pressing the button. Reloading to pick up a new release is no longer needed. Help 9.5 explains it.
+
+### Changed
+
+- **Morse Speeds sections open one at a time** — Opening one speed closes the others, and all of them close when the Morse Speeds card collapses.
+- **Kebab menus are narrower and steady** — Both menus are now 234 px wide (10% narrower) and keep room for the scrollbar, so the items no longer change width when it appears.
+- **Back closes an open kebab menu** — On the main screen and in full screen, the browser or phone Back button now closes an open menu first.
+- **Firebase caching** — `firebase.json` now sends `Cache-Control: no-cache` for `index.html`, `ngsw.json`, `ngsw-worker.js` and `manifest.webmanifest`, so a new deploy is noticed straight away.
+
+### Fixed
+
+- **No pull-to-refresh inside dialogs** — Dragging down in Help, Symbols Reference, Settings, the Setup Wizard or full screen no longer reloads the app on Android and desktop browsers.
+- **Extra Back presses after a reload** — Reloading the page with a dialog open used to leave history entries behind, so leaving the app took several Back presses. The app now removes them on start-up, and one Back from the main screen exits.
+- **Morse Speeds + button alignment** — The + button now sits directly below the Help "?" button in each speed section.
+
 ## [2.8.2] - 2026-11-02
 
 ### Fixed

@@ -4,6 +4,7 @@
 
 import { Component } from '@angular/core';
 import { SpeedItemComponent } from '../../settings-items/speed/speed-item.component';
+import { UpdatesCardComponent } from './updates-card/updates-card.component';
 import { ScreenSettingsCardComponent } from './screen-settings-card/screen-settings-card.component';
 import { TextBlurItemComponent } from '../../settings-items/text-blur/text-blur-item.component';
 import { FarnsworthItemComponent } from '../../settings-items/farnsworth/farnsworth-item.component';
@@ -15,7 +16,7 @@ import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.com
 /**
  * Settings — Other tab.
  *
- * Thin shell that renders the six miscellaneous settings cards as
+ * Thin shell that renders the miscellaneous settings cards as
  * independent child components. Each card encapsulates its own
  * expand/collapse state, service injections, and event handlers.
  */
@@ -31,6 +32,7 @@ import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.com
     ShowProsignsItemComponent,
     ProsignActionsItemComponent,
     EmojisItemComponent,
+    UpdatesCardComponent,
   ],
   templateUrl: './settings-other-tab.component.html',
 })

@@ -12,3 +12,5 @@
 .speed-sub-value { color: #8cf; font-variant-numeric: tabular-nums; }
 .speed-sub-title { font-weight: 600; padding: .5rem .6rem 0; }
 .speed-sub-body { padding: .2rem .6rem .6rem; }
+/* Same right inset as the hint box's Help "?" (.3rem), so the + button sits directly below it */
+.speed-sub-body app-stepper { padding-right: .3rem; }

@@ -1,0 +1,47 @@
+<!-- App Updates: installed version, Check for updates / Update now -->
+<app-item-shell cardId="updates-card" title="App Updates">
+  <div class="update-row">
+    <span>Installed version</span>
+    <strong>{{ version }}</strong>
+  </div>
+
+  <div class="update-status" [class.update-error]="updates.state() === 'error'" aria-live="polite">
+    @switch (updates.state()) {
+      @case ('unavailable') {
+        Updates are not available here: the app is running without its service worker
+        (for example the development server, or a browser that does not support it).
+      }
+      @case ('checking') { Checking for a new version… }
+      @case ('downloading') { A new version was found and is downloading… }
+      @case ('ready') {
+        <strong>A new version is ready.</strong>
+        {{ updates.message() || 'Press Update now to restart the app with it.' }}
+      }
+      @case ('up-to-date') { <strong>You are up to date.</strong> }
+      @case ('error') { {{ updates.message() }} }
+      @default { Not checked yet. }
+    }
+    @if (updates.lastChecked(); as checked) {
+      <small>Last checked {{ checked | date: 'mediumTime' }}</small>
+    }
+  </div>
+
+  @if (updates.supported) {
+    <div class="update-actions">
+      @if (updates.state() === 'ready') {
+        <button type="button" class="pill-btn pill-primary" (click)="updates.applyUpdate()">Update now</button>
+      } @else {
+        <button type="button" class="pill-btn pill-accent"
+                [disabled]="updates.state() === 'checking' || updates.state() === 'downloading'"
+                (click)="updates.check()">Check for updates</button>
+      }
+    </div>
+  }
+
+  <div class="cw-hint">
+    The app checks by itself when it starts, when you come back to it and every 30 minutes.
+    A new version is downloaded in the background and is never installed on its own: you decide
+    when to restart. Your settings are kept.
+    <app-help-link-button section="s9-5" label="Help: Updating the app" />
+  </div>
+</app-item-shell>

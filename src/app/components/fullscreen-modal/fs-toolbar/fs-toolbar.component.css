@@ -476,7 +476,7 @@
   box-shadow: 0 4px 16px rgba(0,0,0,.5);
   z-index: 100;
   max-height: calc(100dvh - 6rem);
-  max-width: 260px;
+  max-width: 234px;
   overflow-y: auto;
   white-space: nowrap;
 }

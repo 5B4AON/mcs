@@ -29,14 +29,14 @@ export const SPEED_INFO: Record<SpeedKind, { key: 'encoderWpm' | 'keyerWpm' | 'r
   rx: {
     key: 'rxDecoderWpm',
     label: 'RX decoder start speed',
-    hint: 'Where the receive decoder starts. It adapts as it listens.',
+    hint: 'The speed at which the receive decoder starts. It adapts as it listens.',
     help: 's2-2',
     helpLabel: 'Help: decoder start speed',
   },
   tx: {
     key: 'txDecoderWpm',
     label: 'TX decoder start speed',
-    hint: 'The same for the Morse you key.',
+    hint: 'The speed at which the transmit decoder starts. It adapts as it listens.',
     help: 's2-2',
     helpLabel: 'Help: decoder start speed',
   },

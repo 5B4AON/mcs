@@ -195,6 +195,16 @@ html.ios-layout :is(
   overscroll-behavior: contain;
 }
 
+/* All platforms: while a dialog is open, dragging down at the top of it must not trigger the browser's
+   pull-to-refresh (it reloads the app and throws the dialog away) */
+html:has(
+  .settings-overlay, .wizard-overlay, .settings-transfer-overlay, .scan-results-overlay,
+  .confirm-overlay, .md-overlay, .emoji-edit-overlay, .emoji-picker-overlay,
+  .help-overlay, .ref-overlay, .fs-modal-overlay
+) {
+  overscroll-behavior-y: contain;
+}
+
 /* Page scroll is locked while any overlay is open (:has() is supported on iOS 15.4 and later) */
 html.ios-layout:has(
   .settings-overlay, .wizard-overlay, .settings-transfer-overlay, .scan-results-overlay,

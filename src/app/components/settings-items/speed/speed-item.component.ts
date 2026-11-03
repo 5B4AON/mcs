@@ -2,10 +2,11 @@
  * Morse Code Studio
  */
 
-import { Component, Input, inject, signal } from '@angular/core';
+import { Component, Input, effect, inject, signal } from '@angular/core';
 import { AppSettings } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { CollapseDirective } from '../../collapse.directive';
+import { CardAccordionService } from '../item-shell/card-accordion.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -41,6 +42,7 @@ export class SpeedItemComponent {
 
   readonly scope = inject(SETTINGS_SCOPE);
   private decoder = inject(MorseDecoderService);
+  private accordion = inject(CardAccordionService);
 
   readonly s = this.scope.value;
   readonly range = SPEED_RANGE;
@@ -50,11 +52,18 @@ export class SpeedItemComponent {
   /** Sub-items opened in the card (the wizard shows them all open) */
   readonly open = signal<ReadonlySet<SpeedKind>>(new Set());
 
-  toggle(kind: SpeedKind): void {
-    const next = new Set(this.open());
-    if (!next.delete(kind)) next.add(kind);
-    this.open.set(next);
+  constructor() {
+    // Whenever the Morse Speeds card collapses (by its header or because another card opened), close its sub-items too.
+    effect(() => {
+      if (this.accordion.openCardId() !== 'speeds-card') this.open.set(new Set());
+    });
   }
+
+  /** Opens one sub-item and closes the others; clicking the open one closes it. */
+  toggle(kind: SpeedKind): void {
+    this.open.set(this.open().has(kind) ? new Set() : new Set([kind]));
+  }
+
 
   /** Slider and + / - buttons (the stepper keeps the value inside the toolbar's range). */
   setSpeed(kind: SpeedKind, value: number): void {
