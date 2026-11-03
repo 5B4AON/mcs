@@ -55,6 +55,9 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Emitted when the user requests the Setup Wizard (opened above this modal) */
   @Output() wizardRequested = new EventEmitter<void>();
 
+  /** Emitted when the user requests Presets (opened above this modal) */
+  @Output() presetsRequested = new EventEmitter<void>();
+
   /** Key or Type, remembered between sessions (saved with the settings and presets). */
   get inputMode(): 'key' | 'type' {
     return this.settings.settings().fullscreenInputMode;

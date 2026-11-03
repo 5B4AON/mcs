@@ -72,6 +72,9 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   /** Emitted when the user opens the Setup Wizard from the menu */
   @Output() wizardRequested = new EventEmitter<void>();
 
+  /** Emitted when the user opens Presets from the menu */
+  @Output() presetsRequested = new EventEmitter<void>();
+
   /** Fonts offered in the kebab menu. */
   readonly fonts = FULLSCREEN_FONTS;
 

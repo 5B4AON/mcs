@@ -1551,8 +1551,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showSettings = true;
   }
 
-  /** Open Presets on top of the goal list */
+  /** Open Presets on top of the goal list, or straight from a kebab menu */
   openGoalPresets(): void {
+    if (!this.showGoals) {
+      this.menuFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn');
+    }
     this.showGoalPresets = true;
     this.pushModalState('presets');
   }
@@ -1561,7 +1564,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   dismissGoalPresets(viaUi = true): void {
     this.showGoalPresets = false;
     if (viaUi) this.popModalState();
-    window.setTimeout(() => document.querySelector<HTMLElement>('app-goal-navigator-modal .settings-action-btn[aria-label="Presets"]')?.focus());
+    const fallback = this.menuFocusFallback;
+    window.setTimeout(() => {
+      const goalsButton = document.querySelector<HTMLElement>('app-goal-navigator-modal .settings-action-btn[aria-label="Presets"]');
+      if (goalsButton) goalsButton.focus();
+      else if (fallback?.isConnected && !this.showSettings && !this.showWizard) fallback.focus();
+    });
   }
 
   /** Open the guided setup for a goal, on top of the goal list */
