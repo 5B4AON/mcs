@@ -56,47 +56,80 @@ button.kebab-help-btn:has(.pill-icon)::after {
 }
 
 /*
- * Kebab menus (main screen and fullscreen): compact speed pills, a scrollbar that
- * is always visible (Android hides overlay bars until you scroll) and shading at
- * the edge that still has content beyond it.
+ * Kebab menus (main screen and fullscreen): a scrollbar that is always visible (Android hides
+ * overlay bars until you scroll) and shading at the edge that still has content beyond it.
  */
-.kebab-compact .wpm-pill.wpm-pill-interactive {
-  padding-block: .1rem;
+
+/* Stepper rows (Morse Speeds and the fullscreen Styling block): icon, minus, value, plus. They are as wide as the pill buttons and centred like them. */
+.kebab-compact .kebab-step-ctl {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  width: 11rem;
+  max-width: 100%;
+  align-self: center;
+  color: #aaa;
 }
-.kebab-compact .wpm-pill .wpm-pill-value {
-  font-size: 1.1rem;
-  line-height: 1;
+.kebab-step-icon {
+  gap: .15rem;
+  width: 2.4rem;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .95rem;
+  font-weight: 700;
+  color: #8ab;
 }
-.kebab-compact .wpm-pill .wpm-btn {
-  width: 1.5rem;
-  height: 1.5rem;
-  font-size: .85rem;
+/* Same round button as the Morse speed steppers in Settings */
+.kebab-compact .kebab-step-btn {
+  width: 2rem;
+  height: 2rem;
+  min-height: 0;
+  flex: none;
+  padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #2a3a2a;
+  color: #8cf;
+  border: 1px solid #446;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
-.kebab-compact .wpm-pill .wpm-cal-btn {
-  width: 1.7rem;
-  height: 1.7rem;
+.kebab-compact .kebab-step-btn:hover:not(:disabled) { background: #3a5a3a; }
+.kebab-compact .kebab-step-btn:disabled { opacity: .4; cursor: default; }
+.kebab-compact .kebab-step-btn:focus-visible { outline: 2px solid #8cf; outline-offset: 1px; }
+/* RX/TX: label and icon fill the icon and minus columns, so the value lines up with the Encoder and Keyer values */
+.kebab-step-lead {
+  width: 4.8rem;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-right: .2rem;
+  font-size: .95rem;
+  font-weight: 700;
+  color: #8ab;
 }
-.kebab-compact .wpm-pill .wpm-cal-btn svg {
-  width: 16px;
-  height: 16px;
+.kebab-step-value {
+  flex: 1;
+  text-align: center;
+  font-size: .95rem;
+  font-weight: 600;
+  color: #0f0;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
-@media (pointer: coarse) {
-  .kebab-compact .wpm-pill.wpm-pill-interactive {
-    padding-block: .1rem;
-  }
-  .kebab-compact .wpm-pill .wpm-btn {
-    width: 1.2rem;
-    height: 1.2rem;
-    font-size: .75rem;
-  }
-  .kebab-compact .wpm-pill .wpm-cal-btn {
-    width: 1.3rem;
-    height: 1.3rem;
-  }
-  .kebab-compact .wpm-pill .wpm-cal-btn svg {
-    width: 14px;
-    height: 14px;
-  }
+.kebab-step-unit {
+  margin-left: .15rem;
+  font-size: .6rem;
+  font-weight: 600;
+  color: #8ab;
+  text-transform: uppercase;
 }
 .kebab-compact {
   /* Both kebab menus (main and fullscreen) share one fixed width, whatever they show */

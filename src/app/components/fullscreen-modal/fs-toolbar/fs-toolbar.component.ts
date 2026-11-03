@@ -8,6 +8,7 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CollapseDirective } from '../../collapse.directive';
+import { MorseSpeedsComponent } from '../../morse-speeds/morse-speeds.component';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, ModalDisplaySettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
@@ -40,7 +41,7 @@ import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 @Component({
   selector: 'app-fs-toolbar',
   standalone: true,
-  imports: [FormsModule, CollapseDirective],
+  imports: [FormsModule, CollapseDirective, MorseSpeedsComponent],
   templateUrl: './fs-toolbar.component.html',
   styleUrls: ['./fs-toolbar.component.css'],
 })
@@ -116,16 +117,28 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
       clearTimeout(this.stylingResetTimer);
       this.stylingResetTimer = null;
     }
-    if (!open && this.stylingOpen) {
+    if (!open && (this.stylingOpen || this.speedsOpen)) {
       this.stylingResetTimer = setTimeout(() => {
         this.stylingOpen = false;
+        this.speedsOpen = false;
         this.stylingResetTimer = null;
       }, 0);
     }
   }
 
-  /** Text styling controls are shown only while expanded; the menu always opens collapsed */
+  /** Text styling controls and Morse Speeds are shown only while expanded, one at a time; the menu always opens with both collapsed */
   stylingOpen = false;
+  speedsOpen = false;
+
+  toggleStyling(): void {
+    this.stylingOpen = !this.stylingOpen;
+    if (this.stylingOpen) this.speedsOpen = false;
+  }
+
+  toggleSpeeds(): void {
+    this.speedsOpen = !this.speedsOpen;
+    if (this.speedsOpen) this.stylingOpen = false;
+  }
   fsKebabMaxHeight: number | null = null;
   clearMenuOpen = false;
 
@@ -167,6 +180,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.fontHoldTimer !== null) clearTimeout(this.fontHoldTimer);
     this.releaseKebabBack?.();
     this.releaseKebabBack = null;
     if (this.stylingResetTimer) clearTimeout(this.stylingResetTimer);
@@ -231,41 +245,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     this.inputModeChange.emit(this.inputMode === 'key' ? 'type' : 'key');
   }
 
-  // ---- WPM adjustment methods ----
-
-  /**
-   * Adjust a decoder/keyer WPM setting by delta.
-   * Clamps to 5–50 range. Resets calibration when changing decoder WPM
-   * so the adaptive algorithm restarts from the new baseline.
-   */
-  adjustWpm(key: 'keyerWpm' | 'rxDecoderWpm' | 'txDecoderWpm', delta: number): void {
-    const v = Math.max(5, Math.min(50, (this.settings.settings() as any)[key] + delta));
-    this.settings.update({ [key]: v } as Partial<AppSettings>);
-    if (key === 'rxDecoderWpm') this.decoder.resetRxCalibration();
-    if (key === 'txDecoderWpm') this.decoder.resetTxCalibration();
-    this.saveSettings();
-  }
-
-  /** Reset button next to an RX/TX speed: back to the app default start speed (saved), restarting the adaptive calibration */
-  resetDecoderSpeed(source: 'rx' | 'tx'): void {
-    const defaults = this.settings.getDefaults();
-    if (source === 'rx') {
-      this.settings.update({ rxDecoderWpm: defaults.rxDecoderWpm });
-      this.decoder.resetRxCalibration();
-    } else {
-      this.settings.update({ txDecoderWpm: defaults.txDecoderWpm });
-      this.decoder.resetTxCalibration();
-    }
-    this.saveSettings();
-  }
-
-  /** Adjust encoder WPM (clamped to 5–50) */
-  adjustEncoderWpm(delta: number): void {
-    const v = Math.max(5, Math.min(50, this.settings.settings().encoderWpm + delta));
-    this.settings.update({ encoderWpm: v });
-    this.saveSettings();
-  }
-
   // ---- Settings change handlers ----
 
   /** Handle generic setting changes from select/input elements */
@@ -291,6 +270,88 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
       value = parseFloat(el.value);
     }
     this.settings.updateModalDisplay({ [key]: value } as Partial<ModalDisplaySettings>);
+    this.saveSettings();
+  }
+
+  readonly FONT_MULT_MIN = 1;
+  readonly FONT_MULT_MAX = 10;
+  readonly ROW_MULT_MIN = 1;
+  readonly ROW_MULT_MAX = 10;
+
+  /** Row spacing (em) at level ×1 and the step between whole levels; ×10 is the widest the setting allows (0.5) */
+  private static readonly ROW_SPACING_AT_MIN = -0.04;
+  private static readonly ROW_SPACING_PER_LEVEL = 0.06;
+
+  /** Font size as the ×1.0–×10.0 multiplier of the fitted size (stored as 24 units per ×1) */
+  get fontSizeMultiplier(): number {
+    return this.fontTenths() / 10;
+  }
+
+  /** Row spacing as a whole level from ×1 to ×10, whatever the stored value is */
+  get rowSpacingMultiplier(): number {
+    const level = Math.round((this.settings.modalDisplay().lineSpacing - FsToolbarComponent.ROW_SPACING_AT_MIN)
+      / FsToolbarComponent.ROW_SPACING_PER_LEVEL) + 1;
+    return Math.min(this.ROW_MULT_MAX, Math.max(this.ROW_MULT_MIN, level));
+  }
+
+  nudgeRowSpacing(direction: -1 | 1): void {
+    const level = Math.min(this.ROW_MULT_MAX, Math.max(this.ROW_MULT_MIN, this.rowSpacingMultiplier + direction));
+    const spacing = FsToolbarComponent.ROW_SPACING_AT_MIN + (level - 1) * FsToolbarComponent.ROW_SPACING_PER_LEVEL;
+    this.settings.updateModalDisplay({ lineSpacing: Math.round(spacing * 100) / 100 });
+    this.saveSettings();
+  }
+
+  // ---- Font size: press and hold repeats ----
+
+  private fontHoldTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private fontTenths(): number {
+    return Math.round(this.settings.modalDisplay().fontSize / 2.4);
+  }
+
+  /** Move the font size by `tenths` tenths of a multiplier, stopping at ×1.0 and ×10.0 */
+  private stepFontSize(direction: -1 | 1, tenths: number): void {
+    const next = Math.min(this.FONT_MULT_MAX * 10, Math.max(this.FONT_MULT_MIN * 10, this.fontTenths() + direction * tenths));
+    this.settings.updateModalDisplay({ fontSize: Math.round(next * 2.4) });
+  }
+
+  /**
+   * One step at once, then after a short pause the size keeps moving while the button is held,
+   * faster the longer it is held (the delay shrinks and the step grows), so the whole ×1–×10
+   * range takes about two seconds. The setting is saved once, on release.
+   */
+  startFontHold(direction: -1 | 1, event: PointerEvent): void {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    this.stopFontHold();
+    (event.currentTarget as HTMLElement).setPointerCapture?.(event.pointerId);
+    this.stepFontSize(direction, 1);
+    let delay = 150;
+    let ticks = 0;
+    const tick = () => {
+      ticks++;
+      this.stepFontSize(direction, ticks > 20 ? 5 : ticks > 8 ? 2 : 1);
+      const atLimit = direction < 0 ? this.fontTenths() <= this.FONT_MULT_MIN * 10 : this.fontTenths() >= this.FONT_MULT_MAX * 10;
+      if (atLimit) {
+        this.stopFontHold();
+        return;
+      }
+      delay = Math.max(40, delay * 0.85);
+      this.fontHoldTimer = setTimeout(tick, delay);
+    };
+    this.fontHoldTimer = setTimeout(tick, 400);
+  }
+
+  stopFontHold(): void {
+    if (this.fontHoldTimer === null) return;
+    clearTimeout(this.fontHoldTimer);
+    this.fontHoldTimer = null;
+    this.saveSettings();
+  }
+
+  /** Pointer presses are handled on press; a click with no pointer (keyboard Enter/Space) steps once */
+  onFontClick(direction: -1 | 1, event: MouseEvent): void {
+    if (event.detail !== 0) return;
+    this.stepFontSize(direction, 1);
     this.saveSettings();
   }
 

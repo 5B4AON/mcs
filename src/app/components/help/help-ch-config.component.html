@@ -159,9 +159,11 @@
   keys and keying surfaces; Type captures text while displaying it inline.
   The toolbar
   shows read-only WPM indicator pills (RX, TX, Keyer) and a CW level
-  meter (when CW input is enabled). The kebab menu (⋮) contains
-  interactive WPM adjustment with calibration reset buttons, display
-  settings (including the font), the Lens switch, and links to the Symbols Reference and Help.
+  meter (when CW input is enabled). The kebab menu (⋮) contains a
+  collapsible <strong>Morse Speeds</strong> block (RX and TX with reset
+  buttons, Encoder and Keyer with &minus;/+ buttons), a collapsible
+  <strong>Styling</strong> block (only one of the two is open at a time),
+  the Lens switch, and links to the Symbols Reference and Help.
   When Firebase RTDB input or output is active, a small
   <strong>RTDB status indicator</strong> (wifi icon) turns green in
   the toolbar.
@@ -187,15 +189,16 @@
   are saved with your settings (per audio device configuration, like the rest):
 </p>
 <ul>
-  <li><strong>Font size</strong> — A multiplier from ×1 to ×10. The text size
-      first fits the screen on its own (it shrinks on a small phone and grows
-      on a very large monitor); this slider multiplies that size, so ×1 is the
-      fitted size and ×2 is twice as large.</li>
+  <li><strong>Font size</strong> — A multiplier from ×1.0 to ×10.0, changed
+      with the round &minus; and + buttons (hold one down to change it
+      quickly). The text size first fits the screen on its own (it shrinks on
+      a small phone and grows on a very large monitor); this multiplies that
+      size, so ×1 is the fitted size and ×2 is twice as large.</li>
   <li><strong>Font</strong> — Typewriter (the default), Classic, Readable or
       Cockpit. The fonts are built into the app, so they look the same on
       every device and keep working offline.</li>
-  <li><strong>Line spacing</strong> — Vertical spacing between conversation
-      lines. Lines never touch or overlap, and with very large text the
+  <li><strong>Row spacing</strong> — Vertical spacing between conversation
+      lines, from ×1 (tightest) to ×10 (widest) in whole steps. Lines never touch or overlap, and with very large text the
       spacing tightens (and, if needed, the text is limited) so that at least
       three lines stay visible above the touch keys.</li>
   <li><strong>Colours</strong> — Custom colours for RX text, TX text, buffered
@@ -204,7 +207,7 @@
 
 <p>
   The <strong>Key / Type</strong> choice, <strong>Lens</strong> and all the
-  display settings above (font, size, line spacing and colours) are remembered
+  display settings above (font, size, row spacing and colours) are remembered
   with your settings and are included in Presets and settings files. Defaults:
   Key, Lens off, Typewriter, 24 px.
 </p>

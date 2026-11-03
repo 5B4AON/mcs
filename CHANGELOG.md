@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.0] - 2026-11-03
+
+### Added
+
+- **Morse Speeds in both kebab menus** — The speed controls of the main-screen and full-screen menus now sit under a collapsible **Morse Speeds** pill at the top. It is always collapsed when a menu opens, and in the full-screen menu it and **Styling** open one at a time. **RX** and **TX** show the speed the decoder currently follows (with a dots-and-dashes icon that hints at the adaptive tracking) and a round reset button; their +/− buttons are gone, so start speeds are set in Settings → Other → Morse Speeds. **Encoder** (keyboard icon) and **Keyer** (morse key icon) have round −/+ buttons. All four values line up in one column.
+- **Hold to change the font size** — In full-screen Styling, holding the font size − or + button keeps changing the value and speeds up the longer you hold, so ×1.0 to ×10.0 takes about two seconds. The value is saved when you release.
+
+### Changed
+
+- **Styling uses − / + buttons** — The font size and row spacing sliders in the full-screen Styling block are now an icon, a round − button, the value and a round + button, as wide as the pill buttons. Row spacing is a fixed whole-number scale from ×1 (tightest) to ×10 (widest). Saved values are unchanged.
+- **Font picker looks like a pill** — The full-screen font selector now matches the menu pill buttons, and the Styling rows no longer hang out past them.
+
 ## [2.8.5] - 2026-11-03
 
 ### Fixed

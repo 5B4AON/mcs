@@ -27,6 +27,8 @@ import { ViewportService } from './services/viewport.service';
 import { InstallHintService } from './services/install-hint.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
+import { CollapseDirective } from './components/collapse.directive';
+import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
 import { FullscreenModalComponent } from './components/fullscreen-modal/fullscreen-modal.component';
@@ -61,7 +63,7 @@ import * as practiceUi from './components/settings-items/practice/practice-ui.ut
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -140,6 +142,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private kebabOpen = false;
   private releaseKebabBack: (() => void) | null = null;
   controlsKebabMaxHeight: number | null = null;
+  /** Morse Speeds block of the speed menu; the menu always opens with it collapsed */
+  speedsOpen = false;
 
   /** Kebab button to focus when Settings or the goal list closes, because the menu item that opened it is hidden */
   menuFocusFallback: HTMLElement | null = null;
@@ -669,11 +673,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.releaseKebabBack = this.modalBack.open(() => {
         this.kebabOpen = false;
         this.releaseKebabBack = null;
+        this.collapseSpeedsLater();
       });
     } else {
       this.releaseKebabBack?.();
       this.releaseKebabBack = null;
+      this.collapseSpeedsLater();
     }
+  }
+
+  /** Collapse Morse Speeds one tick after the menu closed, when it is already hidden, so it never visibly slides shut */
+  private collapseSpeedsLater(): void {
+    setTimeout(() => {
+      if (!this.kebabOpen) this.speedsOpen = false;
+    }, 0);
   }
 
   // ---- Browser back-button modal handling ----
@@ -1783,35 +1796,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   onSettingsSaved(): void {
     if (this.defaultsResetInSettings) this.defaultsResetSaved = true;
-  }
-
-  // ---- WPM adjustments ----
-
-  adjustEncoderWpm(delta: number): void {
-    const v = Math.max(5, Math.min(50, this.settings.settings().encoderWpm + delta));
-    this.settings.update({ encoderWpm: v });
-    this.saveSettings();
-  }
-
-  adjustWpm(key: 'keyerWpm' | 'rxDecoderWpm' | 'txDecoderWpm', delta: number): void {
-    const v = Math.max(5, Math.min(50, (this.settings.settings() as any)[key] + delta));
-    this.settings.update({ [key]: v } as Partial<AppSettings>);
-    if (key === 'rxDecoderWpm') this.decoder.resetRxCalibration();
-    if (key === 'txDecoderWpm') this.decoder.resetTxCalibration();
-    this.saveSettings();
-  }
-
-  /** Reset button next to an RX/TX speed: back to the app default start speed (saved), restarting the adaptive calibration */
-  resetDecoderSpeed(source: 'rx' | 'tx'): void {
-    const defaults = this.settings.getDefaults();
-    if (source === 'rx') {
-      this.settings.update({ rxDecoderWpm: defaults.rxDecoderWpm });
-      this.decoder.resetRxCalibration();
-    } else {
-      this.settings.update({ txDecoderWpm: defaults.txDecoderWpm });
-      this.decoder.resetTxCalibration();
-    }
-    this.saveSettings();
   }
 
   // ---- Straight-key sprite button ----

@@ -159,88 +159,6 @@
   gap: .5rem;
   flex-shrink: 0;
 }
-.wpm-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-  background: #1a2a1a;
-  border: 1px solid #2a4a2a;
-  border-radius: 4px;
-  padding: .15rem .5rem;
-  white-space: nowrap;
-}
-.wpm-pill-label {
-  font-size: .7rem;
-  color: #8ab;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-}
-.wpm-pill-value {
-  font-variant-numeric: tabular-nums;
-  font-size: .95rem;
-  font-weight: 600;
-  color: #0f0;
-  min-width: 2em;
-  text-align: center;
-  position: relative;
-  top: -.04em;
-}
-.wpm-pill-interactive {
-  gap: .15rem;
-  padding: .1rem .25rem;
-}
-.wpm-btn {
-  background: #2a3a2a;
-  color: #8cf;
-  border: 1px solid #446;
-  border-radius: 3px;
-  width: 1.1rem;
-  height: 1.1rem;
-  font-size: .7rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-.wpm-btn:hover {
-  background: #3a5a3a;
-}
-.wpm-btn:active {
-  background: #5a8a5a;
-  color: #fff;
-  transform: scale(0.88);
-}
-.wpm-cal-btn {
-  background: none;
-  border: none;
-  color: #8ab;
-  cursor: pointer;
-  padding: 0;
-  margin-left: .45rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 3px;
-  transition: color .15s, background .15s;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.wpm-cal-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .15);
-}
-.wpm-cal-btn:active {
-  color: #8cf;
-  transform: scale(.85);
-}
-.wpm-cal-btn svg {
-  display: block;
-}
 
 /* ---- RTDB status icon ---- */
 .rtdb-status-icon {
@@ -332,29 +250,22 @@
   color: #fff;
 }
 
-/* ---- Font size / spacing slider ---- */
+/* ---- Font size / row spacing steppers: icon, minus, value, plus ---- */
 .fs-font-ctl {
   display: flex;
   align-items: center;
-  gap: .25rem;
+  gap: .5rem;
   font-size: .75rem;
   color: #aaa;
-  cursor: pointer;
+}
+/* Zero base width so the longest font name never widens the menu beyond the pill buttons */
+.fs-face-ctl {
+  gap: .4rem;
 }
 .fs-face-ctl .fs-mode-select {
-  flex: 1;
+  flex: 1 1 0;
+  width: 0;
   min-width: 0;
-}
-.fs-font-ctl input[type="range"] {
-  flex: 1;
-  min-width: 0;
-  accent-color: #8cf;
-}
-/* Room for the widest readout (×10.0) so the menu never widens when the slider reaches the top */
-.fs-font-ctl .fs-font-value {
-  min-width: 3.2em;
-  text-align: right;
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---- Colour picker row ---- */
@@ -434,22 +345,45 @@
 .fs-close-btn:hover { background: #3a4050; }
 .fs-close-btn:active { background: #5577aa; color: #fff; transform: scale(0.88); }
 
-/* ---- Mode selector (encoder kebab) ---- */
+/* ---- Font select, shaped like the pill buttons ---- */
 .fs-mode-select {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  background: #222;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: .1rem .25rem;
+  background: linear-gradient(180deg, #506078 0%, #3a4858 100%);
+  border: 1px solid #556;
+  border-radius: 20px;
   cursor: pointer;
 }
+.fs-mode-select::after {
+  content: '';
+  position: absolute;
+  right: .9rem;
+  top: 50%;
+  width: .4rem;
+  height: .4rem;
+  border-right: 2px solid #8cf;
+  border-bottom: 2px solid #8cf;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.fs-mode-select:focus-within {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+}
 .fs-mode-select select {
-  background: #222;
-  color: #ddd;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: #fff;
   border: none;
-  font-size: .8rem;
+  font-size: .85rem;
+  font-weight: 600;
   width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: .45rem 2rem .45rem 1rem;
+  text-overflow: ellipsis;
   cursor: pointer;
   outline: none;
 }
@@ -480,6 +414,12 @@
   overflow-y: auto;
   white-space: nowrap;
 }
+/* In the kebab menu the styling rows are exactly as wide as the pill buttons and centred like them */
+.fs-kebab-items .fs-toolbar-display > * {
+  width: 11rem;
+  max-width: 100%;
+  align-self: center;
+}
 .fs-kebab-items.open {
   display: flex;
   flex-direction: column;
@@ -491,10 +431,6 @@
   flex-direction: column;
   align-items: stretch;
   gap: .85rem;
-}
-.fs-kebab-items .wpm-pill-label {
-  flex: 1;
-  text-align: center;
 }
 .kebab-btn {
   display: flex;
@@ -618,21 +554,8 @@ label { user-select: none; }
    TOUCH — coarser pointer (phones/tablets)
    ============================================================ */
 @media (pointer: coarse) {
-  button:not(.fs-clear-btn):not(.fs-close-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.wpm-cal-btn) {
+  button:not(.fs-clear-btn):not(.fs-close-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.kebab-step-btn) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
-  }
-  .wpm-btn {
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.85rem;
-  }
-  .wpm-cal-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-  .wpm-cal-btn svg {
-    width: 18px;
-    height: 18px;
   }
 }

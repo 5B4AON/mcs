@@ -224,60 +224,6 @@
   white-space: nowrap;
 }
 
-/* WPM pill displays (unified format) */
-.wpm-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: .3rem;
-  background: #1a2a1a;
-  border: 1px solid #2a4a2a;
-  border-radius: 4px;
-  padding: .15rem .5rem;
-  white-space: nowrap;
-}
-.wpm-pill-label {
-  font-size: .7rem;
-  color: #8ab;
-  text-transform: uppercase;
-  letter-spacing: .4px;
-  flex: 1;
-  text-align: center;
-}
-.wpm-pill-value {
-  font-variant-numeric: tabular-nums;
-  font-size: .95rem;
-  font-weight: 600;
-  color: #0f0;
-  min-width: 2em;
-  text-align: center;
-  position: relative;
-  top: -.04em;
-}
-.wpm-pill-interactive {
-  gap: .15rem;
-  padding: .1rem .25rem;
-  justify-content: center;
-}
-.wpm-btn {
-  background: #2a3a2a;
-  color: #8cf;
-  border: 1px solid #446;
-  border-radius: 3px;
-  width: 1.1rem;
-  height: 1.1rem;
-  font-size: .7rem;
-  font-weight: 700;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  padding: 0;
-  line-height: 1;
-}
-.wpm-btn:hover {
-  background: #3a5a3a;
-}
-
 /* ===== Panel (shared section styling) ===== */
 .panel {
   background: #1a1a2a;
@@ -353,36 +299,6 @@
   display: none;
 }
 
-/* Reset-calibration button inside kebab WPM rows */
-.wpm-cal-btn {
-  background: none;
-  border: none;
-  color: #8ab;
-  cursor: pointer;
-  padding: 0;
-  margin-left: .45rem;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 1.35rem;
-  height: 1.35rem;
-  border-radius: 3px;
-  transition: color .15s, background .15s;
-  flex-shrink: 0;
-  line-height: 1;
-}
-.wpm-cal-btn:hover {
-  color: #fff;
-  background: rgba(255, 255, 255, .15);
-}
-.wpm-cal-btn:active {
-  color: #8cf;
-  transform: scale(.85);
-}
-.wpm-cal-btn svg {
-  display: block;
-}
-
 .kebab-help-btn {
   display: block;
   border: none;
@@ -426,7 +342,6 @@
 
 .kebab-items .kebab-help-btn,
 .kebab-items .kebab-help-btn + .kebab-help-btn { margin-top: 0; }
-.kebab-items .wpm-pill + .kebab-help-btn { margin-top: .4rem; }
 
 /* Level meters (now inside decoder panel) */
 .level-meter-group {
@@ -1636,21 +1551,8 @@ select { max-width: 300px; }
    ============================================================ */
 @media (pointer: coarse) {
   /* Larger touch targets */
-  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.wpm-cal-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn) {
+  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
-  }
-  .wpm-btn {
-    width: 1.6rem;
-    height: 1.6rem;
-    font-size: 0.85rem;
-  }
-  .wpm-cal-btn {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-  .wpm-cal-btn svg {
-    width: 18px;
-    height: 18px;
   }
 }
