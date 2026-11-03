@@ -252,6 +252,7 @@
 
 /* ---- Font size / row spacing steppers: icon, minus, value, plus ---- */
 .fs-font-ctl {
+  -webkit-tap-highlight-color: transparent;
   display: flex;
   align-items: center;
   gap: .5rem;
@@ -367,7 +368,7 @@
   transform: translateY(-70%) rotate(45deg);
   pointer-events: none;
 }
-.fs-mode-select:focus-within {
+.fs-mode-select:has(select:focus-visible) {
   outline: 2px solid #8cf;
   outline-offset: 1px;
 }
@@ -390,6 +391,10 @@
 .fs-mode-select select option {
   background: #222;
   color: #ddd;
+}
+.fs-mode-select select option:checked {
+  background: #3a4858;
+  color: #fff;
 }
 
 /* ---- Kebab menu ---- */

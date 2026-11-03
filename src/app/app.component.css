@@ -241,11 +241,10 @@
 .panel-icon {
   color: #8ab;
   flex-shrink: 0;
-  height: 2.8em;
-  width: auto;
-  margin: -1em 0;
+  width: 28px;
+  height: 28px;
   position: relative;
-  top: -0.15em;
+  top: -3px;
 }
 
 /* Panel title row with WPM indicators */
@@ -925,19 +924,65 @@
   color: #8cf;
 }
 .encoder-mode-label {
+  -webkit-tap-highlight-color: transparent;
   display: flex;
   align-items: center;
   gap: .35rem;
   font-size: .9rem;
   color: #ccc;
 }
-.encoder-mode-label select {
+/* Mode select, shaped like the pill buttons (same look as the fullscreen Font select) */
+.mode-select {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: #282c34;
+  border: 1px solid #556;
+  border-radius: 20px;
+  cursor: pointer;
+}
+.mode-select::after {
+  content: '';
+  position: absolute;
+  right: .9rem;
+  top: 50%;
+  width: .4rem;
+  height: .4rem;
+  border-right: 2px solid #8cf;
+  border-bottom: 2px solid #8cf;
+  transform: translateY(-70%) rotate(45deg);
+  pointer-events: none;
+}
+.mode-select:hover {
+  background: #3a4050;
+}
+.mode-select:has(select:focus-visible) {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+}
+.mode-select select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  color: #fff;
+  border: none;
+  font-size: .85rem;
+  font-weight: 600;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  padding: .45rem 2rem .45rem 1rem;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  outline: none;
+}
+.mode-select select option {
   background: #222;
   color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: .15rem .3rem;
-  font-size: .85rem;
+}
+.mode-select select option:checked {
+  background: #3a4858;
+  color: #fff;
 }
 
 .action-right {
@@ -1264,6 +1309,28 @@ select { max-width: 300px; }
 /* ============================================================
    RESPONSIVE — MOBILE (≤480px)
    ============================================================ */
+/* Phone widths: keep Mode, TX, Clear and Full screen on one row (360 px viewport) */
+@media (max-width: 480px) {
+  .encoder-actions {
+    gap: 8px;
+    justify-content: space-between;
+  }
+  .encoder-mode-label {
+    gap: .5rem;
+    font-size: .8rem;
+  }
+  .mode-select::after {
+    right: .65rem;
+  }
+  .mode-select select {
+    font-size: .8rem;
+    padding: .4rem 1.5rem .4rem .7rem;
+  }
+  .encoder-actions .action-right {
+    margin-left: 0;
+  }
+}
+
 @media (max-width: 480px) {
   :host {
     --shell-pad-x: 0.5rem;

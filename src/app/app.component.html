@@ -150,19 +150,7 @@
   <!-- ========== Output ========== -->
   <section class="panel">
     <div class="panel-title-row">
-      <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-        <!-- Base plate -->
-        <rect x="8" y="44" width="48" height="6" rx="2" fill="currentColor" opacity="0.25"/>
-        <!-- Pivot post -->
-        <line x1="18" y1="44" x2="18" y2="36"/>
-        <!-- Lever arm -->
-        <line x1="18" y1="36" x2="52" y2="30"/>
-        <!-- Knob -->
-        <ellipse cx="52" cy="29" rx="5" ry="3.5" fill="currentColor" opacity="0.5"/>
-        <!-- Contact points -->
-        <circle cx="36" cy="44" r="2" fill="currentColor" opacity="0.6"/>
-        <circle cx="36" cy="38" r="1.5" fill="currentColor" opacity="0.4"/>
-      </svg>
+      <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="18" width="20" height="3.5" rx="1"/><line x1="13" y1="18" x2="13" y2="13.5"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><line x1="6" y1="13.5" x2="6" y2="9"/><path d="M2.5 8.5a3.5 2 0 0 1 7 0z" fill="currentColor"/><line x1="19" y1="13.5" x2="19" y2="18"/></svg>
       <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
            [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
            [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
@@ -319,13 +307,15 @@
     <div class="encoder-actions">
       <label class="encoder-mode-label">
         Mode:
-        <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
-          <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
-          <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
-          @if (settings.settings().practiceEnabled) {
-            <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Practice</option>
-          }
-        </select>
+        <span class="mode-select">
+          <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+            <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
+            <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
+            @if (settings.settings().practiceEnabled) {
+              <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Practice</option>
+            }
+          </select>
+        </span>
       </label>
       @if (settings.settings().encoderMode === 'practice') {
         <!-- Practice control: single button like TX -->

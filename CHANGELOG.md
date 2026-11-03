@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.2] - 2026-11-03
+
+### Changed
+
+- **Straight-key icon on the main screen** — The icon left of the audio status ("Audio is running") is now the straight-key icon from the Morse Speeds Keyer row, at the same 28 px size.
+- **Mode select looks like a pill** — On the main screen, the Mode select now has the pill look of the full-screen Font select, with the flat background of the round buttons beside it. On phones (480 px and below) the row spreads Mode, TX, Clear and Full screen evenly across the width, with Full screen flush right, and the round buttons have more space between them.
+
+### Fixed
+
+- **No blue box when pressing a select** — Pressing the main-screen Mode select or the full-screen Font select no longer flashes the browser's blue tap highlight around it. Keyboard focus still shows an outline.
+
 ## [2.9.1] - 2026-11-03
 
 ### Added
