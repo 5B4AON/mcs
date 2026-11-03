@@ -803,7 +803,7 @@
 }
 
 /* Shared button styles — scoped to settings cards to avoid leaking globally */
-.settings-card-body button {
+.settings-card-body button:where(:not(.pill-btn)) {
   cursor: pointer;
   padding: .35rem .8rem;
   font-size: .85rem;
@@ -813,7 +813,7 @@
   border-radius: 4px;
   transition: background .12s;
 }
-.settings-card-body button:hover {
+.settings-card-body button:where(:not(.pill-btn)):hover {
   background: #444;
 }
 
@@ -879,7 +879,7 @@ select { max-width: 300px; }
    TOUCH IMPROVEMENTS — coarser pointer (phones/tablets)
    ============================================================ */
 @media (pointer: coarse) {
-  .settings-card-body button:not(.speed-step-btn) {
+  .settings-card-body button:not(.speed-step-btn):where(:not(.pill-btn)) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }
