@@ -1247,7 +1247,7 @@
 }
 
 /* ===== Shared button styles ===== */
-button {
+button:where(:not(.pill-btn)) {
   cursor: pointer;
   padding: .35rem .8rem;
   font-size: .85rem;
@@ -1257,7 +1257,7 @@ button {
   border-radius: 4px;
   transition: background .12s;
 }
-button:hover {
+button:where(:not(.pill-btn)):hover {
   background: #444;
 }
 button.active {

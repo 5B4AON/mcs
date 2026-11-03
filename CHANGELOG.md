@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.8.5] - 2026-11-03
+
+### Fixed
+
+- **Pill buttons on the main screen** — **Update now** in the update notice, **Re-enable MIDI**, **Keep screen on** and **Tap for full screen** now look like the shared pill buttons (round, with their own hover) instead of the flat grey button with square corners. The main screen's general button style now skips `.pill-btn` without changing its specificity, so other buttons are unaffected.
+
 ## [2.8.4] - 2026-11-03
 
 ### Fixed
