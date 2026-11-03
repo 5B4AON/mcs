@@ -110,7 +110,8 @@ button.kebab-help-btn:has(.pill-icon)::after {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding-right: .2rem;
+  /* Left padding puts RX/TX under the left edge of the keyboard and key icons of the rows below */
+  padding: 0 .2rem 0 .4rem;
   font-size: .95rem;
   font-weight: 700;
   color: #8ab;
