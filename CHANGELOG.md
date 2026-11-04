@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.4] - 2026-11-04
+
+### Changed
+
+- **Clear menu shows only what can be cleared** — **Input area** appears only when there is typed or pending text, **Output area** only when the main output or the full-screen conversation has text, and **All text areas** only when both have content. The Clear button is disabled when everything is empty, and an open menu closes if the content disappears.
+- **Clearing works on both screens at once** — **Input area** now empties the typed text on the main screen and in full screen together (and stops a send or replay in progress), and **Output area** clears the main output and the full-screen conversation together. In full screen, **Input area** is now offered in Key mode too whenever there is input to clear.
+- **Send button disabled with nothing to send** — The Start transmitting button on the main screen and in full screen Type mode is dimmed and disabled when there is no text to transmit. It stays enabled while sending (as Stop) and while a replay is paused.
+- **Top bar spans the full window** — On wide desktop windows the main-screen top bar now reaches both edges, like the full-screen toolbar; the content below stays at its previous width.
+
 ## [2.9.3] - 2026-11-04
 
 ### Added

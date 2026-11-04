@@ -276,6 +276,11 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     if (mode !== this.inputMode) this.inputModeChange.emit(mode);
   }
 
+  /** True when the encoder holds unsent text, including a replay that is paused. */
+  get hasTextToTransmit(): boolean {
+    return this.encoder.buffer().slice(this.encoder.sentIndex()).trim().length > 0;
+  }
+
   /** Start or stop the current encoder transmission. */
   toggleTx(): void {
     this.encoder.toggleTx();

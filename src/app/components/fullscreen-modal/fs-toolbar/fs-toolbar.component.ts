@@ -21,6 +21,7 @@ import { PracticeService } from '../../../services/practice.service';
 import { LensService } from '../../../services/lens.service';
 import { ViewportService } from '../../../services/viewport.service';
 import { ModalBackService } from '../../../services/modal-back.service';
+import { ClearService } from '../../../services/clear.service';
 import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
 
 /**
@@ -159,6 +160,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private lens: LensService,
     private viewport: ViewportService,
     private modalBack: ModalBackService,
+    public clear: ClearService,
   ) {}
 
   /** Close the menu when a press lands outside it, even on controls that stop the click (touch keyers) */
@@ -366,36 +368,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   }
 
   // ---- Clear methods ----
-
-  /** Clear the text typed in Type mode (pending Morse text, or the Type-along answer in practice); this also stops a send or replay in progress. */
-  clearInputArea(): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-      this.practice.userInput.set('');
-    } else {
-      this.encoder.clearBuffer();
-    }
-  }
-
-  /** Clear the current mode's conversation buffer */
-  clearConversation(): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-    }
-    this.displayBuffers.fullscreenConversation.clear();
-    this.lens.reset();
-  }
-
-  /** Clear all four display buffers plus encoder operational state */
-  clearAllBuffers(): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-    }
-    this.displayBuffers.clearAll();
-    this.decoder.clearOutput();
-    this.encoder.clearBuffer();
-    this.lens.reset();
-  }
 
   /** Toggle the clear context menu */
   toggleClearMenu(): void {

@@ -319,11 +319,15 @@
   min-height: unset;
   flex-shrink: 0;
 }
-.fs-clear-btn:hover { background: #3a4050; }
-.fs-clear-btn:active {
+.fs-clear-btn:hover:not(:disabled) { background: #3a4050; }
+.fs-clear-btn:active:not(:disabled) {
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);
+}
+.fs-clear-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .fs-clear-btn svg { display: block; }
 

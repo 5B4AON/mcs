@@ -1,10 +1,9 @@
 ﻿:host {
   --shell-pad-x: 1.5rem;
+  --shell-max: 940px;
   display: flex;
   flex-direction: column;
   padding: 0 var(--shell-pad-x) 1.5rem;
-  max-width: 940px;
-  margin: 0 auto;
   min-height: 100vh;
   min-height: 100dvh;
   box-sizing: border-box;
@@ -15,6 +14,14 @@
   display: flex;
   flex-direction: column;
   flex: 1;
+}
+
+/* The top bar spans the whole window like the full-screen toolbar; the content below it stays capped at the shell width */
+.app-container > :is(div, section):not(.app-header) {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: calc(var(--shell-max) - 2 * var(--shell-pad-x));
+  align-self: center;
 }
 
 /* Same look and spacing as .fs-toolbar so the bar does not shift when entering full screen */
@@ -1010,13 +1017,17 @@
   padding: 0;
   flex-shrink: 0;
 }
-.clear-icon-btn:hover {
+.clear-icon-btn:hover:not(:disabled) {
   background: #3a4050;
 }
-.clear-icon-btn:active {
+.clear-icon-btn:active:not(:disabled) {
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);
+}
+.clear-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .clear-icon-btn svg {
   display: block;
@@ -1116,10 +1127,14 @@
   padding: 0;
   flex-shrink: 0;
 }
-.tx-icon-btn:hover {
+.tx-icon-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.tx-icon-btn:hover:not(:disabled) {
   background: #3a4050;
 }
-.tx-icon-btn:active {
+.tx-icon-btn:active:not(:disabled) {
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);

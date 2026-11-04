@@ -25,6 +25,7 @@ import { WakeLockService } from './services/wake-lock.service';
 import { AutoFullscreenService } from './services/auto-fullscreen.service';
 import { ViewportService } from './services/viewport.service';
 import { InstallHintService } from './services/install-hint.service';
+import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { CollapseDirective } from './components/collapse.directive';
@@ -122,8 +123,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Whether the fullscreen conversation modal is open. */
   activeModal: 'conversation' | null = null;
 
-  /** Whether the encoder textarea has text (for TX button state) */
-  encoderInputHasText = false;
+  /** Whether the encoder textarea has text (for TX button state); shared with the clear menus through `ClearService` */
+  get encoderInputHasText(): boolean {
+    return this.clear.mainInputHasText();
+  }
+  set encoderInputHasText(value: boolean) {
+    this.clear.mainInputHasText.set(value);
+  }
 
   /** Whether the first-use Morse guide is visible */
   showTryMorseGuide = true;
@@ -236,6 +242,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public practice: PracticeService,
     public viewport: ViewportService,
     public installHint: InstallHintService,
+    public clear: ClearService,
   ) {
     // Browser toolbars collapsing, rotation and zoom change the visual viewport without always firing
     // a window resize, so the host height follows the service's signal.
@@ -510,6 +517,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       restore: () => this.restoreModalState(),
     };
     this.subs.push(this.helpLinks.requested$.subscribe(id => this.showHelpOnTop(id)));
+    this.subs.push(this.clear.inputCleared$.subscribe(() => {
+      if (this.encoderInputRef) this.encoderInputRef.nativeElement.value = '';
+    }));
     try {
       this.showTryMorseGuide = localStorage.getItem('mcsTryMorseGuideDismissed') !== '1';
     } catch {
@@ -1250,6 +1260,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.fillTryMorseExample(textarea);
   }
 
+  /** True when there is text to transmit: typed in the textarea or waiting (also paused) in the encoder buffer. */
+  get canStartTx(): boolean {
+    return !this.encoder.isSending() && (this.encoderInputHasText || this.encoder.buffer().length > this.encoder.sentIndex());
+  }
+
   /** Gate encoder starts when configured destinations can transmit externally. */
   requestEncoderTx(textarea: HTMLTextAreaElement): void {
     if (this.encoder.isSending()) {
@@ -1384,44 +1399,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.encoder.clearBuffer();
   }
 
-  /** Clear only the encoder textarea input (not the buffer or log) */
-  clearEncoderTextarea(textarea: HTMLTextAreaElement): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-      this.practice.userInput.set('');
-    }
-    textarea.value = '';
-    this.encoderInputHasText = false;
-    if (this.encoder.replayPending()) this.encoder.clearBuffer();
-  }
-
-  /** Clear the main output display buffer and reset operational state */
-  clearMainOutput(): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-      if (this.encoderInputRef) {
-        this.encoderInputRef.nativeElement.value = '';
-        this.encoderInputHasText = false;
-      }
-    }
-    this.displayBuffers.mainOutput.clear();
-    this.decoder.clearOutput();
-  }
-
-  /** Clear all three display buffers plus encoder operational state */
-  clearAllBuffers(): void {
-    if (this.settings.settings().encoderMode === 'practice') {
-      this.practice.abort();
-      this.practice.userInput.set('');
-    }
-    if (this.encoderInputRef) {
-      this.encoderInputRef.nativeElement.value = '';
-      this.encoderInputHasText = false;
-    }
-    this.displayBuffers.clearAll();
-    this.decoder.clearOutput();
-    this.encoder.clearBuffer();
-  }
 
   // ---- Practice mode ----
 

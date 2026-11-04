@@ -260,7 +260,7 @@
   -webkit-user-select: none;
   user-select: none;
 }
-.fs-float-btn:hover {
+.fs-float-btn:hover:not(:disabled) {
   background: rgba(80, 80, 110, 0.9);
   color: rgba(255, 255, 255, 0.85);
 }

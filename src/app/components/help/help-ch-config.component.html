@@ -136,13 +136,14 @@
 </ul>
 <p>
   Each buffer receives text from the same data sources (decoded characters,
-  sent encoder characters, and Firebase RTDB input) but can be
-  <strong>cleared independently</strong>. Pressing the Clear button (🗑)
-  opens a context menu with <strong>Output area</strong> (clears the current
-  buffer only) and <strong>All text areas</strong> (clears both buffers at
-  once). The menu also has an <strong>Input area</strong> option that empties
-  the text-entry field (in full screen, the text typed in Type mode)
-  without affecting any log; it also stops a replay in progress.
+  sent encoder characters, and Firebase RTDB input). Pressing the Clear button
+  (🗑) opens a context menu that offers only what there is to clear:
+  <strong>Output area</strong> (clears the main output and the full-screen
+  conversation together), <strong>Input area</strong> (empties the text-entry
+  field on both screens, without affecting any log, and stops a send or
+  replay in progress) and <strong>All text areas</strong> (both, shown only
+  when the input and the output both have content). The Clear button is
+  dimmed when everything is empty.
 </p>
 <p>
   Buffers are capped at approximately <strong>5 000 characters</strong>
