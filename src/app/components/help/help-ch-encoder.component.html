@@ -223,6 +223,12 @@
         prefix database with random suffixes &mdash; great for contest
         practice.</td>
   </tr>
+  <tr>
+    <td><strong>Koch method</strong></td>
+    <td>Random characters from the first N lessons of the Koch method, with
+        the newest lesson's characters coming up more often. See
+        <em>Koch Method</em> below.</td>
+  </tr>
 </table>
 
 <div class="trivia-card">
@@ -240,6 +246,34 @@
   The <strong>Count</strong> setting (1&ndash;10) controls how many groups,
   words, or callsigns are generated per round.
 </p>
+
+<h3>Koch Method</h3>
+<p>
+  Choose <strong>Koch method</strong> as the Content to learn the characters
+  one lesson at a time. The <strong>Lesson</strong> selector lists the 40
+  lessons as &ldquo;1 &ndash; K, M&rdquo;, &ldquo;2 &ndash; U&rdquo; and so on up to
+  &ldquo;40 &ndash; X&rdquo;. Lesson N plays random characters from lessons 1 to N,
+  and the characters the lesson introduced come up about 30&nbsp;% of the
+  time, so the newest ones get the most practice. Move back and forth
+  between lessons whenever you like; a new lesson applies from the next
+  sequence.
+</p>
+<ul>
+  <li>Choosing Koch method sets the group size to 5 and the Count to 10, about
+      a minute of Morse at 12&nbsp;WPM. You can change both.</li>
+  <li>The character pool options are not shown, because the lesson sets the
+      pool. Koch practice is always Type-Along; the Feedback selector is
+      hidden and your earlier choice returns when you pick another
+      content type.</li>
+  <li>The hint under <strong>Rounds</strong> estimates how long a round takes at
+      your speed and Farnsworth settings. Use 2 or 3 rounds to practise for a
+      few minutes and see the average.</li>
+  <li>The punctuation characters of the later lessons are shown and scored as
+      themselves; <strong>=</strong> is shown as =, not &lt;BT&gt;.</li>
+  <li>When a round, or the average of a session, scores above 90&nbsp;%, the
+      result recommends the next lesson with a <strong>Go to lesson</strong>
+      button. The lesson never changes unless you press it.</li>
+</ul>
 
 <h3>Feedback Modes</h3>
 <table>
@@ -276,7 +310,7 @@
 <h3>Type-Along Rounds</h3>
 <p>
   The <strong>Rounds</strong> selector appears when Feedback is set to
-  <strong>Type-Along</strong>. Choose 1 to keep the normal single-round
+  <strong>Type-Along</strong> (and always for Koch method). Choose 1 to keep the normal single-round
   exercise. Choose 2 to 5 to make a temporary practice session.
 </p>
 <ol>

@@ -29,7 +29,7 @@ export const PRACTICE_FLOW: WizardFlow = {
     {
       id: 'practice',
       title: 'What do you want to copy?',
-      intro: 'Choose the content, how it is scored and how many rounds. This goal keeps practice on this device only, whatever the pipeline below shows.',
+      intro: 'Choose the content (random characters, words, callsigns or Koch method lessons), how it is scored and how many rounds. This goal keeps practice on this device only, whatever the pipeline below shows.',
       helpSection: 's3-5',
       items: [{ item: 'practice' }],
     },

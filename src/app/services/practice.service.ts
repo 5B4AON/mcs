@@ -9,7 +9,9 @@ import { MorseEncoderService } from './morse-encoder.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { PRACTICE_WORDS } from '../data/practice-words';
 import { CALLSIGN_PREFIXES } from '../data/callsign-prefixes';
+import { KOCH_NEWEST_WEIGHT, kochNewChars, kochPool } from '../data/koch-lessons';
 import { MORSE_TABLE } from '../morse-table';
+import { effectivePracticeFeedbackMode } from '../components/settings-items/practice/practice-item.model';
 
 /** Practice playback state */
 export type PracticeState = 'idle' | 'playing' | 'paused' | 'finished';
@@ -61,9 +63,11 @@ export class PracticeService {
   readonly sessionStage = signal<PracticeSessionStage>('none');
   /** Completed round percentages for the current multi-round session */
   readonly roundScores = signal<number[]>([]);
+  /** Feedback mode in effect: Koch method is always Type-along */
+  readonly feedbackMode = computed(() => effectivePracticeFeedbackMode(this.settings.settings()));
   /** Whether the configured Type-along exercise has multiple rounds */
   readonly isMultiRoundTypeAlong = computed(() =>
-    this.settings.settings().practiceFeedbackMode === 'typealong'
+    this.feedbackMode() === 'typealong'
     && this.settings.settings().practiceRounds > 1
   );
   /** Whether the current practice result area shows a multi-round summary */
@@ -215,6 +219,17 @@ export class PracticeService {
     this.roundScores.set([]);
   }
 
+  /**
+   * Move to a Koch lesson from the results and return to the idle practice
+   * state, so the next Start plays the new lesson. Starts no output.
+   */
+  goToKochLesson(lesson: number): void {
+    this.settings.update({ practiceKochLesson: lesson });
+    this.abort();
+    this.referenceText.set('');
+    this.displayBuffers.clearAll();
+  }
+
   /** Stop and reset (called when switching away from practice mode) */
   reset(): void {
     this.abort();
@@ -335,6 +350,7 @@ export class PracticeService {
       case 'characters': return this.generateCharacters();
       case 'words': return this.generateWords();
       case 'callsigns': return this.generateCallsigns();
+      case 'koch': return this.generateKoch();
     }
   }
 
@@ -352,16 +368,54 @@ export class PracticeService {
     // Window size scales with pool size but stays reasonable.
     const historySize = Math.min(Math.floor(pool.length / 2), 10);
 
+    return this.buildGroups(() => this.pickNonRecentChar(pool, historySize));
+  }
+
+  /** Build the configured number of space-separated groups from a character picker. */
+  private buildGroups(pick: () => string): string {
+    const s = this.settings.settings();
     const groups: string[] = [];
     for (let g = 0; g < s.practiceGroupCount; g++) {
       let group = '';
       for (let c = 0; c < s.practiceCharGroupSize; c++) {
-        const ch = this.pickNonRecentChar(pool, historySize);
-        group += ch;
+        group += pick();
       }
       groups.push(group);
     }
     return groups.join(' ');
+  }
+
+  /**
+   * Koch method: random characters from lessons 1 to N, where the characters
+   * the current lesson introduced get KOCH_NEWEST_WEIGHT of the picks. Recently
+   * used characters are skipped, with a shorter window than Random Characters
+   * so a two-character pool does not simply alternate.
+   */
+  private generateKoch(): string {
+    const lesson = this.settings.settings().practiceKochLesson;
+    const pool = kochPool(lesson);
+    const newest = kochNewChars(lesson);
+    const historySize = Math.min(Math.floor((pool.length - 1) / 2), 10);
+    const weightOf = (ch: string): number => pool.length === newest.length
+      ? 1
+      : newest.includes(ch)
+        ? KOCH_NEWEST_WEIGHT / newest.length
+        : (1 - KOCH_NEWEST_WEIGHT) / (pool.length - newest.length);
+
+    return this.buildGroups(() => {
+      const recent = historySize > 0 ? this.recentChars.slice(-historySize) : [];
+      const candidates = pool.filter(ch => !recent.includes(ch));
+      const total = candidates.reduce((sum, ch) => sum + weightOf(ch), 0);
+      let r = Math.random() * total;
+      let picked = candidates[candidates.length - 1];
+      for (const ch of candidates) {
+        r -= weightOf(ch);
+        if (r < 0) { picked = ch; break; }
+      }
+      this.recentChars.push(picked);
+      if (this.recentChars.length > 10) this.recentChars.shift();
+      return picked;
+    });
   }
 
   private pickNonRecentChar(pool: string, historySize: number): string {
@@ -482,6 +536,6 @@ export class PracticeService {
     const source: DecoderSource = s.practiceSource;
     const name = s.practiceName || undefined;
     const color = s.practiceColor || undefined;
-    this.displayBuffers.pushSent(source, char, name, color);
+    this.displayBuffers.pushSent(source, char, name, color, true);
   }
 }

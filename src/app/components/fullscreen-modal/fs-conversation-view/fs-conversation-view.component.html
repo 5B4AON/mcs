@@ -28,6 +28,7 @@
         <div>Round {{ $index + 1 }} — {{ score }}%</div>
       }
       <div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div>
+      <app-practice-next-lesson [accuracy]="practice.averageRoundScore()" />
     </section>
   } @else if (practiceView && practice.feedback().length > 0) {
     <div class="fb-results">@for (fb of practice.feedback(); track $index) {<span
@@ -35,6 +36,9 @@
       [class.fb-incorrect]="fb.result === 'incorrect'"
       [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</div>
     <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
+    @if (!practice.isMultiRoundTypeAlong()) {
+      <app-practice-next-lesson [accuracy]="practice.accuracy()" />
+    }
   } @else {
     @for (line of conversationLines; track $index) {
       <div class="fs-line"       [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
@@ -64,7 +68,7 @@
     @if (!conversationLines.length && !decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
       <span class="cursor"></span>
     }
-    @if (practiceView && settings.settings().practiceFeedbackMode === 'typealong' && practice.userInput()) {
+    @if (practiceView && practice.feedbackMode() === 'typealong' && practice.userInput()) {
       <div class="fs-typed-text">{{ practice.userInput() }}</div>
     }
   }

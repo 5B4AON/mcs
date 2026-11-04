@@ -205,10 +205,10 @@
     <div class="decoded-parchment">
       <div class="decoded-text" #decoderBox
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
-           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session</strong><div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div><div>Type what you hear, press Enter to validate.</div><div>After the final round, view your average.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice session</strong><div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div><div>Type what you hear, press Enter to validate.</div><div>After the final round, view your average.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
-             [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
+             [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
              [class.rx-line]="line.type === 'rx'"
              [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
       @if (mainBlurMode) {
@@ -298,7 +298,7 @@
       <textarea #encoderInput rows="2"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
-                  ? (settings.settings().practiceFeedbackMode === 'typealong'
+                  ? (practice.feedbackMode() === 'typealong'
                     ? (practice.isMultiRoundTypeAlong() && practice.sessionStage() === 'none'
                       ? 'Press Enter to view the session briefing...'
                       : practice.isMultiRoundTypeAlong() && practice.sessionStage() === 'briefing'
@@ -306,7 +306,7 @@
                         : 'Type what you hear, then press Enter to continue...')
                     : 'Practice answer entry is unavailable for this feedback mode.')
                   : 'Type text to encode...'"
-                [disabled]="settings.settings().encoderMode === 'practice' && settings.settings().practiceFeedbackMode !== 'typealong'"
+                [disabled]="settings.settings().encoderMode === 'practice' && practice.feedbackMode() !== 'typealong'"
                 (keydown)="onEncoderKeydown($event, encoderInput)"
                 (input)="onEncoderInput(encoderInput)"></textarea>
     </div>
@@ -315,7 +315,7 @@
       <section class="practice-guide" aria-live="polite">
         <div><strong>Practice:</strong> plays {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
         <div>{{ practiceUi.practiceFeedbackDescription(settings.settings()) }}</div>
-        @if (settings.settings().practiceFeedbackMode !== 'typealong') {
+        @if (practice.feedbackMode() !== 'typealong') {
           <div>Typing is unavailable in Listen and Blurred practice so the answer stays hidden. Choose Type-along to enter what you hear.</div>
         }
         @if (practiceUi.practiceExternalRouteNotice(settings.settings()); as routeNotice) {
@@ -341,18 +341,18 @@
         <!-- Practice control: single button like TX -->
         @if (practice.state() === 'idle') {
           <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
-                  [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'"
-                  [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'">
+                  [title]="practice.feedbackMode() === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'"
+                  [attr.aria-label]="practice.feedbackMode() === 'typealong' ? practice.typeAlongActionLabel() : 'Start practice'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
-        } @else if (practice.state() === 'finished' && settings.settings().practiceFeedbackMode === 'typealong' && practice.feedback().length === 0 && !practice.isSessionSummary()) {
+        } @else if (practice.state() === 'finished' && practice.feedbackMode() === 'typealong' && practice.feedback().length === 0 && !practice.isSessionSummary()) {
           <button #practiceActionButton class="tx-icon-btn practice-results" (click)="practiceStartOrNext(encoderInput)" [title]="practice.typeAlongActionLabel()" [attr.aria-label]="practice.typeAlongActionLabel()">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           </button>
         } @else if (practice.state() === 'finished') {
           <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"
-                  [title]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'"
-                  [attr.aria-label]="settings.settings().practiceFeedbackMode === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'">
+                  [title]="practice.feedbackMode() === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'"
+                  [attr.aria-label]="practice.feedbackMode() === 'typealong' ? practice.typeAlongActionLabel() : 'Next sequence'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         } @else if (practice.state() === 'playing') {

@@ -14,8 +14,22 @@
       <option value="characters" [selected]="s().practiceContentMode === 'characters'">Random Characters</option>
       <option value="words" [selected]="s().practiceContentMode === 'words'">Random Words</option>
       <option value="callsigns" [selected]="s().practiceContentMode === 'callsigns'">Random Callsigns</option>
+      <option value="koch" [selected]="s().practiceContentMode === 'koch'">Koch method</option>
     </select>
   </label>
+
+  <!-- Koch method: the lesson sets the character pool -->
+  @if (s().practiceContentMode === 'koch') {
+    <label>
+      Lesson:
+      <select class="koch-lesson-select" (change)="onKochLessonChange($event)">
+        @for (n of kochLessons; track n) {
+          <option [value]="n" [selected]="s().practiceKochLesson === n">{{ kochLessonLabel(n) }}</option>
+        }
+      </select>
+    </label>
+    <div class="cw-hint">{{ kochLessonHint() }}</div>
+  }
 
   <!-- Group count (all modes) -->
   <label>
@@ -27,8 +41,8 @@
     </select>
   </label>
 
-  <!-- Random characters options -->
-  @if (s().practiceContentMode === 'characters') {
+  <!-- Group size (random characters and Koch method) -->
+  @if (s().practiceContentMode === 'characters' || s().practiceContentMode === 'koch') {
     <label>
       Group size:
       <select (change)="onCharGroupSizeChange($event)">
@@ -37,7 +51,10 @@
         }
       </select>
     </label>
+  }
 
+  <!-- Random characters options -->
+  @if (s().practiceContentMode === 'characters') {
     <div class="cw-hint">Character pool:</div>
     <label class="checkbox-label">
       <input type="checkbox"
@@ -82,7 +99,8 @@
     </label>
   }
 
-  <!-- Feedback mode -->
+  <!-- Feedback mode (Koch method is always Type-along) -->
+  @if (s().practiceContentMode !== 'koch') {
   <label>
     Feedback:
     <select (change)="onFeedbackModeChange($event)">
@@ -100,8 +118,11 @@
       Type what you hear, then check it.
     }
   </div>
+  } @else {
+    <div class="cw-hint">Koch practice is Type-along: type what you hear, then check it.</div>
+  }
 
-  @if (s().practiceFeedbackMode === 'typealong') {
+  @if (feedbackMode === 'typealong') {
     <label>
       Rounds:
       <select (change)="onRoundsChange($event)">
@@ -110,7 +131,13 @@
         }
       </select>
     </label>
-    <div class="cw-hint">More than one round gives a score for each round and an average.</div>
+    <div class="cw-hint">
+      @if (s().practiceContentMode === 'koch') {
+        {{ kochRoundsHint() }}
+      } @else {
+        More than one round gives a score for each round and an average.
+      }
+    </div>
   }
 
   @if (forceLocalPipeline) {

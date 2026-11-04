@@ -6,6 +6,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, inject } from '@angular/core';
 
 import { CollapseDirective } from '../../collapse.directive';
+import { AlignSelectLabelsDirective } from './align-select-labels.directive';
 import { CardAccordionService } from './card-accordion.service';
 
 /**
@@ -21,7 +22,7 @@ import { CardAccordionService } from './card-accordion.service';
 @Component({
   selector: 'app-item-shell',
   standalone: true,
-  imports: [NgTemplateOutlet, CollapseDirective],
+  imports: [NgTemplateOutlet, CollapseDirective, AlignSelectLabelsDirective],
   templateUrl: './item-shell.component.html',
   styles: [':host { display: contents; }'],
 })
