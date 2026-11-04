@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
 import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
@@ -60,9 +60,22 @@ export class MorseEncoderService {
    */
   readonly elementEvent$ = new Subject<{ down: boolean }>();
 
+  /**
+   * True while the text in the buffer is a replay of what is already on screen.
+   * A replay goes out through every output the encoder uses, but it is not shown
+   * again as sent text, not shown in Lens and gets no word-gap space. It stays set
+   * until the user types new text (enqueue, setBuffer, submitText).
+   */
+  readonly replayMode = signal(false);
+
+  /** A replay that has not finished: playing, or paused and waiting for the TX button. */
+  readonly replayPending = computed(() => this.replayMode() && this.buffer().length > this.sentIndex());
+
   /** Currently sending (internal lock) */
   private sending = false;
   private abortController: AbortController | null = null;
+  /** Buffer index of the character last forwarded to WinKeyer, MIDI and RTDB, while it has not finished playing */
+  private forwardedIndex = -1;
   private wordGapTimer: ReturnType<typeof setTimeout> | null = null;
 
   /** Queue and lock for sidetone-only playback of incoming RTDB chars */
@@ -83,6 +96,7 @@ export class MorseEncoderService {
 
   /** Enqueue text for sending */
   enqueue(text: string): void {
+    this.replayMode.set(false);
     this.buffer.update(b => b + text.toUpperCase());
     // In live mode, auto-start TX when characters are added
     if (this.settings.settings().encoderMode === 'live') {
@@ -96,6 +110,7 @@ export class MorseEncoderService {
 
   /** Set entire buffer (e.g. from textarea) */
   setBuffer(text: string): void {
+    this.replayMode.set(false);
     const upper = text.toUpperCase();
     const oldSent = this.sentIndex();
     const oldBuf = this.buffer();
@@ -159,13 +174,31 @@ export class MorseEncoderService {
     this.stopTx();
     this.buffer.set('');
     this.sentIndex.set(0);
+    this.forwardedIndex = -1;
     this.cancelWordGapTimer();
   }
 
   /** Submit text in 'enter' mode */
   submitText(text: string): void {
+    this.replayMode.set(false);
     this.buffer.set(text.toUpperCase());
     this.sentIndex.set(0);
+    this.forwardedIndex = -1;
+    this.startTx();
+  }
+
+  /**
+   * Replay a line that is already on screen: it is loaded as the buffer and sent
+   * like typed text, so the TX button pauses and resumes it and clearing the input
+   * area stops it. Does nothing while something is being sent or waits in the buffer.
+   */
+  startReplay(text: string): void {
+    const clean = text.replace(/\s+/g, ' ').trim();
+    if (!clean || this.isSending() || this.buffer().length > this.sentIndex()) return;
+    this.replayMode.set(true);
+    this.buffer.set(clean.toUpperCase());
+    this.sentIndex.set(0);
+    this.forwardedIndex = -1;
     this.startTx();
   }
 
@@ -209,8 +242,12 @@ export class MorseEncoderService {
         const source = es.encoderSource;
         const isPracticeLocal = es.encoderMode === 'practice' && es.practicePipeline === 'local';
 
-        // Skip external outputs when practice mode uses local audio only
-        if (!isPracticeLocal) {
+        // Skip external outputs when practice mode uses local audio only. A character that was
+        // interrupted by a pause is played again in full on resume but forwarded only once,
+        // because the external outputs time and send it themselves.
+        if (!isPracticeLocal && this.forwardedIndex !== idx) {
+          this.forwardedIndex = idx;
+
           // Forward to WinKeyer (as encoder source) — WinKeyer handles its own timing
           this.winkeyerOutput.forwardDecodedChar(token, source);
 
@@ -222,9 +259,11 @@ export class MorseEncoderService {
         }
 
         await this.sendCharacter(token, signal);
-        this.sentIndex.set(endIdx);
 
+        // A character cut short by Stop/Pause does not count as sent: it plays again in full on resume
         if (signal.aborted) break;
+        this.forwardedIndex = -1;
+        this.sentIndex.set(endIdx);
 
         // Inter-character space (3 dit units) — already included after last element
         // If next char is space, we handle it in sendCharacter
@@ -243,6 +282,9 @@ export class MorseEncoderService {
         // fires, a space is pushed to the display buffers (mirroring the
         // decoder's word-boundary detection).
         this.startWordGapTimer();
+      } else if (signal.aborted && this.isSending()) {
+        // Resumed before the interrupted character had finished winding down: carry on from it
+        void this.processSend();
       }
     }
   }
@@ -262,7 +304,7 @@ export class MorseEncoderService {
 
     const morse = MORSE_TABLE[char];
     // Lens follows playback; Copy Practice has its own view
-    const lensMeta = s.encoderMode === 'practice'
+    const lensMeta = s.encoderMode === 'practice' || this.replayMode()
       ? null
       : { source, name: s.encoderName || undefined, color: s.encoderColor || undefined };
     if (lensMeta) this.lens.show('encoder', lensMeta, '', char, morse ?? '');
@@ -326,6 +368,7 @@ export class MorseEncoderService {
    */
   private startWordGapTimer(): void {
     this.cancelWordGapTimer();
+    if (this.replayMode()) return;
     const s = this.settings.settings();
     const baseTimings = timingsFromWpm(s.encoderWpm);
     const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;

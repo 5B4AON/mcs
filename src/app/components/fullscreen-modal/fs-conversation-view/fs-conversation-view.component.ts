@@ -4,7 +4,7 @@
 
 import {
   Component, HostListener, Input, OnInit, OnDestroy, OnChanges, SimpleChanges,
-  AfterViewChecked, ElementRef, EventEmitter, Output, ViewChild, computed
+  AfterViewChecked, ElementRef, EventEmitter, Output, ViewChild, computed, effect
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { SettingsService } from '../../../services/settings.service';
@@ -55,6 +55,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   @Input() lensMode = false;
   /** Requests a temporary input choice change from the modal shell. */
   @Output() inputModeChange = new EventEmitter<'key' | 'type'>();
+  /** Asks the app to replay a line through the encoder, after its external-send confirmation. */
+  @Output() replayRequested = new EventEmitter<string>();
 
   @ViewChild('conversationArea') conversationAreaRef?: ElementRef<HTMLDivElement>;
   @ViewChild('typeInput') typeInputRef?: ElementRef<HTMLInputElement>;
@@ -97,7 +99,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Pending encoder characters shown inline with the conversation. */
   readonly encoderPendingChars = computed(() => {
     const buffer = this.encoder.buffer();
-    if (this.settings.settings().encoderMode === 'practice') return [];
+    // A replay is already on screen as sent text, so it is not drawn again as pending text
+    if (this.settings.settings().encoderMode === 'practice' || this.encoder.replayMode()) return [];
     return buffer.slice(this.encoder.sentIndex()).split('');
   });
 
@@ -125,7 +128,12 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     private mouseKeyer: MouseKeyerService,
     public practice: PracticeService,
     private sanitizer: DomSanitizer,
-  ) {}
+  ) {
+    // The reveal button is disabled without text, so a hold cannot end by itself when the text goes
+    effect(() => {
+      if (!this.displayBuffers.fullscreenConversation.hasText()) this.revealing = false;
+    });
+  }
 
   /**
    * Active blur mode derived from settings.
@@ -150,6 +158,44 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
    */
   get conversationLines(): DisplayLine[] {
     return this.displayBuffers.fullscreenConversation.lines();
+  }
+
+  /** True when the conversation has text on screen; the reveal and replay buttons dim without it. */
+  get hasText(): boolean {
+    return this.displayBuffers.fullscreenConversation.hasText();
+  }
+
+  /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
+  get replayAvailable(): boolean {
+    if (this.encoder.replayPending()) return true;
+    if (!this.hasText) return false;
+    if (this.isPractice) return this.practice.state() === 'finished' && this.practice.referenceText() !== '';
+    return !this.encoder.isSending() && this.encoder.buffer().length <= this.encoder.sentIndex()
+      && this.displayBuffers.fullscreenConversation.lastLine() !== null;
+  }
+
+  /** True while a replay is playing or paused; the button then stops it. */
+  get replayStops(): boolean {
+    return this.encoder.replayPending();
+  }
+
+  /**
+   * Replay what is on screen without drawing it again. In practice the finished sequence plays
+   * again; otherwise the last line is sent through the encoder's outputs, after the app's
+   * confirmation when they are external. The practice button (TX button in Type mode) pauses and
+   * resumes it, and pressing the replay button while one is playing or paused stops it.
+   */
+  onReplay(): void {
+    if (this.encoder.replayPending()) {
+      if (this.isPractice) this.practice.stopReplay();
+      else this.encoder.clearBuffer();
+    } else if (this.isPractice) {
+      this.practice.replay();
+    } else {
+      const line = this.displayBuffers.fullscreenConversation.lastLine();
+      if (line) this.replayRequested.emit(line.text);
+    }
+    this.requestTypeInputFocus();
   }
 
   /** Start revealing blurred text (momentary hold) */

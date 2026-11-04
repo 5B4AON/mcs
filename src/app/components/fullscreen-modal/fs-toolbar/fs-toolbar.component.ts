@@ -367,6 +367,16 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   // ---- Clear methods ----
 
+  /** Clear the text typed in Type mode (pending Morse text, or the Type-along answer in practice); this also stops a send or replay in progress. */
+  clearInputArea(): void {
+    if (this.settings.settings().encoderMode === 'practice') {
+      this.practice.abort();
+      this.practice.userInput.set('');
+    } else {
+      this.encoder.clearBuffer();
+    }
+  }
+
   /** Clear the current mode's conversation buffer */
   clearConversation(): void {
     if (this.settings.settings().encoderMode === 'practice') {

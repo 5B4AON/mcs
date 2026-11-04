@@ -88,23 +88,18 @@
   flex: 1 1 120px;
   min-width: 0;
   padding: .3rem .55rem;
-  border-radius: 4px;
-  background: #392322;
   color: #ffb4aa;
   font-size: .82rem;
   overflow-wrap: anywhere;
 }
 .audio-inline-status.audio-status-stopped,
 .audio-inline-status.audio-status-failed {
-  background: #392322;
   color: #ffb4aa;
 }
 .audio-inline-status.audio-status-progress {
-  background: #38301e;
   color: #ffd27a;
 }
 .audio-inline-status.audio-status-running {
-  background: #1d3025;
   color: #9ce0b3;
 }
 .audio-retry-stop-btn {
@@ -575,9 +570,18 @@
   color: rgba(50, 35, 20, 0.9);
 }
 .blur-reveal-btn-main:active,
-.blur-reveal-btn-main.revealing {
+.blur-reveal-btn-main.revealing,
+.blur-reveal-btn-main.playing {
   background: rgba(140, 120, 90, 0.9);
   color: #2a1e12;
+}
+/* Replay sits directly above the reveal button (44 px + 8 px gap) */
+.blur-replay-btn-main {
+  bottom: 62px;
+}
+.blur-reveal-btn-main:disabled {
+  opacity: 0.45;
+  cursor: default;
 }
 .blur-reveal-btn-main svg {
   display: block;
@@ -1618,7 +1622,7 @@ select { max-width: 300px; }
    ============================================================ */
 @media (pointer: coarse) {
   /* Larger touch targets */
-  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn) {
+  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }

@@ -212,7 +212,27 @@
              [class.rx-line]="line.type === 'rx'"
              [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
       @if (mainBlurMode) {
+        <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"
+                [disabled]="!mainReplayAvailable"
+                (mousedown)="$event.preventDefault()"
+                (click)="onMainReplay()"
+                [title]="mainReplayStops ? 'Stop replay' : 'Replay the last line'"
+                [attr.aria-label]="mainReplayStops ? 'Stop replay' : 'Replay the last line'">
+          @if (mainReplayStops) {
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          } @else {
+            <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <g transform="translate(0.25 0.9)">
+                <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
+                <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
+                <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
+              </g>
+            </svg>
+          }
+        </button>
         <button class="blur-reveal-btn-main" [class.revealing]="mainRevealing"
+                [disabled]="!displayBuffers.mainOutput.hasText()"
                 (mousedown)="onMainRevealStart($event)"
                 (mouseup)="onMainRevealEnd()"
                 (mouseleave)="onMainRevealEnd()"
@@ -354,8 +374,8 @@
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
         </button>
         <div class="clear-menu popup-anim" [class.open]="clearMenuOpen">
-          <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Input box</button>
-          <button class="clear-menu-btn clear-this" (click)="clearMainOutput(); closeClearMenu()">This text area</button>
+          <button class="clear-menu-btn clear-textarea" (click)="clearEncoderTextarea(encoderInput); closeClearMenu()">Input area</button>
+          <button class="clear-menu-btn clear-this" (click)="clearMainOutput(); closeClearMenu()">Output area</button>
           <button class="clear-menu-btn clear-all" (click)="clearAllBuffers(); closeClearMenu()">All text areas</button>
         </div>
       </div>
@@ -393,7 +413,8 @@
                         (symbolsRefRequested)="openSymbolsRef()"
                         (settingsRequested)="openSettings()"
                         (wizardRequested)="openGoals()"
-                        (presetsRequested)="openGoalPresets()"></app-fullscreen-modal>
+                        (presetsRequested)="openGoalPresets()"
+                        (replayRequested)="requestReplay($event)"></app-fullscreen-modal>
 }
 
 <!-- ========== SETTINGS MODAL ========== -->

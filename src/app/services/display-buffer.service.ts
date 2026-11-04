@@ -48,6 +48,11 @@ export class DisplayBuffer {
   readonly lines = signal<DisplayLine[]>([]);
   /** Flat text for simple display (e.g. main output panel) */
   readonly text = signal('');
+
+  /** True when there is any visible text on screen. */
+  hasText(): boolean {
+    return this.text().trim().length > 0;
+  }
   /** Maximum number of character entries to keep */
   private capacity: number;
   /**
@@ -147,6 +152,18 @@ export class DisplayBuffer {
   /** Get the current entry count (for watermark tracking). */
   get length(): number {
     return this.entries.length;
+  }
+
+  /**
+   * The text of the most recent line, for replaying it as sound: the last run
+   * of RX or TX text, cut after its last newline (a prosign action may have
+   * started a new visual line inside it). Null when there is no text.
+   */
+  lastLine(): { type: 'rx' | 'tx'; text: string } | null {
+    const last = this.lines().at(-1);
+    if (!last) return null;
+    const text = last.text.split('\n').filter(part => part.trim()).at(-1);
+    return text ? { type: last.type, text } : null;
   }
 
   /** Trim oldest entries if over capacity. */

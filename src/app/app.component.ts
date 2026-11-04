@@ -129,7 +129,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   showTryMorseGuide = true;
 
   /** Active confirmation action for example replacement or external TX */
-  tryMorseConfirmAction: 'replace' | 'external-send' | 'live-send' | null = null;
+  tryMorseConfirmAction: 'replace' | 'external-send' | 'live-send' | 'replay' | null = null;
+  /** Line waiting for the external-send confirmation of a replay */
+  private pendingReplayText = '';
   tryMorseConfirmMessage = '';
   tryMorseConfirmTitle = '';
   tryMorseConfirmLabel = '';
@@ -360,6 +362,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const buf = this.encoder.buffer();
       const idx = this.encoder.sentIndex();
       const isPractice = this.settings.settings().encoderMode === 'practice';
+      // A replay is already on screen: it is sent but not shown again
+      const replay = this.encoder.replayMode();
       if (buf !== this.lastSentBuf) {
         // Buffer was replaced or cleared.
         // When processSend finishes, sentIndex.set(endIdx), buffer.set(''),
@@ -371,7 +375,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           if (isPractice) {
             // Only flush remaining chars if practice is still playing
             // (not if we aborted — state would be 'idle')
-            if (this.practice.state() !== 'idle') {
+            if (this.practice.state() !== 'idle' && !replay) {
               let i = this.lastSentIdx;
               while (i < this.lastSentBuf.length) {
                 const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
@@ -379,7 +383,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
                 i = endIdx;
               }
             }
-          } else {
+          } else if (!replay) {
             const es = this.settings.settings();
             const encSource = es.encoderSource;
             const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
@@ -412,7 +416,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         let i = this.lastSentIdx;
         while (i < idx) {
           const { token, endIdx } = this.encoder.extractToken(buf, i);
-          if (isPractice) {
+          if (replay) {
+            // Already on screen
+          } else if (isPractice) {
             this.practice.pushPracticeChar(token);
           } else {
             const es = this.settings.settings();
@@ -425,6 +431,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         }
         this.lastSentIdx = idx;
       }
+    });
+
+    // The reveal button is disabled without text, so a hold cannot end by itself when the text goes
+    effect(() => {
+      if (!this.displayBuffers.mainOutput.hasText()) this.mainRevealing = false;
     });
 
     // Watch for encoder word-gap timer — insert a space into display buffers
@@ -1274,6 +1285,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.openExternalConfirmation(action, destinations);
       return;
     }
+    if (action === 'replay') {
+      this.encoder.startReplay(this.pendingReplayText);
+      return;
+    }
     this.confirmedLiveDestinations = destinations;
     if (action === 'live-send') {
       const textarea = this.encoderInputRef?.nativeElement;
@@ -1293,7 +1308,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.settings.update({ encoderMode: 'enter' });
   }
 
-  private openExternalConfirmation(action: 'external-send' | 'live-send', destinations: string[]): void {
+  private openExternalConfirmation(action: 'external-send' | 'live-send' | 'replay', destinations: string[]): void {
     this.tryMorseConfirmAction = action;
     this.pendingExternalDestinations = [...destinations];
     this.tryMorseConfirmTitle = action === 'live-send' ? 'Allow live sending?' : 'Confirm external send';
@@ -1377,6 +1392,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     textarea.value = '';
     this.encoderInputHasText = false;
+    if (this.encoder.replayPending()) this.encoder.clearBuffer();
   }
 
   /** Clear the main output display buffer and reset operational state */
@@ -1480,6 +1496,55 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Stop revealing blurred text on main screen */
   onMainRevealEnd(): void {
     this.mainRevealing = false;
+  }
+
+  /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
+  get mainReplayAvailable(): boolean {
+    if (this.encoder.replayPending()) return true;
+    if (!this.displayBuffers.mainOutput.hasText()) return false;
+    if (this.settings.settings().encoderMode === 'practice') {
+      return this.practice.state() === 'finished' && this.practice.referenceText() !== '';
+    }
+    return !this.encoder.isSending() && this.encoder.buffer().length <= this.encoder.sentIndex()
+      && !this.encoderInputHasText && this.displayBuffers.mainOutput.lastLine() !== null;
+  }
+
+  /** True while a replay is playing or paused; the button then stops it. */
+  get mainReplayStops(): boolean {
+    return this.encoder.replayPending();
+  }
+
+  /**
+   * Replay what is on the main screen without drawing it again. In practice mode the
+   * finished sequence plays again; otherwise the last line goes out through the encoder's
+   * outputs, after the usual confirmation when it would key or relay externally. In both
+   * cases the send button (practice button in practice) pauses and resumes it, and pressing
+   * the replay button while one is playing or paused stops it.
+   */
+  onMainReplay(): void {
+    const practiceMode = this.settings.settings().encoderMode === 'practice';
+    if (this.encoder.replayPending()) {
+      if (practiceMode) this.practice.stopReplay();
+      else this.encoder.clearBuffer();
+      return;
+    }
+    if (practiceMode) {
+      this.practice.replay();
+      return;
+    }
+    const line = this.displayBuffers.mainOutput.lastLine();
+    if (line) this.requestReplay(line.text);
+  }
+
+  /** Send a line again through the encoder, after the usual confirmation when it would key or relay externally. Also used by the full-screen view. */
+  requestReplay(text: string): void {
+    const destinations = this.getExternalEncoderDestinations();
+    if (destinations.length) {
+      this.pendingReplayText = text;
+      this.openExternalConfirmation('replay', destinations);
+      return;
+    }
+    this.encoder.startReplay(text);
   }
 
   toggleControlsKebab(): void {

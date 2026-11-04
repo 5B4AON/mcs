@@ -249,6 +249,10 @@
   background: linear-gradient(180deg, #c04040 0%, #8a2020 100%);
   color: #fff;
 }
+.clear-menu-btn.clear-textarea {
+  background: linear-gradient(180deg, #4088c0 0%, #285888 100%);
+  color: #fff;
+}
 
 /* ---- Font size / row spacing steppers: icon, minus, value, plus ---- */
 .fs-font-ctl {

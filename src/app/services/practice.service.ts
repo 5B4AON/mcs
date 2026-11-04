@@ -165,6 +165,24 @@ export class PracticeService {
     this.playSequence(text);
   }
 
+  /**
+   * Play the finished sequence again as sound only. The text on screen is not
+   * touched or drawn again; the state follows playback so the practice button
+   * pauses and resumes it like any other practice playback.
+   */
+  replay(): void {
+    const text = this.referenceText();
+    if (!text || this.state() !== 'finished') return;
+    this.state.set('playing');
+    this.encoder.startReplay(text);
+  }
+
+  /** Stop a replay for good (not a pause) and go back to the finished state. */
+  stopReplay(): void {
+    this.encoder.clearBuffer();
+    if (this.state() === 'playing' || this.state() === 'paused') this.state.set('finished');
+  }
+
   /** Generate a new sequence and start */
   next(): void {
     this.start();

@@ -72,8 +72,19 @@ export class FsLensViewComponent {
     return this.blurMode === 'both' || this.blurMode === frame.source;
   }
 
+  /** Stroke widths of the glow layers, widest first; stacked translucent outlines fade outwards like a soft glow without a blur filter. */
+  readonly glowLayers = [0.5, 0.34, 0.18];
+
+  /** Frames are replaced, never mutated, so the layout is computed once per frame instead of on every template read. */
+  private geometries = new WeakMap<LensFrame, LensGeometry>();
+
   geometry(frame: LensFrame): LensGeometry {
-    return layoutPattern(frame.pattern, frame.planned);
+    let g = this.geometries.get(frame);
+    if (!g) {
+      g = layoutPattern(frame.pattern, frame.planned);
+      this.geometries.set(frame, g);
+    }
+    return g;
   }
 
   /** Announced once, when the character is known; skipped while blurred or while it is the previous character. */

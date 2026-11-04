@@ -57,6 +57,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** Emitted when the user requests Presets (opened above this modal) */
   @Output() presetsRequested = new EventEmitter<void>();
+  /** Asks the app to replay a line through the encoder (it asks for confirmation when outputs are external). */
+  @Output() replayRequested = new EventEmitter<string>();
 
   /** Key or Type, remembered between sessions (saved with the settings and presets). */
   get inputMode(): 'key' | 'type' {

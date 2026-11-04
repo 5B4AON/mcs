@@ -72,7 +72,26 @@
 
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
   @if (blurMode) {
-    <button class="fs-float-btn" [class.revealing]="revealing"
+    <button class="fs-float-btn" [class.playing]="replayStops"
+            [disabled]="!replayAvailable"
+            (mousedown)="$event.preventDefault()"
+            (click)="onReplay()"
+            [title]="replayStops ? 'Stop replay' : 'Replay the last line'"
+            [attr.aria-label]="replayStops ? 'Stop replay' : 'Replay the last line'">
+      @if (replayStops) {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      } @else {
+        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(0.25 0.9)">
+            <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
+            <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
+            <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
+          </g>
+        </svg>
+      }
+    </button>
+    <button class="fs-float-btn" [class.revealing]="revealing" [disabled]="!hasText"
             (mousedown)="onRevealStart($event)"
             (mouseup)="onRevealEnd()"
             (mouseleave)="onRevealEnd()"

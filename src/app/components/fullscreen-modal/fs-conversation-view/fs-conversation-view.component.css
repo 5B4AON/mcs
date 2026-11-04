@@ -335,7 +335,12 @@
   min-height: 1.5em;
 }
 
-.fs-float-btn.revealing {
+.fs-float-btn.revealing,
+.fs-float-btn.playing {
   background: rgba(50, 110, 180, 0.8);
   color: #fff;
+}
+.fs-float-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
 }

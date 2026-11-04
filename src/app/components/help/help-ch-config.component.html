@@ -138,11 +138,11 @@
   Each buffer receives text from the same data sources (decoded characters,
   sent encoder characters, and Firebase RTDB input) but can be
   <strong>cleared independently</strong>. Pressing the Clear button (🗑)
-  opens a context menu with <strong>This text area</strong> (clears the current
+  opens a context menu with <strong>Output area</strong> (clears the current
   buffer only) and <strong>All text areas</strong> (clears both buffers at
-  once). On the main screen, the encoder&rsquo;s clear menu adds an
-  <strong>Input box</strong> option to empty the text-entry field without
-  affecting any log.
+  once). The menu also has an <strong>Input area</strong> option that empties
+  the text-entry field (in full screen, the text typed in Type mode)
+  without affecting any log; it also stops a replay in progress.
 </p>
 <p>
   Buffers are capped at approximately <strong>5 000 characters</strong>
@@ -240,6 +240,38 @@
   conversation views, user-name tags from RTDB relay messages remain visible
   even when the text is blurred, so you always know who is transmitting.
 </p>
+<h3>Replay button</h3>
+
+<p>
+  While text is blurred, a <strong>replay button</strong> (a circular arrow
+  with a play triangle) sits directly above the eye button, on the main screen
+  and in full screen. Use it to listen again without revealing the text.
+</p>
+<ul>
+  <li><strong>What is replayed</strong> &mdash; the last line on screen (the
+      most recent run of RX or TX text). In Copy Practice it is the sequence
+      that just finished.</li>
+  <li><strong>Silent on screen</strong> &mdash; the replay is not added to the
+      text again and Lens does not change, so the blurred text stays exactly
+      as it was.</li>
+  <li><strong>Same outputs as typed text</strong> &mdash; the replay is sent at
+      the Encoder speed (with Farnsworth timing if enabled) through every
+      output you use: sidetone, opto/key output, serial, MIDI, WinKeyer, RTDB
+      and vibration. When it would key or relay externally, the usual
+      <em>Confirm external send</em> dialog appears first (in Copy Practice the
+      practice pipeline setting decides, as for normal practice).</li>
+  <li><strong>Pause and resume</strong> &mdash; use the send button. In Type
+      mode of full screen it is the transmit button; in Copy Practice it is the
+      practice Pause / Resume button. A character that was cut short plays
+      again in full when you resume.</li>
+  <li><strong>Stop</strong> &mdash; while a replay plays or is paused the
+      replay button turns into a stop square; press it to end the replay.
+      <strong>Clear &rarr; Input area</strong> stops it too.</li>
+  <li><strong>When it is unavailable</strong> &mdash; the replay and eye
+      buttons are disabled while there is no text on screen. Replay is also
+      disabled while something else is being sent, while the input area holds
+      unsent text, and in Copy Practice until the sequence has finished.</li>
+</ul>
 
 <!-- 8.5 Farnsworth / Wordsworth Timing -->
 <h2 id="s8-5">8.5 &nbsp;Farnsworth / Wordsworth Timing</h2>

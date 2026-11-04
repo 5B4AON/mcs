@@ -30,7 +30,8 @@
         <app-fs-conversation-view [viewportKeyboardOpen]="viewport.keyboardOpen()"
                              [inputMode]="inputMode"
                              [lensMode]="lensMode"
-                             (inputModeChange)="setInputMode($event)"></app-fs-conversation-view>
+                             (inputModeChange)="setInputMode($event)"
+                             (replayRequested)="replayRequested.emit($event)"></app-fs-conversation-view>
       </div>
 
     </div>

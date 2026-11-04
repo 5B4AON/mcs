@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.3] - 2026-11-04
+
+### Added
+
+- **Replay button for blurred text** — When text blur is on, a replay button (circular arrow with a play triangle) sits above the eye button on the main screen and in full screen. It plays the last line again (in Copy Practice, the finished sequence) without adding it to the screen again or changing Lens. The replay goes out at the Encoder speed through the same outputs as typed text, with the usual external-send confirmation first. The send button (the practice button in Copy Practice) pauses and resumes it; the replay button becomes a stop square while it plays, and Clear → Input area stops it too. Both blur buttons are disabled while there is no text on screen.
+- **Input area in the full-screen Clear menu** — In Type mode the full-screen Clear menu now has **Input area**, which clears the text you typed (or the Type-along answer) and stops a send or replay in progress.
+
+### Changed
+
+- **Clear menu names** — "Input box" is now **Input area** and "This text area" is now **Output area**, on the main screen and in full screen.
+- **Lighter Lens effects** — The letter no longer has a filter (its edges are sharper), it fades in without scaling, and the glow around the symbols is made of soft stacked outlines instead of a blur. The look stays close to before while using less processing, which may reduce audio crackle while sending in Lens.
+- **Audio status without a background** — On the main screen the "Audio is running" / stopped text keeps its colour but no longer has a coloured box behind it.
+
+### Fixed
+
+- **Reveal icon size on phones** — The eye icon on the main screen is no longer squeezed on touch devices.
+- **Pause resumes the whole character** — A character cut short by Pause or Stop is now played again in full on resume instead of being skipped (WinKeyer, MIDI and RTDB still receive it only once). Pressing resume right after pause no longer leaves playback stuck.
+
 ## [2.9.2] - 2026-11-03
 
 ### Changed
