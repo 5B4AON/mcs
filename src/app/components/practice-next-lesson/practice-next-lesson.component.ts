@@ -20,7 +20,10 @@ import { KochRecommendation, kochRecommendation } from '../settings-items/practi
     @if (recommendation; as rec) {
       <div class="next-lesson" aria-live="polite">
         @if (rec.kind === 'next') {
-          <span>Over 90 % — ready for lesson {{ rec.lesson }} (new: {{ rec.newChars }}).</span>
+          <span class="next-lesson-text">
+            <span>Over 90 % — ready for lesson {{ rec.lesson }}.</span>
+            <span>New character: {{ rec.newChars }}</span>
+          </span>
           <button type="button" class="pill-btn pill-primary" (click)="goTo(rec.lesson)">Go to lesson {{ rec.lesson }}</button>
         } @else {
           <span>Over 90 % — you have completed all Koch lessons.</span>
@@ -39,6 +42,10 @@ import { KochRecommendation, kochRecommendation } from '../settings-items/practi
       font-family: system-ui, sans-serif;
       font-size: .85rem;
       color: inherit;
+    }
+    .next-lesson-text {
+      display: flex;
+      flex-direction: column;
     }
   `],
 })

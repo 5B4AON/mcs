@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.10.0';
+export const APP_VERSION = '2.10.1';
 
 /**
  * A very short note (a phrase or one brief sentence) about the main user-visible changes in APP_VERSION, shown once
