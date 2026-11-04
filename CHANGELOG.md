@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.0] - 2026-11-04
+
+### Added
+
+- **Koch method in Copy Practice** — A new **Koch method** Content type plays random characters from lessons 1 to N of the 40-lesson Koch order (1 – K, M … 40 – X), chosen with a **Lesson** select placed under Content. The newest lesson's characters come up about 30 % of the time, and at lesson 1 only K and M play. Choosing Koch method sets group size 5 and Count 10 (about a minute at 12 WPM); Koch practice is always Type-along, so the Character pool and Feedback options are hidden (your Feedback choice returns for other content types) and Rounds stays available, with a hint that estimates the round and session length from your speed, Farnsworth settings and lesson. After a result above 90 % (a round, or the average of a session) a suggestion offers **Go to lesson N+1** on the main screen and in full screen; at lesson 40 it says all lessons are complete. The Practice setup wizard offers it too. In practice, `=` is now shown and scored as `=`, not `<BT>`.
+- **What's new** — After an update, a dismissable "What's new in vX.X.X" note shows once, and a **What's new** pill next to the installed version in Settings → Other → App Updates opens it again. The text is `WHATS_NEW` in `version.ts`.
+
+### Changed
+
+- **Select boxes line up in each card** — In Settings cards and wizard steps, the labelled select boxes of a card now start at the same left edge, set by the widest label of that card.
+
+### Fixed
+
+- **Long Lesson list closing on release** — In Chrome, clicking in the middle of the 40-item Lesson select and releasing the mouse closed the list; it now opens as a scrollable list below the select (Chromium 135 and later).
+
 ## [2.9.4] - 2026-11-04
 
 ### Changed

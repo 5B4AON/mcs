@@ -19,6 +19,7 @@ import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
+import { WhatsNewService } from './services/whats-new.service';
 import { UpdateService } from './services/update.service';
 import { HelpLinkService } from './services/help-link.service';
 import { WakeLockService } from './services/wake-lock.service';
@@ -28,6 +29,7 @@ import { InstallHintService } from './services/install-hint.service';
 import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
+import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
 import { CollapseDirective } from './components/collapse.directive';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
@@ -64,7 +66,7 @@ import * as practiceUi from './components/settings-items/practice/practice-ui.ut
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, PracticeNextLessonComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -188,6 +190,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly helpLinks = inject(HelpLinkService);
   private readonly modalBack = inject(ModalBackService);
   readonly updates = inject(UpdateService);
+  private readonly whatsNew = inject(WhatsNewService);
   private readonly ngZone = inject(NgZone);
 
   /** Tracks how many modal history entries are currently pushed */
@@ -527,6 +530,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
 
     this.refreshDeviceConfig();
+    window.setTimeout(() => this.whatsNew.showOnce(), 800);
 
     // Wire mic key events into decoder — use configured source (RX or TX)
     this.subs.push(
@@ -1187,7 +1191,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onEncoderKeydown(event: KeyboardEvent, textarea: HTMLTextAreaElement): void {
     // In practice type-along, Enter maps to start/pause/resume/validate
     if (this.settings.settings().encoderMode === 'practice'
-        && this.settings.settings().practiceFeedbackMode === 'typealong'
+        && this.practice.feedbackMode() === 'typealong'
         && event.key === 'Enter') {
       event.preventDefault();
       const state = this.practice.state();
@@ -1404,7 +1408,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Start practice or advance to next sequence */
   practiceStartOrNext(textarea: HTMLTextAreaElement): void {
-    if (this.settings.settings().practiceFeedbackMode === 'typealong') {
+    if (this.practice.feedbackMode() === 'typealong') {
       this.practice.advanceTypeAlongSession();
       return;
     }
@@ -1434,7 +1438,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
     // Practice mode blur/typealong: blur the practice source direction
-    if (s.encoderMode === 'practice' && (s.practiceFeedbackMode === 'blur' || s.practiceFeedbackMode === 'typealong')) {
+    if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
       // If practice finished and feedback computed, unblur to show highlights
       if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
         return null;
@@ -1649,7 +1653,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       if (this.activeModal || this.fullscreenAfterWizard) return;
       if (goal === 'decode') {
         this.audioToggleButtonRef?.nativeElement.focus();
-      } else if (goal === 'practice' && this.settings.settings().practiceFeedbackMode !== 'typealong') {
+      } else if (goal === 'practice' && this.practice.feedbackMode() !== 'typealong') {
         this.practiceActionButtonRef?.nativeElement.focus();
       } else {
         this.encoderInputRef?.nativeElement.focus();

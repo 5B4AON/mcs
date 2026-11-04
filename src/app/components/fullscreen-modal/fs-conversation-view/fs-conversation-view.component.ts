@@ -7,7 +7,7 @@ import {
   AfterViewChecked, ElementRef, EventEmitter, Output, ViewChild, computed, effect
 } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
-import { SettingsService } from '../../../services/settings.service';
+import { AppSettings, SettingsService } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
@@ -16,6 +16,7 @@ import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
+import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
 import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 
 /**
@@ -35,7 +36,7 @@ import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent],
+  imports: [FsLensViewComponent, PracticeNextLessonComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -143,7 +144,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
     if (s.encoderMode === 'practice' && this.inputMode === 'key') return null;
-    if (s.encoderMode === 'practice' && (s.practiceFeedbackMode === 'blur' || s.practiceFeedbackMode === 'typealong')) {
+    if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
       if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
         return null;
       }
@@ -263,12 +264,18 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Format a display line with optional name prefix and prosign/emoji styling */
   formatLine(line: DisplayLine): SafeHtml {
-    return formatLine(line, this.settings.settings(), this.sanitizer);
+    return formatLine(line, this.textSettings(), this.sanitizer);
   }
 
   /** Format encoder text without applying emoji replacements while it is pending. */
   formatPendingText(text: string): SafeHtml {
-    return formatText(text, this.settings.settings(), this.sanitizer);
+    return formatText(text, this.textSettings(), this.sanitizer);
+  }
+
+  /** Practice text is shown as played: `=` stays `=` instead of becoming <BT>. */
+  private textSettings(): AppSettings {
+    const s = this.settings.settings();
+    return s.encoderMode === 'practice' && s.showProsigns ? { ...s, showProsigns: false } : s;
   }
 
   /** Select Key or Type message without sending or changing saved settings. */
@@ -289,7 +296,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Start, advance, pause, or resume the active practice flow. */
   practiceAction(): void {
-    if (this.settings.settings().practiceFeedbackMode === 'typealong') {
+    if (this.practice.feedbackMode() === 'typealong') {
       if (this.practice.state() === 'playing') {
         this.practice.pause();
       } else if (this.practice.state() === 'paused') {
@@ -311,7 +318,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     const inputEvent = event as InputEvent;
     const input = event.target as HTMLInputElement;
     const isPractice = this.settings.settings().encoderMode === 'practice';
-    const typeAlong = isPractice && this.settings.settings().practiceFeedbackMode === 'typealong';
+    const typeAlong = isPractice && this.practice.feedbackMode() === 'typealong';
     if (typeAlong && (this.practice.state() === 'playing' || this.practice.state() === 'finished')) {
       if (inputEvent.inputType.startsWith('delete')) {
         this.practice.userInput.set(this.practice.userInput().slice(0, -1));

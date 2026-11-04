@@ -4,7 +4,12 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { PracticeContentMode, PracticeFeedbackMode, PracticePipeline } from './practice-item.model';
+import {
+  KOCH_DEFAULT_COUNT, KOCH_DEFAULT_GROUP_SIZE, PracticeContentMode, PracticeFeedbackMode, PracticePipeline,
+  effectivePracticeFeedbackMode,
+} from './practice-item.model';
+import { KOCH_LESSON_COUNT, kochLessonLabel } from '../../../data/koch-lessons';
+import { kochLessonHint, kochRoundsHint } from './practice-ui.utils';
 import { DecoderSource } from '../../../services/settings-common';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
@@ -14,7 +19,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
  * Settings item — Copy Practice.
  *
  * Configures copy practice: content mode (random characters, words,
- * or callsigns), group count, character pool, word lengths, feedback
+ * callsigns, or Koch method lessons), group count, character pool, word lengths, feedback
  * mode, pipeline, and input direction/name/color.
  */
 @Component({
@@ -38,10 +43,38 @@ export class PracticeItemComponent {
   /** Current values from the scope */
   readonly s = this.scope.value;
 
+  /** Koch lesson numbers for the Lesson select */
+  readonly kochLessons = Array.from({ length: KOCH_LESSON_COUNT }, (_, i) => i + 1);
+  readonly kochLessonLabel = kochLessonLabel;
+
+  /** Feedback mode in effect (Koch method is always Type-along) */
+  get feedbackMode(): PracticeFeedbackMode {
+    return effectivePracticeFeedbackMode(this.s());
+  }
+
+  /** One line on what the chosen lesson plays */
+  kochLessonHint(): string {
+    return kochLessonHint(this.s().practiceKochLesson);
+  }
+
+  /** Estimated round length for the Rounds hint, from the real timing */
+  kochRoundsHint(): string {
+    return kochRoundsHint(this.s());
+  }
+
   /** Handle content mode change */
   onContentModeChange(event: Event): void {
+    const mode = (event.target as HTMLSelectElement).value as PracticeContentMode;
+    // Choosing Koch method starts at 10 groups of 5 characters (about a minute); the user can change both
+    this.scope.update(mode === 'koch' && this.s().practiceContentMode !== 'koch'
+      ? { practiceContentMode: mode, practiceCharGroupSize: KOCH_DEFAULT_GROUP_SIZE, practiceGroupCount: KOCH_DEFAULT_COUNT }
+      : { practiceContentMode: mode });
+  }
+
+  /** Handle Koch lesson change */
+  onKochLessonChange(event: Event): void {
     this.scope.update({
-      practiceContentMode: (event.target as HTMLSelectElement).value as PracticeContentMode,
+      practiceKochLesson: +(event.target as HTMLSelectElement).value,
     });
   }
 

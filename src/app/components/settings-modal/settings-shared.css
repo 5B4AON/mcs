@@ -683,6 +683,24 @@
 .settings-card-body label:has(> app-help-link-button) > app-help-link-button {
   margin-left: auto;
 }
+/* Labelled selects line up inside a card: the label column is as wide as the widest label of the
+   card (measured by AlignSelectLabelsDirective into --select-label-w) plus a little space, so every
+   select starts at the same left edge; a Help "?" sits at the right end. The column never takes
+   more than 42% of the row on narrow screens. 7rem is the value before the first measurement. */
+.settings-card-body label:has(> select) {
+  display: grid;
+  grid-template-columns: min(calc(var(--select-label-w, 7rem) + .5rem), 42%) minmax(0, 260px) 1fr;
+  align-items: center;
+  column-gap: .4rem;
+}
+.settings-card-body label:has(> select) > select {
+  width: 100%;
+  max-width: none;
+}
+.settings-card-body label:has(> select) > app-help-link-button {
+  justify-self: end;
+  margin-left: 0;
+}
 .cw-auto-info {
   font-size: .75rem;
   color: #acd;
@@ -815,6 +833,36 @@
 }
 .settings-card-body button:where(:not(.pill-btn)):hover {
   background: #444;
+}
+
+/* Koch Lesson select (40 options). Chrome opens a long native list over the select, so releasing
+   the mouse after a click in the middle picks the option under the pointer and closes it. Where
+   supported (Chromium 135+), the customizable select opens the list as a popover below the select
+   with its own height limit; other browsers keep the native select. */
+@supports (appearance: base-select) {
+  select.koch-lesson-select,
+  select.koch-lesson-select::picker(select) {
+    appearance: base-select;
+  }
+  select.koch-lesson-select::picker(select) {
+    max-height: min(50vh, 22rem);
+    padding: .25rem;
+    background: #222;
+    color: #ddd;
+    border: 1px solid #556;
+    border-radius: 6px;
+  }
+  select.koch-lesson-select option {
+    padding: .3rem .5rem;
+    border-radius: 4px;
+  }
+  select.koch-lesson-select option:hover,
+  select.koch-lesson-select option:checked {
+    background: #3a4858;
+  }
+  select.koch-lesson-select option::checkmark {
+    color: #8cf;
+  }
 }
 
 /* Misc */

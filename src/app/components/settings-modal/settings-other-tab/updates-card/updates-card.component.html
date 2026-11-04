@@ -3,6 +3,7 @@
   <div class="update-row">
     <span>Installed version</span>
     <strong>{{ version }}</strong>
+    <button type="button" class="pill-btn pill-accent whats-new-btn" (click)="whatsNew.show()">What's new</button>
   </div>
 
   <div class="update-status" [class.update-error]="updates.state() === 'error'" aria-live="polite">

@@ -12,6 +12,8 @@ export interface ConfirmOptions {
   confirmLabel?: string;
   cancelLabel?: string;
   danger?: boolean;
+  /** Only the confirm button (a note to dismiss) */
+  singleAction?: boolean;
 }
 
 /**
@@ -33,6 +35,7 @@ export class ConfirmService {
       ref.setInput('confirmLabel', options.confirmLabel ?? 'Yes');
       ref.setInput('cancelLabel', options.cancelLabel ?? 'Cancel');
       ref.setInput('danger', options.danger ?? false);
+      ref.setInput('singleAction', options.singleAction ?? false);
 
       let finished = false;
       const finish = (answer: boolean): void => {

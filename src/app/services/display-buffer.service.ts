@@ -260,9 +260,10 @@ export class DisplayBufferService {
    * Push a sent (encoder) character to all relevant buffers.
    * The fullscreen conversation and main panel show sent text.
    * If the character is a prosign with an enabled action, the action
-   * is applied to all buffers instead of the raw text.
+   * is applied to all buffers instead of the raw text. `literal` skips the
+   * prosign action check (Copy Practice shows `=` as `=`, never as <BT>).
    */
-  pushSent(type: 'rx' | 'tx', char: string, name?: string, color?: string): void {
+  pushSent(type: 'rx' | 'tx', char: string, name?: string, color?: string, literal = false): void {
     // Suppress the word-gap space that follows a prosign action
     if (this.suppressNextSpace && char === ' ') {
       this.suppressNextSpace = false;
@@ -270,7 +271,7 @@ export class DisplayBufferService {
     }
 
     // Check for prosign action
-    const resolved = this.resolveProsignAction(char);
+    const resolved = literal ? null : this.resolveProsignAction(char);
     if (resolved) {
       const label = resolved.prosignKey;
       this.mainOutput.applyProsignAction(resolved.action, type, name, label, color);

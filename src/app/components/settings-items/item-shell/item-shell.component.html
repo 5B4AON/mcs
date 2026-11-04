@@ -18,13 +18,13 @@
         </label>
       }
     </div>
-    <div class="settings-card-body" *appCollapse="expanded">
+    <div class="settings-card-body" appAlignSelectLabels *appCollapse="expanded">
       <ng-container *ngTemplateOutlet="body"></ng-container>
     </div>
   </div>
 } @else {
   <div class="settings-card" [id]="'settings-card-' + cardId">
-    <div class="settings-card-body">
+    <div class="settings-card-body" appAlignSelectLabels>
       <ng-container *ngTemplateOutlet="body"></ng-container>
     </div>
   </div>
