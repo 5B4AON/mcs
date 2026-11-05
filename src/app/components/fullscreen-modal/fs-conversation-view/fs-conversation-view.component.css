@@ -324,8 +324,9 @@
   font-size: .8em;
   line-height: 1.35;
   color: rgba(255, 255, 255, 0.85);
+  word-break: normal;
+  overflow-wrap: break-word;
 }
-
 
 .fs-typed-text {
   font-family: 'Courier New', monospace;
@@ -343,4 +344,17 @@
 .fs-float-btn:disabled {
   opacity: 0.45;
   cursor: default;
+}
+/* Replay and reveal float over the text: keep it readable through them */
+.fs-float-btn.fs-float-ghost {
+  background: rgba(60, 60, 80, 0.3);
+  border-color: rgba(255, 255, 255, 0.15);
+  box-shadow: none;
+}
+.fs-float-btn.fs-float-ghost:hover:not(:disabled) {
+  background: rgba(80, 80, 110, 0.4);
+}
+.fs-float-btn.fs-float-ghost.revealing,
+.fs-float-btn.fs-float-ghost.playing {
+  background: rgba(50, 110, 180, 0.45);
 }

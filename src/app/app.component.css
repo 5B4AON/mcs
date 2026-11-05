@@ -505,6 +505,27 @@
   background-size: 100% 1.35em;
   background-position: 0 0.3em;
   background-attachment: local;
+  position: relative;
+  z-index: 1;
+}
+
+/*
+ * Night mode for the Koch fireworks: the parchment slowly darkens by 70 % (a black layer between
+ * the paper and the text, which is z-index 1, so the torn edge clip still shapes it) and stays
+ * that way while the show plays. The text keeps its colours. It lightens again when the show ends.
+ */
+.decoded-parchment::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .8s ease;
+}
+.decoded-parchment.night::before {
+  opacity: .7;
+  transition: opacity 7s ease-in-out;
 }
 .cursor {
   color: #3a2e20;
@@ -556,8 +577,8 @@
   width: 44px;
   height: 44px;
   border-radius: 50%;
-  background: rgba(160, 140, 110, 0.7);
-  border: 1px solid rgba(120, 100, 70, 0.5);
+  background: rgba(160, 140, 110, 0.3);
+  border: 1px solid rgba(120, 100, 70, 0.35);
   color: rgba(60, 45, 30, 0.7);
   display: flex;
   align-items: center;
@@ -566,20 +587,19 @@
   z-index: 5;
   padding: 0;
   min-height: unset;
-  box-shadow: 0 2px 8px rgba(80, 60, 40, 0.25);
   transition: background 0.15s, color 0.15s;
   touch-action: manipulation;
   -webkit-user-select: none;
   user-select: none;
 }
 .blur-reveal-btn-main:hover {
-  background: rgba(170, 150, 120, 0.85);
+  background: rgba(170, 150, 120, 0.45);
   color: rgba(50, 35, 20, 0.9);
 }
 .blur-reveal-btn-main:active,
 .blur-reveal-btn-main.revealing,
 .blur-reveal-btn-main.playing {
-  background: rgba(140, 120, 90, 0.9);
+  background: rgba(140, 120, 90, 0.5);
   color: #2a1e12;
 }
 /* Replay sits directly above the reveal button (44 px + 8 px gap) */
@@ -852,6 +872,8 @@
 }
 .encoder-input-row textarea::placeholder {
   text-transform: none;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .try-morse-guide {
@@ -930,6 +952,13 @@
   color: #d5e8f5;
   font-size: .85rem;
   line-height: 1.35;
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+/* The output area breaks anywhere (break-all); practice messages wrap whole words */
+.practice-session-summary {
+  word-break: normal;
+  overflow-wrap: break-word;
 }
 .practice-guide strong {
   color: #8cf;

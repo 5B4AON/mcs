@@ -13,16 +13,43 @@ import { effectivePracticeFeedbackMode } from './practice-item.model';
  * Return a concise description of the currently configured practice content.
  */
 export function practiceContentDescription(settings: AppSettings): string {
+  const count = settings.practiceGroupCount;
   switch (settings.practiceContentMode) {
     case 'characters':
-      return `${settings.practiceGroupCount} character group${settings.practiceGroupCount === 1 ? '' : 's'} of ${settings.practiceCharGroupSize}`;
-    case 'words':
-      return `${settings.practiceGroupCount} random word${settings.practiceGroupCount === 1 ? '' : 's'}`;
-    case 'callsigns':
-      return `${settings.practiceGroupCount} random callsign${settings.practiceGroupCount === 1 ? '' : 's'}`;
     case 'koch':
-      return `${settings.practiceGroupCount} character group${settings.practiceGroupCount === 1 ? '' : 's'} of ${settings.practiceCharGroupSize} (Koch lesson ${settings.practiceKochLesson})`;
+      return `${count} group${count === 1 ? '' : 's'} of ${settings.practiceCharGroupSize} characters each`;
+    case 'words':
+      return `${count} word${count === 1 ? '' : 's'}`;
+    case 'callsigns':
+      return `${count} callsign${count === 1 ? '' : 's'}`;
   }
+}
+
+/** The practice content, prefixed with the number of rounds when there is more than one. */
+export function practiceSessionDescription(settings: AppSettings): string {
+  const content = practiceContentDescription(settings);
+  if (settings.practiceRounds <= 1) return content;
+  const each = settings.practiceContentMode === 'words' || settings.practiceContentMode === 'callsigns' ? ' each' : '';
+  return `${settings.practiceRounds} rounds of ${content}${each}`;
+}
+
+/** The session briefing as separate lines: rounds and groups, then the group size. */
+export function practiceSessionLines(settings: AppSettings): string[] {
+  const rounds = settings.practiceRounds > 1 ? `${settings.practiceRounds} rounds of ` : '';
+  const count = settings.practiceGroupCount;
+  if (settings.practiceContentMode === 'characters' || settings.practiceContentMode === 'koch') {
+    return [`${rounds}${count} group${count === 1 ? '' : 's'},`, `${settings.practiceCharGroupSize} characters each.`];
+  }
+  const noun = settings.practiceContentMode === 'words' ? 'word' : 'callsign';
+  const each = settings.practiceRounds > 1 ? ' each' : '';
+  return [`${rounds}${count} ${noun}${count === 1 ? '' : 's'}${each}.`];
+}
+
+/** Heading of the practice note: the Koch lesson and its new characters when Koch is on, otherwise the given default. */
+export function practiceHeading(settings: AppSettings, fallback: string): string {
+  return settings.practiceContentMode === 'koch'
+    ? `Koch lesson ${settings.practiceKochLesson} - ${kochNewChars(settings.practiceKochLesson).join(', ')}`
+    : fallback;
 }
 
 /**
@@ -35,7 +62,7 @@ export function practiceFeedbackDescription(settings: AppSettings): string {
     case 'blur':
       return 'Blurred: copy on paper or in your head, then hold Reveal to check.';
     case 'typealong':
-      return 'Type-along: type what you hear, then validate your answer.';
+      return 'Type-along: type what you hear.';
   }
 }
 

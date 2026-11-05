@@ -27,9 +27,6 @@
         @if (mapping.mode === 'paddle' && mapping.reversePaddles) {
           <span class="midi-mapping-reverse" title="Paddles reversed">↔</span>
         }
-        @if (mapping.mode === 'paddle') {
-          <span class="midi-mapping-mode-detail" title="Paddle mode">{{ paddleModeLabel(mapping.paddleMode) }}</span>
-        }
       </ng-template>
     </app-mapping-list>
   }

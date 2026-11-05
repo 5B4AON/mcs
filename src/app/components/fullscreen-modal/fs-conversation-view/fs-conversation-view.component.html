@@ -16,10 +16,12 @@
     <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing"></app-fs-lens-view>
   } @else if (practiceView && practice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
-      <strong>Practice session</strong>
-      <div>Copy {{ settings.settings().practiceRounds }} rounds of {{ practiceUi.practiceContentDescription(settings.settings()) }}.</div>
-      <div>Type what you hear, press Enter to validate.</div>
-      <div>After the final round, view your average.</div>
+      <strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>
+      @for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {
+        <div>{{ line }}</div>
+      }
+      <div>Type what you hear,</div>
+      <div>hit Enter to validate.</div>
     </section>
   } @else if (practiceView && practice.isSessionSummary()) {
     <section class="practice-session-summary" aria-live="polite">
@@ -74,9 +76,12 @@
   }
 </div>
 
+@if (practiceView && practice.kochFinished()) {
+  <app-fireworks />
+}
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
   @if (blurMode) {
-    <button class="fs-float-btn" [class.playing]="replayStops"
+    <button class="fs-float-btn fs-float-ghost" [class.playing]="replayStops"
             [disabled]="!replayAvailable"
             (mousedown)="$event.preventDefault()"
             (click)="onReplay()"
@@ -95,7 +100,7 @@
         </svg>
       }
     </button>
-    <button class="fs-float-btn" [class.revealing]="revealing" [disabled]="!hasText"
+    <button class="fs-float-btn fs-float-ghost" [class.revealing]="revealing" [disabled]="!hasText"
             (mousedown)="onRevealStart($event)"
             (mouseup)="onRevealEnd()"
             (mouseleave)="onRevealEnd()"

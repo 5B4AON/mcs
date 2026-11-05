@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
 import { MorseEncoderService } from './morse-encoder.service';
@@ -36,12 +36,26 @@ export class ClearService {
     return this.encoder.buffer().length > this.encoder.sentIndex();
   });
 
-  /** True when either output area shows text. */
+  /** True when either output area shows text, or a practice briefing/summary is showing. */
   readonly outputHasContent = computed(() =>
-    this.displayBuffers.mainOutput.hasText() || this.displayBuffers.fullscreenConversation.hasText());
+    this.displayBuffers.mainOutput.hasText() || this.displayBuffers.fullscreenConversation.hasText()
+    || (this.settings.settings().encoderMode === 'practice' && this.practice.promptShowing()));
 
   /** True when the Clear button has anything to offer. */
   readonly canClear = computed(() => this.inputHasContent() || this.outputHasContent());
+
+  /**
+   * The practice settings that shape an exercise. Name and colour are left out (they only style
+   * the text, and a name is typed one letter at a time); the on/off switch is handled by the mode change.
+   */
+  private readonly practiceSignature = computed(() => {
+    const s = this.settings.settings();
+    return JSON.stringify([
+      s.practiceContentMode, s.practiceGroupCount, s.practiceCharGroupSize, s.practiceIncludeLetters,
+      s.practiceIncludeNumbers, s.practiceIncludePunctuation, s.practiceKochLesson, s.practiceWordLengths,
+      s.practiceFeedbackMode, s.practiceRounds, s.practicePipeline, s.practiceSource,
+    ]);
+  });
 
   constructor(
     private settings: SettingsService,
@@ -50,7 +64,18 @@ export class ClearService {
     private displayBuffers: DisplayBufferService,
     private practice: PracticeService,
     private lens: LensService,
-  ) {}
+  ) {
+    // Changing what is practised starts clean: nothing from the previous exercise stays on screen
+    let previous = this.practiceSignature();
+    effect(() => {
+      const signature = this.practiceSignature();
+      if (signature === previous) return;
+      previous = signature;
+      untracked(() => {
+        if (this.settings.settings().encoderMode === 'practice') this.clearAll();
+      });
+    });
+  }
 
   /** Clear the typed text; this also stops a send or replay in progress. */
   clearInput(): void {

@@ -4,7 +4,7 @@
 
 import { Component, Input, computed, inject } from '@angular/core';
 import { KeyboardInputMapping } from './keyboard-keyer-item.model';
-import { DecoderSource, PaddleMode } from '../../../services/settings-common';
+import { DecoderSource } from '../../../services/settings-common';
 import { KeyboardInputEditModalComponent, KeyboardInputEditSaveEvent } from '../../settings-modal/keyboard-input-edit-modal/keyboard-input-edit-modal.component';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
@@ -164,16 +164,5 @@ export class KeyboardKeyerItemComponent {
   nameColor(m: KeyboardInputMapping): string {
     if (m.color) return m.color;
     return m.source === 'rx' ? '#8cf' : '#fc8';
-  }
-
-  /** Get a human-readable paddle mode label */
-  paddleModeLabel(mode: PaddleMode): string {
-    switch (mode) {
-      case 'iambic-b': return 'Iambic B';
-      case 'iambic-a': return 'Iambic A';
-      case 'ultimatic': return 'Ultimatic';
-      case 'single-lever': return 'Single';
-      default: return mode;
-    }
   }
 }

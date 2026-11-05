@@ -12,6 +12,7 @@ import { CALLSIGN_PREFIXES } from '../data/callsign-prefixes';
 import { KOCH_NEWEST_WEIGHT, kochNewChars, kochPool } from '../data/koch-lessons';
 import { MORSE_TABLE } from '../morse-table';
 import { effectivePracticeFeedbackMode } from '../components/settings-items/practice/practice-item.model';
+import { kochRecommendation } from '../components/settings-items/practice/practice-ui.utils';
 
 /** Practice playback state */
 export type PracticeState = 'idle' | 'playing' | 'paused' | 'finished';
@@ -74,6 +75,17 @@ export class PracticeService {
   readonly isSessionSummary = computed(() => this.sessionStage() === 'summary');
   /** Current round number for an active multi-round session */
   readonly currentRound = computed(() => this.roundScores().length + 1);
+  /** Whether a multi-round briefing or summary is on screen (only those stages show prompt text) */
+  readonly promptShowing = computed(() => this.sessionStage() === 'briefing' || this.sessionStage() === 'summary');
+
+  /** The result on screen completes the last Koch lesson with a recommendation to celebrate (drives the fireworks) */
+  readonly kochFinished = computed(() => {
+    const accuracy = this.sessionStage() === 'summary'
+      ? this.averageRoundScore()
+      : (!this.isMultiRoundTypeAlong() && this.feedback().length > 0 ? this.accuracy() : 0);
+    return kochRecommendation(this.settings.settings(), accuracy)?.kind === 'complete';
+  });
+
   /** Unweighted average of the completed round percentages */
   readonly averageRoundScore = computed(() => {
     const scores = this.roundScores();

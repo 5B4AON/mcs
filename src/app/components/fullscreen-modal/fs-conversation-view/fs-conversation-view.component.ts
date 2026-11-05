@@ -17,6 +17,7 @@ import { PracticeService } from '../../../services/practice.service';
 import { formatText, formatLine } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
+import { FireworksComponent } from '../../fireworks/fireworks.component';
 import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 
 /**
@@ -36,7 +37,7 @@ import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, PracticeNextLessonComponent],
+  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })

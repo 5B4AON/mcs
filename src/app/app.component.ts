@@ -30,6 +30,7 @@ import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
+import { FireworksComponent } from './components/fireworks/fireworks.component';
 import { CollapseDirective } from './components/collapse.directive';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
@@ -66,7 +67,7 @@ import * as practiceUi from './components/settings-items/practice/practice-ui.ut
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, PracticeNextLessonComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -1427,6 +1428,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Resume practice playback */
   practiceResume(): void {
     this.practice.resume();
+  }
+
+  /** The Koch course has just been completed on screen: the output area shows the fireworks at night */
+  get celebrating(): boolean {
+    return this.practice.kochFinished() && this.settings.settings().encoderMode === 'practice';
   }
 
   // ---- Text blur ----

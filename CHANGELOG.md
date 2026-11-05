@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.2] - 2026-11-05
+
+### Added
+
+- **Fireworks for finishing the Koch course** — Scoring above 90 % on lesson 40 now plays a see-through firework show over the output area, on the main screen and in full screen, with a congratulation message. Round, ring and gold willow bursts throw out thin sparks that slow, droop and leave fading light trails, followed by tiny flickering white stars. On the main screen the parchment slowly darkens by 70 % (over 7 seconds) so the show is easier to see. It keeps playing until you clear the screen, never takes clicks, and shows a single still frame when the device asks for reduced motion.
+- **Koch lesson heading** — The practice briefing and the practice note under the input box are headed "Koch lesson N - characters" (for example "Koch lesson 2 - U") instead of "Practice session" / "Practice".
+
+### Changed
+
+- **Clearer practice text** — The multi-round briefing now reads, for example, "2 rounds of 10 groups, / 5 characters each. / Type what you hear, / hit Enter to validate." (words and callsigns read "2 rounds of 5 words each"), without the redundant "After the final round, view your average." line. The note under the input box uses the same wording, drops "plays", "random" and "then validate your answer", and starts its text on the line after the heading. Practice messages wrap whole words instead of splitting them.
+- **Replay and reveal buttons see-through** — The replay and reveal buttons on the main screen and in full screen are now mostly transparent, so text underneath stays readable.
+- **Practice output clears itself** — The Clear button is now enabled while a practice briefing or summary is showing. Changing any practice setting that shapes the exercise (content, counts, lesson, rounds, feedback mode and so on) clears the output and input areas, and the practice session, while in Practice mode.
+- **Menu order** — In both kebab menus, Symbols Ref now sits directly above Help.
+- **Keyboard Keyer list** — Paddle mappings no longer repeat the paddle mode (for example "Iambic B") in the Settings list.
+- **Update wording** — The App Updates card and Help 9.5 now say that a new version downloads in the background and is used the next time the app is opened or reloaded, or when you press **Update now**, and that the open app is never restarted automatically.
+
 ## [2.10.1] - 2026-11-04
 
 ### Changed

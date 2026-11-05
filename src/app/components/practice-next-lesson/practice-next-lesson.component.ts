@@ -5,13 +5,16 @@
 import { Component, Input } from '@angular/core';
 import { PracticeService } from '../../services/practice.service';
 import { SettingsService } from '../../services/settings.service';
+import { KOCH_LESSON_COUNT } from '../../data/koch-lessons';
 import { KochRecommendation, kochRecommendation } from '../settings-items/practice/practice-ui.utils';
 
 /**
  * Koch method advice under a practice result: with an accuracy above 90 % it
  * recommends the next lesson and offers a button that moves to it. Nothing
  * changes by itself; the lesson only changes when the learner clicks. Shown
- * nowhere for other content types or lower scores.
+ * nowhere for other content types or lower scores. After the last lesson it
+ * congratulates the learner (the fireworks are drawn by the output area itself,
+ * see `PracticeService.kochFinished`).
  */
 @Component({
   selector: 'app-practice-next-lesson',
@@ -26,13 +29,22 @@ import { KochRecommendation, kochRecommendation } from '../settings-items/practi
           </span>
           <button type="button" class="pill-btn pill-primary" (click)="goTo(rec.lesson)">Go to lesson {{ rec.lesson }}</button>
         } @else {
-          <span>Over 90 % — you have completed all Koch lessons.</span>
+          <div class="finale">
+            <strong class="finale-title">Congratulations!</strong>
+            <span>You scored over 90 % in the last lesson and have completed all {{ lessonCount }} Koch lessons.</span>
+            <span>Brilliant work!</span>
+          </div>
         }
       </div>
     }
   `,
   styles: [`
-    :host { display: block; }
+    :host {
+      display: block;
+      /* The output area breaks anywhere; these messages wrap whole words */
+      word-break: normal;
+      overflow-wrap: break-word;
+    }
     .next-lesson {
       display: flex;
       flex-wrap: wrap;
@@ -47,11 +59,28 @@ import { KochRecommendation, kochRecommendation } from '../settings-items/practi
       display: flex;
       flex-direction: column;
     }
+    .next-lesson:has(.finale) {
+      justify-content: center;
+    }
+    .finale {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: .2rem;
+      width: 100%;
+      text-align: center;
+      line-height: 1.3;
+    }
+    .finale-title {
+      font-size: 1.15rem;
+    }
   `],
 })
 export class PracticeNextLessonComponent {
   /** The accuracy shown in the result (a round, or the average of a session) */
   @Input() accuracy = 0;
+
+  readonly lessonCount = KOCH_LESSON_COUNT;
 
   constructor(
     private settings: SettingsService,
