@@ -212,7 +212,7 @@
              [class.rx-line]="line.type === 'rx'"
              [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor">{{ decoder.currentPattern() }}</span></div>
       @if (celebrating) {
-        <app-fireworks />
+        <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }
       @if (mainBlurMode) {
         <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"

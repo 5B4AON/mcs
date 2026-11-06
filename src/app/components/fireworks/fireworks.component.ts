@@ -2,13 +2,29 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, Component, ElementRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, Input, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { FireworkSound, ShellKind } from './firework-sound';
 
 /** Burst colours as hues (red, orange, gold, green, cyan-blue, blue, purple, pink) */
 const HUES = [2, 24, 46, 125, 190, 215, 280, 330];
 
 /** Per-frame (1/60 s) fraction of the picture that fades away: this is what leaves the slowly vanishing light trails */
 const FADE = 0.12;
+
+/** Pause after the text colour change has finished, before the first shell */
+const AFTER_TEXT_CHANGE_MS = 1000;
+
+/**
+ * Wait before the first shell: the end of the text colour change plus a short pause.
+ * Full screen: the text fades over 2 s from the start (and a closing keyboard settles meanwhile).
+ */
+export const LAUNCH_DELAY_MS = 2000 + AFTER_TEXT_CHANGE_MS;
+
+/** Main screen: the text starts changing 2 s into the darkening and takes 2 s (see `.decoded-parchment.night` in app.component.css) */
+export const MAIN_LAUNCH_DELAY_MS = 4000 + AFTER_TEXT_CHANGE_MS;
+
+/** Simulation speed: 0.8 = 20 % slower, so every burst, trail and fade lasts 25 % longer */
+const SPEED = 0.8;
 
 /** A burst particle (a streaking spark) or a glittering star that appears later and falls */
 interface Particle {
@@ -17,6 +33,8 @@ interface Particle {
   age: number; life: number; delay: number;
   hue: number; width: number;
   star: boolean; crackle: boolean;
+  /** The white flash at the centre of a shell: full white at once, then a slow crackling fade while it falls */
+  flash: boolean;
 }
 
 /**
@@ -48,20 +66,31 @@ interface Particle {
       display: block;
       width: 100%;
       height: 100%;
-      opacity: .9;
+      opacity: 1;
     }
   `],
 })
 export class FireworksComponent implements AfterViewInit, OnDestroy {
+  /** Time before the first shell, in milliseconds */
+  @Input() launchDelayMs = LAUNCH_DELAY_MS;
+
   @ViewChild('canvas', { static: true }) private canvasRef!: ElementRef<HTMLCanvasElement>;
 
   private ctx!: CanvasRenderingContext2D;
   private particles: Particle[] = [];
   private frame = 0;
   private lastTime = 0;
+  /** Frame time (in 1/60 s) smoothed over a few frames, so uneven animation-frame timestamps do not make the motion stutter */
+  private smoothFrames = 0;
+  /** Pre-drawn soft glows (drawn once, then stamped each frame instead of building a gradient every time) */
+  private starSprite?: HTMLCanvasElement;
+  private readonly flashSprites = new Map<number, HTMLCanvasElement>();
   private untilNextBurst = 0;
   private observer?: ResizeObserver;
   private still = false;
+  private started = false;
+  private startTimer = 0;
+  private readonly sound = new FireworkSound();
   /** Drawing units: one unit is 1/160 of the box height in device pixels, so the show scales with the area */
   private unit = 1;
 
@@ -75,15 +104,22 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
       this.observer = new ResizeObserver(() => this.resize());
       this.observer.observe(this.host.nativeElement);
       this.resize();
-      if (this.still) {
-        this.drawStill();
-      } else {
-        this.frame = requestAnimationFrame(time => this.tick(time));
-      }
+      // Start the audio well before the first shell so it is running when it goes off
+      if (!this.still) this.sound.prepare();
+      this.startTimer = window.setTimeout(() => {
+        this.started = true;
+        if (this.still) {
+          this.drawStill();
+        } else {
+          this.frame = requestAnimationFrame(time => this.tick(time));
+        }
+      }, this.launchDelayMs);
     });
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.startTimer);
+    this.sound.dispose();
     cancelAnimationFrame(this.frame);
     this.observer?.disconnect();
   }
@@ -100,11 +136,13 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
     this.unit = height / 160;
     this.particles = [];
     this.untilNextBurst = 0;
-    if (this.still) this.drawStill();
+    if (this.still && this.started) this.drawStill();
   }
 
   private tick(time: number): void {
-    const frames = this.lastTime ? Math.min(3, (time - this.lastTime) / (1000 / 60)) : 1;
+    const raw = this.lastTime ? Math.min(3, (time - this.lastTime) / (1000 / 60)) : 1;
+    this.smoothFrames = this.smoothFrames ? this.smoothFrames * 0.75 + raw * 0.25 : raw;
+    const frames = this.smoothFrames * SPEED;
     this.lastTime = time;
     if (this.canvasRef.nativeElement.width) this.step(frames);
     this.frame = requestAnimationFrame(next => this.tick(next));
@@ -155,22 +193,35 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
   private draw(p: Particle): void {
     const { ctx, unit } = this;
     const t = p.age / p.life;
+    if (p.flash) {
+      let alpha = Math.pow(1 - t, 2.2);
+      if (t > 0.35 && Math.random() < 0.3) alpha *= 0.3;
+      // Every frame is faded only a little, so the same spot piles up about eight draws: each draw is faint,
+      // and the glow falls off smoothly to nothing so it never shows an edge or an outline
+      const glowRadius = Math.max(8, 15 * unit * (1 - t * 0.3));
+      // Tinted with the shell colour: it gets more colour (and less white) towards the outside
+      ctx.globalAlpha = alpha * 0.05;
+      ctx.drawImage(this.flashSprite(p.hue), p.x - glowRadius, p.y - glowRadius, glowRadius * 2, glowRadius * 2);
+      ctx.globalAlpha = 1;
+      // The very bright part is only a tiny crackle-sized point
+      const coreRadius = Math.max(1.5, 1.2 * unit);
+      const core = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, coreRadius);
+      core.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.4})`);
+      core.addColorStop(0.4, `hsla(${p.hue}, 100%, 85%, ${alpha * 0.1})`);
+      core.addColorStop(1, `hsla(${p.hue}, 100%, 85%, 0)`);
+      ctx.fillStyle = core;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, coreRadius, 0, Math.PI * 2);
+      ctx.fill();
+      return;
+    }
     if (p.star) {
       // A tiny white point with a very soft glow that fades smoothly to nothing, flickering while it falls
       const twinkle = (0.3 + Math.random() * 0.7) * (1 - t);
       const glow = Math.max(2, 1.3 * unit);
-      const gradient = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, glow);
-      gradient.addColorStop(0, `rgba(255, 255, 255, ${twinkle * 0.4})`);
-      gradient.addColorStop(0.35, `rgba(255, 255, 255, ${twinkle * 0.12})`);
-      gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = gradient;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, glow, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = `rgba(255, 255, 255, ${twinkle})`;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, Math.max(0.5, 0.26 * unit), 0, Math.PI * 2);
-      ctx.fill();
+      ctx.globalAlpha = twinkle;
+      ctx.drawImage(this.starGlow(), p.x - glow, p.y - glow, glow * 2, glow * 2);
+      ctx.globalAlpha = 1;
       return;
     }
     // White-hot at first, cooling to the shell colour; crackling sparks stutter near the end
@@ -183,6 +234,53 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
     ctx.moveTo(p.px, p.py);
     ctx.lineTo(p.x, p.y);
     ctx.stroke();
+  }
+
+  /** The glow of a shell centre at full strength for one hue (the caller scales it with the alpha) */
+  private flashSprite(hue: number): HTMLCanvasElement {
+    const key = Math.round(hue);
+    let sprite = this.flashSprites.get(key);
+    if (!sprite) {
+      const size = 128;
+      const r = size / 2;
+      sprite = document.createElement('canvas');
+      sprite.width = sprite.height = size;
+      const c = sprite.getContext('2d')!;
+      const g = c.createRadialGradient(r, r, 0, r, r, r);
+      g.addColorStop(0, `hsla(${key}, 100%, 75%, 1)`);
+      g.addColorStop(0.1, `hsla(${key}, 100%, 68%, 0.7)`);
+      g.addColorStop(0.3, `hsla(${key}, 100%, 60%, 0.32)`);
+      g.addColorStop(0.6, `hsla(${key}, 100%, 55%, 0.1)`);
+      g.addColorStop(1, `hsla(${key}, 100%, 55%, 0)`);
+      c.fillStyle = g;
+      c.fillRect(0, 0, size, size);
+      this.flashSprites.set(key, sprite);
+    }
+    return sprite;
+  }
+
+  /** The glowing white point of a star at full strength: a soft halo around a tiny bright core */
+  private starGlow(): HTMLCanvasElement {
+    if (!this.starSprite) {
+      const size = 32;
+      const r = size / 2;
+      const sprite = document.createElement('canvas');
+      sprite.width = sprite.height = size;
+      const c = sprite.getContext('2d')!;
+      const g = c.createRadialGradient(r, r, 0, r, r, r);
+      g.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+      g.addColorStop(0.35, 'rgba(255, 255, 255, 0.12)');
+      g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      c.fillStyle = g;
+      c.fillRect(0, 0, size, size);
+      // The core is 0.2 of the glow radius (0.26 unit against 1.3 units)
+      c.fillStyle = '#fff';
+      c.beginPath();
+      c.arc(r, r, r * 0.2, 0, Math.PI * 2);
+      c.fill();
+      this.starSprite = sprite;
+    }
+    return this.starSprite;
   }
 
   /** Start one shell somewhere in the upper two thirds of the box */
@@ -202,6 +300,8 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
     // A particle that starts at v and is slowed by `drag` every frame travels about v * drag / (1 - drag)
     const speed = reach * (1 - drag) / drag;
     const tilt = Math.random() * Math.PI;
+    // Reduced motion draws one still frame and stays silent
+    if (!this.still) this.sound.play(kind as ShellKind, (x / width) * 2 - 1, Math.min(1.2, Math.max(0.6, reach / (52 * unit))));
 
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -229,8 +329,16 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
         width: 1.1 * (unit / 2.4),
         star: false,
         crackle: kind !== 'ring' && Math.random() < 0.4,
+        flash: false,
       });
     }
+
+    // The centre of the shell flashes white, then fades and falls with the sparks
+    this.particles.push({
+      x, y, px: x, py: y, vx: 0, vy: 0, drag: 0.98, gravity: 0.011 * unit,
+      age: 0, life: 80, delay: 0, hue, width: 0,
+      star: false, crackle: false, flash: true,
+    });
 
     // Glittering stars appear once the sparks have spread, and flicker as they fall
     const stars = small ? 8 : 14;
@@ -244,7 +352,7 @@ export class FireworksComponent implements AfterViewInit, OnDestroy {
         drag: 0.99, gravity: 0.005 * unit,
         age: 0, life: 80 + Math.random() * 70, delay: 28 + Math.random() * 30,
         hue: kind === 'willow' ? 46 : hue + 10, width: 0,
-        star: true, crackle: false,
+        star: true, crackle: false, flash: false,
       });
     }
   }

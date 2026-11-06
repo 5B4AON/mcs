@@ -67,6 +67,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   private lastScrollHeight = 0;
   private needsScroll = false;
   private needsTypeInputFocus = false;
+  private wasCelebrating = false;
   private mouseAttached = false;
   private readonly keyboardHeldButtons = new Set<'straight' | 'left' | 'right'>();
 
@@ -81,6 +82,11 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Practice briefing, feedback and typed text are shown only in Type mode so Key mode shows keyed characters. */
   get practiceView(): boolean {
     return this.isPractice && this.inputMode === 'type';
+  }
+
+  /** The Koch course is finished on screen: fireworks play, the text changes colour and the on-screen keyboard stays closed */
+  get celebrating(): boolean {
+    return this.practiceView && this.practice.kochFinished();
   }
 
   /** Lens replaces the conversation, except while Copy Practice uses it for its own text. */
@@ -239,7 +245,11 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   ngAfterViewChecked(): void {
     this.updateMouseKeyerAttachment();
-    if (this.needsTypeInputFocus && this.focusTypeInput()) {
+    const celebrating = this.celebrating;
+    // Close the on-screen keyboard once, so the fireworks get the whole screen
+    if (celebrating && !this.wasCelebrating) this.focusMain();
+    this.wasCelebrating = celebrating;
+    if (this.needsTypeInputFocus && !celebrating && this.focusTypeInput()) {
       this.needsTypeInputFocus = false;
     }
 
@@ -359,7 +369,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Refocus typing when the conversation is clicked in Type mode. */
   onConversationClick(): void {
-    if (this.inputMode === 'type') this.focusTypeInput();
+    if (this.inputMode === 'type' && !this.celebrating) this.focusTypeInput();
   }
 
   /**

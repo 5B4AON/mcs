@@ -33,6 +33,29 @@
   outline: none;
 }
 
+/*
+ * Koch course finished: all the text turns amber together over 2 s. Only the container carries
+ * the colour and the transition; the elements that set their own colour (lines, cursor, feedback letters,
+ * typed text) inherit it, because they can appear at the same moment (a result starts the show) and a new
+ * element would jump to its colour instead of transitioning. !important beats the inline per-line colours.
+ */
+.fs-conversation {
+  transition: color 2s ease-in;
+}
+.fs-conversation.celebrate {
+  color: #e6b95f !important;
+}
+.fs-conversation.celebrate .fs-line,
+.fs-conversation.celebrate .cursor,
+.fs-conversation.celebrate .fs-typed-text,
+.fs-conversation.celebrate .fb-accuracy,
+.fs-conversation.celebrate .fb-correct,
+.fs-conversation.celebrate .fb-incorrect,
+.fs-conversation.celebrate .fb-missed,
+.fs-conversation.celebrate .fs-encoder-inline > span {
+  color: inherit !important;
+}
+
 /* Line rendering: the gap follows the row spacing and shrinks when the text is large (see .fs-fit) */
 .fs-line {
   margin-bottom: var(--fs-gap, 0);

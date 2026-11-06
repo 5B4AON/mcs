@@ -30,7 +30,7 @@ import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
-import { FireworksComponent } from './components/fireworks/fireworks.component';
+import { FireworksComponent, MAIN_LAUNCH_DELAY_MS } from './components/fireworks/fireworks.component';
 import { CollapseDirective } from './components/collapse.directive';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
@@ -1429,6 +1429,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   practiceResume(): void {
     this.practice.resume();
   }
+
+  /** The first shell waits for the end of the text colour change */
+  readonly fireworksLaunchDelayMs = MAIN_LAUNCH_DELAY_MS;
 
   /** The Koch course has just been completed on screen: the output area shows the fireworks at night */
   get celebrating(): boolean {

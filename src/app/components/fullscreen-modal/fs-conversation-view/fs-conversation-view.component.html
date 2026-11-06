@@ -5,7 +5,7 @@
        (keydown)="onTypeKeydown($event)">
 
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" [class.lens-on]="lensView"
-     [class.key-mode]="inputMode === 'key'"
+     [class.key-mode]="inputMode === 'key'" [class.celebrate]="celebrating"
      [style.--lens-side]="lensSideInset"
      [style.--lens-bottom]="lensBottomInset"
      [attr.tabindex]="inputMode === 'key' ? 0 : -1"
@@ -76,7 +76,7 @@
   }
 </div>
 
-@if (practiceView && practice.kochFinished()) {
+@if (celebrating) {
   <app-fireworks />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">

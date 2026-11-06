@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.3] - 2026-11-06
+
+### Added
+
+- **Firework sounds** — Every burst now has a synthesised report (no audio files): a crack, a deep thump, a rumbling tail that is longer and lower for bigger shells, and a scatter of tiny crackling pops that thins out as the stars burn away (heavy for willows, light for rings), with a full, loud report. The sound lags the flash by only 30–100 ms, and pitch, length, loudness, delay and stereo position vary slightly with every burst and follow where it bursts on screen. It plays on the device's default output, never on the Morse sidetone or key-output routes, and stays silent when the device asks for reduced motion.
+
+### Changed
+
+- **Koch finale polish** — The firework show waits until the text colour change has finished, plus one second, before the first burst (about 5 seconds on the main screen, 3 seconds in full screen). On the main screen the parchment now darkens by 85 % in 3 seconds, and the text then turns amber over 2 seconds; in full screen all the text fades to amber over 2 seconds, together with any results and feedback letters. In full screen on a phone the on-screen keyboard is closed when the course is finished so the show has the whole screen. Each burst has a small bright white crackle at its centre inside a wider soft glow in the colour of the shell, which fades slowly and falls with the sparks. The show plays 20 % slower, so bursts, trails and fades last longer, and its motion is smoother.
+
 ## [2.10.2] - 2026-11-05
 
 ### Added

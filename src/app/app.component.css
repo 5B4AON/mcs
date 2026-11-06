@@ -487,6 +487,7 @@
   line-height: 1.35em;
   white-space: pre-wrap;
   word-break: break-all;
+  transition: color .8s ease;
   /* Faded typewriter ribbon ink — dark blue-brown */
   color: #1e1812;
   text-shadow:
@@ -510,9 +511,9 @@
 }
 
 /*
- * Night mode for the Koch fireworks: the parchment slowly darkens by 70 % (a black layer between
+ * Night mode for the Koch fireworks: the parchment darkens by 85 % in 3 s (a black layer between
  * the paper and the text, which is z-index 1, so the torn edge clip still shapes it) and stays
- * that way while the show plays. The text keeps its colours. It lightens again when the show ends.
+ * that way while the show plays. The text turns amber (below). It lightens again when the show ends.
  */
 .decoded-parchment::before {
   content: '';
@@ -524,8 +525,27 @@
   transition: opacity .8s ease;
 }
 .decoded-parchment.night::before {
-  opacity: .7;
-  transition: opacity 7s ease-in-out;
+  opacity: .85;
+  transition: opacity 3s ease-in-out;
+}
+/*
+ * All the text turns amber together over 2 s, starting 2 s into the darkening (the layer is then at
+ * about 70 %). Only the box carries the colour and the transition; the elements that set their own colour
+ * (cursor, feedback letters, accuracy line) inherit it. They can appear at the same moment as the night
+ * (a result is what starts it), and a new element would jump to its colour instead of transitioning.
+ */
+.decoded-parchment.night .decoded-text {
+  color: #e6b95f;
+  text-shadow: 0 0 6px rgba(230, 185, 95, .5);
+  transition: color 2s ease-in 2s, text-shadow 2s ease-in 2s;
+}
+.decoded-parchment.night .cursor,
+.decoded-parchment.night .fb-accuracy,
+.decoded-parchment.night .fb-correct,
+.decoded-parchment.night .fb-incorrect,
+.decoded-parchment.night .fb-missed {
+  color: inherit;
+  text-shadow: inherit;
 }
 .cursor {
   color: #3a2e20;
