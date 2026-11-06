@@ -67,6 +67,22 @@
 .emoji-row-disabled {
   opacity: 0.5;
 }
+/* Header row above the list: same inset as a row (padding + 1px border) so its checkbox lines up with theirs */
+.emoji-select-all-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.3rem;
+  padding: 0 0.5rem;
+  border: 1px solid transparent;
+}
+.emoji-select-all {
+  cursor: pointer;
+}
+.emoji-select-count {
+  font-size: 0.75rem;
+  color: #889;
+}
 .emoji-enable {
   flex-shrink: 0;
   display: flex;
@@ -161,18 +177,4 @@
   font-size: 0.8rem;
   padding-left: 2.5rem;
   margin-top: -0.2rem;
-}
-.emoji-add-btn {
-  margin-top: 0.5rem;
-  background: #2a2a3e;
-  color: #8af;
-  border: 1px dashed #446;
-  border-radius: 4px;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.emoji-add-btn:hover {
-  background: #333;
 }

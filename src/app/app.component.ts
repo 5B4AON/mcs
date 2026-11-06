@@ -202,6 +202,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Last known encoder sentIndex — used to detect newly sent chars */
   private lastSentIdx = 0;
+  /** `encoder.sendCompletions()` as last seen by the sent-text effect */
+  private lastSendCompletions = 0;
   /** Last known encoder buffer — detects when buffer is replaced */
   private lastSentBuf = '';
   /** Last known encoder wordGapCount — detects word-gap timer firings */
@@ -375,6 +377,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const isPractice = this.settings.settings().encoderMode === 'practice';
       // A replay is already on screen: it is sent but not shown again
       const replay = this.encoder.replayMode();
+      const completions = this.encoder.sendCompletions();
+      const sendCompleted = completions !== this.lastSendCompletions;
+      this.lastSendCompletions = completions;
       if (buf !== this.lastSentBuf) {
         // Buffer was replaced or cleared.
         // When processSend finishes, sentIndex.set(endIdx), buffer.set(''),
@@ -399,8 +404,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             const encSource = es.encoderSource;
             const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
             const displayColor = es.encoderColor || undefined;
+            // Only a send that ran to the end leaves characters to show; a buffer emptied by Clear or
+            // backspace was discarded
+            const end = sendCompleted ? this.lastSentBuf.length : this.lastSentIdx;
             let i = this.lastSentIdx;
-            while (i < this.lastSentBuf.length) {
+            while (i < end) {
               const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
               this.displayBuffers.pushSent(encSource, token, displayName, displayColor);
               i = endIdx;

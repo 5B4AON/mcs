@@ -68,6 +68,13 @@ export class MorseEncoderService {
    */
   readonly replayMode = signal(false);
 
+  /**
+   * Counts sends that ran to the end of the buffer in Live mode. The buffer is emptied right
+   * after, so the display uses this to know the last characters were really sent and still have
+   * to be shown; a buffer emptied any other way (Clear, backspace) was discarded.
+   */
+  readonly sendCompletions = signal(0);
+
   /** A replay that has not finished: playing, or paused and waiting for the TX button. */
   readonly replayPending = computed(() => this.replayMode() && this.buffer().length > this.sentIndex());
 
@@ -275,6 +282,7 @@ export class MorseEncoderService {
         // In live mode, clear the buffer when sending completes
         // In enter mode, keep the buffer so it's visible until manually cleared
         if (this.settings.settings().encoderMode === 'live') {
+          if (!signal.aborted && this.buffer().length > 0) this.sendCompletions.update(n => n + 1);
           this.buffer.set('');
           this.sentIndex.set(0);
         }

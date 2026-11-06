@@ -253,8 +253,7 @@
 .settings-card-body > .serial-port-row,
 .settings-card-body > .conflict-warning,
 .settings-card-body > .keyer-hint,
-.settings-card-body > .wpm-pill,
-.settings-card-body > .test-btn {
+.settings-card-body > .wpm-pill {
   margin-top: .55rem;
   padding-top: .55rem;
   border-top: 1px solid #2a2a3a;
@@ -380,24 +379,12 @@
   background: #1a1a28;
   border: 1px solid #335;
   border-radius: 4px;
+  container-type: inline-size;
 }
 .calibration-label {
   font-size: .8rem;
   color: #8cf;
   font-weight: 600;
-}
-.calibration-row button {
-  font-size: .78rem;
-  padding: .25rem .6rem;
-  background: #2a2a4a;
-  border-color: #557;
-}
-.calibration-row button:hover:not(:disabled) {
-  background: #3a3a5a;
-}
-.calibration-row button:disabled {
-  opacity: .4;
-  cursor: not-allowed;
 }
 .calibration-values {
   font-size: .78rem;
@@ -483,66 +470,6 @@
   border-left: 3px solid #864;
   border-radius: 2px;
 }
-.test-btn {
-  padding: .3rem .8rem;
-  font-size: .8rem;
-  background: #335;
-  color: #cdf;
-  border: 1px solid #556;
-  border-radius: 4px;
-  cursor: pointer;
-  margin-top: .25rem;
-}
-.test-btn:hover:not(:disabled) {
-  background: #446;
-}
-.test-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-/* Pill action button (same look as the kebab menu pills), e.g. "Test Output".
-   Prefixed with .settings-card-body so it wins over the shared card button style. */
-.settings-card-body .settings-pill-btn {
-  display: block;
-  width: 100%;
-  max-width: 240px;
-  margin: .6rem auto 0;
-  padding: .45rem 1rem;
-  border: none;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #506078 0%, #3a4858 100%);
-  color: #dde4ec;
-  font: inherit;
-  font-size: .78rem;
-  font-weight: 700;
-  letter-spacing: .3px;
-  text-align: center;
-  cursor: pointer;
-  box-shadow: 0 3px 6px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18), inset 0 -2px 4px rgba(0,0,0,.25);
-  transition: transform .1s, filter .15s;
-}
-.settings-card-body .settings-pill-btn:hover {
-  background: linear-gradient(180deg, #506078 0%, #3a4858 100%);
-  filter: brightness(1.15);
-  transform: translateY(-1px);
-}
-.settings-card-body .settings-pill-btn:active {
-  transform: translateY(1px);
-}
-.settings-card-body .settings-pill-btn:disabled,
-.settings-card-body .settings-pill-btn:disabled:hover {
-  background: linear-gradient(180deg, #2b313b 0%, #242932 100%);
-  color: #6b7480;
-  box-shadow: none;
-  filter: none;
-  transform: none;
-  cursor: not-allowed;
-}
-.settings-card-body .settings-pill-btn:focus-visible {
-  outline: 2px solid #8cf;
-  outline-offset: 2px;
-}
 
 /* Serial port styles */
 .serial-port-row {
@@ -550,6 +477,7 @@
   gap: .5rem;
   align-items: center;
   flex-wrap: wrap;
+  container-type: inline-size;
 }
 .serial-status {
   font-size: .8rem;
@@ -788,19 +716,47 @@
   cursor: pointer;
   background: transparent;
 }
-.card-color-clear {
-  background: transparent;
-  color: #888;
-  border: 1px solid #444;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  padding: 0.15rem 0.4rem;
+/* Round "clear colour" button: the circular icon look of the Settings header buttons,
+   sized to sit beside the colour picker. The second selector beats the shared card button rule. */
+.card-color-clear,
+.settings-card-body .card-color-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid #556;
+  border-radius: 50%;
+  background: #282c34;
+  color: #8cf;
+  font-size: 0;
   line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
 }
-.card-color-clear:hover {
-  color: #ccc;
-  border-color: #666;
+/* The X is the same shape as the header close button, drawn with a mask so it follows the text colour */
+.card-color-clear::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>") center / contain no-repeat;
+  mask: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2.5' stroke-linecap='round'><line x1='18' y1='6' x2='6' y2='18'/><line x1='6' y1='6' x2='18' y2='18'/></svg>") center / contain no-repeat;
+}
+.card-color-clear:hover,
+.settings-card-body .card-color-clear:hover {
+  background: #3a4050;
+}
+.card-color-clear:active,
+.settings-card-body .card-color-clear:active {
+  background: #5577aa;
+  color: #fff;
+}
+.card-color-clear:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
 }
 .card-color-preview {
   font-size: 0.85rem;
@@ -876,14 +832,6 @@ select { max-width: 300px; }
   .settings-card-body select {
     max-width: 100%;
   }
-  .calibration-row {
-    flex-direction: column;
-    align-items: stretch;
-    gap: .35rem;
-  }
-  .calibration-row button {
-    width: 100%;
-  }
 }
 
 /* ============================================================
@@ -906,10 +854,6 @@ select { max-width: 300px; }
     flex-direction: column;
     align-items: stretch;
   }
-  .serial-port-row button,
-  .serial-port-row .test-btn {
-    width: 100%;
-  }
   .pilot-wiring-hint,
   .opto-wiring-hint,
   .cw-hint,
@@ -927,12 +871,13 @@ select { max-width: 300px; }
    TOUCH IMPROVEMENTS — coarser pointer (phones/tablets)
    ============================================================ */
 @media (pointer: coarse) {
-  .settings-card-body button:not(.speed-step-btn):where(:not(.pill-btn)) {
+  .settings-card-body button:not(.speed-step-btn):where(:not(.card-color-clear, .pill-btn)) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }
-  .test-btn {
-    min-height: 36px;
+  .settings-card-body .card-color-clear {
+    width: 40px;
+    height: 40px;
   }
   .settings-card-header {
     min-height: 48px;

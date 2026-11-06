@@ -45,7 +45,7 @@
     @for (line of conversationLines; track $index) {
       <div class="fs-line"       [class.rx-line]="line.type === 'rx'" [class.tx-line]="line.type === 'tx'"
       [style.color]="line.color || (line.type === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"
-           [innerHTML]="formatLine(line)"></div>
+           [innerHTML]="formatLine(line, $index)"></div>
     }
     @if (inputMode === 'key') {
       <!-- Key mode keeps one row for the symbols being keyed, so the text does not scroll back up when they are decoded -->
@@ -58,17 +58,29 @@
         <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
       }
     }
-    @if (encoderPendingChars().length) {
+    @if (inputMode === 'type' && !isPractice) {
+      <!-- Type mode: the next typed character shows on the row below the conversation, so the cursor
+           sits there, after the pending text (or alone while nothing is pending) -->
       @if (encoderStartsNewLine()) {
         <div class="fs-line fs-line-placeholder" aria-hidden="true">&nbsp;</div>
       }
       <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
         [class.sending]="$first && encoder.isSending()"
         [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
-        [innerHTML]="formatPendingText(char)"></span>}</span>
-    }
-    @if (!conversationLines.length && !decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
-      <span class="cursor"></span>
+        [innerHTML]="formatPendingText(char)"></span>}<span class="cursor type-cursor" aria-hidden="true"></span></span>
+    } @else {
+      @if (encoderPendingChars().length) {
+        @if (encoderStartsNewLine()) {
+          <div class="fs-line fs-line-placeholder" aria-hidden="true">&nbsp;</div>
+        }
+        <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
+          [class.sending]="$first && encoder.isSending()"
+          [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
+          [innerHTML]="formatPendingText(char)"></span>}</span>
+      }
+      @if (!conversationLines.length && !decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
+        <span class="cursor"></span>
+      }
     }
     @if (practiceView && practice.feedbackMode() === 'typealong' && practice.userInput()) {
       <div class="fs-typed-text">{{ practice.userInput() }}</div>
@@ -78,6 +90,8 @@
 
 @if (celebrating) {
   <app-fireworks />
+} @else if (showEmojiActive) {
+  <app-fireworks [launchDelayMs]="0" />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
   @if (blurMode) {

@@ -87,20 +87,6 @@
 .midi-mapping-btn-edit:hover { color: #fff; background: #333; }
 .midi-mapping-btn-delete { color: #c99; }
 .midi-mapping-btn-delete:hover { color: #fcc; background: #4a2a2a; }
-.midi-mapping-add-btn {
-  margin-top: 0.5rem;
-  background: #2a2a3e;
-  color: #8af;
-  border: 1px dashed #446;
-  border-radius: 4px;
-  padding: 0.35rem 0.8rem;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: background 0.15s;
-}
-.midi-mapping-add-btn:hover {
-  background: #333;
-}
 
 /* Roomier rows for the Setup Wizard lists: easier to read and to touch */
 .midi-mapping-list-roomy {
@@ -130,10 +116,6 @@
 .midi-mapping-list-roomy .midi-mapping-btn svg {
   width: 20px;
   height: 20px;
-}
-.midi-mapping-add-roomy {
-  min-height: 44px;
-  font-size: 0.95rem;
 }
 
 /* ===== Per-row connectivity icon (serial & MIDI) ===== */

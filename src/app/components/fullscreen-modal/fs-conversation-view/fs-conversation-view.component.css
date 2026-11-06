@@ -77,10 +77,12 @@
   content: '';
   display: inline-block;
   width: 0.07em;
-  height: 0.82em;
+  /* As tall as a capital letter of the chosen font (1cap); browsers without the unit use 0.7em */
+  height: 0.7em;
+  height: 1cap;
   min-width: 2px;
   background: #888;
-  vertical-align: -0.15em;
+  vertical-align: baseline;
   margin-left: 1px;
   animation: cursor-blink 1s step-end infinite;
 }

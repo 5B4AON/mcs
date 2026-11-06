@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.10.4] - 2026-11-06
+
+### Added
+
+- **Searchable emoji picker** — The emoji picker now lists the full emoji set (nearly 2,000 emojis in nine tabs) and its search box works: type any word of an emoji's name or tags ("birthday", "party", "heart eyes") to find it across all tabs. The list loads the first time the picker opens, so start-up size is unchanged.
+- **Made-up prosign triggers** — An emoji trigger written as two or more letters in angle brackets, for example `<XY>`, is keyed as the letters run together and recognised again when received, so you can replace your own prosigns with an emoji or text. Typing `<XY>` in the encoder sends it the same way. The emoji editor explains how a made-up prosign is recognised.
+- **Select all for emojis** — A "Select all" checkbox above the emoji list switches every mapping on or off at once, with a dash state and an "N of M on" count when only some are on.
+
+### Changed
+
+- **Emoji triggers wait for the end of the word** — A trigger is replaced only once the word is finished (the space after it has arrived), so `FB` is replaced but `FBI` is never mistaken for it while you are still typing or keying.
+- **Emoji editor refuses illegal triggers** — OK is disabled, with the reason shown, for a trigger that is already used (`+` and `<AR>` count as the same), a made-up prosign with fewer than two letters, or one that sounds exactly like an existing character or another of your triggers.
+- **Consistent pill buttons in Settings** — Every text action button in Settings is now a pill (Add Emoji, Add Mapping, Test Output, WinKeyer Test and Clear Buffer, Mic calibration, "Turn audio output off"), as wide as its text. Buttons that belong together, such as Key Open and Key Closed, share one row with equal widths when they fit. The old per-feature button styles were removed.
+- **Round buttons** — The colour reset buttons and the emoji picker button are now round icon buttons like the other round buttons.
+- **Calibration timeout** — Mic calibration gives up after 3 seconds without a signal and says so, instead of staying on "Measuring…".
+- **Full screen typing cursor** — In Type mode the blinking cursor now sits where the next typed character will appear, stays visible while you type, and is as tall as the letters of the chosen font.
+- **Quieter fireworks** — The firework sparkle sounds are quieter.
+
+### Fixed
+
+- **Unsent text reaching the output** — In full screen Type mode, clearing the input area, or backspacing away unsent text, no longer copies that text into the output area. Normal sending is unchanged.
+- **Round help buttons** — The "?" help buttons keep their round shape and symbol on touch devices.
+
 ## [2.10.3] - 2026-11-06
 
 ### Added

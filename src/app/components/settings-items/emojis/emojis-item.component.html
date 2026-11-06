@@ -7,7 +7,18 @@
     <app-help-link-button section="s8-8" label="Help: emoji replacements" />
   </div>
   <div class="emoji-list">
-    @for (mapping of s().emojiMappings; track $index) {
+    @if (s().emojiMappings.length > 0) {
+      <div class="emoji-select-all-row">
+        <label class="emoji-enable emoji-select-all">
+          <input type="checkbox"
+                 [checked]="enabledCount === s().emojiMappings.length"
+                 [indeterminate]="enabledCount > 0 && enabledCount < s().emojiMappings.length"
+                 (change)="onSelectAll($event)">
+          <span>Select all</span>
+        </label>
+        <span class="emoji-select-count" aria-live="polite">{{ enabledCount }} of {{ s().emojiMappings.length }} on</span>
+      </div>
+    }    @for (mapping of s().emojiMappings; track $index) {
       <div class="emoji-row" [class.emoji-row-disabled]="!mapping.enabled">
           <label class="emoji-enable">
             <input type="checkbox" [checked]="mapping.enabled"
@@ -28,7 +39,7 @@
       </div>
     }
   </div>
-  <button class="emoji-add-btn" (click)="emojiAdd()">+ Add Emoji</button>
+  <button type="button" class="pill-btn pill-block" (click)="emojiAdd()">+ Add Emoji</button>
 </app-item-shell>
 
 

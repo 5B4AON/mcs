@@ -11,6 +11,7 @@ import { EmojiMapping } from '../../settings-items/emojis/emojis-item.model';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 import { BackdropClickDirective } from '../../backdrop-click.directive';
 import { BackCloseDirective } from '../../back-close.directive';
+import { customProsignClash, customProsignPattern, isBuiltInProsign, PUNCTUATION_TO_PROSIGN } from '../../../morse-table';
 
 /**
  * Result payload emitted when the user saves an emoji mapping.
@@ -72,6 +73,50 @@ export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy
   /** Validation error message */
   error = '';
 
+  /** The trigger as it is compared with the others: upper case, punctuation written as its prosign (+ is <AR>) */
+  private triggerKey(match: string): string {
+    const upper = match.trim().toUpperCase();
+    return PUNCTUATION_TO_PROSIGN[upper] ?? upper;
+  }
+
+  /**
+   * Why the trigger cannot be used, or an empty string when it is fine (or still empty).
+   * The OK button stays disabled while this is not empty.
+   */
+  get triggerProblem(): string {
+    const match = this.editMatch.trim().toUpperCase();
+    if (!match) return '';
+    const key = this.triggerKey(match);
+    if (this.allMappings.some((m, i) => i !== this.editIndex && this.triggerKey(m.match) === key)) {
+      return `There is already a mapping with the trigger ${match}.`;
+    }
+    if (!match.startsWith('<') || !match.endsWith('>') || isBuiltInProsign(match)) return '';
+    if (!customProsignPattern(match)) return 'A made-up prosign needs two or more letters, like <XY>.';
+    const clash = customProsignClash(match);
+    if (clash) {
+      const letters = match.slice(1, -1).split('').join(' + ');
+      return `${match} (${letters} keyed together) sounds exactly like ${clash}, so it would be received as ${clash}. Choose other letters.`;
+    }
+    const code = customProsignPattern(match);
+    const twin = this.allMappings.find((m, i) =>
+      i !== this.editIndex && !isBuiltInProsign(m.match) && customProsignPattern(m.match) === code);
+    if (twin) return `${match} sounds exactly like your trigger ${twin.match.toUpperCase()}. Choose other letters.`;
+    return '';
+  }
+
+  /** How a valid made-up prosign such as <XY> is keyed and recognised (empty for other triggers) */
+  get triggerInfo(): string {
+    const match = this.editMatch.trim().toUpperCase();
+    if (this.triggerProblem || !match.startsWith('<') || !match.endsWith('>') || isBuiltInProsign(match)) return '';
+    const letters = match.slice(1, -1).split('').join(' + ');
+    return `Made-up prosign: recognised when ${letters} are keyed together with no gap between the letters.`;
+  }
+
+  /** OK is available only with a trigger that can be used */
+  get canSave(): boolean {
+    return !!this.editMatch.trim() && !this.triggerProblem;
+  }
+
   /** Whether the emoji picker sub-modal is visible */
   showPicker = false;
 
@@ -109,12 +154,8 @@ export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy
       this.error = 'Both trigger and replacement are required.';
       return;
     }
-    // Duplicate check (exclude current index)
-    const dup = this.allMappings.some((m, i) =>
-      i !== this.editIndex && m.match.toUpperCase() === match
-    );
-    if (dup) {
-      this.error = 'Duplicate trigger pattern.';
+    if (this.triggerProblem) {
+      this.error = this.triggerProblem;
       return;
     }
     this.saved.emit({ match, emoji, meaning });

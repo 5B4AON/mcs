@@ -27,14 +27,19 @@ export function escapeHtml(text: string): string {
  *
  * Emoji replacement runs first — enabled emoji mappings are checked at each
  * position (longest match first) and matching text is replaced with an emoji
- * span. Remaining text passes through prosign / punctuation formatting.
+ * span. A trigger only matches a whole word that is already finished: it must be
+ * followed by a space, newline or prosign, so "FB" is not replaced while "FBI" is
+ * still being typed. The end of the text counts as a finished word only when
+ * `endIsWordEnd` is set (lines the conversation has already moved past).
+ * Remaining text passes through prosign / punctuation formatting.
  *
  * @param text The text to format
  * @param settings Current application settings (for prosign/emoji config)
  * @param skipEmojis When true, skip emoji replacements (used for unsent buffer chars)
+ * @param endIsWordEnd When true, a trigger at the very end of the text is replaced too
  * @returns HTML string with styled prosigns and emoji replacements
  */
-export function formatTextInternal(text: string, settings: AppSettings, skipEmojis = false): string {
+export function formatTextInternal(text: string, settings: AppSettings, skipEmojis = false, endIsWordEnd = false): string {
   // Build sorted emoji matchers (longest match first) for the current pass
   const emojiMatchers = !skipEmojis && settings.emojisEnabled
     ? settings.emojiMappings
@@ -69,7 +74,7 @@ export function formatTextInternal(text: string, settings: AppSettings, skipEmoj
             const prosign = PUNCTUATION_TO_PROSIGN[char];
             if (prosign === match) {
               const afterPunct = i + 1;
-              const atWordEndP = afterPunct >= text.length || text[afterPunct] === ' ' || text[afterPunct] === '\n' || text[afterPunct] === '<';
+              const atWordEndP = (endIsWordEnd && afterPunct >= text.length) || text[afterPunct] === ' ' || text[afterPunct] === '\n' || text[afterPunct] === '<';
               if (atWordEndP) {
                 result += `<span class="emoji-display">${escapeHtml(mapping.emoji)}</span>`;
                 i++;
@@ -82,7 +87,7 @@ export function formatTextInternal(text: string, settings: AppSettings, skipEmoj
           // Plain text sequence match (case-insensitive, full word only)
           const slice = text.substring(i, i + match.length);
           const afterMatch = i + match.length;
-          const atWordEnd = afterMatch >= text.length || text[afterMatch] === ' ' || text[afterMatch] === '\n' || text[afterMatch] === '<';
+          const atWordEnd = (endIsWordEnd && afterMatch >= text.length) || text[afterMatch] === ' ' || text[afterMatch] === '\n' || text[afterMatch] === '<';
           if (slice.toUpperCase() === match.toUpperCase() && atWordEnd) {
             result += `<span class="emoji-display">${escapeHtml(mapping.emoji)}</span>`;
             i += match.length;
@@ -157,6 +162,42 @@ export function formatTextNoEmoji(text: string, settings: AppSettings, sanitizer
   return sanitizer.bypassSecurityTrustHtml(formatTextInternal(text, settings, true));
 }
 
+/** Emoji whose replacement text starts a light show while it is the latest thing on screen */
+const SHOW_EMOJI = '\u{1F386}';
+
+/**
+ * True while the newest thing on the line is an emoji replacement whose text contains the
+ * show emoji, i.e. nothing has appeared after the replacement yet. A word trigger is replaced
+ * by the space (or newline) that ends it, so that character is the last one; a bracketed
+ * prosign trigger is replaced by its own closing bracket, and the one word-gap space the
+ * decoder adds right after it does not end the show either.
+ *
+ * @param text The text of the line still being written
+ * @param settings Current application settings
+ */
+export function endsWithShowEmoji(text: string, settings: AppSettings): boolean {
+  if (!settings.emojisEnabled || !text) return false;
+  const closed = text.endsWith(' ') || text.endsWith('\n');
+  const body = closed ? text.slice(0, -1) : text;
+  for (const mapping of settings.emojiMappings) {
+    if (!mapping.enabled || !mapping.match || !mapping.emoji.includes(SHOW_EMOJI)) continue;
+    const isProsign = mapping.match.startsWith('<') && mapping.match.endsWith('>');
+    const forms: { form: string; needsEnd: boolean }[] = [{ form: mapping.match, needsEnd: !isProsign }];
+    if (isProsign) {
+      for (const [punct, prosign] of Object.entries(PUNCTUATION_TO_PROSIGN)) {
+        if (prosign === mapping.match) forms.push({ form: punct, needsEnd: true });
+      }
+    }
+    for (const { form, needsEnd } of forms) {
+      if (needsEnd && !closed) continue;
+      const start = body.length - form.length;
+      if (start < 0 || body.substring(start).toUpperCase() !== form.toUpperCase()) continue;
+      if (start === 0 || body[start - 1] === ' ' || body[start - 1] === '\n') return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Format a complete display line including optional name prefix and text.
  *
@@ -166,13 +207,14 @@ export function formatTextNoEmoji(text: string, settings: AppSettings, sanitizer
  * @param line The display line to format
  * @param settings Current application settings
  * @param sanitizer Angular DOM sanitizer for safe HTML binding
+ * @param lineClosed True for a line the conversation has moved past, so a trigger at its very end is a finished word
  * @returns Formatted SafeHtml with optional name prefix and prosign-styled text
  */
-export function formatLine(line: DisplayLine, settings: AppSettings, sanitizer: DomSanitizer): SafeHtml {
+export function formatLine(line: DisplayLine, settings: AppSettings, sanitizer: DomSanitizer, lineClosed = false): SafeHtml {
   let result = '';
   if (line.name) {
     result += `<span class="rtdb-user-prefix">[${escapeHtml(line.name)}] </span>`;
   }
-  result += `<span class="line-text">${formatTextInternal(line.text, settings)}</span>`;
+  result += `<span class="line-text">${formatTextInternal(line.text, settings, false, lineClosed)}</span>`;
   return sanitizer.bypassSecurityTrustHtml(result);
 }

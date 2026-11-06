@@ -27,6 +27,7 @@
  * MESSAGES IN (from main thread):
  *   { threshold, invertInput, debounceMs, channelIndex, pilotFrequency, sampleRate }
  *   { calibrate: 'open'|'closed' }  → measure average level for threshold setup
+ *   { calibrate: null }             → cancel an unfinished measurement
  *
  * MESSAGES OUT (to main thread):
  *   { type: 'keyChange', down, time, magnitude }
@@ -83,8 +84,8 @@ class KeyDetectProcessor extends AudioWorkletProcessor {
         this.sRate = d.sampleRate;
         this._updateGoertzelCoeff();
       }
-      if (d.calibrate) {
-        this.calibrating = d.calibrate;
+      if (d.calibrate !== undefined) {
+        this.calibrating = d.calibrate || null;
         this.calibSamples = 0;
         this.calibSum = 0;
       }

@@ -108,7 +108,7 @@ export class FireworkSound {
     cracklesHigh.type = 'highpass';
     cracklesHigh.frequency.value = 1200 + r() * 800;
     const cracklesGain = ctx.createGain();
-    cracklesGain.gain.value = 0.6 * level;
+    cracklesGain.gain.value = 0.25 * level;
     crackles.connect(cracklesHigh).connect(cracklesGain).connect(out);
     crackles.start(bang + 0.25 + r() * 0.2);
   }

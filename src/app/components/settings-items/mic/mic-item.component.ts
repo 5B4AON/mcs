@@ -13,6 +13,9 @@ import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
+/** A calibration measurement is abandoned after this long without a result */
+const CALIBRATION_TIMEOUT_MS = 3000;
+
 /**
  * Settings item — Straight Key via Mic (pilot tone detection).
  *
@@ -50,11 +53,16 @@ export class MicItemComponent implements OnInit, OnDestroy {
   /** RMS level measured during "key closed" calibration */
   calibClosedRms: number | null = null;
 
+  /** Set when a measurement got no signal within the timeout */
+  calibrationTimedOut = false;
+
+  private calibrationTimer: ReturnType<typeof setTimeout> | null = null;
   private subs: Subscription[] = [];
 
   ngOnInit(): void {
     this.subs.push(
       this.audioInput.calibration$.subscribe(result => {
+        this.clearCalibrationTimer();
         if (result.state === 'open') this.calibOpenRms = result.rms;
         else if (result.state === 'closed') this.calibClosedRms = result.rms;
         this.calibrating = null;
@@ -63,6 +71,7 @@ export class MicItemComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.clearCalibrationTimer();
     this.subs.forEach(sub => sub.unsubscribe());
   }
 
@@ -101,14 +110,34 @@ export class MicItemComponent implements OnInit, OnDestroy {
 
   /** Start the "key open" calibration measurement */
   calibrateOpen(): void {
-    this.calibrating = 'open';
-    this.audioInput.calibrate('open');
+    this.startCalibration('open');
   }
 
   /** Start the "key closed" calibration measurement */
   calibrateClosed(): void {
-    this.calibrating = 'closed';
-    this.audioInput.calibrate('closed');
+    this.startCalibration('closed');
+  }
+
+  /** Measure one phase; gives up after 3 seconds if the input delivers no signal */
+  private startCalibration(phase: 'open' | 'closed'): void {
+    this.clearCalibrationTimer();
+    this.calibrationTimedOut = false;
+    this.calibrating = phase;
+    this.audioInput.calibrate(phase);
+    this.calibrationTimer = setTimeout(() => {
+      this.calibrationTimer = null;
+      if (this.calibrating === null) return;
+      this.audioInput.cancelCalibration();
+      this.calibrating = null;
+      this.calibrationTimedOut = true;
+    }, CALIBRATION_TIMEOUT_MS);
+  }
+
+  private clearCalibrationTimer(): void {
+    if (this.calibrationTimer !== null) {
+      clearTimeout(this.calibrationTimer);
+      this.calibrationTimer = null;
+    }
   }
 
   /** Apply the midpoint of open/closed calibration values as the threshold */

@@ -89,12 +89,17 @@
     @if (scope.isLive) {
   <div class="calibration-row">
       <span class="calibration-label">Calibrate:</span>
-      <button [disabled]="!audioRunning || calibrating" (click)="calibrateOpen()">
-        {{ calibrating === 'open' ? 'Measuring...' : '1. Key Open' }}
-      </button>
-      <button [disabled]="!audioRunning || calibrating" (click)="calibrateClosed()">
-        {{ calibrating === 'closed' ? 'Measuring...' : '2. Key Closed' }}
-      </button>
+      <span class="pill-group">
+        <button type="button" class="pill-btn" [disabled]="!audioRunning || calibrating" (click)="calibrateOpen()">
+          {{ calibrating === 'open' ? 'Measuring...' : '1. Key Open' }}
+        </button>
+        <button type="button" class="pill-btn" [disabled]="!audioRunning || calibrating" (click)="calibrateClosed()">
+          {{ calibrating === 'closed' ? 'Measuring...' : '2. Key Closed' }}
+        </button>
+      </span>
+      @if (calibrationTimedOut) {
+        <span class="calibration-values" role="status">No signal measured. Check that the microphone and pilot tone are running, then try again.</span>
+      }
       @if (calibOpenRms !== null || calibClosedRms !== null) {
         <span class="calibration-values">
           @if (calibOpenRms !== null) { Open: {{ (calibOpenRms * 1000).toFixed(3) }}m }
@@ -102,7 +107,7 @@
         </span>
       }
       @if (calibOpenRms !== null && calibClosedRms !== null) {
-        <button (click)="applyCalibration()">Apply threshold</button>
+        <button type="button" class="pill-btn pill-primary" (click)="applyCalibration()">Apply threshold</button>
       }
     </div>
   } @else {

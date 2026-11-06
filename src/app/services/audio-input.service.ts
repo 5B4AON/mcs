@@ -291,4 +291,9 @@ export class AudioInputService {
     if (!this.workletNode) return;
     this.workletNode.port.postMessage({ calibrate: state });
   }
+
+  /** Stop a calibration measurement that has not finished */
+  cancelCalibration(): void {
+    this.workletNode?.port.postMessage({ calibrate: null });
+  }
 }

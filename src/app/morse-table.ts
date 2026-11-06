@@ -95,6 +95,69 @@ for (const [punct, prosign] of Object.entries(PUNCTUATION_TO_PROSIGN)) {
   PROSIGN_TO_PUNCTUATION[prosign] = punct;
 }
 
+/** Custom prosigns currently added to MORSE_TABLE / MORSE_REVERSE (see `registerCustomProsigns`) */
+const customProsigns = new Map<string, { code: string; decodable: boolean }>();
+
+/** Built-in entries of the tables, so custom prosigns never replace them */
+const BUILT_IN_TABLE_KEYS = new Set(Object.keys(MORSE_TABLE));
+
+/** True for a prosign that is part of the built-in table (not a made-up one) */
+export function isBuiltInProsign(name: string): boolean {
+  return BUILT_IN_TABLE_KEYS.has(name.toUpperCase());
+}
+
+/**
+ * The Morse pattern of a custom prosign written as `<XY>`: the letters keyed
+ * one straight after the other, with only the short gap between elements.
+ *
+ * @returns The pattern, or null when the name is not two or more letters in angle brackets
+ */
+export function customProsignPattern(name: string): string | null {
+  const m = /^<([A-Z]{2,})>$/.exec(name.toUpperCase());
+  if (!m) return null;
+  let code = '';
+  for (const letter of m[1]) code += MORSE_TABLE[letter] ?? '';
+  return code;
+}
+
+/**
+ * What a custom prosign sounds like when it is the same as something that already exists.
+ *
+ * @returns The existing character or prosign with that pattern, or null when the pattern is free
+ */
+export function customProsignClash(name: string): string | null {
+  const key = name.toUpperCase();
+  const code = customProsignPattern(key);
+  if (!code || BUILT_IN_TABLE_KEYS.has(key)) return null;
+  const same = Object.entries(MORSE_TABLE).find(([k, c]) => c === code && BUILT_IN_TABLE_KEYS.has(k));
+  return same ? same[0] : null;
+}
+
+/**
+ * Makes made-up prosigns such as `<XY>` work like the built-in ones: the encoder keys
+ * them as their letters run together and the decoder recognises them again. A pattern
+ * that is already taken by another character is still keyed but cannot be recognised.
+ * Replaces the previous set, so call it with every custom prosign in use.
+ *
+ * @param names Prosign names in angle brackets, e.g. `<XY>`
+ */
+export function registerCustomProsigns(names: string[]): void {
+  for (const [name, entry] of customProsigns) {
+    delete MORSE_TABLE[name];
+    if (entry.decodable && MORSE_REVERSE[entry.code] === name) delete MORSE_REVERSE[entry.code];
+  }
+  customProsigns.clear();
+  for (const raw of names) {
+    const name = raw.toUpperCase();
+    const code = customProsignPattern(name);
+    if (!code || BUILT_IN_TABLE_KEYS.has(name) || customProsigns.has(name)) continue;
+    const decodable = !(code in MORSE_REVERSE);
+    MORSE_TABLE[name] = code;
+    if (decodable) MORSE_REVERSE[code] = name;
+    customProsigns.set(name, { code, decodable });
+  }
+}
+
 /**
  * Converts text to prosign display format by replacing punctuation marks
  * with their corresponding prosign names (e.g., '+' → '<AR>').

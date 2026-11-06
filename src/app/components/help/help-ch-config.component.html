@@ -489,6 +489,24 @@
 </p>
 
 <p>
+  A word is replaced only once it is finished, that is when the space after it
+  arrives. So a trigger <code>FB</code> is replaced after <code>FB&nbsp;</code>,
+  but <code>FBI</code> is never mistaken for it while you are still typing or keying.
+</p>
+
+<p>
+  You can also invent your own prosigns. Write the trigger as two or more
+  letters in angle brackets, for example <code>&lt;XY&gt;</code>. It is keyed as
+  the letters run together without the gap between letters (here X immediately
+  followed by Y), and when that is received it is recognised as the trigger and
+  replaced. Typing <code>&lt;XY&gt;</code> in the encoder sends it the same way.
+  The editor tells you if the letters sound exactly like an existing character
+  or another of your triggers, and does not let you save such a trigger, nor
+  one that is already used by another mapping, because it could not be recognised. Made-up prosigns work while
+  Emoji Replacements is on and the mapping is ticked.
+</p>
+
+<p>
   The feature ships with a curated set of defaults (disabled by default).
   You can enable it, add your own mappings, reorder, or delete entries in
   <strong>Settings &rarr; Other &rarr; Emoji Replacements</strong>.

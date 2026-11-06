@@ -22,8 +22,6 @@ import { SETTINGS_SCOPE } from '../settings-scope';
     .guard-warning { margin: .5rem 0; padding: .5rem .75rem; border: 1px solid #c90; border-radius: 6px; background: #3a3220; color: #fc3; font-size: .9rem; }
     .guard-warning p { margin: 0 0 .5rem; }
     .guard-note { margin: .5rem 0; font-size: .85rem; color: #bbb; }
-    .guard-btn { padding: .4rem 1rem; border: 0; border-radius: 20px; background: linear-gradient(#506078, #3a4858); color: #fff; font-size: .78rem; font-weight: 700; cursor: pointer; }
-    .guard-btn:focus-visible { outline: 2px solid #8cf; outline-offset: 2px; }
   `],
 })
 export class AudioFeedbackGuardItemComponent {

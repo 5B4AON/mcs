@@ -137,29 +137,47 @@
 }
 
 .picker-btn {
-  background: #2a2a3e;
-  border: 1px solid #555;
-  color: #aaa;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
   cursor: pointer;
-  padding: 0.4rem 0.5rem;
-  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.15s;
+  transition: background 0.15s;
   flex-shrink: 0;
 }
 
+.picker-btn svg {
+  display: block;
+}
+
 .picker-btn:hover {
-  color: #ffcc00;
-  border-color: #ffcc00;
-  background: #333;
+  background: #3a4050;
+}
+
+.picker-btn:active {
+  background: #5577aa;
+  color: #fff;
+}
+
+.picker-btn:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 2px;
 }
 
 .emoji-edit-hint {
   font-size: 0.75rem;
   color: #667;
   line-height: 1.3;
+}
+
+.emoji-edit-problem {
+  color: #f66;
 }
 
 .emoji-edit-error {

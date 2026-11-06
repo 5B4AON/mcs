@@ -108,6 +108,19 @@ export class EmojisItemComponent {
     this.scope.update({ emojiMappings: this.s().emojiMappings.filter((_, i) => i !== index) });
   }
 
+  /** Number of mappings that are switched on */
+  get enabledCount(): number {
+    return this.s().emojiMappings.filter(m => m.enabled).length;
+  }
+
+  /** Master checkbox: on = all on, indeterminate = some on; clicking it switches all on, or all off when all are on */
+  onSelectAll(event: Event): void {
+    const all = this.s().emojiMappings;
+    const enable = this.enabledCount < all.length;
+    (event.target as HTMLInputElement).checked = enable;
+    this.scope.update({ emojiMappings: all.map(m => ({ ...m, enabled: enable })) });
+  }
+
   /** Master switch */
   onEnabledChange(enabled: boolean): void {
     this.scope.update({ emojisEnabled: enabled });

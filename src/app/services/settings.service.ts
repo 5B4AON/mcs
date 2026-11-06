@@ -2,8 +2,8 @@
  * Morse Code Studio
  */
 
-import { Injectable, signal, computed } from '@angular/core';
-import { timingsFromWpm } from '../morse-table';
+import { Injectable, signal, computed, effect } from '@angular/core';
+import { timingsFromWpm, registerCustomProsigns } from '../morse-table';
 import { DEFAULT_FULLSCREEN_FONT, FULLSCREEN_FONTS, FullscreenFontId } from '../fullscreen-fonts';
 import { findChannelConflicts } from './audio-channel-conflicts';
 import {
@@ -280,6 +280,14 @@ const MODAL_DISPLAY_FIELDS: Record<keyof ModalDisplaySettings, keyof AppSettings
 @Injectable({ providedIn: 'root' })
 export class SettingsService {
   readonly settings = signal<AppSettings>({ ...DEFAULT_SETTINGS });
+
+  constructor() {
+    // Made-up prosigns used as emoji triggers (e.g. <XY>) are keyed and recognised like built-in ones
+    effect(() => {
+      const s = this.settings();
+      registerCustomProsigns(s.emojisEnabled ? s.emojiMappings.filter(m => m.enabled).map(m => m.match) : []);
+    });
+  }
 
   /** Fullscreen display settings: a read-only view of the `fullscreen*` fields of `settings` */
   readonly modalDisplay = computed<ModalDisplaySettings>(() => {

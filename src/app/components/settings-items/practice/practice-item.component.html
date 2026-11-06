@@ -189,7 +189,7 @@
              [value]="s().practiceColor || '#ffffff'"
              (input)="onColorChange($event)">
       @if (s().practiceColor) {
-        <button class="color-clear-btn" (click)="clearColor()" title="Use default color">&times;</button>
+        <button type="button" class="card-color-clear" (click)="clearColor()" title="Use default color" aria-label="Use default color">&#10005;</button>
       }
     </span>
   </label>

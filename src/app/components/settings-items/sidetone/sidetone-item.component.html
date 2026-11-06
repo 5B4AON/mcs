@@ -48,11 +48,11 @@
                label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 
   @if (scope.isLive) {
-    <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="settings-pill-btn">
+    <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="pill-btn pill-block">
       Test Output (1s)
     </button>
   } @else {
-    <button type="button" (click)="testDraft()" class="settings-pill-btn">Test Output (1s)</button>
+    <button type="button" (click)="testDraft()" class="pill-btn pill-block">Test Output (1s)</button>
     <div class="keyer-hint">Test only. Nothing is applied yet.</div>
   }
 </app-item-shell>

@@ -44,6 +44,12 @@
         >
           {{ emoji }}
         </button>
+      } @empty {
+        <p class="emoji-picker-empty" role="status">
+          @if (loading) { Loading emojis… }
+          @else if (loadFailed) { The emoji list could not be loaded. You can still type or paste an emoji in the Replacement field. }
+          @else { No emojis found. }
+        </p>
       }
     </div>
   </div>

@@ -120,6 +120,14 @@
   min-height: 0;
 }
 
+.emoji-picker-empty {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: #889;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .emoji-item {
   background: transparent;
   border: 1px solid transparent;

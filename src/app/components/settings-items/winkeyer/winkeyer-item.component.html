@@ -85,14 +85,12 @@
 
   @if (scope.isLive) {
     <div class="serial-port-row">
-      <button [disabled]="!winkeyerOutput.connected()"
-              (click)="winkeyerOutput.test()" class="test-btn">
-        Test (send "TEST")
-      </button>
-      <button [disabled]="!winkeyerOutput.connected()"
-              (click)="winkeyerOutput.clearBuffer()" class="test-btn">
-        Clear Buffer
-      </button>
+      <span class="pill-group">
+        <button type="button" class="pill-btn" [disabled]="!winkeyerOutput.connected()"
+                (click)="winkeyerOutput.test()">Test (send "TEST")</button>
+        <button type="button" class="pill-btn" [disabled]="!winkeyerOutput.connected()"
+                (click)="winkeyerOutput.clearBuffer()">Clear Buffer</button>
+      </span>
       @if (winkeyerOutput.connected()) {
         <span class="serial-status connected">&#x2714; Connected
           @if (winkeyerOutput.firmwareVersion()) {

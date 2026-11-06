@@ -5,7 +5,7 @@
 @if (risky().length) {
   <div class="guard-warning" role="status">
     <p>Audio output is on: {{ risky().join(', ') }}.</p>
-    <button type="button" class="guard-btn" (click)="turnOff()"><span>Turn audio output off</span></button>
+    <button type="button" class="pill-btn" (click)="turnOff()">Turn audio output off</button>
   </div>
 } @else {
   <p class="guard-note">No audio output that could cause a loop is on.</p>

@@ -257,6 +257,34 @@ button.kebab-help-btn:has(.pill-icon)::after {
 .pill-btn svg {
   flex-shrink: 0;
 }
+/* A pill on its own row, centred, as wide as its text (e.g. "+ Add Mapping", "Test Output") */
+.pill-btn.pill-block {
+  display: flex;
+  width: fit-content;
+  margin: .6rem auto 0;
+}
+/* Several pills of one action group: equal width (the widest text), no wider than needed,
+   side by side while the row fits and stacked when it does not (the nearest container
+   query box is the row that holds the group, see .calibration-row / .serial-port-row) */
+.pill-group {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(max-content, 1fr);
+  gap: .5rem;
+  width: max-content;
+  max-width: 100%;
+  align-self: flex-start;
+}
+.pill-group > .pill-btn {
+  min-width: 0;
+  max-width: none;
+  white-space: nowrap;
+}
+@container (max-width: 17.5rem) {
+  .pill-group {
+    grid-auto-flow: row;
+  }
+}
 @media (pointer: coarse) {
   .pill-btn {
     min-height: 44px;

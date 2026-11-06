@@ -14,7 +14,7 @@ import { DisplayBufferService, DisplayLine } from '../../../services/display-buf
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
-import { formatText, formatLine } from '../fullscreen-format.utils';
+import { formatText, formatLine, endsWithShowEmoji } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
 import { FireworksComponent } from '../../fireworks/fireworks.component';
@@ -87,6 +87,13 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** The Koch course is finished on screen: fireworks play, the text changes colour and the on-screen keyboard stays closed */
   get celebrating(): boolean {
     return this.practiceView && this.practice.kochFinished();
+  }
+
+  /** The newest text on screen is an emoji replacement that starts a light show; the next character ends it */
+  get showEmojiActive(): boolean {
+    if (this.lensView || this.practiceView) return false;
+    const lines = this.conversationLines;
+    return lines.length > 0 && endsWithShowEmoji(lines[lines.length - 1].text, this.textSettings());
   }
 
   /** Lens replaces the conversation, except while Copy Practice uses it for its own text. */
@@ -273,9 +280,10 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   // ---- Text formatting (delegates to shared utility functions) ----
 
-  /** Format a display line with optional name prefix and prosign/emoji styling */
-  formatLine(line: DisplayLine): SafeHtml {
-    return formatLine(line, this.textSettings(), this.sanitizer);
+  /** Format a display line with optional name prefix and prosign/emoji styling.
+   *  The last line is still being written, so a trigger word at its end waits for a space. */
+  formatLine(line: DisplayLine, index: number): SafeHtml {
+    return formatLine(line, this.textSettings(), this.sanitizer, index < this.conversationLines.length - 1);
   }
 
   /** Format encoder text without applying emoji replacements while it is pending. */
