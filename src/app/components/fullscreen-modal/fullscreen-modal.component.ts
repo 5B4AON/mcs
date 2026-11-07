@@ -11,11 +11,13 @@ import { MorseEncoderService } from '../../services/morse-encoder.service';
 import { KeyerService } from '../../services/keyer.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
 import { PracticeService } from '../../services/practice.service';
+import { SendPracticeService } from '../../services/send-practice.service';
 import { LensService } from '../../services/lens.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
+import { SendPromptComponent } from '../send-prompt/send-prompt.component';
 import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
 
 /**
@@ -32,7 +34,7 @@ import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-
 @Component({
   selector: 'app-fullscreen-modal',
   standalone: true,
-  imports: [FsToolbarComponent, FsConversationViewComponent],
+  imports: [FsToolbarComponent, FsConversationViewComponent, SendPromptComponent],
   templateUrl: './fullscreen-modal.component.html',
   styleUrls: ['./fullscreen-modal.component.css'],
 })
@@ -78,6 +80,11 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     return this.inputMode === 'key' && this.settings.settings().touchKeyerEnabled;
   }
 
+  /** Send practice in Key mode pins its prompt box above the output area. */
+  get sendPromptShown(): boolean {
+    return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice';
+  }
+
   /** Font stack chosen in the fullscreen menu. */
   get fontStack(): string {
     return fullscreenFontStack(this.settings.settings().fullscreenFont);
@@ -93,6 +100,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private encoder: MorseEncoderService,
     private keyer: KeyerService,
     private practice: PracticeService,
+    private sendPractice: SendPracticeService,
     private lens: LensService,
     private devices: AudioDeviceService,
     public viewport: ViewportService,
@@ -163,6 +171,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     this.remember({ fullscreenInputMode: mode });
     this.keyer.setKeyboardMappingsEnabled(mode === 'key');
     if (mode === 'key' && this.settings.settings().encoderMode === 'practice') this.practice.abort();
+    if (mode === 'type' && this.settings.settings().encoderMode === 'send-practice') this.sendPractice.abort();
     if (mode === 'type') this.conversationView?.focusTypeInput();
     else this.conversationView?.focusMain();
   }

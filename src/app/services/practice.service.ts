@@ -7,33 +7,17 @@ import { SettingsService } from './settings.service';
 import { DecoderSource } from './settings-common';
 import { MorseEncoderService } from './morse-encoder.service';
 import { DisplayBufferService } from './display-buffer.service';
-import { PRACTICE_WORDS } from '../data/practice-words';
-import { CALLSIGN_PREFIXES } from '../data/callsign-prefixes';
-import { KOCH_NEWEST_WEIGHT, kochNewChars, kochPool } from '../data/koch-lessons';
-import { MORSE_TABLE } from '../morse-table';
+import { PracticeContentOptions, PracticeSequenceGenerator } from './practice-content';
+import { PracticeFeedback, computePracticeFeedback, practiceAccuracy } from './practice-scoring';
 import { effectivePracticeFeedbackMode } from '../components/settings-items/practice/practice-item.model';
 import { kochRecommendation } from '../components/settings-items/practice/practice-ui.utils';
+
+export type { PracticeFeedback } from './practice-scoring';
 
 /** Practice playback state */
 export type PracticeState = 'idle' | 'playing' | 'paused' | 'finished';
 /** Current phase of a multi-round Type-along session */
 export type PracticeSessionStage = 'none' | 'briefing' | 'in-progress' | 'round-feedback' | 'summary';
-
-/** Per-character feedback entry after a round completes */
-export interface PracticeFeedback {
-  /** The reference character */
-  ref: string;
-  /** 'correct' | 'incorrect' | 'missed' */
-  result: 'correct' | 'incorrect' | 'missed';
-}
-
-/** Punctuation characters that have morse encodings */
-const PUNCTUATION_CHARS = Object.keys(MORSE_TABLE).filter(
-  ch => ch.length === 1 && !/[A-Z0-9 ]/.test(ch)
-);
-
-const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const DIGITS = '0123456789';
 
 /**
  * Practice Service — generates sequences and manages playback state
@@ -93,17 +77,10 @@ export class PracticeService {
   });
 
   /** Accuracy percentage (correct / total reference chars, ignoring spaces) */
-  readonly accuracy = computed(() => {
-    const fb = this.feedback();
-    if (fb.length === 0) return 0;
-    const chars = fb.filter(f => f.ref !== ' ');
-    if (chars.length === 0) return 0;
-    const correct = chars.filter(f => f.result === 'correct').length;
-    return Math.round((correct / chars.length) * 100);
-  });
+  readonly accuracy = computed(() => practiceAccuracy(this.feedback()));
 
-  /** Index into usedWordIndices to track word-list progression */
-  private usedWordIndices = new Set<number>();
+  /** Builds the sequences and remembers recent characters and used words */
+  private readonly generator = new PracticeSequenceGenerator();
 
   constructor(
     private settings: SettingsService,
@@ -246,73 +223,15 @@ export class PracticeService {
   reset(): void {
     this.abort();
     this.referenceText.set('');
-    this.usedWordIndices.clear();
+    this.generator.clearUsedWords();
   }
 
   /**
    * Compute per-character feedback by aligning user input to the
-   * reference text using longest common subsequence (LCS).
-   * Spaces are treated as regular characters — the user must type
-   * them to get a correct match.
+   * reference text (longest common subsequence, see practice-scoring.ts).
    */
   computeFeedback(userInput: string): void {
-    const ref = this.referenceText().toUpperCase();
-    const usr = userInput.toUpperCase();
-
-    // Build LCS table
-    const m = ref.length;
-    const n = usr.length;
-    const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-    for (let i = 1; i <= m; i++) {
-      for (let j = 1; j <= n; j++) {
-        dp[i][j] = ref[i - 1] === usr[j - 1]
-          ? dp[i - 1][j - 1] + 1
-          : Math.max(dp[i - 1][j], dp[i][j - 1]);
-      }
-    }
-
-    // Backtrack to find which ref indices were matched by the LCS
-    const matched = new Set<number>();
-    let i = m;
-    let j = n;
-    while (i > 0 && j > 0) {
-      if (ref[i - 1] === usr[j - 1]) {
-        matched.add(i - 1);
-        i--;
-        j--;
-      } else if (dp[i - 1][j] >= dp[i][j - 1]) {
-        i--;
-      } else {
-        j--;
-      }
-    }
-
-    // Build per-character feedback:
-    // Walk ref and user input in parallel. Matched chars are 'correct'.
-    // Unmatched ref chars (skipped by user) are 'missed' (grey).
-    // Chars where the user typed something wrong are 'incorrect' (red) —
-    // detected when the user consumed input but ref wasn't matched.
-    const result: PracticeFeedback[] = [];
-    let userIdx = 0;
-    for (let ri = 0; ri < m; ri++) {
-      if (matched.has(ri)) {
-        result.push({ ref: ref[ri], result: 'correct' });
-        // Advance userIdx to the matching user char
-        while (userIdx < n && usr[userIdx] !== ref[ri]) userIdx++;
-        userIdx++;
-      } else {
-        // Check if user typed an incorrect char at this position
-        // (user has remaining input that didn't match)
-        if (userIdx < n && !this.isUpcomingMatch(usr, userIdx, ref, ri, matched)) {
-          result.push({ ref: ref[ri], result: 'incorrect' });
-          userIdx++;
-        } else {
-          result.push({ ref: ref[ri], result: 'missed' });
-        }
-      }
-    }
-
-    this.feedback.set(result);
+    this.feedback.set(computePracticeFeedback(this.referenceText(), userInput));
   }
 
   /**
@@ -340,173 +259,21 @@ export class PracticeService {
     }
   }
 
-  /**
-   * Check if the user's next input char matches an upcoming ref char
-   * that is in the LCS. If so, the current ref char was skipped (missed),
-   * not incorrectly typed.
-   */
-  private isUpcomingMatch(usr: string, userIdx: number, ref: string, refIdx: number, matched: Set<number>): boolean {
-    // Look ahead in ref for the next matched char
-    for (let ri = refIdx + 1; ri < ref.length; ri++) {
-      if (matched.has(ri) && usr[userIdx] === ref[ri]) return true;
-      if (matched.has(ri)) break; // next match is a different char
-    }
-    return false;
-  }
-
   // ---- Sequence generation ----
 
   private generateSequence(): string {
     const s = this.settings.settings();
-    switch (s.practiceContentMode) {
-      case 'characters': return this.generateCharacters();
-      case 'words': return this.generateWords();
-      case 'callsigns': return this.generateCallsigns();
-      case 'koch': return this.generateKoch();
-    }
-  }
-
-  private recentChars: string[] = [];
-
-  private generateCharacters(): string {
-    const s = this.settings.settings();
-    let pool = '';
-    if (s.practiceIncludeLetters) pool += LETTERS;
-    if (s.practiceIncludeNumbers) pool += DIGITS;
-    if (s.practiceIncludePunctuation) pool += PUNCTUATION_CHARS.join('');
-    if (!pool) pool = LETTERS; // fallback
-
-    // Keep a history window to avoid repeating the same character too soon.
-    // Window size scales with pool size but stays reasonable.
-    const historySize = Math.min(Math.floor(pool.length / 2), 10);
-
-    return this.buildGroups(() => this.pickNonRecentChar(pool, historySize));
-  }
-
-  /** Build the configured number of space-separated groups from a character picker. */
-  private buildGroups(pick: () => string): string {
-    const s = this.settings.settings();
-    const groups: string[] = [];
-    for (let g = 0; g < s.practiceGroupCount; g++) {
-      let group = '';
-      for (let c = 0; c < s.practiceCharGroupSize; c++) {
-        group += pick();
-      }
-      groups.push(group);
-    }
-    return groups.join(' ');
-  }
-
-  /**
-   * Koch method: random characters from lessons 1 to N, where the characters
-   * the current lesson introduced get KOCH_NEWEST_WEIGHT of the picks. Recently
-   * used characters are skipped, with a shorter window than Random Characters
-   * so a two-character pool does not simply alternate.
-   */
-  private generateKoch(): string {
-    const lesson = this.settings.settings().practiceKochLesson;
-    const pool = kochPool(lesson);
-    const newest = kochNewChars(lesson);
-    const historySize = Math.min(Math.floor((pool.length - 1) / 2), 10);
-    const weightOf = (ch: string): number => pool.length === newest.length
-      ? 1
-      : newest.includes(ch)
-        ? KOCH_NEWEST_WEIGHT / newest.length
-        : (1 - KOCH_NEWEST_WEIGHT) / (pool.length - newest.length);
-
-    return this.buildGroups(() => {
-      const recent = historySize > 0 ? this.recentChars.slice(-historySize) : [];
-      const candidates = pool.filter(ch => !recent.includes(ch));
-      const total = candidates.reduce((sum, ch) => sum + weightOf(ch), 0);
-      let r = Math.random() * total;
-      let picked = candidates[candidates.length - 1];
-      for (const ch of candidates) {
-        r -= weightOf(ch);
-        if (r < 0) { picked = ch; break; }
-      }
-      this.recentChars.push(picked);
-      if (this.recentChars.length > 10) this.recentChars.shift();
-      return picked;
-    });
-  }
-
-  private pickNonRecentChar(pool: string, historySize: number): string {
-    // Try to pick a character not in the recent history
-    for (let attempt = 0; attempt < 20; attempt++) {
-      const ch = pool[Math.floor(Math.random() * pool.length)];
-      if (!this.recentChars.includes(ch)) {
-        this.recentChars.push(ch);
-        if (this.recentChars.length > historySize) this.recentChars.shift();
-        return ch;
-      }
-    }
-    // Fallback: pick any random character
-    const ch = pool[Math.floor(Math.random() * pool.length)];
-    this.recentChars.push(ch);
-    if (this.recentChars.length > historySize) this.recentChars.shift();
-    return ch;
-  }
-
-  private generateWords(): string {
-    const s = this.settings.settings();
-    const lengths = s.practiceWordLengths;
-    const filtered = PRACTICE_WORDS
-      .map((w, i) => ({ word: w, index: i }))
-      .filter(e => lengths.includes(e.word.length));
-
-    if (filtered.length === 0) return this.generateCharacters(); // fallback
-
-    // Bias toward earlier (more common) words using weighted random
-    // Also avoid duplicates within the current set of used indices
-    const available = filtered.filter(e => !this.usedWordIndices.has(e.index));
-    const source = available.length >= s.practiceGroupCount ? available : filtered;
-
-    // If we've exhausted most words, reset the used set
-    if (available.length < s.practiceGroupCount) {
-      this.usedWordIndices.clear();
-    }
-
-    const picked: string[] = [];
-    const pickedIndices = new Set<number>();
-    for (let i = 0; i < s.practiceGroupCount; i++) {
-      // Weighted random: bias toward lower indices (more common words)
-      // Using an exponential distribution: index = floor(|random²| * length)
-      let attempts = 0;
-      let entry = source[0];
-      while (attempts < 50) {
-        const r = Math.random();
-        const idx = Math.floor(r * r * source.length);
-        entry = source[idx];
-        if (!pickedIndices.has(entry.index)) break;
-        attempts++;
-      }
-      picked.push(entry.word.toUpperCase());
-      pickedIndices.add(entry.index);
-      this.usedWordIndices.add(entry.index);
-    }
-    return picked.join(' ');
-  }
-
-  private generateCallsigns(): string {
-    const s = this.settings.settings();
-    const calls: string[] = [];
-    for (let i = 0; i < s.practiceGroupCount; i++) {
-      calls.push(this.randomCallsign());
-    }
-    return calls.join(' ');
-  }
-
-  private randomCallsign(): string {
-    const entry = CALLSIGN_PREFIXES[Math.floor(Math.random() * CALLSIGN_PREFIXES.length)];
-    const digit = entry.digits.length > 0
-      ? String(entry.digits[Math.floor(Math.random() * entry.digits.length)])
-      : '';
-    const suffixLen = 1 + Math.floor(Math.random() * 3); // 1–3
-    let suffix = '';
-    for (let i = 0; i < suffixLen; i++) {
-      suffix += LETTERS[Math.floor(Math.random() * LETTERS.length)];
-    }
-    return `${entry.prefix}${digit}${suffix}`;
+    const options: PracticeContentOptions = {
+      contentMode: s.practiceContentMode,
+      groupCount: s.practiceGroupCount,
+      charGroupSize: s.practiceCharGroupSize,
+      includeLetters: s.practiceIncludeLetters,
+      includeNumbers: s.practiceIncludeNumbers,
+      includePunctuation: s.practiceIncludePunctuation,
+      kochLesson: s.practiceKochLesson,
+      wordLengths: s.practiceWordLengths,
+    };
+    return this.generator.generate(options);
   }
 
   // ---- Playback ----

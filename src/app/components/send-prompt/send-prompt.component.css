@@ -1,0 +1,75 @@
+:host {
+  display: block;
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Same look as the typing box it replaces */
+.send-prompt {
+  min-height: 3.2rem;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: .35rem;
+  padding: .4rem .6rem;
+  background: #181c22;
+  color: #ddd;
+  border: 1px solid #2e3a44;
+  box-shadow: inset 3px 3px 8px rgba(0,0,0,.65), inset -2px -2px 5px rgba(255,255,255,.05);
+  border-radius: 4px;
+  font-family: system-ui, sans-serif;
+  font-weight: normal;
+  letter-spacing: normal;
+  word-break: normal;
+  overflow-wrap: break-word;
+  text-align: left;
+}
+.send-prompt-text {
+  overflow: hidden;
+  white-space: pre;
+  line-height: 2rem;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: #e8f1ff;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 10%, #000 90%, transparent 100%);
+}
+/* One line that slides like an RSS ticker; see PromptTickerDirective */
+.ticker-track {
+  display: inline-block;
+  /* Half the box on each side: the first and the last character can both sit in the middle */
+  padding-inline: 50%;
+  transition: transform .35s ease-out;
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-track { transition: none; }
+}
+/* The next character to key is bigger and blue; "As you go" also colours what is done */
+.pm-current { color: #4aa3ff; font-size: 1.25em; }
+.pm-correct { color: #4caf50; }
+.pm-incorrect { color: #ff5252; }
+.send-prompt-note {
+  font-size: .85rem;
+  color: #9ab;
+}
+.send-prompt-pattern {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .35rem;
+  min-height: .6rem;
+}
+.hint-dot,
+.hint-dash {
+  display: inline-block;
+  height: .6rem;
+  background: #8cf;
+}
+.hint-dot { width: .6rem; border-radius: 50%; }
+.hint-dash { width: 1.6rem; border-radius: .3rem; }

@@ -28,10 +28,13 @@ import { ViewportService } from './services/viewport.service';
 import { InstallHintService } from './services/install-hint.service';
 import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
+import { SendPracticeService } from './services/send-practice.service';
+import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
 import { FireworksComponent, MAIN_LAUNCH_DELAY_MS } from './components/fireworks/fireworks.component';
 import { CollapseDirective } from './components/collapse.directive';
+import { SendPromptComponent } from './components/send-prompt/send-prompt.component';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
@@ -41,6 +44,7 @@ import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.c
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
 import * as practiceUi from './components/settings-items/practice/practice-ui.utils';
+import * as sendPracticeUi from './components/settings-items/send-practice/send-practice-ui.utils';
 
 /**
  * Morse Code Studio
@@ -67,13 +71,14 @@ import * as practiceUi from './components/settings-items/practice/practice-ui.ut
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, SendPromptComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
 export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Shared labels for the Practice guidance shown in the main view. */
   readonly practiceUi = practiceUi;
+  readonly sendPracticeUi = sendPracticeUi;
 
   // ---- Application state ----
   /** Whether audio contexts are running (Start/Stop toggle) */
@@ -246,6 +251,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public wakeLock: WakeLockService,
     public autoFullscreen: AutoFullscreenService,
     public practice: PracticeService,
+    public sendPractice: SendPracticeService,
+    private sendPracticeGate: SendPracticeGateService,
     public viewport: ViewportService,
     public installHint: InstallHintService,
     public clear: ClearService,
@@ -271,13 +278,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Loop detection: record output chars and check for feedback loops.
     effect(() => {
       const tagged = this.decoder.taggedOutput();
+      // Send practice shows its own prompt and keyed text; on "This device only" its keying stays off the outputs
+      const sendPracticeKeying = this.sendPractice.active();
+      const sendPracticeLocal = this.sendPracticeGate.blocked();
       if (tagged.length > this.lastTaggedLen) {
         // Forward only the newly added characters
         for (let i = this.lastTaggedLen; i < tagged.length; i++) {
           const entry = tagged[i];
           // Push to independent display buffers for all entries
           const displayName = this.getDisplayName(entry.type, entry.name);
-          this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
+          if (!sendPracticeKeying || entry.fromRtdb) {
+            this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
+          }
+          if (sendPracticeLocal && !entry.fromRtdb) continue;
 
           // Compute whether this entry is from a relay-allowed input path.
           // Used both for loop detection exclusion and for output forwarding.
@@ -1433,6 +1446,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.practice.pause();
   }
 
+  // ---- Send practice mode ----
+
+  /** Send practice shows its prompt and keyed text; keying works as usual. */
+  get sendPracticeActive(): boolean {
+    return this.settings.settings().encoderMode === 'send-practice';
+  }
+
+  /** Start, check or advance Send practice (the single practice button). */
+  sendPracticeAdvance(): void {
+    this.sendPractice.advance();
+  }
+
+  /** "Hear it first": play the prompt on this device, or stop it. */
+  sendPracticePromptAudio(): void {
+    if (this.sendPractice.promptPlaying()) this.sendPractice.stopPrompt();
+    else this.sendPractice.playPrompt();
+  }
+
   /** Resume practice playback */
   practiceResume(): void {
     this.practice.resume();
@@ -1443,7 +1474,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** The Koch course has just been completed on screen: the output area shows the fireworks at night */
   get celebrating(): boolean {
-    return this.practice.kochFinished() && this.settings.settings().encoderMode === 'practice';
+    const mode = this.settings.settings().encoderMode;
+    return (this.practice.kochFinished() && mode === 'practice')
+      || (this.sendPractice.kochFinished() && mode === 'send-practice');
   }
 
   // ---- Text blur ----
@@ -1454,6 +1487,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    if (s.encoderMode === 'send-practice') return null;
     // Practice mode blur/typealong: blur the practice source direction
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
       // If practice finished and feedback computed, unblur to show highlights
@@ -1499,6 +1533,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get mainReplayAvailable(): boolean {
     if (this.encoder.replayPending()) return true;
+    if (this.sendPracticeActive) return this.sendPractice.state() === 'keying' && this.sendPractice.hintChar() !== '';
     if (!this.displayBuffers.mainOutput.hasText()) return false;
     if (this.settings.settings().encoderMode === 'practice') {
       return this.practice.state() === 'finished' && this.practice.referenceText() !== '';
@@ -1520,6 +1555,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * the replay button while one is playing or paused stops it.
    */
   onMainReplay(): void {
+    if (this.sendPracticeActive) {
+      this.sendPracticePromptAudio();
+      return;
+    }
     const practiceMode = this.settings.settings().encoderMode === 'practice';
     if (this.encoder.replayPending()) {
       if (practiceMode) this.practice.stopReplay();

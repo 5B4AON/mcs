@@ -1,0 +1,20 @@
+<div class="send-prompt" aria-live="polite">
+  @if (sendPractice.state() === 'idle' || sendPractice.promptShowing()) {
+    <span class="send-prompt-note">{{ note }}</span>
+  } @else {
+    <div class="send-prompt-text" aria-label="Text to key"
+         [appPromptTicker]="sendPractice.referenceText() + ':' + sendPractice.alignment().position + ':' + sendPractice.state()"><div class="ticker-track">@for (m of sendPractice.promptMarks(); track $index) {<span
+      [class.pm-current]="m.state === 'current'"
+      [class.pm-correct]="m.state === 'correct'"
+      [class.pm-incorrect]="m.state === 'incorrect'">{{ m.char }}</span>}</div></div>
+    @if (settings.settings().sendPracticeHint === 'current') {
+      <div class="send-prompt-pattern" [attr.aria-label]="'Pattern of ' + sendPractice.hintChar()">
+        @if (sendPractice.state() === 'keying') {
+          @for (el of sendPractice.hintPattern().split(''); track $index) {
+            <span [class.hint-dot]="el === '.'" [class.hint-dash]="el === '-'"></span>
+          }
+        }
+      </div>
+    }
+  }
+</div>

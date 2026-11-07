@@ -6,8 +6,8 @@ import { DECODER_SOURCES, DecoderSource, SettingsFieldRules } from '../../../ser
 import type { AppSettings } from '../../../services/settings.service';
 import { ItemDescriptor, labelledReview } from '../item-descriptor';
 
-/** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type, 'practice' for copy practice */
-export const ENCODER_MODES = ['enter', 'live', 'practice'] as const;
+/** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type, 'practice' for copy practice, 'send-practice' for send practice */
+export const ENCODER_MODES = ['enter', 'live', 'practice', 'send-practice'] as const;
 export type EncoderMode = typeof ENCODER_MODES[number];
 
 /** The settings the Keyboard Encoder item owns. Its speed is in the common settings. */
@@ -47,7 +47,7 @@ export const ENCODER_DESCRIPTOR: ItemDescriptor = {
 /** How an encoder mode reads in a review. */
 function modeText(key: keyof AppSettings, value: unknown): string {
   if (key !== 'encoderMode') return value === '' || value === undefined ? 'none' : String(value);
-  return value === 'live' ? 'Live' : value === 'practice' ? 'Practice' : 'Send on Enter';
+  return value === 'live' ? 'Live' : value === 'practice' ? 'Copy practice' : value === 'send-practice' ? 'Send practice' : 'Send on Enter';
 }
 
 /** The send mode of typed text (live or on Enter), asked on its own page of the Type guide. */

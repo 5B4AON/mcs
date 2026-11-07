@@ -12,6 +12,7 @@ import { VibrationOutputService } from './vibration-output.service';
 import { MidiOutputService } from './midi-output.service';
 import { LoopDetectionService } from './loop-detection.service';
 import { LensService } from './lens.service';
+import { SendPracticeGateService } from './send-practice-gate.service';
 
 /**
  * Options for onKeyDown / onKeyUp calls.
@@ -207,6 +208,7 @@ export class MorseDecoderService {
     private midiOutput: MidiOutputService,
     private loopDetection: LoopDetectionService,
     private lens: LensService,
+    private sendPracticeGate: SendPracticeGateService,
   ) {
     this.resetCalibration();
   }
@@ -307,11 +309,13 @@ export class MorseDecoderService {
       // may BE from that radio, so keying it would create a loop.
       // Exception: when the user has enabled per-mapping relay from a
       // specific serial input to specific serial output(s).
-      if (!isReceive) {
+      // Send practice on "This device only" keeps serial and MIDI silent.
+      const externalAllowed = !this.sendPracticeGate.blocked();
+      if (externalAllowed && !isReceive) {
         pipeline.activatedOutputs.add('serial');
         this.serialOutputRefCount++;
         this.serialOutput.keyDown(source);
-      } else if (pipeline.fromSerial) {
+      } else if (externalAllowed && pipeline.fromSerial) {
         const idx = this.extractInputIndex(path, 'serial');
         const outMappings = this.settings.settings().serialOutputMappings;
         if (idx !== undefined && this.hasRelayOutput(outMappings, idx, source)) {
@@ -325,11 +329,11 @@ export class MorseDecoderService {
       // Receive pipelines must not echo onto the MIDI bus or radio chain.
       // Exception: when the user has enabled per-mapping relay from a
       // specific MIDI input to specific MIDI output(s).
-      if (!isReceive) {
+      if (externalAllowed && !isReceive) {
         pipeline.activatedOutputs.add('midi');
         this.midiOutputRefCount++;
         this.midiOutput.keyDown(source);
-      } else if (pipeline.fromMidi) {
+      } else if (externalAllowed && pipeline.fromMidi) {
         const idx = this.extractInputIndex(path, 'midi');
         const outMappings = this.settings.settings().midiOutputMappings;
         if (idx !== undefined && this.hasRelayOutput(outMappings, idx, source)) {

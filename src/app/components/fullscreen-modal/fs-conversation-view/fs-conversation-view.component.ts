@@ -14,11 +14,13 @@ import { DisplayBufferService, DisplayLine } from '../../../services/display-buf
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
+import { SendPracticeService } from '../../../services/send-practice.service';
 import { formatText, formatLine, endsWithShowEmoji } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
 import { FireworksComponent } from '../../fireworks/fireworks.component';
 import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
+import * as sendPracticeUi from '../../settings-items/send-practice/send-practice-ui.utils';
 
 /**
  * Fullscreen conversation view component.
@@ -44,6 +46,7 @@ import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges, AfterViewChecked {
   /** Shared labels for the compact Practice guide. */
   readonly practiceUi = practiceUi;
+  readonly sendPracticeUi = sendPracticeUi;
 
   /**
    * Whether the on-screen keyboard is likely open.
@@ -84,21 +87,27 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return this.isPractice && this.inputMode === 'type';
   }
 
+  /** Send practice shows its prompt and keyed text in Key mode only (Type mode ends it). */
+  get sendPracticeView(): boolean {
+    return this.settings.settings().encoderMode === 'send-practice' && this.inputMode === 'key';
+  }
+
   /** The Koch course is finished on screen: fireworks play, the text changes colour and the on-screen keyboard stays closed */
   get celebrating(): boolean {
-    return this.practiceView && this.practice.kochFinished();
+    return (this.practiceView && this.practice.kochFinished())
+      || (this.sendPracticeView && this.sendPractice.kochFinished());
   }
 
   /** The newest text on screen is an emoji replacement that starts a light show; the next character ends it */
   get showEmojiActive(): boolean {
-    if (this.lensView || this.practiceView) return false;
+    if (this.lensView || this.practiceView || this.sendPracticeView) return false;
     const lines = this.conversationLines;
     return lines.length > 0 && endsWithShowEmoji(lines[lines.length - 1].text, this.textSettings());
   }
 
-  /** Lens replaces the conversation, except while Copy Practice uses it for its own text. */
+  /** Lens replaces the conversation, except while Copy or Send Practice uses it for its own text. */
   get lensView(): boolean {
-    return this.lensMode && !this.practiceView;
+    return this.lensMode && !this.practiceView && !this.sendPracticeView;
   }
 
   /** Side space kept clear of the floating transmit and reveal buttons (otherwise 10% each side). */
@@ -142,6 +151,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     private keyer: KeyerService,
     private mouseKeyer: MouseKeyerService,
     public practice: PracticeService,
+    public sendPractice: SendPracticeService,
     private sanitizer: DomSanitizer,
   ) {
     // The reveal button is disabled without text, so a hold cannot end by itself when the text goes
@@ -157,6 +167,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
    */
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    if (s.encoderMode === 'send-practice') return null;
     if (s.encoderMode === 'practice' && this.inputMode === 'key') return null;
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
       if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
@@ -311,6 +322,17 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   toggleTx(): void {
     this.encoder.toggleTx();
     this.requestTypeInputFocus();
+  }
+
+  /** Start, check or advance Send practice (the single practice button). */
+  sendPracticeAction(): void {
+    this.sendPractice.advance();
+  }
+
+  /** "Hear it first": play the prompt on this device, or stop it. */
+  sendPracticePromptAudio(): void {
+    if (this.sendPractice.promptPlaying()) this.sendPractice.stopPrompt();
+    else this.sendPractice.playPrompt();
   }
 
   /** Start, advance, pause, or resume the active practice flow. */

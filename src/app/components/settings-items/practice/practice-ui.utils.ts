@@ -177,9 +177,18 @@ export type KochRecommendation =
  * the average of a multi-round session). Null for other content or lower scores.
  */
 export function kochRecommendation(settings: AppSettings, accuracy: number): KochRecommendation | null {
-  if (settings.practiceContentMode !== 'koch' || accuracy <= KOCH_ADVANCE_ACCURACY) return null;
-  if (settings.practiceKochLesson >= KOCH_LESSON_COUNT) return { kind: 'complete' };
-  const lesson = settings.practiceKochLesson + 1;
+  return kochAdvice(settings.practiceContentMode, settings.practiceKochLesson, accuracy);
+}
+
+/** The same advice for Send practice, which has its own content mode and lesson. */
+export function sendKochRecommendation(settings: AppSettings, accuracy: number): KochRecommendation | null {
+  return kochAdvice(settings.sendPracticeContentMode, settings.sendPracticeKochLesson, accuracy);
+}
+
+function kochAdvice(contentMode: string, currentLesson: number, accuracy: number): KochRecommendation | null {
+  if (contentMode !== 'koch' || accuracy <= KOCH_ADVANCE_ACCURACY) return null;
+  if (currentLesson >= KOCH_LESSON_COUNT) return { kind: 'complete' };
+  const lesson = currentLesson + 1;
   return { kind: 'next', lesson, newChars: kochNewChars(lesson).join(', ') };
 }
 

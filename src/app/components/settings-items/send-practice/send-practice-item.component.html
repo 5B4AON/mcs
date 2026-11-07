@@ -1,0 +1,160 @@
+<!-- Send Practice -->
+<app-item-shell cardId="send-practice-card" title="Send Practice" [mode]="mode"
+                [enabled]="s().sendPracticeEnabled"
+                (enabledChange)="onEnabledChange($event)">
+  <div class="cw-hint">
+    Shows text for you to key with a key or paddle. Choose Send practice mode, then press Start.
+    <app-help-link-button section="s3-6" label="Help: Send practice" />
+  </div>
+
+  <!-- Content mode -->
+  <label>
+    Content:
+    <select (change)="onContentModeChange($event)">
+      <option value="characters" [selected]="s().sendPracticeContentMode === 'characters'">Random Characters</option>
+      <option value="words" [selected]="s().sendPracticeContentMode === 'words'">Random Words</option>
+      <option value="callsigns" [selected]="s().sendPracticeContentMode === 'callsigns'">Random Callsigns</option>
+      <option value="koch" [selected]="s().sendPracticeContentMode === 'koch'">Koch method</option>
+    </select>
+  </label>
+
+  <!-- Koch method: the lesson sets the character pool -->
+  @if (s().sendPracticeContentMode === 'koch') {
+    <label>
+      Lesson:
+      <select class="koch-lesson-select" (change)="onKochLessonChange($event)">
+        @for (n of kochLessons; track n) {
+          <option [value]="n" [selected]="s().sendPracticeKochLesson === n">{{ kochLessonLabel(n) }}</option>
+        }
+      </select>
+    </label>
+    <div class="cw-hint">{{ kochLessonHint() }}</div>
+  }
+
+  <label>
+    Count:
+    <select (change)="onGroupCountChange($event)">
+      @for (n of [1,2,3,4,5,6,7,8,9,10]; track n) {
+        <option [value]="n" [selected]="s().sendPracticeGroupCount === n">{{ n }}</option>
+      }
+    </select>
+  </label>
+
+  @if (s().sendPracticeContentMode === 'characters' || s().sendPracticeContentMode === 'koch') {
+    <label>
+      Group size:
+      <select (change)="onCharGroupSizeChange($event)">
+        @for (n of [1,2,3,4,5]; track n) {
+          <option [value]="n" [selected]="s().sendPracticeCharGroupSize === n">{{ n }}</option>
+        }
+      </select>
+    </label>
+  }
+
+  @if (s().sendPracticeContentMode === 'characters') {
+    <div class="cw-hint">Character pool:</div>
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().sendPracticeIncludeLetters"
+             (change)="onPoolToggle('sendPracticeIncludeLetters', $event)">
+      Letters (A–Z)
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().sendPracticeIncludeNumbers"
+             (change)="onPoolToggle('sendPracticeIncludeNumbers', $event)">
+      Numbers (0–9)
+    </label>
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().sendPracticeIncludePunctuation"
+             (change)="onPoolToggle('sendPracticeIncludePunctuation', $event)">
+      Punctuation
+    </label>
+  }
+
+  @if (s().sendPracticeContentMode === 'words') {
+    <div class="cw-hint">Word lengths:</div>
+    @for (len of [3, 4, 5]; track len) {
+      <label class="checkbox-label">
+        <input type="checkbox" [checked]="s().sendPracticeWordLengths.includes(len)"
+               (change)="onWordLengthToggle(len, $event)">
+        {{ len }} letters
+      </label>
+    }
+  }
+
+  <!-- Checking -->
+  <label>
+    Check:
+    <select (change)="onCheckModeChange($event)">
+      <option value="live" [selected]="s().sendPracticeCheckMode === 'live'">As you go</option>
+      <option value="auto" [selected]="s().sendPracticeCheckMode === 'auto'">At the end (Auto)</option>
+      <option value="manual" [selected]="s().sendPracticeCheckMode === 'manual'">At the end (Manual)</option>
+    </select>
+  </label>
+  <div class="cw-hint">
+    @switch (s().sendPracticeCheckMode) {
+      @case ('live') {
+        The text turns green as you key it right and red where you slip. Key a character again to fix it. The round ends when everything is right, or a few seconds after you reach the end.
+      }
+      @case ('auto') {
+        Key the whole text, then see what you got right. The round ends by itself a few seconds after you reach the end.
+      }
+      @default {
+        Key the whole text, then press Check to see what you got right.
+      }
+    }
+  </div>
+
+  <label>
+    Rounds:
+    <select (change)="onRoundsChange($event)">
+      @for (n of [1,2,3,4,5]; track n) {
+        <option [value]="n" [selected]="s().sendPracticeRounds === n">{{ n }}</option>
+      }
+    </select>
+  </label>
+  <div class="cw-hint">More than one round gives a score for each round and an average.</div>
+
+  <label>
+    Pattern hint:
+    <select (change)="onHintChange($event)">
+      <option value="off" [selected]="s().sendPracticeHint === 'off'">Off</option>
+      <option value="current" [selected]="s().sendPracticeHint === 'current'">Current character</option>
+    </select>
+  </label>
+  <div class="cw-hint">Shows the dots and dashes of the character you are keying.</div>
+
+  <!-- Keys used -->
+  <div class="cw-hint"><strong>Keys used for Send Practice:</strong> only these count as keying the text. RTDB never does.</div>
+  @for (row of inputRows(); track row.id) {
+    <label class="checkbox-label" [style.opacity]="row.available ? null : 0.45">
+      <input type="checkbox" [checked]="isInputSelected(row.id)" (change)="onInputToggle(row.id, $event)">
+      <span [style.color]="row.color || null">{{ row.label }}</span>
+    </label>
+  }
+  @for (id of staleInputs(); track id) {
+    <label class="checkbox-label">
+      <input type="checkbox" checked (change)="onInputToggle(id, $event)">
+      {{ id }} <em>(no longer exists, untick to remove)</em>
+    </label>
+  }
+
+  @if (forceLocalPipeline) {
+    <div class="cw-hint">This guide keeps send practice on this device.</div>
+  } @else {
+    <label>
+      Pipeline:
+      <select (change)="onPipelineChange($event)">
+        <option value="local" [selected]="s().sendPracticePipeline === 'local'">This device only</option>
+        <option value="full" [selected]="s().sendPracticePipeline === 'full'">Full pipeline</option>
+      </select>
+    </label>
+    <div class="cw-hint">
+      @if (s().sendPracticePipeline === 'local') {
+        Sidetone and vibration only. Nothing is sent to serial, MIDI, WinKeyer or RTDB.
+      } @else {
+        Your keying also goes to your switched-on outputs.
+      }
+    </div>
+  }
+  <div class="cw-hint">A key wired directly to a transmitter will still transmit. The app cannot stop that.</div>
+</app-item-shell>

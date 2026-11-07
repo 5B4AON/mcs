@@ -9,6 +9,7 @@ import { MorseEncoderService } from './morse-encoder.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { PracticeService } from './practice.service';
+import { SendPracticeService } from './send-practice.service';
 import { LensService } from './lens.service';
 
 /**
@@ -36,10 +37,12 @@ export class ClearService {
     return this.encoder.buffer().length > this.encoder.sentIndex();
   });
 
-  /** True when either output area shows text, or a practice briefing/summary is showing. */
+  /** True when either output area shows text, or a practice briefing/summary/round is showing. */
   readonly outputHasContent = computed(() =>
     this.displayBuffers.mainOutput.hasText() || this.displayBuffers.fullscreenConversation.hasText()
-    || (this.settings.settings().encoderMode === 'practice' && this.practice.promptShowing()));
+    || (this.settings.settings().encoderMode === 'practice' && this.practice.promptShowing())
+    || (this.settings.settings().encoderMode === 'send-practice'
+      && (this.sendPractice.state() !== 'idle' || this.sendPractice.promptShowing())));
 
   /** True when the Clear button has anything to offer. */
   readonly canClear = computed(() => this.inputHasContent() || this.outputHasContent());
@@ -57,12 +60,23 @@ export class ClearService {
     ]);
   });
 
+  /** Same for Send practice: what is shown and how it is checked; the keys, pipeline and hint are left out. */
+  private readonly sendPracticeSignature = computed(() => {
+    const s = this.settings.settings();
+    return JSON.stringify([
+      s.sendPracticeContentMode, s.sendPracticeGroupCount, s.sendPracticeCharGroupSize, s.sendPracticeIncludeLetters,
+      s.sendPracticeIncludeNumbers, s.sendPracticeIncludePunctuation, s.sendPracticeKochLesson, s.sendPracticeWordLengths,
+      s.sendPracticeCheckMode, s.sendPracticeRounds,
+    ]);
+  });
+
   constructor(
     private settings: SettingsService,
     private encoder: MorseEncoderService,
     private decoder: MorseDecoderService,
     private displayBuffers: DisplayBufferService,
     private practice: PracticeService,
+    private sendPractice: SendPracticeService,
     private lens: LensService,
   ) {
     // Changing what is practised starts clean: nothing from the previous exercise stays on screen
@@ -73,6 +87,17 @@ export class ClearService {
       previous = signature;
       untracked(() => {
         if (this.settings.settings().encoderMode === 'practice') this.clearAll();
+      });
+    });
+    let previousSend = this.sendPracticeSignature();
+    effect(() => {
+      const signature = this.sendPracticeSignature();
+      if (signature === previousSend) return;
+      previousSend = signature;
+      untracked(() => {
+        // A jump to the next Koch lesson from the results has already started its round
+        if (this.sendPractice.takeLessonJump()) return;
+        if (this.settings.settings().encoderMode === 'send-practice') this.clearAll();
       });
     });
   }
@@ -92,6 +117,7 @@ export class ClearService {
       this.mainInputHasText.set(false);
       this.inputCleared$.next();
     }
+    if (this.settings.settings().encoderMode === 'send-practice') this.sendPractice.abort();
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.lens.reset();

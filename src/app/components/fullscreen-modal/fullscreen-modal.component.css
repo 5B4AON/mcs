@@ -66,6 +66,17 @@
 .fs-fit.touch-on {
   --fs-reserve: 96px;
 }
+/* Send practice: the prompt box above the text takes some of the height, so the text fits in what is left */
+.fs-send-prompt {
+  flex: none;
+  margin-bottom: .35rem;
+}
+.fs-fit.prompt-on {
+  --fs-reserve: 132px;
+}
+.fs-fit.prompt-on.touch-on {
+  --fs-reserve: 168px;
+}
 
 /* ---- Responsive ---- */
 @media (max-width: 480px) {

@@ -20,6 +20,7 @@ import { MIDI_INPUT_DEFAULTS, MIDI_INPUT_FIELD_RULES, MidiInputSettings } from '
 import { MIDI_OUTPUT_DEFAULTS, MIDI_OUTPUT_FIELD_RULES, MidiOutputSettings } from '../components/settings-items/midi-output/midi-output-item.model';
 import { MOUSE_KEYER_DEFAULTS, MOUSE_KEYER_FIELD_RULES, MouseKeyerSettings } from '../components/settings-items/mouse-keyer/mouse-keyer-item.model';
 import { PRACTICE_DEFAULTS, PRACTICE_FIELD_RULES, PracticeSettings } from '../components/settings-items/practice/practice-item.model';
+import { SEND_PRACTICE_DEFAULTS, SEND_PRACTICE_FIELD_RULES, SendPracticeSettings } from '../components/settings-items/send-practice/send-practice-item.model';
 import { PROSIGN_ACTIONS_DEFAULTS, PROSIGN_ACTIONS_FIELD_RULES, ProsignActionsSettings } from '../components/settings-items/prosign-actions/prosign-actions-item.model';
 import { RTDB_INPUT_DEFAULTS, RTDB_INPUT_FIELD_RULES, RtdbInputSettings } from '../components/settings-items/rtdb-input/rtdb-input-item.model';
 import { RTDB_OUTPUT_DEFAULTS, RTDB_OUTPUT_FIELD_RULES, RtdbOutputSettings } from '../components/settings-items/rtdb-output/rtdb-output-item.model';
@@ -164,7 +165,7 @@ export interface AppSettings extends
   WinkeyerSettings, RtdbOutputSettings, SidetoneSettings, VibrationSettings, EncoderSettings,
   KeyboardKeyerSettings, MouseKeyerSettings, TouchKeyerSettings, MidiInputSettings, MidiOutputSettings,
   RtdbInputSettings, SpriteKeySettings, TextBlurSettings, ShowProsignsSettings, ProsignActionsSettings,
-  FarnsworthSettings, PracticeSettings, EmojisSettings, CommonSettings {}
+  FarnsworthSettings, PracticeSettings, SendPracticeSettings, EmojisSettings, CommonSettings {}
 
 const DEFAULT_SETTINGS: AppSettings = {
   ...MIC_DEFAULTS,
@@ -189,6 +190,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   ...PROSIGN_ACTIONS_DEFAULTS,
   ...FARNSWORTH_DEFAULTS,
   ...PRACTICE_DEFAULTS,
+  ...SEND_PRACTICE_DEFAULTS,
   ...EMOJIS_DEFAULTS,
   ...COMMON_DEFAULTS,
 };
@@ -200,7 +202,7 @@ export const SETTINGS_FIELD_RULES = mergeFieldRules(
   VIBRATION_FIELD_RULES, ENCODER_FIELD_RULES, KEYBOARD_KEYER_FIELD_RULES, MOUSE_KEYER_FIELD_RULES,
   TOUCH_KEYER_FIELD_RULES, MIDI_INPUT_FIELD_RULES, MIDI_OUTPUT_FIELD_RULES, RTDB_INPUT_FIELD_RULES,
   SPRITE_KEY_FIELD_RULES, TEXT_BLUR_FIELD_RULES, PROSIGN_ACTIONS_FIELD_RULES, FARNSWORTH_FIELD_RULES,
-  PRACTICE_FIELD_RULES, EMOJIS_FIELD_RULES, COMMON_FIELD_RULES,
+  PRACTICE_FIELD_RULES, SEND_PRACTICE_FIELD_RULES, EMOJIS_FIELD_RULES, COMMON_FIELD_RULES,
 );
 
 /**

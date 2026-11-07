@@ -68,6 +68,8 @@ export class MorseEncoderService {
    */
   readonly replayMode = signal(false);
 
+  /** The current replay stays on this device (set by startReplay, reset with replayMode). */
+  private replayLocalOnly = false;
   /**
    * Counts sends that ran to the end of the buffer in Live mode. The buffer is emptied right
    * after, so the display uses this to know the last characters were really sent and still have
@@ -198,11 +200,14 @@ export class MorseEncoderService {
    * Replay a line that is already on screen: it is loaded as the buffer and sent
    * like typed text, so the TX button pauses and resumes it and clearing the input
    * area stops it. Does nothing while something is being sent or waits in the buffer.
+   * With `localOnly` it plays as sidetone and vibration only, never to serial, MIDI,
+   * WinKeyer or RTDB (Send practice's "Hear it first").
    */
-  startReplay(text: string): void {
+  startReplay(text: string, localOnly = false): void {
     const clean = text.replace(/\s+/g, ' ').trim();
     if (!clean || this.isSending() || this.buffer().length > this.sentIndex()) return;
     this.replayMode.set(true);
+    this.replayLocalOnly = localOnly;
     this.buffer.set(clean.toUpperCase());
     this.sentIndex.set(0);
     this.forwardedIndex = -1;
@@ -210,6 +215,12 @@ export class MorseEncoderService {
   }
 
   // ---- internal send loop ----
+
+  /** Copy practice on "Local audio and vibration", or a replay started local-only: external outputs stay silent. */
+  private isLocalOnly(s: { encoderMode: string; practicePipeline: string }): boolean {
+    return (s.encoderMode === 'practice' && s.practicePipeline === 'local')
+      || (this.replayMode() && this.replayLocalOnly);
+  }
 
   /**
    * Extract the next token from the buffer.
@@ -247,9 +258,9 @@ export class MorseEncoderService {
 
         const es = this.settings.settings();
         const source = es.encoderSource;
-        const isPracticeLocal = es.encoderMode === 'practice' && es.practicePipeline === 'local';
+        const isPracticeLocal = this.isLocalOnly(es);
 
-        // Skip external outputs when practice mode uses local audio only. A character that was
+        // Skip external outputs when practice mode or a local-only replay uses local audio only. A character that was
         // interrupted by a pause is played again in full on resume but forwarded only once,
         // because the external outputs time and send it themselves.
         if (!isPracticeLocal && this.forwardedIndex !== idx) {
@@ -329,7 +340,7 @@ export class MorseEncoderService {
       this.elementEvent$.next({ down: true });
 
       // Play tone, pulse serial, and vibrate for the element duration
-      const isPracticeLocal = s.encoderMode === 'practice' && s.practicePipeline === 'local';
+      const isPracticeLocal = this.isLocalOnly(s);
       if (isPracticeLocal) {
         await Promise.all([
           this.audioOutput.scheduleTone(duration, source),
