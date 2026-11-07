@@ -4,6 +4,7 @@
 
 import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
+import { farnsworthProblems, sidetoneProblems } from './direction-checks';
 
 /**
  * Goal "Practice receiving Morse": content, feedback and rounds, speed,
@@ -46,7 +47,10 @@ export const PRACTICE_FLOW: WizardFlow = {
     speedStep({ encoder: true }, {
       intro: 'Practice sequences play at this speed. Slower is easier to copy while you learn.',
     }),
-    farnsworthStep({ applies: 'rx', level: 'intermediate' }),
+    farnsworthStep({
+      applies: 'rx', level: 'intermediate',
+      validate: ctx => farnsworthProblems(ctx.settings, [ctx.settings.practiceSource], 'the practice'),
+    }),
     {
       id: 'pipeline',
       level: 'expert',
@@ -65,6 +69,7 @@ export const PRACTICE_FLOW: WizardFlow = {
     },
     soundStep({
       detail: 'Practice sequences are played through it. Make sure it is on and at a comfortable volume.',
+      validate: ctx => sidetoneProblems(ctx.settings, [ctx.settings.practiceSource], 'the practice'),
     }),
   ],
 };

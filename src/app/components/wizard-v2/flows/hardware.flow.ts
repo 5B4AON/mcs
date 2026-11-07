@@ -6,6 +6,7 @@ import { any, settingIs } from '../engine/conditions';
 import { WizardFlow, WizardStep } from '../engine/flow-types';
 import { farnsworthStep, leavePracticeForced, leavePracticeStep, soundStep, speedStep } from './shared-steps';
 import { MIDI_SUPPORTED, SERIAL_SUPPORTED } from './device-support';
+import { farnsworthProblems, sidetoneProblems } from './direction-checks';
 
 /** On a device with no MIDI, WinKeyer or serial support (for example an iPhone) there is nothing to set up. */
 const HARDWARE_UNAVAILABLE = !MIDI_SUPPORTED && !SERIAL_SUPPORTED;
@@ -127,12 +128,18 @@ export const HARDWARE_FLOW: WizardFlow = {
         : ['Enable a serial mapping and assign it an exact serial port.'],
     },
     speedStep({ encoder: true }, { when: bitTimedRoute, level: 'intermediate' }),
-    farnsworthStep({ applies: 'tx', when: bitTimedRoute, level: 'intermediate' }),
+    farnsworthStep({
+      applies: 'tx', when: bitTimedRoute, level: 'intermediate',
+      validate: ctx => farnsworthProblems(ctx.settings, [ctx.settings.encoderSource], 'the text you send'),
+    }),
     soundStep({
       detail: 'The text you send is also played through it. It does not change the radio-keying routes you chose on the previous pages.',
-      validate: ctx => ctx.settings.serialEnabled || ctx.settings.winkeyerEnabled || ctx.settings.midiOutputEnabled
-        ? []
-        : ['Tick at least one radio-keying route (MIDI, WinKeyer or serial), or close the wizard.'],
+      validate: ctx => [
+        ...(ctx.settings.serialEnabled || ctx.settings.winkeyerEnabled || ctx.settings.midiOutputEnabled
+          ? []
+          : ['Tick at least one radio-keying route (MIDI, WinKeyer or serial), or close the wizard.']),
+        ...sidetoneProblems(ctx.settings, [ctx.settings.encoderSource], 'the text you send'),
+      ],
     }),
   ],
 };

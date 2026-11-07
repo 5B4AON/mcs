@@ -13,7 +13,7 @@
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
      [class.blur-revealing]="revealing" #conversationArea>
   @if (lensView) {
-    <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing"></app-fs-lens-view>
+    <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing" [inputMode]="inputMode"></app-fs-lens-view>
   } @else if (sendPracticeView && sendPractice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
       <strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>

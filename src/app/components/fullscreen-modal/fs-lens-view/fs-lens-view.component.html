@@ -32,7 +32,7 @@
       </div>
     </div>
   } @empty {
-    <div class="lens-empty">Key or type a character</div>
+    <div class="lens-empty">{{ inputMode === 'type' ? 'Type a character' : 'Key a character' }}</div>
   }
   <div class="lens-live" aria-live="polite">{{ announcement(lens.frame()) }}</div>
 </div>

@@ -58,6 +58,8 @@ export function speedStep(
 export interface FarnsworthStepOptions extends TimingStepOptions {
   /** Which Morse the goal plays, so the step can say which "Applies to" choice stretches the gaps */
   applies?: 'tx' | 'rx';
+  /** Extra checks for this goal, for example that "Applies to" covers the direction it plays */
+  validate?: WizardStep['validate'];
 }
 
 /** Standard Farnsworth step, always right after the speed step. */
@@ -74,6 +76,7 @@ export function farnsworthStep(options: FarnsworthStepOptions = {}): WizardStep 
     helpSection: options.helpSection ?? 's8-5',
     when: options.when,
     level: options.level,
+    validate: options.validate,
     items: [{ item: 'farnsworth', hint }],
   };
 }

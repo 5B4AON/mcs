@@ -54,6 +54,8 @@ import { KochRecommendation, kochRecommendation, sendKochRecommendation } from '
       margin-top: .75rem;
       font-family: system-ui, sans-serif;
       font-size: .85rem;
+      /* The full-screen text area has a huge line height; without this the button and the two lines inherit it */
+      line-height: 1.3;
       color: inherit;
     }
     .next-lesson-text {

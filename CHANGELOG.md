@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.13.0] - 2026-11-07
+
+### Added
+
+- **Teach or demonstrate Morse guide** — The Teach goal in the Setup Wizard is rebuilt from scratch. You say how comfortable you are, who the session is for (children, teenagers, adults or the public, people who know some Morse, experienced operators) and what you want to do, then answer only the few questions that session needs. There are 16 ready-made sessions in six groups: show first-timers what Morse is, show how it is sent, show how it is copied, check what learners can do, run a class activity (a conversation or a quiz with a key for each student, or students joining from their own devices) and let people take turns at a fair or in class. What is offered grows with your level and always suits the audience, and the guide opens the full screen for you. The result is one specific setup that you can apply at once or save as a preset.
+- **Run sheet** — The guide ends with a short numbered plan for the session (what to do before, during and after, and what students do on their own devices). It is shown only in the guide and has a Copy button.
+- **Rewards and picture names** — A session can add a reward word that makes the screen show a picture or message (text, an emoji or both) when someone keys or types it. New student keys start with friendly animal names. Existing emoji mappings are never changed.
+- **Speed and pauses choices** — Intermediate and Expert teachers choose the speed, the extra pauses between letters and the room size; a Novice gets good choices decided from the audience, and everything decided is listed in "What this setup will do" on the review.
+- **Direction checks in the guides** — The Type, Practice, Hardware, Key and see the text, Practice sending and online conversation guides now warn when the beep or the longer pauses are set to ignore the direction (sent or received) of the Morse the guide creates.
+
+### Changed
+
+- **Lens blur** — Text blur in Lens now blurs the big letter much more, so it cannot be read from a distance while the dots and dashes stay sharp.
+- **Lens hint** — The empty full-screen Lens says "Key a character" in Key mode and "Type a character" in Type mode.
+- **Try Morse** — Choosing Setup Wizard in the Try Morse box now dismisses the box, like Close.
+- **Guide engine** — A guide's forced settings and their review lines can be worked out from the answers, a guide can correct earlier answers when a later one narrows the choices, and the Teach goal's own wording, summary and preset name are supported. The unfinished first attempt at Teach was removed.
+
+### Fixed
+
+- **"Go to lesson" button in full screen** — The button and its advice lines no longer stretch tall because of the full screen's large line height.
+
 ## [2.12.0] - 2026-11-07
 
 ### Added
