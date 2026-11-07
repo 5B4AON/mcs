@@ -4,9 +4,10 @@
 
 import { Component, Input } from '@angular/core';
 import { PracticeService } from '../../services/practice.service';
+import { SendPracticeService } from '../../services/send-practice.service';
 import { SettingsService } from '../../services/settings.service';
 import { KOCH_LESSON_COUNT } from '../../data/koch-lessons';
-import { KochRecommendation, kochRecommendation } from '../settings-items/practice/practice-ui.utils';
+import { KochRecommendation, kochRecommendation, sendKochRecommendation } from '../settings-items/practice/practice-ui.utils';
 
 /**
  * Koch method advice under a practice result: with an accuracy above 90 % it
@@ -80,20 +81,27 @@ export class PracticeNextLessonComponent {
   /** The accuracy shown in the result (a round, or the average of a session) */
   @Input() accuracy = 0;
 
+  /** Whose Koch lesson the advice is about: Copy practice (default) or Send practice */
+  @Input() kind: 'copy' | 'send' = 'copy';
+
   readonly lessonCount = KOCH_LESSON_COUNT;
 
   constructor(
     private settings: SettingsService,
     private practice: PracticeService,
+    private sendPractice: SendPracticeService,
   ) {}
 
   /** The advice for the current accuracy, or null when there is none */
   get recommendation(): KochRecommendation | null {
-    return kochRecommendation(this.settings.settings(), this.accuracy);
+    return this.kind === 'send'
+      ? sendKochRecommendation(this.settings.settings(), this.accuracy)
+      : kochRecommendation(this.settings.settings(), this.accuracy);
   }
 
   /** Move to the lesson and return to the idle practice state */
   goTo(lesson: number): void {
-    this.practice.goToKochLesson(lesson);
+    if (this.kind === 'send') this.sendPractice.goToKochLesson(lesson);
+    else this.practice.goToKochLesson(lesson);
   }
 }

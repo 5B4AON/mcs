@@ -6,7 +6,10 @@
       <option value="enter" [selected]="s().encoderMode === 'enter'">Send on Enter</option>
       <option value="live" [selected]="s().encoderMode === 'live'">Live</option>
       @if (s().encoderMode === 'practice') {
-        <option value="practice" selected>Practice (current)</option>
+        <option value="practice" selected>Copy practice (current)</option>
+      }
+      @if (s().encoderMode === 'send-practice') {
+        <option value="send-practice" selected>Send practice (current)</option>
       }
     </select>
   </label>

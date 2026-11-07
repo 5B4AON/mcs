@@ -205,7 +205,12 @@
     <div class="decoded-parchment" [class.night]="celebrating">
       <div class="decoded-text" #decoderBox
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
-           [class.blur-revealing]="mainRevealing">@if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>@for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Type what you hear,</div><div>hit Enter to validate.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
+           [class.blur-revealing]="mainRevealing">@if (sendPracticeActive) {@if (sendPractice.sessionStage() === 'briefing') {<section class="practice-session-summary" aria-live="polite"><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>@for (line of sendPracticeUi.sendPracticeSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Key what you see.</div></section>} @else if (sendPractice.isSessionSummary()) {<section class="practice-session-summary" aria-live="polite"><strong>Send practice results</strong>@for (score of sendPractice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%@if (sendPractice.roundSpeeds()[$index]) { · ≈ {{ sendPractice.roundSpeeds()[$index] }} WPM}</div>}<div><strong>Average — {{ sendPractice.averageRoundScore() }}%</strong>@if (sendPractice.averageSpeed()) { · ≈ {{ sendPractice.averageSpeed() }} WPM}</div><app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" /></section>} @else if (sendPractice.feedback().length > 0) {<span class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
+             [class.fb-correct]="fb.result === 'correct'"
+             [class.fb-incorrect]="fb.result === 'incorrect'"
+             [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ sendPractice.accuracy() }}%</div>@if (sendPractice.keyedWpm()) {<div class="fb-accuracy">You keyed ≈ {{ sendPractice.keyedWpm() }} WPM</div>}@if (!sendPractice.isMultiRound()) {<app-practice-next-lesson kind="send" [accuracy]="sendPractice.accuracy()" />}} @else if (sendPractice.state() === 'keying') {<span class="fb-results">@for (mark of sendPractice.keyedMarks(); track $index) {<span
+             [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
+             [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</span>}} @else if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>@for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Type what you hear,</div><div>hit Enter to validate.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
@@ -214,13 +219,13 @@
       @if (celebrating) {
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }
-      @if (mainBlurMode) {
+      @if (mainBlurMode || sendPracticeActive) {
         <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"
                 [disabled]="!mainReplayAvailable"
                 (mousedown)="$event.preventDefault()"
                 (click)="onMainReplay()"
-                [title]="mainReplayStops ? 'Stop replay' : 'Replay the last line'"
-                [attr.aria-label]="mainReplayStops ? 'Stop replay' : 'Replay the last line'">
+                [title]="mainReplayStops ? (sendPracticeActive ? 'Stop the sound' : 'Stop replay') : (sendPracticeActive ? 'Hear the next character' : 'Replay the last line')"
+                [attr.aria-label]="mainReplayStops ? (sendPracticeActive ? 'Stop the sound' : 'Stop replay') : (sendPracticeActive ? 'Hear the next character' : 'Replay the last line')">
           @if (mainReplayStops) {
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
           } @else {
@@ -234,6 +239,7 @@
             </svg>
           }
         </button>
+        @if (mainBlurMode) {
         <button class="blur-reveal-btn-main" [class.revealing]="mainRevealing"
                 [disabled]="!displayBuffers.mainOutput.hasText()"
                 (mousedown)="onMainRevealStart($event)"
@@ -249,6 +255,7 @@
             <circle cx="12" cy="12" r="3"/>
           </svg>
         </button>
+        }
       }
     </div>
     @if (settings.settings().cwInputEnabled) {
@@ -298,7 +305,11 @@
     }
 
     <div class="encoder-input-row">
+      @if (sendPracticeActive) {
+        <app-send-prompt />
+      }
       <textarea #encoderInput rows="2"
+                [style.display]="sendPracticeActive ? 'none' : null"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (practice.feedbackMode() === 'typealong'
@@ -314,6 +325,18 @@
                 (input)="onEncoderInput(encoderInput)"></textarea>
     </div>
 
+    @if (sendPracticeActive) {
+      <section class="practice-guide" aria-live="polite">
+        <div><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice') }}</strong></div>
+        <div>{{ sendPracticeUi.sendPracticeSessionDescription(settings.settings()) }}. Key what you see.</div>
+        @if (!sendPractice.inputsReady()) {
+          <div>No key input is active. Pick keys in Settings → Other → Send Practice.</div>
+        }
+        @if (sendPracticeUi.sendPracticeExternalRouteNotice(settings.settings()); as routeNotice) {
+          <div>{{ routeNotice }}</div>
+        }
+      </section>
+    }
     @if (settings.settings().encoderMode === 'practice') {
       <section class="practice-guide" aria-live="polite">
         <div><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice') }}</strong></div>
@@ -333,15 +356,37 @@
         Mode:
         <span class="mode-select">
           <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
-            <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
-            <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
-            @if (settings.settings().practiceEnabled) {
-              <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Practice</option>
+            <optgroup label="Typing">
+              <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
+              <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
+            </optgroup>
+            @if (settings.settings().practiceEnabled || settings.settings().sendPracticeEnabled) {
+              <optgroup label="Practice">
+                @if (settings.settings().practiceEnabled) {
+                  <option value="practice" [selected]="settings.settings().encoderMode === 'practice'">Copy practice</option>
+                }
+                @if (settings.settings().sendPracticeEnabled) {
+                  <option value="send-practice" [selected]="settings.settings().encoderMode === 'send-practice'">Send practice</option>
+                }
+              </optgroup>
             }
           </select>
         </span>
       </label>
-      @if (settings.settings().encoderMode === 'practice') {
+      @if (sendPracticeActive) {
+        <!-- Send practice control: start, check, next -->
+        <button class="tx-icon-btn" [class.tx-ready]="sendPractice.state() !== 'keying'"
+                [class.practice-results]="sendPractice.state() === 'keying'"
+                [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
+                (click)="sendPracticeAdvance()"
+                [title]="sendPractice.actionLabel()" [attr.aria-label]="sendPractice.actionLabel()">
+          @if (sendPractice.state() === 'keying') {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+          }
+        </button>
+      } @else if (settings.settings().encoderMode === 'practice') {
         <!-- Practice control: single button like TX -->
         @if (practice.state() === 'idle') {
           <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceStartOrNext(encoderInput)"

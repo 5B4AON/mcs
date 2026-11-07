@@ -20,6 +20,8 @@ import { EncoderItemComponent } from './encoder/encoder-item.component';
 import { ENCODER_DESCRIPTOR, ENCODER_MODE_DESCRIPTOR } from './encoder/encoder-item.model';
 import { PracticeItemComponent } from './practice/practice-item.component';
 import { PRACTICE_DESCRIPTOR } from './practice/practice-item.model';
+import { SendPracticeItemComponent } from './send-practice/send-practice-item.component';
+import { SEND_PRACTICE_DESCRIPTOR } from './send-practice/send-practice-item.model';
 import { TextBlurItemComponent } from './text-blur/text-blur-item.component';
 import { TEXT_BLUR_DESCRIPTOR } from './text-blur/text-blur-item.model';
 import { ShowProsignsItemComponent } from './show-prosigns/show-prosigns-item.component';
@@ -73,6 +75,7 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
   'encoder-mode': { component: EncoderItemComponent, descriptor: ENCODER_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
   'practice': { component: PracticeItemComponent, descriptor: PRACTICE_DESCRIPTOR },
+  'send-practice': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_DESCRIPTOR },
   'text-blur': { component: TextBlurItemComponent, descriptor: TEXT_BLUR_DESCRIPTOR },
   'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },
   'prosign-actions': { component: ProsignActionsItemComponent, descriptor: PROSIGN_ACTIONS_DESCRIPTOR },

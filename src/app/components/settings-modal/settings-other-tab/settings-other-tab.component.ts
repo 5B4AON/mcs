@@ -9,6 +9,7 @@ import { ScreenSettingsCardComponent } from './screen-settings-card/screen-setti
 import { TextBlurItemComponent } from '../../settings-items/text-blur/text-blur-item.component';
 import { FarnsworthItemComponent } from '../../settings-items/farnsworth/farnsworth-item.component';
 import { PracticeItemComponent } from '../../settings-items/practice/practice-item.component';
+import { SendPracticeItemComponent } from '../../settings-items/send-practice/send-practice-item.component';
 import { ShowProsignsItemComponent } from '../../settings-items/show-prosigns/show-prosigns-item.component';
 import { ProsignActionsItemComponent } from '../../settings-items/prosign-actions/prosign-actions-item.component';
 import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.component';
@@ -29,6 +30,7 @@ import { EmojisItemComponent } from '../../settings-items/emojis/emojis-item.com
     TextBlurItemComponent,
     FarnsworthItemComponent,
     PracticeItemComponent,
+    SendPracticeItemComponent,
     ShowProsignsItemComponent,
     ProsignActionsItemComponent,
     EmojisItemComponent,

@@ -24,18 +24,27 @@
     <td>Casual QSOs, real-time ragchew</td>
   </tr>
   <tr>
-    <td><strong>Practice</strong></td>
+    <td><strong>Copy practice</strong></td>
     <td>The app generates a random sequence, plays it as Morse, and you
         type what you hear. After the round, per-character feedback shows
         your accuracy.</td>
     <td>CW copy training, building head-copy speed</td>
   </tr>
+  <tr>
+    <td><strong>Send practice</strong></td>
+    <td>The app shows a random sequence as text and you key it with a key,
+        paddle or other key input. After the round, per-character feedback
+        shows your accuracy and your keying speed.</td>
+    <td>Learning to send, building clean keying</td>
+  </tr>
 </table>
 
 <p>
-  Practice appears in the encoder mode dropdown when the
-  <strong>Copy Practice</strong> card is enabled in Settings &rarr; Other.
+  The practice modes appear in the mode dropdown, under <em>Practice</em>,
+  when the <strong>Copy Practice</strong> or <strong>Send Practice</strong>
+  card is enabled in Settings &rarr; Other.
   See <a href="#" class="help-link" data-section="s3-5">&sect;&nbsp;3.5</a>
+  and <a href="#" class="help-link" data-section="s3-6">&sect;&nbsp;3.6</a>
   for full details.
 </p>
 
@@ -180,9 +189,10 @@
 <p>
   Copy Practice turns Morse Code Studio into a self-study CW trainer.
   Enable the feature in <strong>Settings &rarr; Other &rarr; Copy
-  Practice</strong>, then select <strong>Practice</strong> from the
-  encoder mode dropdown on the main screen or in the full-screen
-  conversation toolbar.
+  Practice</strong>, then select <strong>Copy practice</strong> from the
+  Mode dropdown (under <em>Practice</em>) on the main screen. In the
+  full-screen view the Key/Type toggle is locked to <strong>Type</strong>
+  while Copy practice is the mode, because you type what you hear.
 </p>
 
 <h3>How It Works</h3>
@@ -464,5 +474,155 @@
     encoder and press Play. Type each callsign as you hear it. When the
     sequence finishes, press the validate button to see which characters
     you got right.
+  </p>
+</div>
+
+<!-- 3.6 Send Practice -->
+<h2 id="s3-6">3.6 &nbsp;Send Practice</h2>
+
+<p>
+  Send Practice is the mirror of Copy Practice. Instead of hearing Morse and
+  typing it, the app <strong>shows</strong> a text and you <strong>key</strong>
+  it with a straight key, a paddle or any other key input you choose. Enable it
+  in <strong>Settings &rarr; Other &rarr; Send Practice</strong>, then pick
+  <strong>Send practice</strong> in the Mode dropdown (under
+  <em>Practice</em>) on the main screen. In the full-screen view it works in
+  <strong>Key</strong> mode, with the same prompt box pinned at the top above
+  the output. The Key/Type toggle is locked to Key while Send practice is the
+  mode, and to Type while Copy practice is (your own choice comes back
+  afterwards).
+</p>
+
+<h3>How a Round Works</h3>
+<ol>
+  <li>Press <strong>Start</strong>, or just key a character. A prompt card takes
+      the place of the typing box and shows the text to key. The character to
+      key next is shown <span style="color:#4aa3ff">bigger and blue</span>.</li>
+  <li>Key the text. Each character you key appears in the output area as it
+      is decoded, and the dots and dashes in progress show as usual.</li>
+  <li>The round ends by itself (see <em>Check</em> below), or you press the
+      check button (&#10003;). Characters appear
+      <span style="color:#4caf50">correct</span>,
+      <span style="color:#f44336">incorrect</span> or
+      <span style="color:#888">missed</span>, with the accuracy percentage and
+      <strong>You keyed &asymp; N WPM</strong>, the average speed of the
+      characters you keyed.</li>
+  <li>Press the button again, or simply key the next character, for the next
+      text. With the Koch method, <strong>Go to lesson</strong> starts the first
+      round of the next lesson at once.</li>
+</ol>
+<p>
+  The first picked key that produces a character owns the round, so two keys
+  cannot mix their characters. An unreadable character counts as incorrect.
+  Word gaps are never scored, so you do not have to time them.
+</p>
+
+<h3>Mistakes Need No Deleting</h3>
+<p>
+  Everyone slips, and most people simply key the character again. Send
+  Practice follows where you are in the text by lining up everything you have
+  keyed with the whole prompt after each character: a wrong, repeated or
+  skipped character is noticed, and the keying after it still counts. So you
+  can leave a mistake in and carry on, or key a character again to put it
+  right. When you have reached the end, or keyed as many characters as the
+  prompt has, with mistakes left in, the round waits about three and a half
+  seconds for corrections, and every new character restarts that wait, before
+  it ends by itself. When it is clear you have finished (the last character
+  you keyed is the prompt's last one, keyed right) it waits only one second.
+</p>
+
+<h3>Erasing a Mistake</h3>
+<p>
+  Key the error prosign <strong>&lt;HH&gt;</strong> (eight dits) to erase the last
+  character you keyed, as operators do on the air. It erases one character
+  and never appears in the result.
+</p>
+
+<h3>Settings</h3>
+<table>
+  <tr><th>Setting</th><th>What it does</th></tr>
+  <tr>
+    <td><strong>Content</strong>, Count, Group size, pool, word lengths</td>
+    <td>The same choices as Copy Practice (random characters, words,
+        callsigns, Koch method). Send Practice keeps its own settings and its
+        own Koch lesson, so the two practices progress independently. Choosing
+        Koch method sets 5 groups of 5 characters (Copy Practice uses 10 groups).</td>
+  </tr>
+  <tr>
+    <td><strong>Check</strong></td>
+    <td><em>As you go</em> (default) turns the prompt
+        <span style="color:#4caf50">green</span> where you keyed it right and
+        <span style="color:#f44336">red</span> where you slipped, and ends the
+        round when everything is right. <em>At the end (Auto)</em> shows no
+        marks while you key and ends the round by itself once you reach the
+        end. <em>At the end (Manual)</em> ends only when you press Check. In
+        every mode the next character to key is shown bigger and blue.</td>
+  </tr>
+  <tr>
+    <td><strong>Rounds</strong></td>
+    <td>1 to 5. With more than one round you read a short briefing first,
+        get a score and speed for each round, and a summary with the
+        averages at the end. Nothing is saved.</td>
+  </tr>
+  <tr>
+    <td><strong>Pattern hint</strong></td>
+    <td>On by default: shows the dots and dashes of the character you are
+        about to key under the prompt. Turn it off as you learn the
+        characters.</td>
+  </tr>
+  <tr>
+    <td><strong>Keys used for Send Practice</strong></td>
+    <td>Which inputs count: keyboard straight keys and paddles, MIDI and
+        serial keys or paddles, the mouse keyer, the touch keyer and sprite
+        key, and a straight key via microphone. Hardware keys count as local
+        keying. Keying from RTDB never counts, and the CW tone detector is not
+        offered because it listens to the air rather than your key.</td>
+  </tr>
+  <tr>
+    <td><strong>Pipeline</strong></td>
+    <td><em>This device only</em> (default) keeps your keying on the sidetone
+        and vibration. <em>Full pipeline</em> also sends it to your
+        switched-on outputs.</td>
+  </tr>
+</table>
+
+<h3>Hear It First</h3>
+<p>
+  The replay button beside the output area plays the character you are about
+  to key (the bigger blue one) as Morse, so you learn how it sounds. It plays
+  on this device only, never to serial, MIDI, WinKeyer or RTDB, whatever the
+  pipeline.
+</p>
+
+<h3>Safety: Nothing Leaves This Device by Default</h3>
+<p>
+  With <em>This device only</em>, keying during Send Practice does not drive
+  the serial, MIDI, WinKeyer or RTDB outputs, even if they are switched on.
+  Choose <em>Full pipeline</em> only when you mean to send your keying to
+  them. <strong>A key wired directly to a transmitter will still transmit.</strong>
+  The app cannot stop that, so use a dummy load or disconnect the radio while
+  you practise.
+</p>
+
+<h3>Tips for Straight Keys</h3>
+<ul>
+  <li>Paddles key with perfect timing, so they decode reliably from the first
+      character. A straight key is judged by your own timing, which the
+      decoder adapts to over the first few characters, so the first
+      characters of a session may be misread.</li>
+  <li>A pause of about two and a half dots ends a character. If your letters
+      split in two, shorten the pauses between your dots and dashes.</li>
+  <li>If the card says <em>No key input is active</em>, pick at least one key
+      that is switched on in Settings &rarr; Other &rarr; Send Practice.</li>
+</ul>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Learn Your First Two Characters</div>
+  <p>
+    Enable Send Practice in Settings &rarr; Other. Set Content to
+    <em>Koch method</em> with Lesson 1 (K and M), Count to 1 and Group size to
+    1. Choose <em>Send practice</em> in the Mode dropdown, press Start, and key
+    the character you see with the space bar (straight key) or the paddle keys.
+    Score above 90&nbsp;% and the result offers lesson 2.
   </p>
 </div>

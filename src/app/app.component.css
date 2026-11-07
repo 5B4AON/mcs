@@ -1040,6 +1040,12 @@
   background: #222;
   color: #ddd;
 }
+.mode-select select optgroup {
+  background: #222;
+  color: #8cf;
+  font-style: normal;
+  font-weight: 700;
+}
 .mode-select select option:checked {
   background: #3a4858;
   color: #fff;
@@ -1380,19 +1386,19 @@ select { max-width: 300px; }
 /* Phone widths: keep Mode, TX, Clear and Full screen on one row (360 px viewport) */
 @media (max-width: 480px) {
   .encoder-actions {
-    gap: 8px;
+    gap: 6px;
     justify-content: space-between;
   }
   .encoder-mode-label {
-    gap: .5rem;
+    gap: .35rem;
     font-size: .8rem;
   }
   .mode-select::after {
-    right: .65rem;
+    right: .55rem;
   }
   .mode-select select {
     font-size: .8rem;
-    padding: .4rem 1.5rem .4rem .7rem;
+    padding: .4rem 1.3rem .4rem .55rem;
   }
   .encoder-actions .action-right {
     margin-left: 0;

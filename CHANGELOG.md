@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.11.0] - 2026-11-07
+
+### Added
+
+- **Send Practice** — A new card in Settings → Other, the mirror of Copy Practice. The app shows random characters, words, callsigns or a Koch lesson (with its own lesson setting) and you key them with any key input you pick: keyboard straight keys and paddles, MIDI or serial keys and paddles, the mouse, touch and sprite keys, or a straight key via the microphone. Keyed characters are scored with the same colour-coded feedback and accuracy as Copy Practice, with your keying speed in WPM. The prompt turns green and red as you key (the default "As you go"), or is checked at the end automatically or with the Check button; the next character to key is shown bigger and blue in every mode. Mistakes need no deleting: after every character the keying is lined up with the whole prompt, so repeats, wrong and skipped characters are tolerated, and a round that is nearly done waits about 3.5 seconds for corrections before it ends. After a round, the next key you press starts the next one, and so does the first key you press when no round is showing; "Go to lesson" in the Koch advice starts the first round of that lesson at once. When it is clear you have finished, the round ends after 1 second instead of 3.5. A pattern hint for the current character (on by default), 1–5 round sessions with averages, and the Koch "go to the next lesson" advice. **Hear it first** plays the character you are about to key on this device only, and keying `<HH>` erases the last keyed character. By default keying stays on this device: nothing reaches the serial, MIDI, WinKeyer or RTDB outputs unless you choose the Full pipeline. It works on the main screen and in the full-screen Key mode, and Help has a new section 3.6.
+
+### Changed
+
+- **Mode select on phones** — The Mode select, Start, Clear and full-screen buttons stay on one row at 360 px wide even with the grouped options.
+- **Full screen locked in the practice modes** — While Send practice is the mode the Key/Type toggle is disabled and the view stays in Key mode; while Copy practice is the mode it stays in Type mode. Your own choice is restored afterwards.
+- **Send Practice Koch count** — Choosing the Koch method in Send Practice sets 5 groups of 5 characters (Copy Practice keeps 10).
+- **Scrolling prompt** — The Send Practice prompt is a single line that slides smoothly like a news ticker, always keeping the character to key next in the middle of the box (directly above the pattern hint), so a long prompt never grows the box or pushes the straight-key sprite down. The full-screen view uses the same prompt box, pinned at the top above the output area.
+- **Mode select grouped** — The Mode select lists Send on Enter and Live under "Typing", and Copy practice and Send practice under "Practice". The former "Practice" option is now called "Copy practice".
+- **Practice code shared** — Copy Practice's sequence generation and scoring moved into shared helpers used by both practices. Copy Practice behaves exactly as before.
+
 ## [2.10.4] - 2026-11-06
 
 ### Added

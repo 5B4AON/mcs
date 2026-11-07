@@ -14,6 +14,43 @@
      [class.blur-revealing]="revealing" #conversationArea>
   @if (lensView) {
     <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing"></app-fs-lens-view>
+  } @else if (sendPracticeView && sendPractice.sessionStage() === 'briefing') {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>
+      @for (line of sendPracticeUi.sendPracticeSessionLines(settings.settings()); track $index) {
+        <div>{{ line }}</div>
+      }
+      <div>Key what you see.</div>
+    </section>
+  } @else if (sendPracticeView && sendPractice.isSessionSummary()) {
+    <section class="practice-session-summary" aria-live="polite">
+      <strong>Send practice results</strong>
+      @for (score of sendPractice.roundScores(); track $index) {
+        <div>Round {{ $index + 1 }} — {{ score }}%@if (sendPractice.roundSpeeds()[$index]) { · ≈ {{ sendPractice.roundSpeeds()[$index] }} WPM}</div>
+      }
+      <div><strong>Average — {{ sendPractice.averageRoundScore() }}%</strong>@if (sendPractice.averageSpeed()) { · ≈ {{ sendPractice.averageSpeed() }} WPM}</div>
+      <app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" />
+    </section>
+  } @else if (sendPracticeView && sendPractice.feedback().length > 0) {
+    <div class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
+      [class.fb-correct]="fb.result === 'correct'"
+      [class.fb-incorrect]="fb.result === 'incorrect'"
+      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</div>
+    <div class="fb-accuracy">Accuracy: {{ sendPractice.accuracy() }}%</div>
+    @if (sendPractice.keyedWpm()) {
+      <div class="fb-accuracy">You keyed ≈ {{ sendPractice.keyedWpm() }} WPM</div>
+    }
+    @if (!sendPractice.isMultiRound()) {
+      <app-practice-next-lesson kind="send" [accuracy]="sendPractice.accuracy()" />
+    }
+  } @else if (sendPracticeView) {
+    <!-- The prompt itself is pinned above this area (app-send-prompt); here is what was keyed -->
+    @if (sendPractice.state() === 'keying') {
+      <div class="fs-line" [style.color]="settings.modalDisplay().txForeground">@for (mark of sendPractice.keyedMarks(); track $index) {<span
+        [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
+        [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</div>
+    }
+    <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>}</div>
   } @else if (practiceView && practice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
       <strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>
@@ -129,7 +166,36 @@
       </svg>
     </button>
   }
-  @if (practiceView) {
+  @if (sendPracticeView) {
+    <button class="fs-float-btn fs-float-ghost" [class.playing]="sendPractice.promptPlaying()"
+            [disabled]="sendPractice.state() !== 'keying' || sendPractice.hintChar() === ''"
+            (mousedown)="$event.preventDefault()"
+            (click)="sendPracticePromptAudio()"
+            [title]="sendPractice.promptPlaying() ? 'Stop the sound' : 'Hear the next character'"
+            [attr.aria-label]="sendPractice.promptPlaying() ? 'Stop the sound' : 'Hear the next character'">
+      @if (sendPractice.promptPlaying()) {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      } @else {
+        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <g transform="translate(0.25 0.9)">
+            <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
+            <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
+            <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
+          </g>
+        </svg>
+      }
+    </button>
+    <button class="fs-float-btn fs-float-play" (click)="sendPracticeAction()"
+            [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
+            [attr.aria-label]="sendPractice.actionLabel()" [title]="sendPractice.actionLabel()">
+      @if (sendPractice.state() === 'keying') {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      } @else {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      }
+    </button>
+  } @else if (practiceView) {
     <button class="fs-float-btn fs-float-play" (click)="practiceAction()"
             [attr.aria-label]="practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
