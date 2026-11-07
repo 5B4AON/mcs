@@ -13,12 +13,14 @@
     }
   </span>
 
-  <div class="cw-hint">
-    Plays letters from a shared channel. Needs internet.
-    <app-help-link-button section="s10-3" label="Help: Firebase input" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Plays letters from a shared channel. Needs internet.
+      <app-help-link-button section="s10-3" label="Help: Firebase input" />
+    </div>
+  }
 
-  @if (mode === 'embedded' && !forceEnabled) {
+  @if ((part === 'all' || part === 'connect') && mode === 'embedded' && !forceEnabled) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbInputEnabled"
              (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
@@ -34,24 +36,27 @@
   }
 
   @if (mode === 'card' || forceEnabled || s().rtdbInputEnabled) {
-    @if (!rtdbService.isOnline()) {
+    @if ((part === 'all' || part === 'connect') && !rtdbService.isOnline()) {
       <div class="conflict-warning">
         You are currently offline. Firebase Realtime Database requires an internet connection.
       </div>
     }
 
-    @if (forceSource) {
-      <p class="cw-hint">This guide receives remote Morse as RX.</p>
-    } @else {
-      <label>Used for:
-        <select [value]="s().rtdbInputSource" (change)="onSourceChange($event)">
-          <option value="rx">RX &mdash; received morse</option>
-          <option value="tx">TX &mdash; transmitted morse</option>
-        </select>
-        <app-help-link-button section="s5-1" label="Help: RX and TX" />
-      </label>
+    @if (part === 'all' || part === 'play') {
+      @if (forceSource) {
+        <p class="cw-hint">This guide receives remote Morse as RX.</p>
+      } @else {
+        <label>Used for:
+          <select [value]="s().rtdbInputSource" (change)="onSourceChange($event)">
+            <option value="rx">RX &mdash; received morse</option>
+            <option value="tx">TX &mdash; transmitted morse</option>
+          </select>
+          <app-help-link-button section="s5-1" label="Help: RX and TX" />
+        </label>
+      }
     }
 
+    @if (part === 'all' || part === 'connect') {
     <label [class.field-invalid]="!s().rtdbInputChannelName.trim()">Channel Name<span class="required-mark">*</span>:
       <input type="text" [value]="s().rtdbInputChannelName"
              (input)="onChannelChange('rtdbInputChannelName', $event)"
@@ -71,16 +76,22 @@
       Anyone with these can join. Never use a real password.
       <app-help-link-button section="s10-2" label="Help: Firebase channel privacy" />
     </div>
+    }
 
+    @if (part === 'all' || part === 'play') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbInputOverrideWpm"
              (change)="onBoolChange('rtdbInputOverrideWpm', $event)">
       Override remote WPM with local encoder WPM
     </label>
     <div class="cw-hint">Plays at your own speed, not the sender's.</div>
+    }
 
-    <div class="card-section-divider"></div>
+    @if (part === 'all') {
+      <div class="card-section-divider"></div>
+    }
 
+    @if (part === 'all' || part === 'names') {
     <label>Override Name:
       <input type="text" [value]="s().rtdbInputName"
              (input)="onOverrideNameChange($event)"
@@ -102,12 +113,13 @@
       </div>
     </label>
     <div class="cw-hint">Replaces the sender's colour. Leave empty to keep it.</div>
+    }
 
-    @if (rtdbService.lastError()) {
+    @if ((part === 'all' || part === 'connect') && rtdbService.lastError()) {
       <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
     }
 
-    @if (scope.isLive) {
+    @if ((part === 'all' || part === 'connect') && scope.isLive) {
       <div class="serial-port-row">
         @if (rtdbService.inputListening()) {
           <span class="serial-status connected">&#x2714; Listening</span>

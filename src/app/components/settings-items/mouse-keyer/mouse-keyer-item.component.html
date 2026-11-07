@@ -6,15 +6,18 @@
     <span class="source-badge" [class.source-rx]="(forceSource ?? s().mouseKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().mouseKeyerSource) === 'tx'">{{ (forceSource ?? s().mouseKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+@if (part === 'all') {
   <div class="keyer-hint">
     Clicks key Morse in the decoder area and in full-screen Key mode.
     <app-help-link-button section="s4-2" label="Help: mouse keyer" />
   </div>
+}
 
-@if (forceEnabled) {
+@if ((part === 'all' || part === 'buttons') && forceEnabled) {
   <p class="keyer-hint">This guide enables mouse keying.</p>
 }
 
+@if (part === 'all' || part === 'buttons') {
 @if (forceSource) {
   <p class="keyer-hint">Mouse keying sends Morse (TX).</p>
 } @else {
@@ -60,7 +63,9 @@
 @if (mouseActionConflict()) {
   <div class="conflict-warning">{{ mouseActionConflict() }}</div>
 }
+}
 
+@if (part === 'all' || part === 'paddle') {
 <label>
   <input type="checkbox" [checked]="s().mouseReversePaddles"
          (change)="onBoolChange('mouseReversePaddles', $event)">
@@ -76,9 +81,13 @@
   </select>
   <app-help-link-button section="paddle-modes" />
 </label>
+}
 
+@if (part === 'all') {
 <div class="card-section-divider"></div>
+}
 
+@if (part === 'all' || part === 'identity') {
 <label>Name:
   <input type="text" [value]="s().mouseKeyerName"
          (input)="onSettingChange('mouseKeyerName', $event)"
@@ -100,4 +109,5 @@
   </div>
 </label>
 <div class="keyer-hint">Optional. Colours this input's text.</div>
+}
 </app-item-shell>

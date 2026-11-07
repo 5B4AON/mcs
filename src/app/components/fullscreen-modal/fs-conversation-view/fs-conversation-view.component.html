@@ -32,10 +32,10 @@
       <app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" />
     </section>
   } @else if (sendPracticeView && sendPractice.feedback().length > 0) {
-    <div class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
+    <div class="fb-results">@for (word of sendResultWords(); track $index) {<span class="fs-word">@for (fb of word.items; track $index) {<span
       [class.fb-correct]="fb.result === 'correct'"
       [class.fb-incorrect]="fb.result === 'incorrect'"
-      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</div>
+      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref }}</span>}</span>@if (word.space) {&ngsp;}}</div>
     <div class="fb-accuracy">Accuracy: {{ sendPractice.accuracy() }}%</div>
     @if (sendPractice.keyedWpm()) {
       <div class="fb-accuracy">You keyed ≈ {{ sendPractice.keyedWpm() }} WPM</div>
@@ -46,9 +46,9 @@
   } @else if (sendPracticeView) {
     <!-- The prompt itself is pinned above this area (app-send-prompt); here is what was keyed -->
     @if (sendPractice.state() === 'keying') {
-      <div class="fs-line" [style.color]="settings.modalDisplay().txForeground">@for (mark of sendPractice.keyedMarks(); track $index) {<span
+      <div class="fs-line" [style.color]="settings.modalDisplay().txForeground">@for (word of sendKeyedWords(); track $index) {<span class="fs-word">@for (mark of word.items; track $index) {<span
         [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
-        [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</div>
+        [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char }}</span>}</span>@if (word.space) {&ngsp;}}</div>
     }
     <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>}</div>
   } @else if (practiceView && practice.sessionStage() === 'briefing') {

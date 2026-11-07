@@ -13,12 +13,14 @@
     }
   </span>
 
-  <div class="cw-hint">
-    Sends the letters you decode to a shared channel. Needs internet.
-    <app-help-link-button section="s10-4" label="Help: Firebase output" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Sends the letters you decode to a shared channel. Needs internet.
+      <app-help-link-button section="s10-4" label="Help: Firebase output" />
+    </div>
+  }
 
-  @if (mode === 'embedded' && !forceEnabled) {
+  @if ((part === 'all' || part === 'connect') && mode === 'embedded' && !forceEnabled) {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputEnabled"
              (change)="onEnabledChange($any($event.target).checked, $any($event.target))">
@@ -34,25 +36,28 @@
   }
 
   @if (mode === 'card' || forceEnabled || s().rtdbOutputEnabled) {
-    @if (forceForward) {
-      <p class="cw-hint">This guide shares both received and sent Morse.</p>
-    } @else {
-      <label>Forward:
-        <select [value]="s().rtdbOutputForward" (change)="onForwardChange($event)">
-          <option value="rx" [selected]="s().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
-          <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
-          <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
-        </select>
-        <app-help-link-button section="s5-1" label="Help: RX and TX" />
-      </label>
+    @if (part === 'all' || part === 'send') {
+      @if (forceForward) {
+        <p class="cw-hint">This guide shares both received and sent Morse.</p>
+      } @else {
+        <label>Forward:
+          <select [value]="s().rtdbOutputForward" (change)="onForwardChange($event)">
+            <option value="rx" [selected]="s().rtdbOutputForward === 'rx'">RX only &mdash; received morse</option>
+            <option value="tx" [selected]="s().rtdbOutputForward === 'tx'">TX only &mdash; transmitted morse</option>
+            <option value="both" [selected]="s().rtdbOutputForward === 'both'">Both RX and TX</option>
+          </select>
+          <app-help-link-button section="s5-1" label="Help: RX and TX" />
+        </label>
+      }
     }
 
-    @if (!rtdbService.isOnline()) {
+    @if ((part === 'all' || part === 'connect') && !rtdbService.isOnline()) {
       <div class="conflict-warning">
         You are currently offline. Firebase Realtime Database requires an internet connection.
       </div>
     }
 
+    @if (part === 'all' || part === 'connect') {
     <label [class.field-invalid]="!(sharedChannel ? s().rtdbInputChannelName : s().rtdbOutputChannelName).trim()">Channel Name<span class="required-mark">*</span>:
       <input type="text" [value]="sharedChannel ? s().rtdbInputChannelName : s().rtdbOutputChannelName"
              (input)="sharedChannel ? onSharedChannelChange('rtdbInputChannelName', $event) : onTextChange('rtdbOutputChannelName', $event)"
@@ -71,7 +76,9 @@
       Anyone with these can join. Never use a real password.
       <app-help-link-button section="s10-2" label="Help: Firebase channel privacy" />
     </div>
+    }
 
+    @if (part === 'all' || part === 'identity') {
     <label [class.field-invalid]="!s().rtdbOutputName.trim() && !suggestedName.trim()">Name@if (!suggestedName) {<span class="required-mark">*</span>}:
       <input type="text" [value]="s().rtdbOutputName"
              (input)="onTextChange('rtdbOutputName', $event)"
@@ -108,7 +115,9 @@
       Always use this color (override input-specific colors)
     </label>
     <div class="cw-hint">Off: an input's own colour is used first. This colour fills in when it has none.</div>
+    }
 
+    @if (part === 'all' || part === 'relay') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbAllowInputRelay && !isSameChannel()"
              [disabled]="isSameChannel()"
@@ -132,12 +141,13 @@
       </label>
       <div class="cw-hint">Sends only relayed Morse. Everything else is held back.</div>
     }
+    }
 
-    @if (rtdbService.lastError()) {
+    @if ((part === 'all' || part === 'connect') && rtdbService.lastError()) {
       <div class="conflict-warning">{{ rtdbService.lastError() }}</div>
     }
 
-    @if (scope.isLive) {
+    @if ((part === 'all' || part === 'connect') && scope.isLive) {
       <div class="serial-port-row">
         @if (rtdbService.outputActive()) {
           <span class="serial-status connected">&#x2714; Active</span>

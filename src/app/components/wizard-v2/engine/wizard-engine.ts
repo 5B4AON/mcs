@@ -3,12 +3,13 @@
  */
 
 import { Signal, computed, signal } from '@angular/core';
-import { AppSettings } from '../../../services/settings.service';
+import { AppSettings, DEFAULT_SETTINGS } from '../../../services/settings.service';
 import { findChannelConflicts } from '../../../services/audio-channel-conflicts';
 import { ExternalRouteChange, compareExternalRoutes } from '../../../services/output-change-checker';
 import { ItemDescriptor, ItemReviewLine } from '../../settings-items/item-descriptor';
 import { DraftSettingsScope } from '../../settings-items/draft-settings-scope';
-import { ConditionContext, ForcedSetting, StepPage, WizardAnswers, WizardFlow, WizardStep } from './flow-types';
+import { ConditionContext, ForcedSetting, StepPage, StepQuestion, WizardAnswers, WizardFlow, WizardLevel, WizardStep } from './flow-types';
+import { LEVEL_QUESTION_ID, LEVEL_STEP, isWizardLevel, visibleAtLevel } from './levels';
 import { MappingKind } from '../../settings-items/mapping/mapping-registry';
 
 /** Finds an item's descriptor by registry id (see `item-registry.ts`). */
@@ -25,6 +26,8 @@ export interface StepReview {
 
 /** Everything the Review step shows. */
 export interface FlowReview {
+  /** Steps that were left out because of the chosen level (and would otherwise be shown) */
+  skippedByLevel: WizardStep[];
   /** Changed settings, grouped by the step that asked about them */
   steps: StepReview[];
   /** Settings the goal always sets, when they differ from now */
@@ -58,6 +61,21 @@ export class WizardEngine {
   /** Defaults of every question in the flow */
   private readonly defaults: Record<string, unknown> = {};
 
+  /** Settings the level suggested, so changing the level can take them back */
+  private seeded: Partial<AppSettings> = {};
+
+  /** A preset was loaded into the draft: the user's chosen values win over the level's suggestions from then on */
+  private presetLoaded = false;
+
+  /** Every step of the flow, with the level question first when the goal has one */
+  private readonly allSteps: WizardStep[];
+
+  /** The level chosen on the first step (Novice when the goal has none) */
+  readonly level: Signal<WizardLevel>;
+
+  /** Steps skipped only because of the level */
+  readonly skippedByLevel: Signal<WizardStep[]>;
+
   /** Steps currently shown: those whose condition holds */
   readonly steps: Signal<WizardStep[]>;
 
@@ -74,16 +92,25 @@ export class WizardEngine {
     readonly scope: DraftSettingsScope,
     private readonly descriptorFor: ItemDescriptorLookup,
     private readonly kindFor: MappingKindLookup = id => { throw new Error(`No mapping kinds: ${id}`); },
+    initialLevel: WizardLevel = 'novice',
   ) {
-    for (const step of flow.steps) {
+    this.allSteps = flow.levels ? [LEVEL_STEP, ...flow.steps] : flow.steps;
+    const startLevel = flow.levels ? initialLevel : 'novice';
+    for (const step of this.allSteps) {
       for (const q of step.questions ?? []) {
-        this.defaults[q.id] = structuredClone(q.defaultFrom ? q.defaultFrom(scope.value()) : q.default);
+        this.defaults[q.id] = structuredClone(q.id === LEVEL_QUESTION_ID ? startLevel : this.defaultOf(q, startLevel));
       }
     }
     this.answerState.set(structuredClone(this.defaults));
+    this.level = computed(() => {
+      const chosen = this.answerState()[LEVEL_QUESTION_ID];
+      return flow.levels && isWizardLevel(chosen) ? chosen : 'novice';
+    });
+    this.skippedByLevel = computed(() => flow.steps
+      .filter(step => !visibleAtLevel(step.level, this.level()) && (!step.when || step.when(this.context()))));
 
-    this.steps = computed(() => flow.steps
-      .filter(step => !step.when || step.when(this.context()))
+    this.steps = computed(() => this.allSteps
+      .filter(step => visibleAtLevel(step.level, this.level()) && (!step.when || step.when(this.context())))
       .flatMap(step => this.expand(step)));
     this.step = computed(() => {
       const shown = this.steps();
@@ -99,12 +126,56 @@ export class WizardEngine {
       const id = current.page?.kind === 'mapping' ? `${current.page.baseId}#list` : current.id;
       return this.steps().findIndex(step => step.id === id);
     });
-    this.currentId.set(flow.steps[0]?.id ?? '');
+    this.currentId.set(this.allSteps[0]?.id ?? '');
   }
 
   /** What conditions see: the draft and the answers. */
   private context(): ConditionContext {
-    return { settings: this.scope.value(), answers: this.answerState() };
+    return { settings: this.scope.value(), answers: this.answerState(), level: this.level() };
+  }
+
+  /** Start value of a question: from the settings, else the level's, else its plain default. */
+  private defaultOf(q: StepQuestion, level: WizardLevel): unknown {
+    const fromSettings = q.defaultFrom?.(this.scope.value());
+    return fromSettings !== undefined ? fromSettings : q.defaultByLevel?.[level] ?? q.default;
+  }
+
+  /**
+   * Called when the user leaves the level step: puts the level's suggested
+   * settings and answer defaults in place. Settings are suggested only where
+   * they still have the app's factory value, so a value the user chose earlier
+   * is kept; what an earlier choice of level suggested is taken back first.
+   * Once a preset has been loaded, its values take precedence and the level
+   * suggests no settings at all.
+   */
+  commitLevel(): void {
+    const level = this.level();
+    const base = this.scope.base();
+    const current = this.scope.value();
+    if (!this.presetLoaded) {
+      const retract: Record<string, unknown> = {};
+      for (const key of Object.keys(this.seeded) as (keyof AppSettings)[]) {
+        if (sameJson(current[key], this.seeded[key])) retract[key] = base[key];
+      }
+      const suggested: Partial<Record<keyof AppSettings, unknown>> = {};
+      for (const [key, value] of Object.entries(this.flow.levelDefaults?.[level] ?? {}) as [keyof AppSettings, unknown][]) {
+        if (sameJson(base[key], DEFAULT_SETTINGS[key])) suggested[key] = value;
+      }
+      this.seeded = suggested as Partial<AppSettings>;
+      this.scope.update({ ...retract, ...suggested } as Partial<AppSettings>);
+    }
+
+    const answers = { ...this.answerState() };
+    for (const step of this.flow.steps) {
+      for (const q of step.questions ?? []) {
+        if (!q.defaultByLevel) continue;
+        const next = structuredClone(this.defaultOf(q, level));
+        // An answer the user has not touched follows the new level's default
+        if (sameJson(answers[q.id], this.defaults[q.id])) answers[q.id] = structuredClone(next);
+        this.defaults[q.id] = next;
+      }
+    }
+    this.answerState.set(answers);
   }
 
   /**
@@ -257,7 +328,7 @@ export class WizardEngine {
     const changed = new Set(this.scope.changedKeys());
     if (this.stepKeys(step).some(key => changed.has(key))) return true;
     const answers = this.answerState();
-    return (step.questions ?? []).some(q => !sameJson(answers[q.id], this.defaults[q.id]));
+    return (step.questions ?? []).some(q => !q.preference && !sameJson(answers[q.id], this.defaults[q.id]));
   }
 
   /** Put this step's settings and answers back to where they started; the live app is untouched. */
@@ -278,7 +349,7 @@ export class WizardEngine {
     }
     this.scope.revert(keys);
     const answers = { ...this.answerState() };
-    for (const q of step.questions ?? []) answers[q.id] = structuredClone(this.defaults[q.id]);
+    for (const q of step.questions ?? []) if (!q.preference) answers[q.id] = structuredClone(this.defaults[q.id]);
     this.answerState.set(answers);
   }
 
@@ -303,8 +374,11 @@ export class WizardEngine {
     for (const key of this.flow.derivedKeys ?? []) patch[key] = settings[key];
     this.scope.update(patch as Partial<AppSettings>);
     this.origins = {};
-    this.answerState.set(structuredClone(this.defaults));
-    this.currentId.set(this.flow.steps[0]?.id ?? '');
+    this.seeded = {};
+    this.presetLoaded = true;
+    // The level is a preference: loading a preset does not change it
+    this.answerState.set({ ...structuredClone(this.defaults), [LEVEL_QUESTION_ID]: this.answerState()[LEVEL_QUESTION_ID] });
+    this.currentId.set(this.allSteps[0]?.id ?? '');
   }
 
   // ---- Validation ----
@@ -391,7 +465,7 @@ export class WizardEngine {
     const forced = this.activeForced()
       .filter(f => !sameJson(base[f.key], f.value) && !seen.has(f.key))
       .map(f => ({ label: f.label, key: f.key }));
-    return { steps, forced, keys: Object.keys(this.applyPatch()) as (keyof AppSettings)[] };
+    return { skippedByLevel: this.skippedByLevel(), steps, forced, keys: Object.keys(this.applyPatch()) as (keyof AppSettings)[] };
   }
 
   // ---- Safety checks ----

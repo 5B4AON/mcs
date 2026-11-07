@@ -35,6 +35,9 @@ export class RtdbInputItemComponent implements OnDestroy {
 
   /** The containing flow makes receiving part of the selected goal. */
   @Input() forceEnabled = false;
+
+  /** A wizard step can show one part of the card; Settings shows all of it. */
+  @Input() part: 'all' | 'connect' | 'play' | 'names' = 'all';
   @Input() forceSource: AppSettings['rtdbInputSource'] | null = null;
 
   readonly scope = inject(SETTINGS_SCOPE);

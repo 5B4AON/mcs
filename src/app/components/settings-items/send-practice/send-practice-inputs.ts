@@ -3,6 +3,7 @@
  */
 
 import type { AppSettings } from '../../../services/settings.service';
+import { formatKeyCode } from '../mapping/keyboard-mapping-editor/keyboard-mapping-editor.component';
 
 /** Picker ids: `keyboard-straight`, `keyboard:N`, `midi:N`, `serial:N` (N = mapping index), `mouse`, `touch`, `mic`. */
 const INPUT_ID = /^(?:keyboard-straight|mouse|touch|mic|(?:keyboard|midi|serial):\d+)$/;
@@ -51,7 +52,7 @@ export function sendPracticeInputRows(s: AppSettings): SendPracticeInputRow[] {
     if (m.mode !== 'paddle') return;
     rows.push({
       id: `keyboard:${i}`, group: 'Keyboard', color: m.color,
-      label: m.name ? `Keyboard paddle: ${m.name}` : `Keyboard paddle ${i + 1}: ${m.keyCode} / ${m.dahKeyCode}`,
+      label: m.name ? `Keyboard paddle: ${m.name}` : `Keyboard paddle ${i + 1}: ${formatKeyCode(m.keyCode)} / ${formatKeyCode(m.dahKeyCode)}`,
       available: s.keyboardKeyerEnabled && m.enabled,
     });
   });
@@ -78,6 +79,25 @@ export function sendPracticeInputRows(s: AppSettings): SendPracticeInputRow[] {
 export function staleSendPracticeInputs(s: AppSettings): string[] {
   const known = new Set(sendPracticeInputRows(s).map(r => r.id));
   return s.sendPracticeInputs.filter(id => !known.has(id));
+}
+
+/**
+ * Whether a selected, switched-on key is a paddle (where the keyer makes the dits
+ * and dahs, so the keyer speed matters). A straight key is timed by the hand.
+ */
+export function sendPracticeHasPaddle(s: AppSettings): boolean {
+  const selected = new Set(s.sendPracticeInputs);
+  const isPaddle = (id: string): boolean => {
+    if (id === 'mouse') {
+      return s.mouseKeyerEnabled && [s.mouseLeftAction, s.mouseMiddleAction, s.mouseRightAction].some(a => a === 'dit' || a === 'dah');
+    }
+    if (id === 'touch') return s.touchKeyerEnabled && s.touchKeyerMode === 'paddle';
+    const mapped = /^(keyboard|midi|serial):(\d+)$/.exec(id);
+    if (!mapped) return false;
+    const m = ({ keyboard: s.keyboardInputMappings, midi: s.midiInputMappings, serial: s.serialInputMappings })[mapped[1] as 'keyboard' | 'midi' | 'serial'][+mapped[2]];
+    return m?.mode === 'paddle';
+  };
+  return sendPracticeInputRows(s).some(r => r.available && selected.has(r.id) && isPaddle(r.id));
 }
 
 /** Whether at least one selected key can currently produce keying. */

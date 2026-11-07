@@ -167,7 +167,7 @@ export interface AppSettings extends
   RtdbInputSettings, SpriteKeySettings, TextBlurSettings, ShowProsignsSettings, ProsignActionsSettings,
   FarnsworthSettings, PracticeSettings, SendPracticeSettings, EmojisSettings, CommonSettings {}
 
-const DEFAULT_SETTINGS: AppSettings = {
+export const DEFAULT_SETTINGS: AppSettings = {
   ...MIC_DEFAULTS,
   ...CW_DETECTOR_DEFAULTS,
   ...AUDIO_OUTPUT_DEFAULTS,

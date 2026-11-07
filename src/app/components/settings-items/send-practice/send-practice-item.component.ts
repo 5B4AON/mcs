@@ -34,6 +34,9 @@ export class SendPracticeItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
+  /** A wizard step can show one part of the card; Settings shows all of it. */
+  @Input() part: 'all' | 'keys' | 'content' | 'checking' | 'hint' | 'pipeline' = 'all';
+
   /** A guide that keeps send practice on this device hides the pipeline choice. */
   @Input() forceLocalPipeline = false;
 

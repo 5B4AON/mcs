@@ -17,11 +17,16 @@ import { AUDIO_OUTPUT_DESCRIPTOR } from './audio-output/audio-output-item.model'
 import { VibrationItemComponent } from './vibration/vibration-item.component';
 import { VIBRATION_DESCRIPTOR } from './vibration/vibration-item.model';
 import { EncoderItemComponent } from './encoder/encoder-item.component';
-import { ENCODER_DESCRIPTOR, ENCODER_MODE_DESCRIPTOR } from './encoder/encoder-item.model';
+import { ENCODER_DESCRIPTOR, ENCODER_IDENTITY_DESCRIPTOR, ENCODER_MODE_DESCRIPTOR, ENCODER_SOURCE_DESCRIPTOR } from './encoder/encoder-item.model';
 import { PracticeItemComponent } from './practice/practice-item.component';
-import { PRACTICE_DESCRIPTOR } from './practice/practice-item.model';
+import {
+  PRACTICE_CONTENT_DESCRIPTOR, PRACTICE_DESCRIPTOR, PRACTICE_FEEDBACK_DESCRIPTOR, PRACTICE_IDENTITY_DESCRIPTOR, PRACTICE_PIPELINE_DESCRIPTOR,
+} from './practice/practice-item.model';
 import { SendPracticeItemComponent } from './send-practice/send-practice-item.component';
-import { SEND_PRACTICE_DESCRIPTOR } from './send-practice/send-practice-item.model';
+import {
+  SEND_PRACTICE_CHECKING_DESCRIPTOR, SEND_PRACTICE_CONTENT_DESCRIPTOR, SEND_PRACTICE_DESCRIPTOR, SEND_PRACTICE_HINT_DESCRIPTOR,
+  SEND_PRACTICE_KEYS_DESCRIPTOR, SEND_PRACTICE_PIPELINE_DESCRIPTOR,
+} from './send-practice/send-practice-item.model';
 import { TextBlurItemComponent } from './text-blur/text-blur-item.component';
 import { TEXT_BLUR_DESCRIPTOR } from './text-blur/text-blur-item.model';
 import { ShowProsignsItemComponent } from './show-prosigns/show-prosigns-item.component';
@@ -31,9 +36,9 @@ import { PROSIGN_ACTIONS_DESCRIPTOR } from './prosign-actions/prosign-actions-it
 import { EmojisItemComponent } from './emojis/emojis-item.component';
 import { EMOJIS_DESCRIPTOR } from './emojis/emojis-item.model';
 import { MouseKeyerItemComponent } from './mouse-keyer/mouse-keyer-item.component';
-import { MOUSE_KEYER_DESCRIPTOR } from './mouse-keyer/mouse-keyer-item.model';
+import { MOUSE_KEYER_BUTTONS_DESCRIPTOR, MOUSE_KEYER_DESCRIPTOR, MOUSE_KEYER_IDENTITY_DESCRIPTOR, MOUSE_KEYER_PADDLE_DESCRIPTOR } from './mouse-keyer/mouse-keyer-item.model';
 import { TouchKeyerItemComponent } from './touch-keyer/touch-keyer-item.component';
-import { TOUCH_KEYER_DESCRIPTOR } from './touch-keyer/touch-keyer-item.model';
+import { TOUCH_KEYER_DESCRIPTOR, TOUCH_KEYER_IDENTITY_DESCRIPTOR, TOUCH_KEYER_MODE_DESCRIPTOR, TOUCH_KEYER_PADDLE_DESCRIPTOR } from './touch-keyer/touch-keyer-item.model';
 import { SpriteKeyItemComponent } from './sprite-key/sprite-key-item.component';
 import { SPRITE_KEY_DESCRIPTOR } from './sprite-key/sprite-key-item.model';
 import { SerialInputItemComponent } from './serial-input/serial-input-item.component';
@@ -41,17 +46,19 @@ import { SERIAL_INPUT_DESCRIPTOR } from './serial-input/serial-input-item.model'
 import { SerialOutputItemComponent } from './serial-output/serial-output-item.component';
 import { SERIAL_OUTPUT_DESCRIPTOR } from './serial-output/serial-output-item.model';
 import { WinkeyerItemComponent } from './winkeyer/winkeyer-item.component';
-import { WINKEYER_DESCRIPTOR } from './winkeyer/winkeyer-item.model';
+import { WINKEYER_CONNECT_DESCRIPTOR, WINKEYER_DESCRIPTOR, WINKEYER_PORT_DESCRIPTOR, WINKEYER_SEND_DESCRIPTOR, WINKEYER_SPEED_DESCRIPTOR } from './winkeyer/winkeyer-item.model';
 import { RtdbInputItemComponent } from './rtdb-input/rtdb-input-item.component';
-import { RTDB_INPUT_DESCRIPTOR } from './rtdb-input/rtdb-input-item.model';
+import { RTDB_INPUT_CONNECT_DESCRIPTOR, RTDB_INPUT_DESCRIPTOR, RTDB_INPUT_NAMES_DESCRIPTOR, RTDB_INPUT_PLAY_DESCRIPTOR } from './rtdb-input/rtdb-input-item.model';
 import { RtdbOutputItemComponent } from './rtdb-output/rtdb-output-item.component';
-import { RTDB_OUTPUT_DESCRIPTOR } from './rtdb-output/rtdb-output-item.model';
+import {
+  RTDB_OUTPUT_CONNECT_DESCRIPTOR, RTDB_OUTPUT_DESCRIPTOR, RTDB_OUTPUT_IDENTITY_DESCRIPTOR, RTDB_OUTPUT_RELAY_DESCRIPTOR, RTDB_OUTPUT_SEND_DESCRIPTOR,
+} from './rtdb-output/rtdb-output-item.model';
 import { MicItemComponent } from './mic/mic-item.component';
 import { MIC_DESCRIPTOR } from './mic/mic-item.model';
 import { CwDetectorItemComponent } from './cw-detector/cw-detector-item.component';
 import { CW_DETECTOR_DESCRIPTOR } from './cw-detector/cw-detector-item.model';
 import { MidiOutputItemComponent } from './midi-output/midi-output-item.component';
-import { MIDI_OUTPUT_DESCRIPTOR } from './midi-output/midi-output-item.model';
+import { MIDI_OUTPUT_CONNECT_DESCRIPTOR, MIDI_OUTPUT_DESCRIPTOR, MIDI_OUTPUT_SPEED_DESCRIPTOR } from './midi-output/midi-output-item.model';
 import { MidiInputItemComponent } from './midi-input/midi-input-item.component';
 import { MIDI_INPUT_DESCRIPTOR } from './midi-input/midi-input-item.model';
 import { KeyboardKeyerItemComponent } from './keyboard-keyer/keyboard-keyer-item.component';
@@ -73,26 +80,56 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'audio-output': { component: AudioOutputItemComponent, descriptor: AUDIO_OUTPUT_DESCRIPTOR, needsAudio: true },
   vibration: { component: VibrationItemComponent, descriptor: VIBRATION_DESCRIPTOR },
   encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
+  'encoder-source': { component: EncoderItemComponent, descriptor: ENCODER_SOURCE_DESCRIPTOR, inputs: { part: 'source' } },
+  'encoder-identity': { component: EncoderItemComponent, descriptor: ENCODER_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'encoder-mode': { component: EncoderItemComponent, descriptor: ENCODER_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
   'practice': { component: PracticeItemComponent, descriptor: PRACTICE_DESCRIPTOR },
+  'practice-content': { component: PracticeItemComponent, descriptor: PRACTICE_CONTENT_DESCRIPTOR, inputs: { part: 'content' } },
+  'practice-feedback': { component: PracticeItemComponent, descriptor: PRACTICE_FEEDBACK_DESCRIPTOR, inputs: { part: 'feedback' } },
+  'practice-pipeline': { component: PracticeItemComponent, descriptor: PRACTICE_PIPELINE_DESCRIPTOR, inputs: { part: 'pipeline' } },
+  'practice-identity': { component: PracticeItemComponent, descriptor: PRACTICE_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'send-practice': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_DESCRIPTOR },
+  'send-practice-keys': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_KEYS_DESCRIPTOR, inputs: { part: 'keys' } },
+  'send-practice-content': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_CONTENT_DESCRIPTOR, inputs: { part: 'content' } },
+  'send-practice-checking': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_CHECKING_DESCRIPTOR, inputs: { part: 'checking' } },
+  'send-practice-pipeline': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_PIPELINE_DESCRIPTOR, inputs: { part: 'pipeline' } },
+  'send-practice-hint': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_HINT_DESCRIPTOR, inputs: { part: 'hint' } },
   'text-blur': { component: TextBlurItemComponent, descriptor: TEXT_BLUR_DESCRIPTOR },
   'show-prosigns': { component: ShowProsignsItemComponent, descriptor: SHOW_PROSIGNS_DESCRIPTOR },
   'prosign-actions': { component: ProsignActionsItemComponent, descriptor: PROSIGN_ACTIONS_DESCRIPTOR },
   'emojis': { component: EmojisItemComponent, descriptor: EMOJIS_DESCRIPTOR },
   'mouse-keyer': { component: MouseKeyerItemComponent, descriptor: MOUSE_KEYER_DESCRIPTOR },
+  'mouse-keyer-buttons': { component: MouseKeyerItemComponent, descriptor: MOUSE_KEYER_BUTTONS_DESCRIPTOR, inputs: { part: 'buttons' } },
+  'mouse-keyer-paddle': { component: MouseKeyerItemComponent, descriptor: MOUSE_KEYER_PADDLE_DESCRIPTOR, inputs: { part: 'paddle' } },
+  'mouse-keyer-identity': { component: MouseKeyerItemComponent, descriptor: MOUSE_KEYER_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'touch-keyer': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_DESCRIPTOR },
+  'touch-keyer-mode': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
+  'touch-keyer-paddle': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_PADDLE_DESCRIPTOR, inputs: { part: 'paddle' } },
+  'touch-keyer-identity': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'sprite-key': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_DESCRIPTOR },
   'midi-output': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_DESCRIPTOR },
+  'midi-output-connect': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_CONNECT_DESCRIPTOR, inputs: { part: 'connect' } },
+  'midi-output-speed': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_SPEED_DESCRIPTOR, inputs: { part: 'speed' } },
   'serial-input': { component: SerialInputItemComponent, descriptor: SERIAL_INPUT_DESCRIPTOR },
   'serial-output': { component: SerialOutputItemComponent, descriptor: SERIAL_OUTPUT_DESCRIPTOR },
   'winkeyer': { component: WinkeyerItemComponent, descriptor: WINKEYER_DESCRIPTOR },
+  'winkeyer-connect': { component: WinkeyerItemComponent, descriptor: WINKEYER_CONNECT_DESCRIPTOR, inputs: { part: 'connect' } },
+  'winkeyer-port': { component: WinkeyerItemComponent, descriptor: WINKEYER_PORT_DESCRIPTOR, inputs: { part: 'port' } },
+  'winkeyer-send': { component: WinkeyerItemComponent, descriptor: WINKEYER_SEND_DESCRIPTOR, inputs: { part: 'send' } },
+  'winkeyer-speed': { component: WinkeyerItemComponent, descriptor: WINKEYER_SPEED_DESCRIPTOR, inputs: { part: 'speed' } },
   mic: { component: MicItemComponent, descriptor: MIC_DESCRIPTOR, needsAudio: true },
   'cw-detector': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, needsAudio: true },
   'cw-detector-tune': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, inputs: { tuneOnly: true }, needsAudio: true },
   'audio-feedback-guard': { component: AudioFeedbackGuardItemComponent, descriptor: AUDIO_FEEDBACK_GUARD_DESCRIPTOR },
   'rtdb-input': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_DESCRIPTOR },
+  'rtdb-input-connect': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_CONNECT_DESCRIPTOR, inputs: { part: 'connect' } },
+  'rtdb-input-play': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_PLAY_DESCRIPTOR, inputs: { part: 'play' } },
+  'rtdb-input-names': { component: RtdbInputItemComponent, descriptor: RTDB_INPUT_NAMES_DESCRIPTOR, inputs: { part: 'names' } },
   'rtdb-output': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_DESCRIPTOR },
+  'rtdb-output-connect': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_CONNECT_DESCRIPTOR, inputs: { part: 'connect' } },
+  'rtdb-output-send': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_SEND_DESCRIPTOR, inputs: { part: 'send' } },
+  'rtdb-output-identity': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
+  'rtdb-output-relay': { component: RtdbOutputItemComponent, descriptor: RTDB_OUTPUT_RELAY_DESCRIPTOR, inputs: { part: 'relay' } },
   'midi-input': { component: MidiInputItemComponent, descriptor: MIDI_INPUT_DESCRIPTOR },
   'keyboard-keyer': { component: KeyboardKeyerItemComponent, descriptor: KEYBOARD_KEYER_DESCRIPTOR },
   farnsworth: { component: FarnsworthItemComponent, descriptor: FARNSWORTH_DESCRIPTOR },

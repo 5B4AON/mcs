@@ -4,7 +4,8 @@
 
 import { KOCH_LESSON_COUNT } from '../../../data/koch-lessons';
 import { DECODER_SOURCES, DecoderSource, SettingsFieldRules } from '../../../services/settings-common';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
+import type { AppSettings } from '../../../services/settings.service';
 
 /** Copy practice content mode */
 export const PRACTICE_CONTENT_MODES = ['characters', 'words', 'callsigns', 'koch'] as const;
@@ -92,28 +93,51 @@ export const PRACTICE_FIELD_RULES: SettingsFieldRules = {
   integers: ['practiceGroupCount', 'practiceCharGroupSize', 'practiceRounds', 'practiceKochLesson', 'practiceWordLengths[]'],
 };
 
+/** Labels of every Copy Practice setting in a review; the wizard parts below show the ones they own. */
+const REVIEW_LABELS: Partial<Record<keyof AppSettings, string>> = {
+  practiceEnabled: 'Copy practice',
+  practiceContentMode: 'Practice content',
+  practiceGroupCount: 'Practice count',
+  practiceCharGroupSize: 'Practice group size',
+  practiceIncludeLetters: 'Practice letters',
+  practiceIncludeNumbers: 'Practice numbers',
+  practiceIncludePunctuation: 'Practice punctuation',
+  practiceKochLesson: 'Koch lesson',
+  practiceWordLengths: 'Practice word lengths',
+  practiceFeedbackMode: 'Practice feedback',
+  practiceRounds: 'Practice rounds',
+  practicePipeline: 'Practice output',
+  practiceSource: 'Practice direction',
+  practiceName: 'Practice name',
+  practiceColor: 'Practice colour',
+};
+
+const CONTENT_KEYS = ['practiceContentMode', 'practiceGroupCount', 'practiceCharGroupSize', 'practiceIncludeLetters', 'practiceIncludeNumbers', 'practiceIncludePunctuation', 'practiceKochLesson', 'practiceWordLengths'] as const;
+const FEEDBACK_KEYS = ['practiceFeedbackMode', 'practiceRounds'] as const;
+const IDENTITY_KEYS = ['practiceSource', 'practiceName', 'practiceColor'] as const;
+
+function contentProblems(s: AppSettings): string[] {
+  return s.practiceContentMode === 'characters' && !s.practiceIncludeLetters && !s.practiceIncludeNumbers && !s.practiceIncludePunctuation
+    ? ['Pick at least one kind of character for practice.']
+    : [];
+}
+
 /** What the Copy Practice item edits, checks and says in a review. */
 export const PRACTICE_DESCRIPTOR: ItemDescriptor = {
   id: 'practice',
-  keys: ['practiceEnabled', 'practiceContentMode', 'practiceGroupCount', 'practiceCharGroupSize', 'practiceIncludeLetters', 'practiceIncludeNumbers', 'practiceIncludePunctuation', 'practiceKochLesson', 'practiceWordLengths', 'practiceFeedbackMode', 'practiceRounds', 'practicePipeline', 'practiceSource', 'practiceName', 'practiceColor'],
-  validate: s => s.practiceContentMode === 'characters' && !s.practiceIncludeLetters && !s.practiceIncludeNumbers && !s.practiceIncludePunctuation
-    ? ['Pick at least one kind of character for practice.']
-    : [],
-  review: labelledReview({
-    practiceEnabled: 'Copy practice',
-    practiceContentMode: 'Practice content',
-    practiceGroupCount: 'Practice count',
-    practiceCharGroupSize: 'Practice group size',
-    practiceIncludeLetters: 'Practice letters',
-    practiceIncludeNumbers: 'Practice numbers',
-    practiceIncludePunctuation: 'Practice punctuation',
-    practiceKochLesson: 'Koch lesson',
-    practiceWordLengths: 'Practice word lengths',
-    practiceFeedbackMode: 'Practice feedback',
-    practiceRounds: 'Practice rounds',
-    practicePipeline: 'Practice output',
-    practiceSource: 'Practice direction',
-    practiceName: 'Practice name',
-    practiceColor: 'Practice colour',
-  }),
+  keys: ['practiceEnabled', ...CONTENT_KEYS, ...FEEDBACK_KEYS, 'practicePipeline', ...IDENTITY_KEYS],
+  validate: contentProblems,
+  review: labelledReview(REVIEW_LABELS),
 };
+
+/** Content, Koch lesson, count, group size and pool or word lengths on their own wizard step. */
+export const PRACTICE_CONTENT_DESCRIPTOR = partDescriptor('practice-content', CONTENT_KEYS, REVIEW_LABELS, contentProblems);
+
+/** Feedback mode and rounds on their own wizard step. */
+export const PRACTICE_FEEDBACK_DESCRIPTOR = partDescriptor('practice-feedback', FEEDBACK_KEYS, REVIEW_LABELS);
+
+/** The Pipeline choice (this device only or full) on its own wizard step. */
+export const PRACTICE_PIPELINE_DESCRIPTOR = partDescriptor('practice-pipeline', ['practicePipeline'], REVIEW_LABELS);
+
+/** Direction, name and colour on their own wizard step. */
+export const PRACTICE_IDENTITY_DESCRIPTOR = partDescriptor('practice-identity', IDENTITY_KEYS, REVIEW_LABELS);

@@ -87,13 +87,19 @@
                 }
                 @switch (q.kind) {
                   @case ('single') {
-                    @for (opt of questionOptions(eng, q); track opt.value) {
+                    @let options = questionOptions(eng, q);
+                    @for (opt of options; track opt.value) {
                       <label class="wizard-check">
                         <input type="radio" [name]="q.id" [checked]="answer(q) === opt.value"
                                [disabled]="opt.disabled" (change)="setSingle(q, opt.value)">
                         {{ opt.label }}
-                        @if (opt.hint) { <span class="wizard-note">{{ opt.hint }}</span> }
                       </label>
+                    }
+                    <!-- The explanation of the selected choice only, under the list -->
+                    @for (opt of options; track opt.value) {
+                      @if (opt.hint && answer(q) === opt.value) {
+                        <p class="wizard-note" role="status">{{ opt.hint }}</p>
+                      }
                     }
                   }
                   @case ('select') {
@@ -215,6 +221,10 @@
               <div class="wizard-error" role="alert">{{ message }}</div>
             }
 
+            @if (review.skippedByLevel.length) {
+              <p class="wizard-note">Skipped for the {{ levelLabel(eng.level()) }} level, so these keep their current settings:
+                {{ skippedTitles(review.skippedByLevel) }}.</p>
+            }
             <p class="wizard-note">Everything else stays exactly as it is.</p>
             <ul class="wizard-list">
               <li>Applying does not save the device profile; use Save in Settings to keep it.</li>

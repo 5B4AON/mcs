@@ -37,7 +37,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
 import { ITEM_REGISTRY } from '../settings-items/item-registry';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
-import { StepItem, StepQuestion, WizardFlow, WizardStep } from './engine/flow-types';
+import { StepItem, StepQuestion, WizardFlow, WizardLevel, WizardStep } from './engine/flow-types';
 import { WizardEngine } from './engine/wizard-engine';
 import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
@@ -45,6 +45,8 @@ import { MappingPageComponent } from './pages/mapping-page.component';
 import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
 import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
+import { LEVEL_STEP, WIZARD_LEVEL_LABELS } from './engine/levels';
+import { WizardLevelService } from '../../services/wizard-level.service';
 import {
   TeachParticipantProfile,
   includesScenario,
@@ -105,6 +107,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   readonly settings = inject(SettingsService);
   private readonly practice = inject(PracticeService);
   readonly presets = inject(PresetService);
+  private readonly wizardLevel = inject(WizardLevelService);
   private readonly scope = inject(SETTINGS_SCOPE) as DraftSettingsScope;
   private readonly audioDevices = inject(AudioDeviceService);
   private readonly midiInput = inject(MidiInputService);
@@ -216,7 +219,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   private startFlow(flow: WizardFlow): void {
     this.scope.seed(this.settings.settings());
-    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind));
+    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind, this.wizardLevel.level()));
     this.flowTitle.set(flow.title);
     this.presetNotice.set('');
     this.presetWarnings.set([]);
@@ -267,7 +270,17 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     return question.optionsFrom?.({
       settings: this.scope.value(),
       answers: engine.answers(),
+      level: engine.level(),
     }) ?? question.options ?? [];
+  }
+
+  levelLabel(level: WizardLevel): string {
+    return WIZARD_LEVEL_LABELS[level];
+  }
+
+  /** Titles of the steps a level left out, as one line for the review. */
+  skippedTitles(steps: WizardStep[]): string {
+    return steps.map(step => step.title).join(', ');
   }
 
   // ---- Navigation ----
@@ -275,6 +288,11 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   next(): void {
     const engine = this.engine();
     if (!engine || !this.commitTeachParticipantPage(true) || this.problems().length || !this.commitMappingPage()) return;
+    // Leaving the level step puts the level's suggestions in place and remembers the level for the next guide
+    if (engine.step().id === LEVEL_STEP.id) {
+      engine.commitLevel();
+      this.wizardLevel.set(engine.level());
+    }
     if (engine.isLast) this.stage.set('review');
     else engine.next();
     this.focusStep();
@@ -465,7 +483,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
         this.midiInput.shutdown();
       }
     }
-    const teachContext = { settings: this.settings.settings(), answers: engine.answers() };
+    const teachContext = { settings: this.settings.settings(), answers: engine.answers(), level: engine.level() };
     // A direction the user ticked is connected now instead of waiting for the next health check
     const teachUsesMobile = engine.flow.goal === 'teach' && includesScenario(teachContext, 'mobile');
     if ((patch.rtdbInputEnabled && !base.rtdbInputEnabled)

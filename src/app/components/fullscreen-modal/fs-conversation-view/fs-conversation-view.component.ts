@@ -15,7 +15,7 @@ import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { SendPracticeService } from '../../../services/send-practice.service';
-import { formatText, formatLine, endsWithShowEmoji } from '../fullscreen-format.utils';
+import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
 import { FireworksComponent } from '../../fireworks/fireworks.component';
@@ -114,6 +114,12 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   get lensSideInset(): string {
     return this.inputMode === 'type' || this.blurMode ? 'max(10%, 64px)' : '10%';
   }
+
+  /** What was keyed in Send practice, grouped into whole words (see `groupWords`) */
+  readonly sendKeyedWords = computed(() => groupWords(this.sendPractice.keyedMarks(), mark => mark.char === ' '));
+
+  /** The Send practice result, grouped into whole words */
+  readonly sendResultWords = computed(() => groupWords(this.sendPractice.feedback(), fb => fb.ref === ' '));
 
   /** Bottom space kept clear of the touch keyer buttons. */
   get lensBottomInset(): string {

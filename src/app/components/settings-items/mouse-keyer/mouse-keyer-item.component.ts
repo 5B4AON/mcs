@@ -27,6 +27,9 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
 export class MouseKeyerItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
+
+  /** A wizard step can show one part of the card; Settings shows all of it. */
+  @Input() part: 'all' | 'buttons' | 'paddle' | 'identity' = 'all';
   @Input() forceEnabled = false;
   @Input() forceSource: 'rx' | 'tx' | null = null;
 

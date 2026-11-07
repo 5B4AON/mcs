@@ -3,6 +3,7 @@
  */
 
 import { AppSettings } from '../../../services/settings.service';
+import { sendPracticeHasActiveInput, sendPracticeHasPaddle } from '../../settings-items/send-practice/send-practice-inputs';
 import { Condition } from './flow-types';
 
 /*
@@ -34,3 +35,9 @@ export const any = (...conditions: Condition[]): Condition =>
 /** Opposite of a condition. */
 export const not = (condition: Condition): Condition =>
   ctx => !condition(ctx);
+
+/** True when a ticked, switched-on Send Practice key is a paddle. */
+export const sendPracticeUsesPaddle: Condition = ctx => sendPracticeHasPaddle(ctx.settings);
+
+/** True when none of the keys ticked for Send Practice can produce keying right now. */
+export const noSendPracticeInput: Condition = ctx => !sendPracticeHasActiveInput(ctx.settings);

@@ -2,10 +2,10 @@
  * Morse Code Studio
  */
 
-import { all, answerIncludes, any, not } from '../engine/conditions';
+import { all, answerIncludes, any, not, settingIs } from '../engine/conditions';
 import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
-import { screenForced, screenStep, soundStep, speedStep } from './shared-steps';
+import { leavePracticeForced, leavePracticeStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
 import { MIDI_SUPPORTED, NOT_AVAILABLE_HINT } from './device-support';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
@@ -29,7 +29,11 @@ const methodUnavailable = (id: string): boolean => id === 'midi' && !MIDI_SUPPOR
 const FORCED: ForcedSetting[] = [...METHODS.flatMap(m => [
   { key: m.key, value: true, label: `Turn the ${m.phrase} on`, when: answerIncludes('methods', m.id) },
   { key: m.key, value: false, label: `Turn the ${m.phrase} off`, when: not(answerIncludes('methods', m.id)) },
-]), ...screenForced('key')];
+]), ...leavePracticeForced(), ...screenForced('key')];
+
+/** True when a mouse button is set to dit or dah, which makes the mouse a paddle. */
+const mouseHasPaddle: Condition = ctx => [ctx.settings.mouseLeftAction, ctx.settings.mouseMiddleAction, ctx.settings.mouseRightAction]
+  .some(action => action === 'dit' || action === 'dah');
 
 /**
  * True when a chosen keyer has a paddle set up: a paddle keyboard or MIDI
@@ -41,9 +45,7 @@ const FORCED: ForcedSetting[] = [...METHODS.flatMap(m => [
 const paddleConfigured: Condition = any(
   all(answerIncludes('methods', 'keyboard'),
     ctx => ctx.settings.keyboardInputMappings.some(m => m.enabled && m.mode === 'paddle')),
-  all(answerIncludes('methods', 'mouse'),
-    ctx => [ctx.settings.mouseLeftAction, ctx.settings.mouseMiddleAction, ctx.settings.mouseRightAction]
-      .some(action => action === 'dit' || action === 'dah')),
+  all(answerIncludes('methods', 'mouse'), mouseHasPaddle),
   all(answerIncludes('methods', 'touch'), ctx => ctx.settings.touchKeyerMode === 'paddle'),
   all(answerIncludes('methods', 'midi'),
     ctx => ctx.settings.midiInputMappings.some(m => m.enabled && m.mode === 'paddle')),
@@ -52,7 +54,7 @@ const paddleConfigured: Condition = any(
 const PADDLE_ONLY = 'This only applies to a paddle, where the keyer makes the dits and dahs. A straight key is timed by your hand, so it is not affected.';
 
 /**
- * Goal "Practice sending Morse": choose which local keyers to use (keyboard,
+ * Goal "Key and see the text": choose which local keyers to use (keyboard,
  * mouse, touch, MIDI), then one step per chosen keyer (a summary of the keyboard
  * or MIDI mappings, each opened to edit), then the keyer speed when a paddle is
  * set up, then the sidetone. There is no Farnsworth step: your hands time the
@@ -62,10 +64,12 @@ const PADDLE_ONLY = 'This only applies to a paddle, where the keyer makes the di
  */
 export const SEND_FLOW: WizardFlow = {
   id: 'send',
-  title: 'Practice sending Morse',
+  title: 'Key and see the text',
   goal: 'send',
   forced: FORCED,
+  levels: true,
   steps: [
+    leavePracticeStep('Copy practice switches the keyers off, and Send practice shows what you key as a practice prompt instead of in the text area.'),
     {
       id: 'methods',
       title: 'Choose how you will send',
@@ -77,7 +81,8 @@ export const SEND_FLOW: WizardFlow = {
         kind: 'multi',
         default: [],
         defaultFrom: (s: AppSettings) => METHODS.filter(m => s[m.key] && !methodUnavailable(m.id)).map(m => m.id),
-        options: METHODS.map(m => methodUnavailable(m.id)
+        // The MIDI keyer needs hardware, so a Novice is not offered it
+        optionsFrom: ctx => METHODS.filter(m => m.id !== 'midi' || ctx.level !== 'novice').map(m => methodUnavailable(m.id)
           ? { value: m.id, label: m.label, hint: NOT_AVAILABLE_HINT, disabled: true }
           : { value: m.id, label: m.label }),
       }],
@@ -102,7 +107,25 @@ export const SEND_FLOW: WizardFlow = {
       intro: 'Choose what each mouse button does.',
       helpSection: 's4-2',
       when: answerIncludes('methods', 'mouse'),
-      items: [{ item: 'mouse-keyer' }],
+      items: [{ item: 'mouse-keyer-buttons' }],
+    },
+    {
+      id: 'mousePaddle',
+      level: 'intermediate',
+      title: 'Mouse paddle behaviour',
+      intro: 'A button set to Dit or Dah works as a paddle. Choose which side is which and how holding both buttons behaves.',
+      helpSection: 'paddle-modes',
+      when: all(answerIncludes('methods', 'mouse'), mouseHasPaddle),
+      items: [{ item: 'mouse-keyer-paddle' }],
+    },
+    {
+      id: 'mouseName',
+      level: 'expert',
+      title: 'Name and colour of mouse keying',
+      intro: 'Optional. A name and colour label the text you key with the mouse, so it stands out where names are shown.',
+      helpSection: 's4-2',
+      when: answerIncludes('methods', 'mouse'),
+      items: [{ item: 'mouse-keyer-identity' }],
     },
     {
       id: 'touch',
@@ -110,10 +133,29 @@ export const SEND_FLOW: WizardFlow = {
       intro: 'Choose how the touch screen keys.',
       helpSection: 's4-3',
       when: answerIncludes('methods', 'touch'),
-      items: [{ item: 'touch-keyer' }],
+      items: [{ item: 'touch-keyer-mode' }],
+    },
+    {
+      id: 'touchPaddle',
+      level: 'intermediate',
+      title: 'Touch paddle behaviour',
+      intro: 'Two touch buttons work as a paddle. Choose which side is which and how holding both buttons behaves.',
+      helpSection: 'paddle-modes',
+      when: all(answerIncludes('methods', 'touch'), settingIs('touchKeyerMode', 'paddle')),
+      items: [{ item: 'touch-keyer-paddle' }],
+    },
+    {
+      id: 'touchName',
+      level: 'expert',
+      title: 'Name and colour of touch keying',
+      intro: 'Optional. A name and colour label the text you key by touch, so it stands out where names are shown.',
+      helpSection: 's4-3',
+      when: answerIncludes('methods', 'touch'),
+      items: [{ item: 'touch-keyer-identity' }],
     },
     {
       id: 'midi',
+      level: 'intermediate',
       title: 'MIDI keyer',
       intro: 'Choose the device, press Detect and play the note for each paddle or key.',
       helpSection: 's6-2',
@@ -125,11 +167,12 @@ export const SEND_FLOW: WizardFlow = {
     },
     speedStep({ keyer: true }, {
       when: paddleConfigured,
+      level: 'intermediate',
       intro: `Pick the keyer speed for your paddle. ${PADDLE_ONLY} You can change it later from the main menu.`,
     }),
     soundStep({
       detail: 'Your keying is played through it, so you hear what you send.',
     }),
-    screenStep('key'),
+    { ...screenStep('key'), level: 'intermediate' },
   ],
 };

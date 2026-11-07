@@ -19,6 +19,7 @@ export const TYPE_FLOW: WizardFlow = {
   title: 'Type and hear Morse',
   goal: 'type',
   forced: screenForced('type'),
+  levels: true,
   steps: [
     {
       id: 'typing-mode',
@@ -29,18 +30,27 @@ export const TYPE_FLOW: WizardFlow = {
     },
     {
       id: 'encoder',
+      level: 'intermediate',
       title: 'Keyboard encoder',
       intro: 'Choose whether typed text counts as sent (TX) or received (RX).',
       helpSection: 's5-1',
-      items: [{ item: 'encoder' }],
+      items: [{ item: 'encoder-source' }],
+    },
+    {
+      id: 'encoder-name',
+      level: 'expert',
+      title: 'Name and colour of typed text',
+      intro: 'Optional. A name and colour label the text you type, so it stands out where names are shown. A new name starts a new line.',
+      helpSection: 's5-1',
+      items: [{ item: 'encoder-identity' }],
     },
     speedStep({ encoder: true }, {
       intro: 'Text you type is sent as Morse at this speed. You can change it later with the speed buttons on the main screen.',
     }),
-    farnsworthStep({ applies: 'tx' }),
+    farnsworthStep({ applies: 'tx', level: 'intermediate' }),
     soundStep({
       detail: 'The text you type is played through it. Radio, serial, MIDI and online outputs are not touched.',
     }),
-    screenStep('type'),
+    { ...screenStep('type'), level: 'intermediate' },
   ],
 };

@@ -34,6 +34,9 @@ export class MidiOutputItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
 
+  /** A wizard step can show one part of the card; Settings shows all of it. */
+  @Input() part: 'all' | 'connect' | 'speed' = 'all';
+
   readonly scope = inject(SETTINGS_SCOPE);
 
   /** Current values from the scope */

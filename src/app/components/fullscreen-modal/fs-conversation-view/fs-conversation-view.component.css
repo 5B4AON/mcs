@@ -319,6 +319,13 @@
   color: #fff;
 }
 
+/* Send practice text: a word stays whole and moves to the next line when it does not fit; only a word longer than a line is broken */
+.fs-word {
+  display: inline-block;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
 /* ---- Practice feedback results ---- */
 .fb-results {
   white-space: pre-wrap;

@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.12.0] - 2026-11-07
+
+### Added
+
+- **Practice sending Morse guide** — A new Setup Wizard goal that walks you through Send Practice: which keys count, the content (including the Koch lesson), how a round is checked and how many rounds, the keyer speed (only when a paddle is ticked and switched on), the pattern hint, where your keying goes (this device only or the full pipeline), the sidetone, whether to switch the main screen to Send practice now, and the screen. It never switches a key or an output on for you.
+- **Experience level** — Most guides start by asking how comfortable you are with Morse and this app (Novice, Intermediate or Expert). Novice shows the essential steps, Intermediate adds the usual choices such as speed and how things are checked, and Expert shows everything. Skipped steps keep their current settings and the review lists them. Your level is remembered for the next guide, some guides suggest different starting values for each level, and a preset you load always wins.
+- **Leave practice mode step** — The Key and see the text, Decode, online conversation and output hardware guides start with a question when a practice mode is on, offering to switch the main screen back to Send on Enter.
+
+### Changed
+
+- **Guide renamed** — The keyer guide that was called "Practice sending Morse" is now "Key and see the text" (its steps are unchanged); the new goal sits directly below it.
+- **Cards in small steps** — Copy Practice, Send Practice, both Firebase cards, MIDI output, WinKeyer, the mouse and touch keyers and the Keyboard Encoder are shown in the guides as several small steps, each with its own explanation, instead of one crowded card. Settings looks as before.
+- **Copy practice pipeline** — The Practice receiving Morse guide now lets you choose the pipeline instead of forcing "this device only" (which stays the default).
+- **Hardware guide** — The Encoder speed and Farnsworth steps now come after the routes and appear only when a MIDI or serial route is on, since a WinKeyer times itself.
+- **Type guide** — The Send mode choice offers only Send on Enter and Live.
+- **Single choices** — A guide question with a choice of options shows one list and the explanation of the selected option below it.
+- **Key names** — The Send Practice key picker shows keys as characters ("[ / ]") instead of key codes.
+
+### Fixed
+
+- **Word wrapping in full-screen Send practice** — A word is kept whole and moves to the next line when it does not fit; only a word longer than a line is broken, and characters such as `/` and `-` are no longer places to split a word.
+
 ## [2.11.0] - 2026-11-07
 
 ### Added

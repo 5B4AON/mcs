@@ -17,6 +17,9 @@ import { WizardGoalId } from '../../settings-modal/goal-navigator/setup-goals';
  * Review and Done are not part of a flow: the shell appends them to every flow.
  */
 
+/** How much help a user wants: decides which steps a goal shows (see `levels.ts`). */
+export type WizardLevel = 'novice' | 'intermediate' | 'expert';
+
 /** Wizard-only answers (not settings), keyed by question id. */
 export type WizardAnswers = Readonly<Record<string, unknown>>;
 
@@ -24,6 +27,8 @@ export type WizardAnswers = Readonly<Record<string, unknown>>;
 export interface ConditionContext {
   settings: AppSettings;
   answers: WizardAnswers;
+  /** The level chosen on the goal's first step (Novice when the goal has no level step) */
+  level: WizardLevel;
 }
 
 /** Pure yes/no question about the draft; decides whether a step is shown. */
@@ -51,8 +56,12 @@ export interface StepQuestion {
   options?: QuestionOption[];
   /** Start value; also what Revert restores */
   default: unknown;
-  /** Start value taken from the current settings (e.g. which inputs are on now); wins over `default`. */
+  /** Start value taken from the current settings (e.g. which inputs are on now); wins over `default` unless it returns undefined. */
   defaultFrom?: (settings: AppSettings) => unknown;
+  /** Start value per level; used when `defaultFrom` gives none, before `default`. */
+  defaultByLevel?: Partial<Record<WizardLevel, unknown>>;
+  /** A remembered preference (such as the level), not an answer about this setup: it never counts as a change */
+  preference?: boolean;
   /** Dynamic choices based on the draft and preceding answers. */
   optionsFrom?: (ctx: ConditionContext) => QuestionOption[];
   hint?: string;
@@ -119,6 +128,8 @@ export interface WizardStep {
   items?: StepItem[];
   /** Step is shown only when this is true; omit to always show */
   when?: Condition;
+  /** Lowest level that sees this step (only in a flow with `levels`); omit for every level */
+  level?: WizardLevel;
   /** Extra checks on the answers (item values are checked by the items' own descriptors) */
   validate?: (ctx: ConditionContext) => string[];
   repeat?: StepRepeat;
@@ -142,6 +153,14 @@ export interface WizardFlow {
   /** The goal in the goal list this flow belongs to */
   goal: WizardGoalId;
   steps: WizardStep[];
+  /** The goal starts with the level question and shows steps by their `level` */
+  levels?: boolean;
+  /**
+   * Suggested values per level for settings of this goal. They are applied when the user
+   * leaves the level step, and only to settings still at the app's factory default, so a
+   * value the user chose earlier is never replaced.
+   */
+  levelDefaults?: Partial<Record<WizardLevel, Partial<AppSettings>>>;
   forced?: ForcedSetting[];
   /** Settings keys derived from wizard-only answers rather than direct item edits. */
   derivedKeys?: readonly (keyof AppSettings)[];

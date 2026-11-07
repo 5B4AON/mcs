@@ -37,6 +37,9 @@ export class RtdbOutputItemComponent implements OnInit, OnDestroy {
 
   /** The containing flow makes sending part of the selected goal. */
   @Input() forceEnabled = false;
+
+  /** A wizard step can show one part of the card; Settings shows all of it. */
+  @Input() part: 'all' | 'connect' | 'send' | 'identity' | 'relay' = 'all';
   @Input() forceForward: AppSettings['rtdbOutputForward'] | null = null;
   @Input() sharedChannel = false;
   @Input() suggestedName = '';

@@ -218,3 +218,30 @@ export function formatLine(line: DisplayLine, settings: AppSettings, sanitizer: 
   result += `<span class="line-text">${formatTextInternal(line.text, settings, false, lineClosed)}</span>`;
   return sanitizer.bypassSecurityTrustHtml(result);
 }
+
+/** One word of a character-by-character display: its items and whether a space follows it. */
+export interface WordGroup<T> {
+  items: T[];
+  space: boolean;
+}
+
+/**
+ * Group the characters of a display into words, so each word can be kept whole
+ * when the text wraps: a line breaks at the spaces, and only a word too long
+ * for a whole line is broken. Characters such as `/`, `-` or `?` belong to the
+ * word like any other, so they are never a place to split it.
+ */
+export function groupWords<T>(items: readonly T[], isSpace: (item: T) => boolean): WordGroup<T>[] {
+  const words: WordGroup<T>[] = [];
+  let current: T[] = [];
+  for (const item of items) {
+    if (isSpace(item)) {
+      words.push({ items: current, space: true });
+      current = [];
+    } else {
+      current.push(item);
+    }
+  }
+  if (current.length) words.push({ items: current, space: false });
+  return words;
+}
