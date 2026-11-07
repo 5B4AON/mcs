@@ -6,7 +6,7 @@ import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
 import { CwInputService } from './services/cw-input.service';
 import { MorseDecoderService } from './services/morse-decoder.service';
-import { MorseEncoderService } from './services/morse-encoder.service';
+import { MorseEncoderService, PlayingPattern } from './services/morse-encoder.service';
 import { KeyerService } from './services/keyer.service';
 import { AudioDeviceService } from './services/audio-device.service';
 import { SerialKeyOutputService } from './services/serial-key-output.service';
@@ -1481,6 +1481,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   // ---- Text blur ----
+
+  /**
+   * Dots and dashes of the typed or received character being played, shown with its tones like keyed symbols.
+   * Practice modes keep them hidden, and so does a blurred direction (they would give the text away).
+   */
+  get mainPlayingPatterns(): PlayingPattern[] {
+    const mode = this.settings.settings().encoderMode;
+    if (mode === 'practice' || mode === 'send-practice') return [];
+    const blur = this.mainBlurMode;
+    return [this.encoder.typedPattern(), this.encoder.receivedPattern()]
+      .filter((p): p is PlayingPattern => !!p && !!p.pattern
+        && (this.mainRevealing || !blur || (blur !== 'both' && blur !== p.source)));
+  }
 
   /**
    * Active blur mode for the main screen.

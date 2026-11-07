@@ -215,7 +215,7 @@
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
              [class.rx-line]="line.type === 'rx'"
-             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span></div>
+             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}</div>
       @if (celebrating) {
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }

@@ -402,8 +402,8 @@ export function rewardPicks(ctx: ConditionContext, id: string): string[] {
 export function chosenRewards(ctx: ConditionContext): Reward[] {
   const scenario = scenarioOf(ctx);
   if (!scenario || (scenario.rewards !== 'optional' && scenario.rewards !== 'required')) return [];
-  // A Novice is not offered rewards in a Lens demo (they would replace the demo), so a stale answer is ignored
-  if (scenario.lens && scenario.rewards === 'optional' && ctx.level === 'novice') return [];
+  // Emoji replacements show only in the full-screen conversation, never in Lens, so a stale answer is ignored
+  if (scenario.lens) return [];
   const rewards: Reward[] = [];
   for (const pick of rewardPicks(ctx, scenario.rewards === 'required' ? 'rewardReq' : 'rewardOpt')) {
     if (pick === 'custom') {
@@ -416,10 +416,11 @@ export function chosenRewards(ctx: ConditionContext): Reward[] {
   return rewards;
 }
 
-/** True when the Expert step asked for the celebration trigger. */
+/** True when the Expert step asked for the celebration trigger (never in a Lens setup, which cannot show it). */
 export function surpriseOn(ctx: ConditionContext): boolean {
+  const scenario = scenarioOf(ctx);
   return ctx.level === 'expert' && text(ctx.answers, 'surprise') === 'yes'
-    && !!scenarioOf(ctx) && ['typed', 'keyed', 'online'].includes(scenarioOf(ctx)!.family);
+    && !!scenario && !scenario.lens && ['typed', 'keyed', 'online'].includes(scenario.family);
 }
 
 /** The trigger the Expert chose for the celebration, in capitals. */
@@ -432,10 +433,10 @@ export function rewardsActive(ctx: ConditionContext): boolean {
   return chosenRewards(ctx).length > 0 || surpriseOn(ctx) || scenarioOf(ctx)?.rewards === 'built-in';
 }
 
-/** True when the full screen shows the conversation (rewards need it) instead of Lens. */
+/** True when the full screen shows the conversation instead of Lens: a Lens scenario always shows Lens. */
 export function conversationView(ctx: ConditionContext): boolean {
   const scenario = scenarioOf(ctx);
-  return !scenario || !scenario.lens || rewardsActive(ctx);
+  return !scenario || !scenario.lens;
 }
 
 /** The mappings the setup needs, besides those already in the list. */
@@ -888,7 +889,6 @@ export function summaryFor(ctx: ConditionContext): string[] {
     : conversationView(ctx)
       ? 'Opens the full screen showing the whole conversation in large text.'
       : 'Opens the full screen showing one big letter at a time, with its dots and dashes.');
-  if (rewardsActive(ctx) && scenario.lens) lines.push('Rewards show in the conversation, so this uses the conversation view instead of one letter at a time.');
   if (scenario.phone) {
     lines.push(scenario.phone === 'two-way'
       ? 'Your phone and this computer share a private room over the internet: your messages play here and the students\' answers go back to your phone. Students do not go online.'

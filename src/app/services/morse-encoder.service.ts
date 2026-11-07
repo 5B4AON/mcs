@@ -18,6 +18,14 @@ import { LensService } from './lens.service';
 /** Queue entry for playback of received characters through all matching outputs */
 interface SidetoneQueueEntry { char: string; source: 'rx' | 'tx'; wpm?: number; name?: string; color?: string; }
 
+/** The dots and dashes of the character being played so far, shown while its tones sound. */
+export interface PlayingPattern {
+  pattern: string;
+  source: 'rx' | 'tx';
+  /** Optional colour override from the input */
+  color?: string;
+}
+
 /**
  * Morse Encoder Service — converts typed text to perfectly timed morse output.
  *
@@ -67,6 +75,12 @@ export class MorseEncoderService {
    * until the user types new text (enqueue, setBuffer, submitText).
    */
   readonly replayMode = signal(false);
+
+  /** Symbols of the typed character being played, revealed with each tone; null between characters, in practice and in replays. */
+  readonly typedPattern = signal<PlayingPattern | null>(null);
+
+  /** Symbols of the received (RTDB) character being played, revealed with each tone; null between characters. */
+  readonly receivedPattern = signal<PlayingPattern | null>(null);
 
   /** The current replay stays on this device (set by startReplay, reset with replayMode). */
   private replayLocalOnly = false;
@@ -282,12 +296,14 @@ export class MorseEncoderService {
         if (signal.aborted) break;
         this.forwardedIndex = -1;
         this.sentIndex.set(endIdx);
+        this.typedPattern.set(null);
 
         // Inter-character space (3 dit units) — already included after last element
         // If next char is space, we handle it in sendCharacter
       }
     } finally {
       this.sending = false;
+      this.typedPattern.set(null);
       if (this.sentIndex() >= this.buffer().length) {
         this.isSending.set(false);
         // In live mode, clear the buffer when sending completes
@@ -334,7 +350,10 @@ export class MorseEncoderService {
 
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
-      if (lensMeta) this.lens.show('encoder', lensMeta, morse.slice(0, i + 1), char, morse);
+      if (lensMeta) {
+        this.lens.show('encoder', lensMeta, morse.slice(0, i + 1), char, morse);
+        this.typedPattern.set({ pattern: morse.slice(0, i + 1), source, color: lensMeta.color });
+      }
 
       // Emit element-start for sprite animation
       this.elementEvent$.next({ down: true });
@@ -472,6 +491,7 @@ export class MorseEncoderService {
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
       this.lens.show('rtdb', lensMeta, morse.slice(0, i + 1), char, morse);
+      this.receivedPattern.set({ pattern: morse.slice(0, i + 1), source, color });
 
       // Play through all outputs based on their forward settings
       await Promise.all([
@@ -488,6 +508,7 @@ export class MorseEncoderService {
 
     // Inter-character space
     await this.sleepMs(timings.interChar);
+    this.receivedPattern.set(null);
   }
 
   private sleepMs(ms: number): Promise<void> {

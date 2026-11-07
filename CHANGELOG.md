@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.1] - 2026-11-07
+
+### Added
+
+- **Symbols shown with the sound while typing and receiving** — In Type mode (main screen and full screen), the dots and dashes of each character now appear as it plays, in step with the tones, like keyed symbols do. This also works for characters received over RTDB. In the full screen, Type mode has a row below the text for them (keyed symbols use it too). They stay hidden in practice modes and for a blurred direction until you reveal the text.
+
+### Fixed
+
+- **Lens sessions no longer ask for a celebration or reward** — The Teach guide's Lens sessions skip the celebration and reward questions, because these only show in the full-screen conversation and would switch the session out of Lens. Applying a Lens session, including "Run Lens from your phone", always opens Lens.
+
 ## [2.14.0] - 2026-11-07
 
 ### Added

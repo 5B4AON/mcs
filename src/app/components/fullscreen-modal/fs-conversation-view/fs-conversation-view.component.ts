@@ -9,7 +9,7 @@ import {
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AppSettings, SettingsService } from '../../../services/settings.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
-import { MorseEncoderService } from '../../../services/morse-encoder.service';
+import { MorseEncoderService, PlayingPattern } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
@@ -125,6 +125,17 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Bottom space kept clear of the touch keyer buttons. */
   get lensBottomInset(): string {
     return this.inputMode === 'key' && this.settings.settings().touchKeyerEnabled ? '100px' : '0px';
+  }
+
+  /**
+   * Dots and dashes of the typed or received character being played, shown with its tones like keyed symbols.
+   * A blurred direction hides them (they would give the text away) until the text is revealed.
+   */
+  get playingPatterns(): PlayingPattern[] {
+    const blur = this.blurMode;
+    return [this.encoder.typedPattern(), this.encoder.receivedPattern()]
+      .filter((p): p is PlayingPattern => !!p && !!p.pattern
+        && (this.revealing || !blur || (blur !== 'both' && blur !== p.source)));
   }
 
   /** Pending encoder characters shown inline with the conversation. */

@@ -61,12 +61,13 @@
   margin-bottom: var(--fs-gap, 0);
 }
 
-/* Key mode: one row below the text is kept for the symbols being keyed, so nothing shifts when they are decoded */
+/* Key and Type mode: one row below the text is kept for the symbols being keyed, typed or received, so nothing shifts when they are decoded */
 .fs-pattern-row {
   min-height: var(--fs-lh, 1.35em);
 }
-/* Blinking cursor for the active decoding pattern; Key mode shows the pattern without the bar */
-.fs-conversation.key-mode .cursor::after {
+/* Blinking cursor for the active decoding pattern; the pattern row (Key and Type mode) shows the pattern without the bar */
+.fs-conversation.key-mode .cursor::after,
+.fs-pattern-row .cursor::after {
   display: none;
 }
 .cursor {

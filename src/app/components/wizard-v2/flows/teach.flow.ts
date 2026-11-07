@@ -509,8 +509,6 @@ const EXACT_PAUSES_STEP: WizardStep = {
   questions: [{ id: 'exactOverall', label: 'Overall words per minute (0 = use the choice above)', kind: 'number', default: 0, min: 0, max: 50 }],
 };
 
-const LENS_NOTE = ' Rewards appear in the full conversation view, which shows the text as it is written instead of one big letter at a time. Choosing one switches this session to the conversation view.';
-
 function rewardOptions(ctx: ConditionContext): QuestionOption[] {
   const audience = audienceOf(ctx);
   const kids = audience === 'kids';
@@ -538,15 +536,6 @@ const FUN_STEPS: WizardStep[] = [
     validate: rewardProblems,
   },
   {
-    id: 'rewardOptLens',
-    title: 'Add a reward?',
-    intro: `A reward is a word that makes the screen show a picture or message when someone keys or types it.${LENS_NOTE}`,
-    helpSection: 's8-8',
-    when: ctx => scenarioOf(ctx)?.rewards === 'optional' && !!scenarioOf(ctx)?.lens && atLeast(ctx.level, 'intermediate'),
-    questions: [{ id: 'rewardOpt', label: 'Rewards', kind: 'multi', default: [], optionsFrom: rewardOptions, hint: 'Tick as many as you like, or none to keep it simple.' }],
-    validate: rewardProblems,
-  },
-  {
     id: 'rewardReq',
     title: 'Choose the reward words',
     intro: 'This session works with a word that wins a reward: when someone keys or types it, the screen shows the reward. Tick one or more. Tell people the words, or keep them secret.',
@@ -560,7 +549,7 @@ const FUN_STEPS: WizardStep[] = [
     title: 'Your own reward',
     intro: 'Type the word people must key (letters or numbers, 2 to 12 long) and what the screen shows. The reward can be text, an emoji, or both.',
     helpSection: 's8-8',
-    when: ctx => (rewardPicks(ctx, 'rewardOpt').includes('custom') && scenarioOf(ctx)?.rewards === 'optional')
+    when: ctx => (rewardPicks(ctx, 'rewardOpt').includes('custom') && scenarioOf(ctx)?.rewards === 'optional' && !scenarioOf(ctx)?.lens)
       || (rewardPicks(ctx, 'rewardReq').includes('custom') && scenarioOf(ctx)?.rewards === 'required'),
     questions: [
       { id: 'rewardWord', label: 'Word to key', kind: 'text', default: '', maxLength: 12 },
@@ -573,7 +562,7 @@ const FUN_STEPS: WizardStep[] = [
     level: 'expert',
     title: 'A surprise?',
     intro: 'Optional. Shows a fireworks celebration when a word or signal you choose is keyed or received. It ends on the next character, and uses the full conversation view.',
-    when: ctx => ['typed', 'keyed', 'online'].includes(scenarioOf(ctx)?.family ?? ''),
+    when: ctx => ['typed', 'keyed', 'online'].includes(scenarioOf(ctx)?.family ?? '') && !scenarioOf(ctx)?.lens,
     questions: [
       {
         id: 'surprise', label: 'Celebration', kind: 'single', default: 'no',
