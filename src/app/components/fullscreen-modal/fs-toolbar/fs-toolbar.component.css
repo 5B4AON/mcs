@@ -42,6 +42,11 @@
   background: #315778;
   color: #fff;
 }
+/* Locked to Key (Send practice): dimmed like other unavailable controls */
+.fs-input-toggle:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
 
 /* ---- WPM indicator pills (read-only, toolbar right side) ---- */
 .wpm-indicators {

@@ -4,14 +4,12 @@
 
 import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
-  ViewChild
+  ViewChild, effect
 } from '@angular/core';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
 import { KeyerService } from '../../services/keyer.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
-import { PracticeService } from '../../services/practice.service';
-import { SendPracticeService } from '../../services/send-practice.service';
 import { LensService } from '../../services/lens.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
@@ -62,9 +60,16 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Asks the app to replay a line through the encoder (it asks for confirmation when outputs are external). */
   @Output() replayRequested = new EventEmitter<string>();
 
-  /** Key or Type, remembered between sessions (saved with the settings and presets). */
+  /**
+   * Key or Type, remembered between sessions (saved with the settings and presets).
+   * Copy practice is typed and Send practice is keyed, so each locks the view to its own
+   * mode without changing the remembered choice.
+   */
   get inputMode(): 'key' | 'type' {
-    return this.settings.settings().fullscreenInputMode;
+    const s = this.settings.settings();
+    if (s.encoderMode === 'send-practice') return 'key';
+    if (s.encoderMode === 'practice') return 'type';
+    return s.fullscreenInputMode;
   }
 
   /** Lens mode (latest character shown large); remembered like the input mode. */
@@ -99,12 +104,15 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     public settings: SettingsService,
     private encoder: MorseEncoderService,
     private keyer: KeyerService,
-    private practice: PracticeService,
-    private sendPractice: SendPracticeService,
     private lens: LensService,
     private devices: AudioDeviceService,
     public viewport: ViewportService,
-  ) {}
+  ) {
+    // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
+    effect(() => {
+      this.keyer.setKeyboardMappingsEnabled(this.inputMode === 'key');
+    });
+  }
 
   ngOnInit(): void {
     // Restore the remembered choices: mapped keys only act in Key mode, and Lens starts recording.
@@ -170,8 +178,6 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   setInputMode(mode: 'key' | 'type'): void {
     this.remember({ fullscreenInputMode: mode });
     this.keyer.setKeyboardMappingsEnabled(mode === 'key');
-    if (mode === 'key' && this.settings.settings().encoderMode === 'practice') this.practice.abort();
-    if (mode === 'type' && this.settings.settings().encoderMode === 'send-practice') this.sendPractice.abort();
     if (mode === 'type') this.conversationView?.focusTypeInput();
     else this.conversationView?.focusMain();
   }

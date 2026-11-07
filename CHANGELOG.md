@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Changed
 
 - **Mode select on phones** — The Mode select, Start, Clear and full-screen buttons stay on one row at 360 px wide even with the grouped options.
+- **Full screen locked in the practice modes** — While Send practice is the mode the Key/Type toggle is disabled and the view stays in Key mode; while Copy practice is the mode it stays in Type mode. Your own choice is restored afterwards.
+- **Send Practice Koch count** — Choosing the Koch method in Send Practice sets 5 groups of 5 characters (Copy Practice keeps 10).
 - **Scrolling prompt** — The Send Practice prompt is a single line that slides smoothly like a news ticker, always keeping the character to key next in the middle of the box (directly above the pattern hint), so a long prompt never grows the box or pushes the straight-key sprite down. The full-screen view uses the same prompt box, pinned at the top above the output area.
 - **Mode select grouped** — The Mode select lists Send on Enter and Live under "Typing", and Copy practice and Send practice under "Practice". The former "Practice" option is now called "Copy practice".
 - **Practice code shared** — Copy Practice's sequence generation and scoring moved into shared helpers used by both practices. Copy Practice behaves exactly as before.

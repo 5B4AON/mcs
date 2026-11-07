@@ -245,8 +245,22 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Copy practice is typed and Send practice is keyed, so the Key/Type toggle is locked while either is the mode. */
+  get inputLocked(): boolean {
+    const mode = this.settings.settings().encoderMode;
+    return mode === 'send-practice' || mode === 'practice';
+  }
+
+  /** Why the toggle is locked, for its tooltip and accessible name. */
+  get inputLockedReason(): string {
+    return this.settings.settings().encoderMode === 'send-practice'
+      ? 'Send practice is keyed, so the view stays in Key mode'
+      : 'Copy practice is typed, so the view stays in Type mode';
+  }
+
   /** Toggle between mapped-key keying and text entry without changing settings. */
   toggleInputMode(): void {
+    if (this.inputLocked) return;
     this.inputModeChange.emit(this.inputMode === 'key' ? 'type' : 'key');
   }
 

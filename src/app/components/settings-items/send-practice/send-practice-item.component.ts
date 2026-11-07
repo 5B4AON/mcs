@@ -4,9 +4,9 @@
 
 import { Component, Input, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { KOCH_DEFAULT_COUNT, KOCH_DEFAULT_GROUP_SIZE } from '../practice/practice-item.model';
+import { KOCH_DEFAULT_GROUP_SIZE } from '../practice/practice-item.model';
 import {
-  SendPracticeCheckMode, SendPracticeContentMode, SendPracticeHint, SendPracticePipeline,
+  SEND_KOCH_DEFAULT_COUNT, SendPracticeCheckMode, SendPracticeContentMode, SendPracticeHint, SendPracticePipeline,
 } from './send-practice-item.model';
 import { sendPracticeInputRows, staleSendPracticeInputs } from './send-practice-inputs';
 import { KOCH_LESSON_COUNT, kochLessonLabel } from '../../../data/koch-lessons';
@@ -74,9 +74,9 @@ export class SendPracticeItemComponent {
 
   onContentModeChange(event: Event): void {
     const mode = (event.target as HTMLSelectElement).value as SendPracticeContentMode;
-    // Choosing Koch method starts at 10 groups of 5 characters (about a minute); the user can change both
+    // Choosing Koch method starts at 5 groups of 5 characters; the user can change both
     this.scope.update(mode === 'koch' && this.s().sendPracticeContentMode !== 'koch'
-      ? { sendPracticeContentMode: mode, sendPracticeCharGroupSize: KOCH_DEFAULT_GROUP_SIZE, sendPracticeGroupCount: KOCH_DEFAULT_COUNT }
+      ? { sendPracticeContentMode: mode, sendPracticeCharGroupSize: KOCH_DEFAULT_GROUP_SIZE, sendPracticeGroupCount: SEND_KOCH_DEFAULT_COUNT }
       : { sendPracticeContentMode: mode });
   }
 

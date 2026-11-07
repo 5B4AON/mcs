@@ -28,6 +28,9 @@ export type SendPracticeHint = typeof SEND_PRACTICE_HINTS[number];
 export const SEND_PRACTICE_PIPELINES = PRACTICE_PIPELINES;
 export type SendPracticePipeline = PracticePipeline;
 
+/** Send practice is slower than copying, so Koch method starts at 5 groups (Copy practice starts at 10). */
+export const SEND_KOCH_DEFAULT_COUNT = 5;
+
 /** The settings the Send Practice item owns. */
 export interface SendPracticeSettings {
   /** Master toggle: shows 'Send practice' in the Mode select when enabled */
@@ -96,7 +99,13 @@ export const SEND_PRACTICE_FIELD_RULES: SettingsFieldRules = {
     sendPracticePipeline: SEND_PRACTICE_PIPELINES,
     sendPracticeHint: SEND_PRACTICE_HINTS,
   },
-  ranges: { sendPracticeKochLesson: [1, KOCH_LESSON_COUNT] },
+  ranges: {
+    sendPracticeKochLesson: [1, KOCH_LESSON_COUNT],
+    sendPracticeGroupCount: [1, 10],
+    sendPracticeCharGroupSize: [1, 5],
+    sendPracticeRounds: [1, 5],
+    'sendPracticeWordLengths[]': [3, 5],
+  },
   integers: ['sendPracticeGroupCount', 'sendPracticeCharGroupSize', 'sendPracticeRounds', 'sendPracticeKochLesson', 'sendPracticeWordLengths[]'],
 };
 
