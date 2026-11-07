@@ -151,7 +151,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   tryMorseConfirmTitle = '';
   tryMorseConfirmLabel = '';
   private pendingExternalDestinations: string[] = [];
-  private confirmedLiveDestinations: string[] = [];
+  /** Destinations the user already confirmed this session; asked again only when the list changes. */
+  private confirmedDestinations: string[] = [];
   private defaultsResetInSettings = false;
   private defaultsResetSaved = false;
 
@@ -486,6 +487,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
           const displayColor = es.encoderColor || undefined;
           this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
+          // The remote screen needs the word gap too, or the next send runs on from this one
+          void this.rtdbService.forwardEncoderChar(' ', es.encoderWpm, encSource, es.encoderName, es.encoderColor);
         }
       }
       this.lastWordGapCount = count;
@@ -1251,7 +1254,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     } else if (this.settings.settings().encoderMode === 'live') {
       const destinations = this.getExternalEncoderDestinations();
       if (textarea.value.trim() && destinations.length
-          && !this.sameDestinations(destinations, this.confirmedLiveDestinations)) {
+          && !this.sameDestinations(destinations, this.confirmedDestinations)) {
         this.openExternalConfirmation('live-send', destinations);
         return;
       }
@@ -1300,7 +1303,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (!textarea.value.trim() && this.encoder.buffer().length <= this.encoder.sentIndex()) return;
     const destinations = this.getExternalEncoderDestinations();
-    if (destinations.length) {
+    if (destinations.length && !this.sameDestinations(destinations, this.confirmedDestinations)) {
       this.openExternalConfirmation('external-send', destinations);
       return;
     }
@@ -1327,11 +1330,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.openExternalConfirmation(action, destinations);
       return;
     }
+    this.confirmedDestinations = destinations;
     if (action === 'replay') {
       this.encoder.startReplay(this.pendingReplayText);
       return;
     }
-    this.confirmedLiveDestinations = destinations;
     if (action === 'live-send') {
       const textarea = this.encoderInputRef?.nativeElement;
       if (textarea) this.encoder.setBuffer(textarea.value);
@@ -1590,7 +1593,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Send a line again through the encoder, after the usual confirmation when it would key or relay externally. Also used by the full-screen view. */
   requestReplay(text: string): void {
     const destinations = this.getExternalEncoderDestinations();
-    if (destinations.length) {
+    if (destinations.length && !this.sameDestinations(destinations, this.confirmedDestinations)) {
       this.pendingReplayText = text;
       this.openExternalConfirmation('replay', destinations);
       return;
