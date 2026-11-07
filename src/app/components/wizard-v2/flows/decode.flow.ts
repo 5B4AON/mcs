@@ -3,6 +3,7 @@
  */
 
 import { WizardFlow } from '../engine/flow-types';
+import { leavePracticeForced, leavePracticeStep } from './shared-steps';
 
 /**
  * Goal "Decode Morse from a radio or sound": a feedback-risk step, then the
@@ -16,8 +17,9 @@ export const DECODE_FLOW: WizardFlow = {
   id: 'decode',
   title: 'Decode Morse from a radio or sound',
   goal: 'decode',
-  forced: [{ key: 'cwInputEnabled', value: true, label: 'CW tone detector on' }],
+  forced: [{ key: 'cwInputEnabled', value: true, label: 'CW tone detector on' }, ...leavePracticeForced()],
   steps: [
+    leavePracticeStep('Send practice does not show decoded text in the output area, and Copy practice shows its own prompt.'),
     {
       id: 'before',
       title: 'Before you listen',

@@ -6,7 +6,7 @@
 export type GoalTab = 'inputs' | 'outputs' | 'other';
 
 /** Goals that also have a guided setup wizard. */
-export type WizardGoalId = 'send' | 'type' | 'practice' | 'relay' | 'hardware' | 'decode' | 'teach';
+export type WizardGoalId = 'send' | 'send-practice' | 'type' | 'practice' | 'relay' | 'hardware' | 'decode' | 'teach';
 
 /** Where a goal lands: an existing settings card, with the guidance shown while it is open. */
 export interface GoalLanding {
@@ -22,7 +22,7 @@ export interface GoalTarget {
   cardId?: string;
 }
 
-export type GoalIcon = 'keyboard' | 'key' | 'headphones' | 'globe' | 'radio' | 'waveform' | 'graduationCap';
+export type GoalIcon = 'keyboard' | 'key' | 'keyCheck' | 'headphones' | 'globe' | 'radio' | 'waveform' | 'graduationCap';
 
 /** One entry of the shared goal list used by the navigator and the setup wizard. */
 export interface SetupGoal {
@@ -55,6 +55,9 @@ export const LANDINGS: Record<string, GoalLanding> = {
   'practice': {
     tab: 'other', cardId: 'settings-card-practice-card',
   },
+  'send-practice': {
+    tab: 'other', cardId: 'settings-card-send-practice-card',
+  },
   'serial-input': {
     tab: 'inputs', cardId: 'settings-card-serial-input-card',
   },
@@ -86,7 +89,8 @@ export const LANDINGS: Record<string, GoalLanding> = {
 
 export const MAIN_GOALS: SetupGoal[] = [
   { label: 'Type and hear Morse', landing: 'encoder', icon: 'keyboard', wizard: 'type' },
-  { label: 'Practice sending Morse', landing: 'keyboard-keyer', icon: 'key', wizard: 'send' },
+  { label: 'Key and see the text', landing: 'keyboard-keyer', icon: 'key', wizard: 'send' },
+  { label: 'Practice sending Morse', landing: 'send-practice', icon: 'keyCheck', wizard: 'send-practice' },
   { label: 'Practice receiving Morse', landing: 'practice', icon: 'headphones', wizard: 'practice' },
   { label: 'Teach or demonstrate Morse', landing: 'teach', icon: 'graduationCap', wizard: 'teach' },
 ];

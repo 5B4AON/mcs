@@ -2,8 +2,8 @@
  * Morse Code Studio
  */
 
-import { Condition, ForcedSetting, WizardStep } from '../engine/flow-types';
-import { answerIs } from '../engine/conditions';
+import { Condition, ForcedSetting, QuestionOption, WizardLevel, WizardStep } from '../engine/flow-types';
+import { all, answerIs, any, settingIs } from '../engine/conditions';
 
 /** Options shared by the standard timing steps. */
 export interface TimingStepOptions {
@@ -15,6 +15,8 @@ export interface TimingStepOptions {
   intro?: string;
   /** Help section to open from the step's "?" button; the standard one is used by default */
   helpSection?: string;
+  /** Lowest level that sees the step (see `levels` on a flow) */
+  level?: WizardLevel;
 }
 
 /**
@@ -47,6 +49,7 @@ export function speedStep(
     intro: options.intro ?? 'Pick how fast Morse is sent for this task. You can change it later from the main menu.',
     helpSection: options.helpSection ?? helpSection,
     when: options.when,
+    level: options.level,
     items,
   };
 }
@@ -70,6 +73,7 @@ export function farnsworthStep(options: FarnsworthStepOptions = {}): WizardStep 
     intro: options.intro ?? 'Optional. Makes the gaps longer so Morse is easier to follow.',
     helpSection: options.helpSection ?? 's8-5',
     when: options.when,
+    level: options.level,
     items: [{ item: 'farnsworth', hint }],
   };
 }
@@ -103,30 +107,40 @@ export function soundStep(options: SoundStepOptions): WizardStep {
 /** Where the user wants to work: the main screen, the full screen, or the full screen with Lens. */
 export type ScreenChoice = 'main' | 'fullscreen' | 'lens';
 
+/** Options of the screen step. */
+export interface ScreenStepOptions {
+  /** Offer "Full screen with Lens" (default true); a goal where one latest character makes no sense leaves it out */
+  lens?: boolean;
+}
+
 /**
  * Standard last step of the goals where you type or key text yourself: which
  * screen to use. Choosing the full screen or Lens also makes the full screen
  * open (in Type or Key mode, matching the goal) when the guide is applied;
  * "Main screen" changes nothing.
  */
-export function screenStep(mode: 'key' | 'type'): WizardStep {
+export function screenStep(mode: 'key' | 'type', options: ScreenStepOptions = {}): WizardStep {
   const doing = mode === 'type' ? 'Type' : 'Key';
+  const lens = options.lens ?? true;
+  const choices: QuestionOption[] = [
+    { value: 'main', label: 'Main screen', hint: 'Stay on the main screen, as now. Nothing about the full screen changes.' },
+    { value: 'fullscreen', label: 'Full screen', hint: `Open the large conversation view in ${doing} mode, showing the whole text.` },
+  ];
+  if (lens) {
+    choices.push({ value: 'lens', label: 'Full screen with Lens', hint: `Open the full screen in ${doing} mode showing one character at a time, with its Morse symbols below it. Each new character replaces the last. Useful for teaching.` });
+  }
   return {
     id: 'screen',
     title: 'Choose your screen',
-    intro: 'Where would you like to work? The main screen shows everything at once. The full screen is one large conversation view. Lens is a teaching aid in the full screen: it shows only the latest character, very large, with its dots and dashes underneath.',
+    intro: `Where would you like to work? The main screen shows everything at once. The full screen is one large conversation view.${lens ? ' Lens is a teaching aid in the full screen: it shows only the latest character, very large, with its dots and dashes underneath.' : ''}`,
     helpSection: 's2-6',
     questions: [{
       id: 'screen',
       label: 'Screen',
       kind: 'single',
       default: 'main',
-      defaultFrom: settings => (settings.fullscreenLensEnabled ? 'lens' : 'main'),
-      options: [
-        { value: 'main', label: 'Main screen', hint: 'Stay on the main screen, as now. Nothing about the full screen changes.' },
-        { value: 'fullscreen', label: 'Full screen', hint: `Open the large conversation view in ${doing} mode, showing the whole text.` },
-        { value: 'lens', label: 'Full screen with Lens', hint: `Open the full screen in ${doing} mode showing one character at a time, with its Morse symbols below it. Each new character replaces the last. Useful for teaching.` },
-      ],
+      defaultFrom: settings => (lens && settings.fullscreenLensEnabled ? 'lens' : 'main'),
+      options: choices,
     }],
   };
 }
@@ -141,4 +155,45 @@ export function screenForced(mode: 'key' | 'type'): ForcedSetting[] {
     { key: 'fullscreenInputMode', value: mode, label: modeLabel, when: chosen('lens') },
     { key: 'fullscreenInputMode', value: mode, label: modeLabel, when: chosen('fullscreen') },
   ];
+}
+
+/** True while the main screen is in Copy practice or Send practice mode. */
+export const inPracticeMode: Condition = any(settingIs('encoderMode', 'practice'), settingIs('encoderMode', 'send-practice'));
+
+const LEAVE_PRACTICE = 'leave-practice';
+
+/**
+ * First step of the goals that do not work in a practice mode (keying and seeing
+ * text, decoding, online relay, hardware output): shown only while a practice
+ * mode is on, it asks whether to go back to Send on Enter. Nothing changes
+ * unless the answer is yes; see `leavePracticeForced`.
+ */
+export function leavePracticeStep(what: string): WizardStep {
+  return {
+    id: 'leave-practice',
+    title: 'Practice mode is on',
+    intro: `The main screen is in a practice mode, which handles keying and text itself. ${what} Going back to Send on Enter makes this guide's result work as described.`,
+    helpSection: 's3-1',
+    when: inPracticeMode,
+    questions: [{
+      id: LEAVE_PRACTICE,
+      label: 'Switch the main screen back to Send on Enter now?',
+      kind: 'single',
+      default: 'yes',
+      options: [
+        { value: 'yes', label: 'Yes, switch to Send on Enter', hint: 'Practice stops. You can pick a practice mode again from the main screen.' },
+        { value: 'no', label: 'No, stay in the practice mode', hint: 'The settings are still applied, but they will not behave as described until you leave the practice mode.' },
+      ],
+    }],
+  };
+}
+
+/** The mode change that goes with `leavePracticeStep`. */
+export function leavePracticeForced(): ForcedSetting[] {
+  return [{
+    key: 'encoderMode',
+    value: 'enter',
+    label: 'Switch the main screen back to Send on Enter',
+    when: all(inPracticeMode, answerIs(LEAVE_PRACTICE, 'yes')),
+  }];
 }

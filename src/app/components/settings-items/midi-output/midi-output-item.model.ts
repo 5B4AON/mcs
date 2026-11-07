@@ -5,7 +5,7 @@
 import {
   KEY_INPUT_MODES, KeyInputMode, OUTPUT_FORWARDS, OutputForward, SettingsFieldRules,
 } from '../../../services/settings-common';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
 
 /** Mode for a MIDI output mapping entry */
 export type MidiOutputMode = KeyInputMode;
@@ -82,13 +82,21 @@ export const MIDI_OUTPUT_FIELD_RULES: SettingsFieldRules = {
   ],
 };
 
+const REVIEW_LABELS = {
+  midiOutputEnabled: 'MIDI output',
+  midiOutputOverrideWpm: 'MIDI output uses local encoder speed',
+};
+
 /** What the MIDI Output item (master switch and WPM option) edits and says in a review. The mappings have their own descriptor. */
 export const MIDI_OUTPUT_DESCRIPTOR: ItemDescriptor = {
   id: 'midi-output',
   keys: ['midiOutputEnabled', 'midiOutputOverrideWpm'],
   validate: () => [],
-  review: labelledReview({
-    midiOutputEnabled: 'MIDI output',
-    midiOutputOverrideWpm: 'MIDI output uses local encoder speed',
-  }),
+  review: labelledReview(REVIEW_LABELS),
 };
+
+/** The switch on its own wizard step. */
+export const MIDI_OUTPUT_CONNECT_DESCRIPTOR = partDescriptor('midi-output-connect', ['midiOutputEnabled'], REVIEW_LABELS);
+
+/** The local-speed option on its own wizard step. */
+export const MIDI_OUTPUT_SPEED_DESCRIPTOR = partDescriptor('midi-output-speed', ['midiOutputOverrideWpm'], REVIEW_LABELS);

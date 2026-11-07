@@ -2,17 +2,17 @@
 @if (part === 'mode') {
 <app-item-shell cardId="encoder-mode-card" title="Send mode" [mode]="mode">
   <label>Send mode:
-    <select [value]="s().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+    <select [value]="typingMode ? s().encoderMode : ''" (change)="onSettingChange('encoderMode', $event)">
+      @if (!typingMode) {
+        <option value="" selected disabled>Choose&hellip;</option>
+      }
       <option value="enter" [selected]="s().encoderMode === 'enter'">Send on Enter</option>
       <option value="live" [selected]="s().encoderMode === 'live'">Live</option>
-      @if (s().encoderMode === 'practice') {
-        <option value="practice" selected>Copy practice (current)</option>
-      }
-      @if (s().encoderMode === 'send-practice') {
-        <option value="send-practice" selected>Send practice (current)</option>
-      }
     </select>
   </label>
+  @if (!typingMode) {
+    <div class="conflict-warning">The main screen is in a practice mode, which does not type text as Morse. Choose how typed text is sent; applying leaves the practice mode.</div>
+  }
   <div class="keyer-hint">
     Send on Enter plays after you press Enter. Live plays each letter as you type.
     <app-help-link-button section="s3-1" label="Help: sending modes" />
@@ -22,11 +22,14 @@
 <app-item-shell cardId="encoder-card" title="Keyboard Encoder" [mode]="mode">
   <span item-badges class="source-badge" [class.source-rx]="s().encoderSource === 'rx'" [class.source-tx]="s().encoderSource === 'tx'">{{ s().encoderSource === 'rx' ? 'RX' : 'TX' }}</span>
 
-  <div class="cw-hint">
-    Plays the text you type as Morse.
-    <app-help-link-button section="s3-1" label="Help: typing and sending modes" />
-  </div>
+  @if (part === 'details') {
+    <div class="cw-hint">
+      Plays the text you type as Morse.
+      <app-help-link-button section="s3-1" label="Help: typing and sending modes" />
+    </div>
+  }
 
+  @if (part === 'details' || part === 'source') {
   <label>Used for:
     <select [value]="s().encoderSource" (change)="onSettingChange('encoderSource', $event)">
       <option value="rx">RX &mdash; received morse</option>
@@ -34,9 +37,13 @@
     </select>
     <app-help-link-button section="s5-1" label="Help: RX and TX" />
   </label>
+  }
 
-  <div class="card-section-divider"></div>
+  @if (part === 'details') {
+    <div class="card-section-divider"></div>
+  }
 
+  @if (part === 'details' || part === 'identity') {
   <label>Name:
     <input type="text" [value]="s().encoderName"
            (input)="onSettingChange('encoderName', $event)"
@@ -58,5 +65,6 @@
     </div>
   </label>
   <div class="keyer-hint">Optional. Colours this input's text.</div>
+  }
 </app-item-shell>
 }

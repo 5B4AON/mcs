@@ -3,7 +3,8 @@
  */
 
 import { OUTPUT_FORWARDS, OutputForward, SettingsFieldRules } from '../../../services/settings-common';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
+import type { AppSettings } from '../../../services/settings.service';
 
 /** The settings the Firebase RTDB Output item owns. */
 export interface RtdbOutputSettings {
@@ -43,6 +44,39 @@ export const RTDB_OUTPUT_FIELD_RULES: SettingsFieldRules = {
 };
 
 /** What the Firebase RTDB Output item edits. The channel secret is never shown in a review, only whether it is set. */
+const REVIEW_LABELS: Partial<Record<keyof AppSettings, string>> = {
+  rtdbOutputEnabled: 'Firebase RTDB output',
+  rtdbOutputForward: 'Firebase output forwards',
+  rtdbOutputChannelName: 'Firebase output channel',
+  rtdbOutputChannelSecret: 'Firebase output channel secret',
+  rtdbOutputName: 'Firebase output name',
+  rtdbOutputOverrideName: 'Always use this name',
+  rtdbOutputColor: 'Firebase output colour',
+  rtdbOutputOverrideColor: 'Always use this colour',
+  rtdbAllowInputRelay: 'Relay Firebase input to output',
+  rtdbRelaySuppressOtherInputs: 'Relay suppresses other inputs',
+};
+
+/** Secrets read as set or none; the rest as plain text. */
+function reviewText(key: keyof AppSettings, value: unknown): string {
+  if (key === 'rtdbOutputChannelSecret') return value ? 'set' : 'none';
+  if (key === 'rtdbOutputForward') return value === 'rx' ? 'RX only' : value === 'tx' ? 'TX only' : 'RX and TX';
+  if (typeof value === 'boolean') return value ? 'On' : 'Off';
+  return value === '' || value === undefined ? 'none' : String(value);
+}
+
+function connectProblems(s: AppSettings): string[] {
+  if (!s.rtdbOutputEnabled) return [];
+  const errors: string[] = [];
+  if (!s.rtdbOutputChannelName.trim()) errors.push('Firebase output: enter a channel name, or turn it off.');
+  if (!s.rtdbOutputChannelSecret.trim()) errors.push('Firebase output: enter a channel secret, or turn it off.');
+  return errors;
+}
+
+function identityProblems(s: AppSettings): string[] {
+  return s.rtdbOutputEnabled && !s.rtdbOutputName.trim() ? ['Firebase output: enter your name, or turn it off.'] : [];
+}
+
 export const RTDB_OUTPUT_DESCRIPTOR: ItemDescriptor = {
   id: 'rtdb-output',
   keys: [
@@ -50,29 +84,18 @@ export const RTDB_OUTPUT_DESCRIPTOR: ItemDescriptor = {
     'rtdbOutputName', 'rtdbOutputOverrideName', 'rtdbOutputColor', 'rtdbOutputOverrideColor',
     'rtdbAllowInputRelay', 'rtdbRelaySuppressOtherInputs',
   ],
-  validate: s => {
-    if (!s.rtdbOutputEnabled) return [];
-    const errors: string[] = [];
-    if (!s.rtdbOutputChannelName.trim()) errors.push('Firebase output: enter a channel name, or turn it off.');
-    if (!s.rtdbOutputChannelSecret.trim()) errors.push('Firebase output: enter a channel secret, or turn it off.');
-    if (!s.rtdbOutputName.trim()) errors.push('Firebase output: enter your name, or turn it off.');
-    return errors;
-  },
-  review: labelledReview({
-    rtdbOutputEnabled: 'Firebase RTDB output',
-    rtdbOutputForward: 'Firebase output forwards',
-    rtdbOutputChannelName: 'Firebase output channel',
-    rtdbOutputChannelSecret: 'Firebase output channel secret',
-    rtdbOutputName: 'Firebase output name',
-    rtdbOutputOverrideName: 'Always use this name',
-    rtdbOutputColor: 'Firebase output colour',
-    rtdbOutputOverrideColor: 'Always use this colour',
-    rtdbAllowInputRelay: 'Relay Firebase input to output',
-    rtdbRelaySuppressOtherInputs: 'Relay suppresses other inputs',
-  }, (key, value) => {
-    if (key === 'rtdbOutputChannelSecret') return value ? 'set' : 'none';
-    if (key === 'rtdbOutputForward') return value === 'rx' ? 'RX only' : value === 'tx' ? 'TX only' : 'RX and TX';
-    if (typeof value === 'boolean') return value ? 'On' : 'Off';
-    return value === '' || value === undefined ? 'none' : String(value);
-  }),
+  validate: s => [...connectProblems(s), ...identityProblems(s)],
+  review: labelledReview(REVIEW_LABELS, reviewText),
 };
+
+/** The switch, channel name and secret on their own wizard step. */
+export const RTDB_OUTPUT_CONNECT_DESCRIPTOR = partDescriptor('rtdb-output-connect', ['rtdbOutputEnabled', 'rtdbOutputChannelName', 'rtdbOutputChannelSecret'], REVIEW_LABELS, connectProblems, reviewText);
+
+/** What is forwarded (RX, TX or both) on its own wizard step. */
+export const RTDB_OUTPUT_SEND_DESCRIPTOR = partDescriptor('rtdb-output-send', ['rtdbOutputForward'], REVIEW_LABELS, undefined, reviewText);
+
+/** The name and colour sent with the Morse on their own wizard step. */
+export const RTDB_OUTPUT_IDENTITY_DESCRIPTOR = partDescriptor('rtdb-output-identity', ['rtdbOutputName', 'rtdbOutputOverrideName', 'rtdbOutputColor', 'rtdbOutputOverrideColor'], REVIEW_LABELS, identityProblems, reviewText);
+
+/** Relaying received Morse to the output channel on its own wizard step. */
+export const RTDB_OUTPUT_RELAY_DESCRIPTOR = partDescriptor('rtdb-output-relay', ['rtdbAllowInputRelay', 'rtdbRelaySuppressOtherInputs'], REVIEW_LABELS, undefined, reviewText);

@@ -2,11 +2,14 @@
 <app-item-shell cardId="send-practice-card" title="Send Practice" [mode]="mode"
                 [enabled]="s().sendPracticeEnabled"
                 (enabledChange)="onEnabledChange($event)">
-  <div class="cw-hint">
-    Shows text for you to key with a key or paddle. Choose Send practice mode, then press Start.
-    <app-help-link-button section="s3-6" label="Help: Send practice" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Shows text for you to key with a key or paddle. Choose Send practice mode, then press Start.
+      <app-help-link-button section="s3-6" label="Help: Send practice" />
+    </div>
+  }
 
+  @if (part === 'all' || part === 'content') {
   <!-- Content mode -->
   <label>
     Content:
@@ -81,6 +84,9 @@
     }
   }
 
+  }
+
+  @if (part === 'all' || part === 'checking') {
   <!-- Checking -->
   <label>
     Check:
@@ -113,7 +119,9 @@
     </select>
   </label>
   <div class="cw-hint">More than one round gives a score for each round and an average.</div>
+  }
 
+  @if (part === 'all' || part === 'hint') {
   <label>
     Pattern hint:
     <select (change)="onHintChange($event)">
@@ -122,7 +130,9 @@
     </select>
   </label>
   <div class="cw-hint">Shows the dots and dashes of the character you are keying.</div>
+  }
 
+  @if (part === 'all' || part === 'keys') {
   <!-- Keys used -->
   <div class="cw-hint"><strong>Keys used for Send Practice:</strong> only these count as keying the text. RTDB never does.</div>
   @for (row of inputRows(); track row.id) {
@@ -138,6 +148,9 @@
     </label>
   }
 
+  }
+
+  @if (part === 'all' || part === 'pipeline') {
   @if (forceLocalPipeline) {
     <div class="cw-hint">This guide keeps send practice on this device.</div>
   } @else {
@@ -157,4 +170,5 @@
     </div>
   }
   <div class="cw-hint">A key wired directly to a transmitter will still transmit. The app cannot stop that.</div>
+  }
 </app-item-shell>

@@ -11,7 +11,7 @@
       }
     </span>
 
-  @if (!midiOutput.supported) {
+  @if ((part === 'all' || part === 'connect') && !midiOutput.supported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
       @if (ios) {
@@ -22,11 +22,11 @@
     </div>
   }
 
-  @if (midiOutput.lastError()) {
+  @if ((part === 'all' || part === 'connect') && midiOutput.lastError()) {
     <div class="conflict-warning">{{ midiOutput.lastError() }}</div>
   }
 
-  @if (mode === 'card') {
+  @if (part === 'all' && mode === 'card') {
     <app-mapping-list [mappings]="s().midiOutputMappings"
                       (add)="addMapping()" (edit)="startEdit($event)" (remove)="removeMapping($event)" kindId="midi-output-mapping-editor"
                       (enabledChange)="onMappingEnabledChange($event.index, $event.enabled)">
@@ -45,7 +45,7 @@
     </app-mapping-list>
   }
 
-  @if (mode === 'embedded') {
+  @if ((part === 'all' || part === 'connect') && mode === 'embedded') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().midiOutputEnabled" [disabled]="!midiOutput.supported"
              (change)="onMidiOutputEnabledChange($any($event.target).checked)">
@@ -60,17 +60,21 @@
     </div>
   }
 
-  <div class="cw-hint">
-    Plays Morse as MIDI notes at the Encoder speed.
-    <app-help-link-button section="s7-4" label="Help: MIDI output" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Plays Morse as MIDI notes at the Encoder speed.
+      <app-help-link-button section="s7-4" label="Help: MIDI output" />
+    </div>
+  }
 
-  <label class="checkbox-label">
-    <input type="checkbox" [checked]="s().midiOutputOverrideWpm"
-           (change)="scope.update({ midiOutputOverrideWpm: $any($event.target).checked })">
-    Override input WPM with local encoder WPM
-  </label>
-  <div class="cw-hint">Plays at your Encoder speed, not the speed it arrived at.</div>
+  @if (part === 'all' || part === 'speed') {
+    <label class="checkbox-label">
+      <input type="checkbox" [checked]="s().midiOutputOverrideWpm"
+             (change)="scope.update({ midiOutputOverrideWpm: $any($event.target).checked })">
+      Override input WPM with local encoder WPM
+    </label>
+    <div class="cw-hint">Plays at your Encoder speed, not the speed it arrived at.</div>
+  }
 </app-item-shell>
 
 <!-- MIDI output edit modal (hosted here because it's triggered from this card) -->

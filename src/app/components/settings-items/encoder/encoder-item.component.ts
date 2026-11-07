@@ -29,7 +29,13 @@ export class EncoderItemComponent {
   @Input() mode: 'card' | 'embedded' = 'card';
 
   /** `mode` shows only how typed text is sent (live or on Enter), used on its own wizard page; the card has no such choice, the main screen does. */
-  @Input() part: 'details' | 'mode' = 'details';
+  @Input() part: 'details' | 'mode' | 'source' | 'identity' = 'details';
+
+  /** Whether the draft is in a mode where typed text is played (not a practice mode) */
+  get typingMode(): boolean {
+    const mode = this.s().encoderMode;
+    return mode === 'enter' || mode === 'live';
+  }
 
   readonly scope = inject(SETTINGS_SCOPE);
 

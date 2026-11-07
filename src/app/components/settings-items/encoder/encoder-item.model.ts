@@ -4,7 +4,7 @@
 
 import { DECODER_SOURCES, DecoderSource, SettingsFieldRules } from '../../../services/settings-common';
 import type { AppSettings } from '../../../services/settings.service';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
 
 /** Encoder submission mode: 'enter' waits for Enter key, 'live' sends as you type, 'practice' for copy practice, 'send-practice' for send practice */
 export const ENCODER_MODES = ['enter', 'live', 'practice', 'send-practice'] as const;
@@ -32,17 +32,25 @@ export const ENCODER_FIELD_RULES: SettingsFieldRules = {
   enums: { encoderMode: ENCODER_MODES, encoderSource: DECODER_SOURCES },
 };
 
+const REVIEW_LABELS = {
+  encoderSource: 'Typed text is used as',
+  encoderName: 'Encoder name',
+  encoderColor: 'Encoder colour',
+};
+
 /** What the Keyboard Encoder item edits and says in a review. */
 export const ENCODER_DESCRIPTOR: ItemDescriptor = {
   id: 'encoder',
   keys: ['encoderSource', 'encoderName', 'encoderColor'],
   validate: () => [],
-  review: labelledReview({
-    encoderSource: 'Typed text is used as',
-    encoderName: 'Encoder name',
-    encoderColor: 'Encoder colour',
-  }),
+  review: labelledReview(REVIEW_LABELS),
 };
+
+/** Whether typed text counts as sent or received, on its own wizard step. */
+export const ENCODER_SOURCE_DESCRIPTOR = partDescriptor('encoder-source', ['encoderSource'], REVIEW_LABELS);
+
+/** The name and colour of typed text, on their own wizard step. */
+export const ENCODER_IDENTITY_DESCRIPTOR = partDescriptor('encoder-identity', ['encoderName', 'encoderColor'], REVIEW_LABELS);
 
 /** How an encoder mode reads in a review. */
 function modeText(key: keyof AppSettings, value: unknown): string {
@@ -54,6 +62,8 @@ function modeText(key: keyof AppSettings, value: unknown): string {
 export const ENCODER_MODE_DESCRIPTOR: ItemDescriptor = {
   id: 'encoder-mode',
   keys: ['encoderMode'],
-  validate: () => [],
+  validate: s => s.encoderMode === 'enter' || s.encoderMode === 'live'
+    ? []
+    : ['Choose Send on Enter or Live: the main screen is in a practice mode, which does not type text as Morse.'],
   review: labelledReview({ encoderMode: 'Typed text is sent' }, modeText),
 };

@@ -5,7 +5,8 @@
 import {
   DECODER_SOURCES, DecoderSource, PADDLE_MODES, PaddleMode, SettingsFieldRules,
 } from '../../../services/settings-common';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
+import type { AppSettings } from '../../../services/settings.service';
 
 /** Mouse button action mapping */
 export const MOUSE_BUTTON_ACTIONS = ['straightKey', 'dit', 'dah', 'none'] as const;
@@ -49,25 +50,38 @@ export const MOUSE_KEYER_FIELD_RULES: SettingsFieldRules = {
   },
 };
 
+const REVIEW_LABELS = {
+  mouseKeyerEnabled: 'Mouse keyer',
+  mouseKeyerSource: 'Mouse keyer source',
+  mouseLeftAction: 'Left button',
+  mouseMiddleAction: 'Middle button',
+  mouseRightAction: 'Right button',
+  mouseReversePaddles: 'Reverse paddles',
+  mousePaddleMode: 'Paddle mode',
+  mouseKeyerName: 'Name',
+  mouseKeyerColor: 'Colour',
+};
+
+function buttonProblems(v: AppSettings): string[] {
+  const a = [v.mouseLeftAction, v.mouseMiddleAction, v.mouseRightAction].filter(x => x !== 'none');
+  return new Set(a).size !== a.length
+    ? ['Each mouse action should be assigned to only one button.']
+    : [];
+}
+
 /** What the mouse-keyer item edits and says in a review. */
 export const MOUSE_KEYER_DESCRIPTOR: ItemDescriptor = {
   id: 'mouse-keyer',
   keys: ['mouseKeyerEnabled', 'mouseKeyerSource', 'mouseLeftAction', 'mouseMiddleAction', 'mouseRightAction', 'mouseReversePaddles', 'mousePaddleMode', 'mouseKeyerName', 'mouseKeyerColor'],
-  validate: v => {
-    const a = [v.mouseLeftAction, v.mouseMiddleAction, v.mouseRightAction].filter(x => x !== 'none');
-    return new Set(a).size !== a.length
-      ? ['Each mouse action should be assigned to only one button.']
-      : [];
-  },
-  review: labelledReview({
-    mouseKeyerEnabled: 'Mouse keyer',
-    mouseKeyerSource: 'Mouse keyer source',
-    mouseLeftAction: 'Left button',
-    mouseMiddleAction: 'Middle button',
-    mouseRightAction: 'Right button',
-    mouseReversePaddles: 'Reverse paddles',
-    mousePaddleMode: 'Paddle mode',
-    mouseKeyerName: 'Name',
-    mouseKeyerColor: 'Colour',
-  }),
+  validate: buttonProblems,
+  review: labelledReview(REVIEW_LABELS),
 };
+
+/** The buttons on their own wizard step. */
+export const MOUSE_KEYER_BUTTONS_DESCRIPTOR = partDescriptor('mouse-keyer-buttons', ['mouseKeyerSource', 'mouseLeftAction', 'mouseMiddleAction', 'mouseRightAction'], REVIEW_LABELS, buttonProblems);
+
+/** The paddle options on their own wizard step. */
+export const MOUSE_KEYER_PADDLE_DESCRIPTOR = partDescriptor('mouse-keyer-paddle', ['mouseReversePaddles', 'mousePaddleMode'], REVIEW_LABELS);
+
+/** The name and colour on their own wizard step. */
+export const MOUSE_KEYER_IDENTITY_DESCRIPTOR = partDescriptor('mouse-keyer-identity', ['mouseKeyerName', 'mouseKeyerColor'], REVIEW_LABELS);

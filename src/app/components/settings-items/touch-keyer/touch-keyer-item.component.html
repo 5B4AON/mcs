@@ -6,15 +6,18 @@
     <span class="source-badge" [class.source-rx]="(forceSource ?? s().touchKeyerSource) === 'rx'" [class.source-tx]="(forceSource ?? s().touchKeyerSource) === 'tx'">{{ (forceSource ?? s().touchKeyerSource) === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+  @if (part === 'all') {
   <div class="keyer-hint">
     On-screen touch buttons key Morse.
     <app-help-link-button section="s4-3" label="Help: touch keyer" />
   </div>
+}
 
-@if (forceEnabled) {
+@if ((part === 'all' || part === 'mode') && forceEnabled) {
   <p class="keyer-hint">This guide enables touch keying.</p>
 }
 
+@if (part === 'all' || part === 'mode') {
 @if (forceSource) {
   <p class="keyer-hint">Touch keying sends Morse (TX).</p>
 } @else {
@@ -42,8 +45,9 @@
     Two touch buttons: left sends dots, right sends dashes.
   }
 </div>
+}
 
-@if (s().touchKeyerMode === 'paddle') {
+@if ((part === 'all' || part === 'paddle') && s().touchKeyerMode === 'paddle') {
   <label>
     <input type="checkbox" [checked]="s().touchReversePaddles"
            (change)="onBoolChange('touchReversePaddles', $event)">
@@ -61,8 +65,11 @@
   </label>
 }
 
+@if (part === 'all') {
 <div class="card-section-divider"></div>
+}
 
+@if (part === 'all' || part === 'identity') {
 <label>Name:
   <input type="text" [value]="s().touchKeyerName"
          (input)="onSettingChange('touchKeyerName', $event)"
@@ -84,4 +91,5 @@
   </div>
 </label>
 <div class="keyer-hint">Optional. Colours this input's text.</div>
+}
 </app-item-shell>

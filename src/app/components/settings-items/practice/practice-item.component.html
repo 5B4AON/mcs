@@ -2,11 +2,14 @@
 <app-item-shell cardId="practice-card" title="Copy Practice" [mode]="mode"
                 [enabled]="s().practiceEnabled"
                 (enabledChange)="onEnabledChange($event)">
-  <div class="cw-hint">
-    Plays random Morse for you to copy by ear. Choose Practice mode, then press Start.
-    <app-help-link-button section="s3-5" label="Help: Copy practice" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Plays random Morse for you to copy by ear. Choose Practice mode, then press Start.
+      <app-help-link-button section="s3-5" label="Help: Copy practice" />
+    </div>
+  }
 
+  @if (part === 'all' || part === 'content') {
   <!-- Content mode -->
   <label>
     Content:
@@ -99,6 +102,9 @@
     </label>
   }
 
+  }
+
+  @if (part === 'all' || part === 'feedback') {
   <!-- Feedback mode (Koch method is always Type-along) -->
   @if (s().practiceContentMode !== 'koch') {
   <label>
@@ -140,6 +146,9 @@
     </div>
   }
 
+  }
+
+  @if (part === 'all' || part === 'pipeline') {
   @if (forceLocalPipeline) {
     <div class="cw-hint">This guide keeps practice on this device.</div>
   } @else {
@@ -161,6 +170,9 @@
     </div>
   }
 
+  }
+
+  @if (part === 'all' || part === 'identity') {
   @if (forceReceivedMorse) {
     <div class="cw-hint">Practice plays as received Morse (RX).</div>
   } @else {
@@ -193,4 +205,5 @@
       }
     </span>
   </label>
+  }
 </app-item-shell>

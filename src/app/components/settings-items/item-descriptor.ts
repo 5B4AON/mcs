@@ -21,6 +21,29 @@
  *  - Device actions (test tone, detect, request port) are explicit buttons and
  *    only work when `scope.isLive` is true.
  *  - Register the item in `item-registry.ts` so flows can refer to it by id.
+ *
+ * Wizard parts
+ * ------------
+ * A card with more than one idea can be shown in a wizard as several small
+ * steps, each with its own explanation. The card component owns every look of
+ * itself, so the split lives in the card, never in a flow:
+ *
+ *  - The component has `@Input() part` (`'all'` is the Settings card; the other
+ *    values name the parts, e.g. `'content'`).
+ *  - The template shows a section with `@if (part === 'all' || part === 'x')`.
+ *    The shell, the item header and notes that belong to the whole card show
+ *    for `'all'` only.
+ *  - The model file exports one descriptor per part, built with
+ *    `partDescriptor()`: its keys are exactly what that part edits, so Revert,
+ *    change detection, validation and review work per step.
+ *  - `item-registry.ts` has one id per part, `<item>-<part>`, with
+ *    `inputs: { part: '<part>' }`; the whole card keeps the plain `<item>` id.
+ *  - A flow only names the registry ids and holds the step texts, order and
+ *    conditions. It never contains card markup or field rules.
+ *  - A card that is one idea (for example Farnsworth) stays whole and needs no
+ *    parts.
+ *  - A card that already had another `part` value (the Keyboard Encoder's
+ *    `'mode'`) keeps its existing whole-card value (`'details'`) instead of `'all'`.
  */
 
 import { AppSettings } from '../../services/settings.service';
@@ -45,6 +68,22 @@ export interface ItemDescriptor {
   validate(settings: AppSettings): string[];
   /** Plain-language lines for the keys that differ between base and proposed */
   review(base: AppSettings, proposed: AppSettings): ItemReviewLine[];
+}
+
+/**
+ * Descriptor of one wizard part of a card: it edits `keys`, checks them with
+ * `validate` and reviews them with the matching entries of the card's label
+ * table (keys without a label are left out of the review).
+ */
+export function partDescriptor(
+  id: string,
+  keys: readonly (keyof AppSettings)[],
+  labels: Partial<Record<keyof AppSettings, string>>,
+  validate: ItemDescriptor['validate'] = () => [],
+  format?: (key: keyof AppSettings, value: unknown) => string,
+): ItemDescriptor {
+  const own = Object.fromEntries(keys.filter(key => labels[key] !== undefined).map(key => [key, labels[key]]));
+  return { id, keys, validate, review: labelledReview(own, format) };
 }
 
 /** Build a `review()` from a label table: one line per labelled key that changed. */

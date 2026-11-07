@@ -5,7 +5,7 @@
 import {
   DECODER_SOURCES, DecoderSource, isTouchDevice, PADDLE_MODES, PaddleMode, SettingsFieldRules,
 } from '../../../services/settings-common';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
 
 /** Touch keyer operating mode */
 export const TOUCH_KEYER_MODES = ['straight', 'paddle'] as const;
@@ -53,20 +53,31 @@ export const TOUCH_KEYER_FIELD_RULES: SettingsFieldRules = {
   },
 };
 
+const REVIEW_LABELS = {
+  touchKeyerEnabled: 'Touch keyer',
+  touchKeyerSource: 'Touch keyer source',
+  touchKeyerMode: 'Touch mode',
+  touchLeftPaddle: 'Left paddle',
+  touchRightPaddle: 'Right paddle',
+  touchReversePaddles: 'Reverse paddles',
+  touchPaddleMode: 'Paddle mode',
+  touchKeyerName: 'Name',
+  touchKeyerColor: 'Colour',
+};
+
 /** What the touch-keyer item edits and says in a review. */
 export const TOUCH_KEYER_DESCRIPTOR: ItemDescriptor = {
   id: 'touch-keyer',
   keys: ['touchKeyerEnabled', 'touchKeyerSource', 'touchKeyerMode', 'touchLeftPaddle', 'touchRightPaddle', 'touchReversePaddles', 'touchPaddleMode', 'touchKeyerName', 'touchKeyerColor'],
   validate: () => [],
-  review: labelledReview({
-    touchKeyerEnabled: 'Touch keyer',
-    touchKeyerSource: 'Touch keyer source',
-    touchKeyerMode: 'Touch mode',
-    touchLeftPaddle: 'Left paddle',
-    touchRightPaddle: 'Right paddle',
-    touchReversePaddles: 'Reverse paddles',
-    touchPaddleMode: 'Paddle mode',
-    touchKeyerName: 'Name',
-    touchKeyerColor: 'Colour',
-  }),
+  review: labelledReview(REVIEW_LABELS),
 };
+
+/** Straight key or paddle on its own wizard step. */
+export const TOUCH_KEYER_MODE_DESCRIPTOR = partDescriptor('touch-keyer-mode', ['touchKeyerSource', 'touchKeyerMode'], REVIEW_LABELS);
+
+/** The paddle options on their own wizard step. */
+export const TOUCH_KEYER_PADDLE_DESCRIPTOR = partDescriptor('touch-keyer-paddle', ['touchReversePaddles', 'touchPaddleMode'], REVIEW_LABELS);
+
+/** The name and colour on their own wizard step. */
+export const TOUCH_KEYER_IDENTITY_DESCRIPTOR = partDescriptor('touch-keyer-identity', ['touchKeyerName', 'touchKeyerColor'], REVIEW_LABELS);

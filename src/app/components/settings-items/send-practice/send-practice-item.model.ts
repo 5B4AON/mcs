@@ -5,7 +5,7 @@
 import { KOCH_LESSON_COUNT } from '../../../data/koch-lessons';
 import { SettingsFieldRules } from '../../../services/settings-common';
 import { PRACTICE_CONTENT_MODES, PRACTICE_PIPELINES, PracticeContentMode, PracticePipeline } from '../practice/practice-item.model';
-import { ItemDescriptor, labelledReview } from '../item-descriptor';
+import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descriptor';
 import type { AppSettings } from '../../../services/settings.service';
 import { isValidSendPracticeInputId } from './send-practice-inputs';
 
@@ -109,37 +109,63 @@ export const SEND_PRACTICE_FIELD_RULES: SettingsFieldRules = {
   integers: ['sendPracticeGroupCount', 'sendPracticeCharGroupSize', 'sendPracticeRounds', 'sendPracticeKochLesson', 'sendPracticeWordLengths[]'],
 };
 
+/** Labels of every Send Practice setting in a review; the parts below show the ones they own. */
+const REVIEW_LABELS: Partial<Record<keyof AppSettings, string>> = {
+  sendPracticeEnabled: 'Send practice',
+  sendPracticeContentMode: 'Send practice content',
+  sendPracticeGroupCount: 'Send practice count',
+  sendPracticeCharGroupSize: 'Send practice group size',
+  sendPracticeIncludeLetters: 'Send practice letters',
+  sendPracticeIncludeNumbers: 'Send practice numbers',
+  sendPracticeIncludePunctuation: 'Send practice punctuation',
+  sendPracticeKochLesson: 'Send practice Koch lesson',
+  sendPracticeWordLengths: 'Send practice word lengths',
+  sendPracticeCheckMode: 'Send practice checking',
+  sendPracticeRounds: 'Send practice rounds',
+  sendPracticePipeline: 'Send practice output',
+  sendPracticeInputs: 'Send practice keys',
+  sendPracticeHint: 'Send practice pattern hint',
+};
+
+const CONTENT_KEYS = ['sendPracticeContentMode', 'sendPracticeGroupCount', 'sendPracticeCharGroupSize', 'sendPracticeIncludeLetters', 'sendPracticeIncludeNumbers', 'sendPracticeIncludePunctuation', 'sendPracticeKochLesson', 'sendPracticeWordLengths'] as const;
+const CHECKING_KEYS = ['sendPracticeCheckMode', 'sendPracticeRounds'] as const;
+
+function contentProblems(s: AppSettings): string[] {
+  return s.sendPracticeContentMode === 'characters' && !s.sendPracticeIncludeLetters && !s.sendPracticeIncludeNumbers && !s.sendPracticeIncludePunctuation
+    ? ['Pick at least one kind of character for send practice.']
+    : [];
+}
+
+function inputProblems(s: AppSettings): string[] {
+  const problems: string[] = [];
+  if (s.sendPracticeEnabled && s.sendPracticeInputs.length === 0) {
+    problems.push('Pick at least one key for send practice.');
+  }
+  if (!s.sendPracticeInputs.every(isValidSendPracticeInputId)) {
+    problems.push('The list of keys for send practice has an unknown entry.');
+  }
+  return problems;
+}
+
 /** What the Send Practice item edits, checks and says in a review. */
 export const SEND_PRACTICE_DESCRIPTOR: ItemDescriptor = {
   id: 'send-practice',
-  keys: ['sendPracticeEnabled', 'sendPracticeContentMode', 'sendPracticeGroupCount', 'sendPracticeCharGroupSize', 'sendPracticeIncludeLetters', 'sendPracticeIncludeNumbers', 'sendPracticeIncludePunctuation', 'sendPracticeKochLesson', 'sendPracticeWordLengths', 'sendPracticeCheckMode', 'sendPracticeRounds', 'sendPracticePipeline', 'sendPracticeInputs', 'sendPracticeHint'],
-  validate: s => {
-    const problems: string[] = [];
-    if (s.sendPracticeContentMode === 'characters' && !s.sendPracticeIncludeLetters && !s.sendPracticeIncludeNumbers && !s.sendPracticeIncludePunctuation) {
-      problems.push('Pick at least one kind of character for send practice.');
-    }
-    if (s.sendPracticeEnabled && s.sendPracticeInputs.length === 0) {
-      problems.push('Pick at least one key for send practice.');
-    }
-    if (!s.sendPracticeInputs.every(isValidSendPracticeInputId)) {
-      problems.push('The list of keys for send practice has an unknown entry.');
-    }
-    return problems;
-  },
-  review: labelledReview({
-    sendPracticeEnabled: 'Send practice',
-    sendPracticeContentMode: 'Send practice content',
-    sendPracticeGroupCount: 'Send practice count',
-    sendPracticeCharGroupSize: 'Send practice group size',
-    sendPracticeIncludeLetters: 'Send practice letters',
-    sendPracticeIncludeNumbers: 'Send practice numbers',
-    sendPracticeIncludePunctuation: 'Send practice punctuation',
-    sendPracticeKochLesson: 'Send practice Koch lesson',
-    sendPracticeWordLengths: 'Send practice word lengths',
-    sendPracticeCheckMode: 'Send practice checking',
-    sendPracticeRounds: 'Send practice rounds',
-    sendPracticePipeline: 'Send practice output',
-    sendPracticeInputs: 'Send practice keys',
-    sendPracticeHint: 'Send practice pattern hint',
-  }, reviewText),
+  keys: ['sendPracticeEnabled', ...CONTENT_KEYS, ...CHECKING_KEYS, 'sendPracticePipeline', 'sendPracticeInputs', 'sendPracticeHint'],
+  validate: s => [...contentProblems(s), ...inputProblems(s)],
+  review: labelledReview(REVIEW_LABELS, reviewText),
 };
+
+/** The "Keys used" picker on its own wizard step. */
+export const SEND_PRACTICE_KEYS_DESCRIPTOR = partDescriptor('send-practice-keys', ['sendPracticeInputs'], REVIEW_LABELS, inputProblems, reviewText);
+
+/** Content, Koch lesson, count, group size and pool or word lengths on their own wizard step. */
+export const SEND_PRACTICE_CONTENT_DESCRIPTOR = partDescriptor('send-practice-content', CONTENT_KEYS, REVIEW_LABELS, contentProblems, reviewText);
+
+/** Check mode and rounds on their own wizard step. */
+export const SEND_PRACTICE_CHECKING_DESCRIPTOR = partDescriptor('send-practice-checking', CHECKING_KEYS, REVIEW_LABELS, () => [], reviewText);
+
+/** The Pipeline choice (this device only or full) and the transmitter warning on their own wizard step. */
+export const SEND_PRACTICE_PIPELINE_DESCRIPTOR = partDescriptor('send-practice-pipeline', ['sendPracticePipeline'], REVIEW_LABELS, () => [], reviewText);
+
+/** The pattern hint on its own wizard step. */
+export const SEND_PRACTICE_HINT_DESCRIPTOR = partDescriptor('send-practice-hint', ['sendPracticeHint'], REVIEW_LABELS, () => [], reviewText);

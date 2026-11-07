@@ -9,6 +9,7 @@ import { HARDWARE_FLOW } from './hardware.flow';
 import { PRACTICE_FLOW } from './practice.flow';
 import { RELAY_FLOW } from './relay.flow';
 import { SEND_FLOW } from './send.flow';
+import { SEND_PRACTICE_FLOW } from './send-practice.flow';
 import { TYPE_FLOW } from './type.flow';
 import { TEACH_FLOW } from './teach.flow';
 
@@ -16,6 +17,7 @@ import { TEACH_FLOW } from './teach.flow';
 const FLOWS: Record<WizardGoalId, WizardFlow> = {
   type: TYPE_FLOW,
   send: SEND_FLOW,
+  'send-practice': SEND_PRACTICE_FLOW,
   practice: PRACTICE_FLOW,
   decode: DECODE_FLOW,
   relay: RELAY_FLOW,

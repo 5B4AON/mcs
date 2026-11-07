@@ -1,9 +1,9 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.11.0';
+export const APP_VERSION = '2.12.0';
 
 /**
  * A very short note (a phrase or one brief sentence) about the main user-visible changes in APP_VERSION, shown once
  * after an update in "What's new in vX.X.X" and again from Settings → Other → App Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'New Send Practice: key the text you see, plus smaller improvements';
+export const WHATS_NEW = 'New level choice in the Setup Wizard and a Practice sending Morse guide, plus smaller improvements';

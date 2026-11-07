@@ -14,12 +14,14 @@
     }
   </span>
 
-  <div class="cw-hint">
-    Sends decoded text to a K1EL WinKeyer, which does the timing itself.
-    <app-help-link-button section="s7-3" label="Help: WinKeyer" />
-  </div>
+  @if (part === 'all') {
+    <div class="cw-hint">
+      Sends decoded text to a K1EL WinKeyer, which does the timing itself.
+      <app-help-link-button section="s7-3" label="Help: WinKeyer" />
+    </div>
+  }
 
-  @if (mode === 'embedded') {
+  @if ((part === 'all' || part === 'connect') && mode === 'embedded') {
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().winkeyerEnabled" [disabled]="unavailable"
              (change)="onEnabledChange($any($event.target).checked)">
@@ -34,6 +36,7 @@
     </div>
   }
 
+  @if (part === 'all' || part === 'connect') {
   @if (!webSerialSupported) {
     <div class="conflict-warning">
       <strong>Not available on this device.</strong>
@@ -51,8 +54,10 @@
       Chrome or Edge on a desktop operating system (Windows, macOS, Linux, or ChromeOS).
     </div>
   }
+  }
 
   @if (mode === 'card' || s().winkeyerEnabled) {
+    @if (part === 'all' || part === 'send') {
     <label>Forward:
       <select [value]="s().winkeyerForward" (change)="onForwardChange($event)">
         <option value="rx" [selected]="s().winkeyerForward === 'rx'">RX only &mdash; received morse</option>
@@ -61,7 +66,9 @@
       </select>
       <app-help-link-button section="s5-1" label="Help: RX and TX" />
     </label>
+    }
 
+    @if (part === 'all' || part === 'port') {
     <label>WinKeyer Port:
       <select [value]="s().winkeyerPortIndex" (change)="onPortChange($event)">
         <option [value]="-1">&mdash; Select &mdash;</option>
@@ -73,17 +80,20 @@
         <option value="-2">+ Add serial port&hellip;</option>
       </select>
     </label>
+    }
 
+    @if (part === 'all' || part === 'speed') {
     <label>WPM Speed:
       <input type="number" min="5" max="99" [value]="s().winkeyerWpm" (change)="onWpmChange($event)">
     </label>
+    }
   }
 
-  @if (winkeyerOutput.lastError()) {
+  @if ((part === 'all' || part === 'port') && winkeyerOutput.lastError()) {
     <div class="conflict-warning">{{ winkeyerOutput.lastError() }}</div>
   }
 
-  @if (scope.isLive) {
+  @if ((part === 'all' || part === 'port') && scope.isLive) {
     <div class="serial-port-row">
       <span class="pill-group">
         <button type="button" class="pill-btn" [disabled]="!winkeyerOutput.connected()"
