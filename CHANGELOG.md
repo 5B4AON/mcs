@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.0] - 2026-11-07
+
+### Added
+
+- **Teach guide: run from your phone** — Three Expert sessions use the teacher's phone as the only device on the internet: run Lens from your phone, dictate from your phone while the learners write down what they hear, and send challenges from your phone while the class answers on local keys (their answers also show on the phone). The guide sets this computer up to receive (what arrives counts as RX and plays at the speed set in the guide) and, for the challenges, to send the students' keys back as TX. The run sheet lists the settings to make on the phone and how RX and TX line up.
+- **Several rewards at once** — Reward questions in the Teach guide are now checkboxes: tick as many rewards as you like, plus your own word and reward. Quiz-style sessions need at least one, and two rewards cannot use the same word.
+- **Keyed SOS demo** — The SOS session now centres on keying `...---...` yourself (with the key choices of the other keyed sessions), lets the children try it, and keeps typing `<SOS>` as the alternative. The run sheet asks the class what it means before the 🆘 appears.
+- **Dots and dashes as shapes** — The symbols being keyed on the main screen and in the full-screen conversation are drawn as small round dots and short bars on one line instead of the characters `.` and `-`.
+
+### Changed
+
+- **Pictures stay off unless wanted** — When a Teach session needs reward or celebration pictures while emoji replacements are switched off, only those pictures are switched on and your other pictures stay off. If pictures were already on, nothing else changes.
+- **Names demo** — "Spell names in Morse" now shows the whole name in the conversation and plays it when you press Enter, instead of one letter at a time in Lens.
+- **Teach guide remembers the audience** — Like the level, the audience you chose is remembered for the next time you open the Teach guide.
+- **Applying a guide and resetting settings clear the screen** — Applying any Setup Wizard guide, or resetting settings to defaults, now also clears the input box, the output and the full-screen conversation.
+- **Review page order** — "Save as preset without applying" and the note that Apply does not save the device profile sit right below "What this setup will do", so you no longer scroll to the bottom to find them.
+- **Practice results in full screen** — The Copy and Send practice summary, briefing and accuracy lines use a fixed readable size instead of the large conversation font, so they always fit.
+
+### Fixed
+
+- **Lens blank after a guide's Apply** — Lens now records characters whenever it is on, also when a guide, preset or Revert switches it on while the full screen is already open.
+
 ## [2.13.0] - 2026-11-07
 
 ### Added

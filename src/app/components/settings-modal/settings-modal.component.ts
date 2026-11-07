@@ -17,6 +17,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AppSettings, SettingsSaveResult, SettingsService } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
+import { ClearService } from '../../services/clear.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
 import { LiveSettingsScope } from '../settings-items/live-settings-scope';
@@ -214,6 +215,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     public presets: PresetService,
     private devices: AudioDeviceService,
     private rtdbService: FirebaseRtdbService,
+    private clear: ClearService,
     private midiInput: MidiInputService,
     private midiOutput: MidiOutputService,
     private serialInput: SerialKeyInputService,
@@ -411,6 +413,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   onResetConfirmed(confirmed: boolean): void {
     this.showResetConfirm = false;
     if (confirmed) {
+      // Clear first: it also ends a running practice session, which depends on the mode being reset
+      this.clear.clearAll();
       this.settings.resetToDefaults();
       this.defaultsReset.emit();
 

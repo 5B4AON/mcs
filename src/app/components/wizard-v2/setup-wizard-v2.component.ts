@@ -20,6 +20,7 @@ import {
 import { NgComponentOutlet } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AudioDeviceService } from '../../services/audio-device.service';
+import { ClearService } from '../../services/clear.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { MidiInputService } from '../../services/midi-input.service';
@@ -44,8 +45,9 @@ import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-regi
 import { MappingPageComponent } from './pages/mapping-page.component';
 import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
-import { LEVEL_STEP, WIZARD_LEVEL_LABELS } from './engine/levels';
+import { LEVEL_QUESTION_ID, LEVEL_STEP, WIZARD_LEVEL_LABELS } from './engine/levels';
 import { WizardLevelService } from '../../services/wizard-level.service';
+import { WizardPreferencesService } from '../../services/wizard-preferences.service';
 import { flowForGoal } from './flows/flow-registry';
 import { BackdropClickDirective } from '../backdrop-click.directive';
 import { PracticeService } from '../../services/practice.service';
@@ -98,8 +100,10 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   readonly settings = inject(SettingsService);
   private readonly practice = inject(PracticeService);
+  private readonly clear = inject(ClearService);
   readonly presets = inject(PresetService);
   private readonly wizardLevel = inject(WizardLevelService);
+  private readonly wizardPreferences = inject(WizardPreferencesService);
   private readonly scope = inject(SETTINGS_SCOPE) as DraftSettingsScope;
   private readonly audioDevices = inject(AudioDeviceService);
   private readonly midiInput = inject(MidiInputService);
@@ -182,7 +186,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   private startFlow(flow: WizardFlow): void {
     this.scope.seed(this.settings.settings());
-    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind, this.wizardLevel.level()));
+    this.engine.set(new WizardEngine(flow, this.scope, id => ITEM_REGISTRY[id].descriptor, mappingKind, this.wizardLevel.level(), this.wizardPreferences.all()));
     this.flowTitle.set(flow.title);
     this.presetNotice.set('');
     this.presetWarnings.set([]);
@@ -255,6 +259,10 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     if (engine.step().id === LEVEL_STEP.id) {
       engine.commitLevel();
       this.wizardLevel.set(engine.level());
+    }
+    // Other remembered answers (such as the Teach audience) are kept the same way
+    for (const q of engine.step().questions ?? []) {
+      if (q.preference && q.id !== LEVEL_QUESTION_ID) this.wizardPreferences.set(q.id, engine.answers()[q.id]);
     }
     if (engine.isLast) this.stage.set('review');
     else engine.next();
@@ -434,6 +442,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   async apply(): Promise<void> {
     const engine = this.engine();
     if (!engine || !engine.canApply()) return;
+    // Every guide starts from a clean screen; cleared before the change so a running practice ends under its own mode
+    this.clear.clearAll();
     const patch = engine.applyPatch();
     // The practice goal selects the Practice encoder mode so the user can press Start right away
     if (engine.flow.goal === 'practice') patch.encoderMode = 'practice';

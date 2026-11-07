@@ -100,12 +100,14 @@ export class WizardEngine {
     private readonly descriptorFor: ItemDescriptorLookup,
     private readonly kindFor: MappingKindLookup = id => { throw new Error(`No mapping kinds: ${id}`); },
     initialLevel: WizardLevel = 'novice',
+    private readonly remembered: Readonly<Record<string, unknown>> = {},
   ) {
     this.allSteps = flow.levels ? [flow.levelStep ?? LEVEL_STEP, ...flow.steps] : flow.steps;
     const startLevel = flow.levels ? initialLevel : 'novice';
     for (const step of this.allSteps) {
       for (const q of step.questions ?? []) {
-        this.defaults[q.id] = structuredClone(q.id === LEVEL_QUESTION_ID ? startLevel : this.defaultOf(q, startLevel));
+        const remembered = q.preference ? this.remembered[q.id] : undefined;
+        this.defaults[q.id] = structuredClone(q.id === LEVEL_QUESTION_ID ? startLevel : remembered ?? this.defaultOf(q, startLevel));
       }
     }
     this.answerState.set(this.settled(structuredClone(this.defaults)));
@@ -202,6 +204,17 @@ export class WizardEngine {
         // An answer the user has not touched follows the new level's default
         if (sameJson(answers[q.id], this.defaults[q.id])) answers[q.id] = structuredClone(next);
         this.defaults[q.id] = next;
+      }
+    }
+    // A remembered preference the new level no longer offers (an audience that needs a higher level) goes back to the question's own default
+    for (const step of this.flow.steps) {
+      for (const q of step.questions ?? []) {
+        if (!q.preference || !q.optionsFrom) continue;
+        const offered = q.optionsFrom({ settings: this.scope.value(), answers, level });
+        if (offered.some(o => o.value === answers[q.id] && !o.disabled)) continue;
+        const fallback = structuredClone(this.defaultOf(q, level));
+        this.defaults[q.id] = fallback;
+        answers[q.id] = structuredClone(fallback);
       }
     }
     this.answerState.set(answers);

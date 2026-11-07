@@ -18,6 +18,7 @@ import { SendPracticeService } from '../../../services/send-practice.service';
 import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
+import { MorsePatternComponent } from '../../morse-pattern/morse-pattern.component';
 import { FireworksComponent } from '../../fireworks/fireworks.component';
 import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
 import * as sendPracticeUi from '../../settings-items/send-practice/send-practice-ui.utils';
@@ -39,7 +40,7 @@ import * as sendPracticeUi from '../../settings-items/send-practice/send-practic
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent],
+  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })

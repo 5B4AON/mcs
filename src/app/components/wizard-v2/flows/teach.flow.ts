@@ -11,9 +11,9 @@ import { inPracticeMode } from './shared-steps';
 import {
   AUDIENCES, AUDIENCE_ORDER, INTENT_QUESTION, Intent, KOCH_OPTIONS, KeyKind, REWARD_IDEAS,
   practiceIs, practiceWhatOf, practiceWhatOptions, intentsFor, reconcileAnswers, checkingOf, knowsMorse, paddleInvolved,
-  atLeast, answerAt, audienceOf, blurOn, chosenKeys, chosenReward, conversationView, describeSpeed, fontSize, inFamily, isScenario,
+  atLeast, answerAt, audienceOf, blurOn, chosenKeys, chosenRewards, rewardPicks, conversationView, describeSpeed, fontSize, inFamily, isScenario,
   participantCount, presetNameFor, rewardProblems, rewardsActive, runSheetFor, scenarioOf, scenariosFor, sendPracticeIds,
-  speedPlan, summaryFor, typingMode, usesKey, withWantedMappings,
+  speedPlan, summaryFor, typingMode, usesKey, viaPhone, withWantedMappings,
 } from './teach-scenarios';
 
 /*
@@ -66,6 +66,8 @@ const AUDIENCE_QUESTION: StepQuestion = {
   label: 'Your audience',
   kind: 'single',
   default: 'teens',
+  // Remembered between visits like the level; never counts as a change
+  preference: true,
   optionsFrom: ctx => AUDIENCE_ORDER
     .filter(a => atLeast(ctx.level, AUDIENCES[a].minLevel))
     .map(a => ({ value: a, label: AUDIENCES[a].label, hint: AUDIENCES[a].hint })),
@@ -379,7 +381,7 @@ const TYPED_STEPS: WizardStep[] = [
     title: 'How should typing play?',
     intro: 'Choose when typed text turns into Morse.',
     helpSection: 's3-1',
-    when: ctx => { const s = scenarioOf(ctx); return !!s && s.typing !== 'none' && (s.family === 'typed' || s.family === 'online'); },
+    when: ctx => { const s = scenarioOf(ctx); return !!s && !s.phone && s.typing !== 'none' && (s.family === 'typed' || s.family === 'online'); },
     questions: [{
       id: 'typing', label: 'Typing', kind: 'single', default: 'auto',
       optionsFrom: ctx => {
@@ -419,7 +421,7 @@ const ROOM_STEP: WizardStep = {
   }],
 };
 
-const playsMorse: Condition = inFamily('typed', 'practice-copy', 'online');
+const playsMorse: Condition = any(inFamily('typed', 'practice-copy', 'online'), viaPhone);
 
 /** True when the speed matters: Morse is played, or a paddle (whose key speed sets the dots) is in use. */
 const speedMatters: Condition = any(playsMorse, all(inFamily('keyed', 'practice-send'), paddleInvolved));
@@ -509,7 +511,7 @@ const EXACT_PAUSES_STEP: WizardStep = {
 
 const LENS_NOTE = ' Rewards appear in the full conversation view, which shows the text as it is written instead of one big letter at a time. Choosing one switches this session to the conversation view.';
 
-function rewardOptions(ctx: ConditionContext, allowNone: boolean): QuestionOption[] {
+function rewardOptions(ctx: ConditionContext): QuestionOption[] {
   const audience = audienceOf(ctx);
   const kids = audience === 'kids';
   const favourite = (id: string): number => (kids && (id === 'cat' || id === 'dog') ? 0 : 1);
@@ -521,7 +523,6 @@ function rewardOptions(ctx: ConditionContext, allowNone: boolean): QuestionOptio
     label: `${i.word} shows ${i.text}`,
     hint: `When someone keys or types ${i.word}, the screen shows ${i.text}. ${i.for}.`,
   }));
-  if (allowNone) options.unshift({ value: 'none', label: 'No reward', hint: 'Keep it simple.' });
   if (atLeast(ctx.level, 'intermediate')) options.push({ value: 'custom', label: 'My own word and reward', hint: 'You choose the word and what the screen shows.' });
   return options;
 }
@@ -533,7 +534,7 @@ const FUN_STEPS: WizardStep[] = [
     intro: 'A reward is a word that makes the screen show a picture or message when someone keys or types it. It is a fun way to celebrate success.',
     helpSection: 's8-8',
     when: ctx => scenarioOf(ctx)?.rewards === 'optional' && !scenarioOf(ctx)?.lens,
-    questions: [{ id: 'rewardOpt', label: 'Reward', kind: 'single', default: 'none', optionsFrom: ctx => rewardOptions(ctx, true) }],
+    questions: [{ id: 'rewardOpt', label: 'Rewards', kind: 'multi', default: [], optionsFrom: rewardOptions, hint: 'Tick as many as you like, or none to keep it simple.' }],
     validate: rewardProblems,
   },
   {
@@ -542,30 +543,30 @@ const FUN_STEPS: WizardStep[] = [
     intro: `A reward is a word that makes the screen show a picture or message when someone keys or types it.${LENS_NOTE}`,
     helpSection: 's8-8',
     when: ctx => scenarioOf(ctx)?.rewards === 'optional' && !!scenarioOf(ctx)?.lens && atLeast(ctx.level, 'intermediate'),
-    questions: [{ id: 'rewardOpt', label: 'Reward', kind: 'single', default: 'none', optionsFrom: ctx => rewardOptions(ctx, true) }],
+    questions: [{ id: 'rewardOpt', label: 'Rewards', kind: 'multi', default: [], optionsFrom: rewardOptions, hint: 'Tick as many as you like, or none to keep it simple.' }],
     validate: rewardProblems,
   },
   {
     id: 'rewardReq',
-    title: 'Choose the reward word',
-    intro: 'This session works with a word that wins a reward: when someone keys or types it, the screen shows the reward. Tell people the word, or keep it secret.',
+    title: 'Choose the reward words',
+    intro: 'This session works with a word that wins a reward: when someone keys or types it, the screen shows the reward. Tick one or more. Tell people the words, or keep them secret.',
     helpSection: 's8-8',
     when: ctx => scenarioOf(ctx)?.rewards === 'required',
-    questions: [{ id: 'rewardReq', label: 'Reward', kind: 'single', default: 'good', optionsFrom: ctx => rewardOptions(ctx, false) }],
-    validate: rewardProblems,
+    questions: [{ id: 'rewardReq', label: 'Rewards', kind: 'multi', default: ['good'], optionsFrom: rewardOptions }],
+    validate: ctx => (rewardPicks(ctx, 'rewardReq').length ? [] : ['Tick at least one reward.']).concat(rewardProblems(ctx)),
   },
   {
     id: 'rewardCustom',
     title: 'Your own reward',
     intro: 'Type the word people must key (letters or numbers, 2 to 12 long) and what the screen shows. The reward can be text, an emoji, or both.',
     helpSection: 's8-8',
-    when: ctx => (answerIs('rewardOpt', 'custom')(ctx) && scenarioOf(ctx)?.rewards === 'optional')
-      || (answerIs('rewardReq', 'custom')(ctx) && scenarioOf(ctx)?.rewards === 'required'),
+    when: ctx => (rewardPicks(ctx, 'rewardOpt').includes('custom') && scenarioOf(ctx)?.rewards === 'optional')
+      || (rewardPicks(ctx, 'rewardReq').includes('custom') && scenarioOf(ctx)?.rewards === 'required'),
     questions: [
       { id: 'rewardWord', label: 'Word to key', kind: 'text', default: '', maxLength: 12 },
       { id: 'rewardText', label: 'What the screen shows', kind: 'text', default: '', maxLength: 40, hint: 'For example "🌟 Brilliant!"' },
     ],
-    validate: ctx => rewardProblems(ctx).concat(chosenReward(ctx)?.word ? [] : ['Type the word people must key.']),
+    validate: ctx => rewardProblems(ctx).concat(String(ctx.answers['rewardWord'] ?? '').trim() ? [] : ['Type the word people must key.']),
   },
   {
     id: 'surprise',
@@ -603,6 +604,42 @@ const FUN_STEPS: WizardStep[] = [
 ];
 
 // ---- Students from their own devices ----
+
+const phoneTwoWay: Condition = ctx => scenarioOf(ctx)?.phone === 'two-way';
+
+// ---- The teacher's phone (only the teacher goes online) ----
+
+const PHONE_STEPS: WizardStep[] = [
+  {
+    id: 'phoneIn',
+    level: 'expert',
+    title: 'Link your phone',
+    intro: 'Your phone sends to this computer over the internet through a room name and password that only you know. Only your phone goes online: the students never do. Tick the box, choose a room name and password, and keep them to yourself. The run sheet then shows how to set up your phone with the same details.',
+    helpSection: 's10-3',
+    when: viaPhone,
+    items: [{ item: 'rtdb-input-connect' }],
+    validate: ctx => ctx.settings.rtdbInputEnabled ? [] : ['Tick the box so this computer can receive what you send from your phone.'],
+  },
+  {
+    id: 'phoneOut',
+    level: 'expert',
+    title: 'Send the students\' answers to your phone',
+    intro: 'Tick the box so what the students key on this computer also shows on your phone. The room name and password are the same as in the last step.',
+    helpSection: 's10-4',
+    when: phoneTwoWay,
+    items: [{ item: 'rtdb-output-connect', inputs: { sharedChannel: true } }],
+    validate: ctx => ctx.settings.rtdbOutputEnabled ? [] : ['Tick the box so your phone receives the students\' answers.'],
+  },
+  {
+    id: 'phoneName',
+    level: 'expert',
+    title: 'A name for this computer',
+    intro: 'This computer sends the students\' answers under this name unless a key has its own. Give it a name that is different from the name you will use on your phone: a device ignores messages that carry a name it uses itself.',
+    helpSection: 's10-4',
+    when: phoneTwoWay,
+    items: [{ item: 'rtdb-output-identity' }],
+  },
+];
 
 const ONLINE_STEPS: WizardStep[] = [
   {
@@ -695,13 +732,13 @@ const keyedFamilies = inFamily('keyed', 'practice-send');
 
 const FORCED: ForcedSetting[] = [
   // Speed
-  { key: 'encoderWpm', value: ctx => speedPlan(ctx).wpm, label: ctx => `Play Morse ${describeSpeed(speedPlan(ctx).wpm)}`, when: inFamily('typed', 'practice-copy', 'online') },
+  { key: 'encoderWpm', value: ctx => speedPlan(ctx).wpm, label: ctx => `Play Morse ${describeSpeed(speedPlan(ctx).wpm)}`, when: playsMorse },
   { key: 'keyerWpm', value: ctx => speedPlan(ctx).wpm, label: ctx => `Set the key speed to ${describeSpeed(speedPlan(ctx).wpm)}`, when: keyedFamilies },
   { key: 'txDecoderWpm', value: ctx => speedPlan(ctx).wpm, label: 'Start reading keyed Morse at that speed', when: keyedFamilies },
-  { key: 'farnsworthEnabled', value: ctx => speedPlan(ctx).stretched, label: ctx => speedPlan(ctx).stretched ? 'Longer pauses between letters and words, so beginners can keep up' : 'Turn off the longer pauses: normal spacing between letters and words', when: inFamily('typed', 'practice-copy', 'online') },
-  { key: 'farnsworthInputMode', value: 'wpm', label: 'Set the longer pauses by the overall speed', when: all(inFamily('typed', 'practice-copy', 'online'), stretched) },
-  { key: 'farnsworthEffectiveWpm', value: ctx => speedPlan(ctx).effective, label: ctx => `Overall speed with the pauses: ${describeSpeed(speedPlan(ctx).effective)}`, when: all(inFamily('typed', 'practice-copy', 'online'), stretched) },
-  { key: 'farnsworthAppliesTo', value: 'both', label: 'Use the longer pauses for everything played here', when: all(inFamily('typed', 'practice-copy', 'online'), stretched) },
+  { key: 'farnsworthEnabled', value: ctx => speedPlan(ctx).stretched, label: ctx => speedPlan(ctx).stretched ? 'Longer pauses between letters and words, so beginners can keep up' : 'Turn off the longer pauses: normal spacing between letters and words', when: playsMorse },
+  { key: 'farnsworthInputMode', value: 'wpm', label: 'Set the longer pauses by the overall speed', when: all(playsMorse, stretched) },
+  { key: 'farnsworthEffectiveWpm', value: ctx => speedPlan(ctx).effective, label: ctx => `Overall speed with the pauses: ${describeSpeed(speedPlan(ctx).effective)}`, when: all(playsMorse, stretched) },
+  { key: 'farnsworthAppliesTo', value: 'both', label: 'Use the longer pauses for everything played here', when: all(playsMorse, stretched) },
 
   // The full screen
   { key: 'fullscreenFontSize', value: fontSize, label: ctx => `Make the full-screen text ×${(fontSize(ctx) / 24).toFixed(1)} the standard size`, when: inScenario },
@@ -752,9 +789,19 @@ const FORCED: ForcedSetting[] = [
   { key: 'encoderSource', value: 'tx', label: 'Count what you type as sent', when: inFamily('online') },
   { key: 'rtdbOutputForward', value: ctx => ctx.settings.rtdbOutputForward === 'rx' ? 'tx' : ctx.settings.rtdbOutputForward, label: 'Share what you type with the students', when: inFamily('online') },
 
+  // The teacher's phone: what arrives counts as received, plays at the speed set here, and (two-way) the students' keys go back as sent
+  { key: 'rtdbInputSource', value: 'rx', label: 'Show what arrives from your phone as received (RX)', when: viaPhone },
+  { key: 'rtdbInputOverrideWpm', value: true, label: 'Play your phone\'s messages at the speed set here', when: viaPhone },
+  { key: 'rtdbOutputForward', value: 'tx', label: 'Send what the students key to your phone (TX)', when: phoneTwoWay },
+
   // Rewards, signals
   { key: 'emojisEnabled', value: true, label: 'Show pictures for rewards on the full screen', when: rewardsActive },
-  { key: 'emojiMappings', value: withWantedMappings, label: 'Add the rewards to the picture list (existing ones are untouched)', when: rewardsActive },
+  {
+    key: 'emojiMappings', value: withWantedMappings, when: rewardsActive,
+    label: ctx => ctx.settings.emojisEnabled
+      ? 'Add the rewards to the picture list (existing ones are untouched)'
+      : 'Add the rewards to the picture list. Your other pictures stay switched off',
+  },
   { key: 'prosignActionsEnabled', value: true, label: 'Switch special signals on', when: all(inFamily('keyed'), knowsMorse, settingIs('prosignActionsEnabled', false), answerIs('signals', 'on')) },
 ];
 
@@ -833,6 +880,7 @@ export const TEACH_FLOW: WizardFlow = {
     ...PRACTICE_STEPS,
     ...TYPED_STEPS,
     ...ONLINE_STEPS,
+    ...PHONE_STEPS,
     ...FUN_STEPS,
     ROOM_STEP,
     SPEED_STEP,

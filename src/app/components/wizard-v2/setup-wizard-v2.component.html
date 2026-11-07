@@ -207,6 +207,33 @@
                 </ul>
               </section>
             }
+
+            <ul class="wizard-list">
+              <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
+            </ul>
+
+            <section class="wizard-preset-save" aria-labelledby="wizard-preset-save-title">
+              @if (!presetSaveOpen()) {
+                <button type="button" class="wizard-pill" (click)="openPresetSave()">Save as preset without applying</button>
+              } @else {
+                <h4 id="wizard-preset-save-title">Save as preset without applying</h4>
+                <label class="wizard-field">Preset name
+                  <input id="wizard-preset-name" type="text" [ngModel]="presetSaveName()"
+                         (ngModelChange)="presetSaveName.set($event)">
+                </label>
+                @if (presetError()) {
+                  <div class="wizard-error" role="alert">{{ presetError() }}</div>
+                }
+                <div class="wizard-preset-actions">
+                  <button type="button" class="wizard-pill wizard-primary" (click)="savePreset()">Save preset</button>
+                  <button type="button" class="wizard-pill" (click)="cancelPresetSave()">Cancel</button>
+                </div>
+              }
+              @if (presetSaveNotice()) {
+                <p class="wizard-note" role="status">{{ presetSaveNotice() }}</p>
+              }
+            </section>
+
             @if (review.steps.length || review.forced.length) {
               <p class="wizard-hint">Apply will change only these settings:</p>
               <ul class="wizard-changes">
@@ -247,31 +274,6 @@
                 {{ skippedTitles(review.skippedByLevel) }}.</p>
             }
             <p class="wizard-note">Everything else stays exactly as it is.</p>
-            <ul class="wizard-list">
-              <li>Applying does not save the device profile; use Save in Settings to keep it.</li>
-            </ul>
-
-            <section class="wizard-preset-save" aria-labelledby="wizard-preset-save-title">
-              @if (!presetSaveOpen()) {
-                <button type="button" class="wizard-pill" (click)="openPresetSave()">Save as preset without applying</button>
-              } @else {
-                <h4 id="wizard-preset-save-title">Save as preset without applying</h4>
-                <label class="wizard-field">Preset name
-                  <input id="wizard-preset-name" type="text" [ngModel]="presetSaveName()"
-                         (ngModelChange)="presetSaveName.set($event)">
-                </label>
-                @if (presetError()) {
-                  <div class="wizard-error" role="alert">{{ presetError() }}</div>
-                }
-                <div class="wizard-preset-actions">
-                  <button type="button" class="wizard-pill wizard-primary" (click)="savePreset()">Save preset</button>
-                  <button type="button" class="wizard-pill" (click)="cancelPresetSave()">Cancel</button>
-                </div>
-              }
-              @if (presetSaveNotice()) {
-                <p class="wizard-note" role="status">{{ presetSaveNotice() }}</p>
-              }
-            </section>
           }
         }
 

@@ -116,6 +116,12 @@ export interface ScenarioInfo {
   typing: 'live' | 'enter' | 'none';
   /** Audiences this does not suit (for example first-timer demos for people who know Morse) */
   exclude?: Audience[];
+  /**
+   * The teacher's phone joins over the internet (only the teacher uses it, never the students):
+   * `receive` = the phone sends and this computer only listens, `two-way` = this computer also
+   * sends what the students key back to the phone.
+   */
+  phone?: 'receive' | 'two-way';
 }
 
 export const INTENT_QUESTION: Record<Intent, string> = {
@@ -135,16 +141,16 @@ export const SCENARIOS: ScenarioInfo[] = [
     lens: true, keys: 'none', blur: false, rewards: 'optional', typing: 'live', exclude: ['learners', 'operators'],
   },
   {
-    id: 'intro-sos', intent: 'introduce', value: 'sos', minLevel: 'novice', family: 'typed',
-    label: 'The SOS demo',
-    hint: 'You type SOS. The famous distress signal plays and a 🆘 appears on the screen. Fun and easy to remember.',
-    lens: false, keys: 'none', blur: false, rewards: 'built-in', typing: 'enter', exclude: ['learners', 'operators'],
+    id: 'intro-sos', intent: 'introduce', value: 'sos', minLevel: 'novice', family: 'keyed',
+    label: 'The SOS demo: key it yourself',
+    hint: 'You and the class key the famous distress signal (three short, three long, three short) and a 🆘 appears on the screen. Fun, easy to remember, and everyone learns to send it. No key? You can type it instead.',
+    lens: false, keys: 'one', blur: false, rewards: 'built-in', typing: 'none', exclude: ['learners', 'operators'],
   },
   {
     id: 'intro-names', intent: 'introduce', value: 'names', minLevel: 'novice', family: 'typed',
     label: 'Spell names in Morse',
-    hint: 'You type the names of people in the room. Each person hears their own name as Morse while the screen shows its letters.',
-    lens: true, keys: 'none', blur: false, rewards: 'optional', typing: 'live', exclude: ['learners', 'operators'],
+    hint: 'You type the names of people in the room. Each person hears their own name as Morse and sees it written out whole.',
+    lens: false, keys: 'none', blur: false, rewards: 'optional', typing: 'enter', exclude: ['learners', 'operators'],
   },
   {
     id: 'send-one', intent: 'send', value: 'one', minLevel: 'novice', family: 'keyed',
@@ -213,6 +219,24 @@ export const SCENARIOS: ScenarioInfo[] = [
     lens: false, keys: 'none', blur: false, rewards: 'optional', typing: 'enter',
   },
   {
+    id: 'class-remote-lens', intent: 'class', value: 'remoteLens', minLevel: 'expert', family: 'typed',
+    label: 'Run Lens from your phone',
+    hint: 'You type on your phone and walk around the room. Each letter plays and shows very large on the computer, one at a time. Only your phone goes online.',
+    lens: true, keys: 'none', blur: false, rewards: 'none', typing: 'live', phone: 'receive',
+  },
+  {
+    id: 'class-remote-dictate', intent: 'class', value: 'remoteDictate', minLevel: 'expert', family: 'typed',
+    label: 'Dictate from your phone',
+    hint: 'You type a message on your phone. It plays on the computer while the text stays hidden, and the learners write down what they hear. Only your phone goes online.',
+    lens: false, keys: 'none', blur: true, rewards: 'none', typing: 'enter', phone: 'receive',
+  },
+  {
+    id: 'class-remote-quiz', intent: 'class', value: 'remoteQuiz', minLevel: 'expert', family: 'keyed',
+    label: 'Challenges from your phone, answers on local keys',
+    hint: 'You send questions or challenges from your phone. The class hears them on the computer and answers on their own keys, and their answers show on the computer and on your phone. Only your phone goes online.',
+    lens: false, keys: 'many', blur: false, rewards: 'optional', typing: 'none', phone: 'two-way',
+  },
+  {
     id: 'booth-try', intent: 'booth', value: 'try', minLevel: 'novice', family: 'keyed',
     label: 'Let people take turns on the key',
     hint: 'Anyone can come up, key a few letters and see them appear while everyone watches, at a fair or in class. Clear the screen for the next person.',
@@ -265,14 +289,20 @@ export function reconcileAnswers(ctx: ConditionContext): Record<string, unknown>
   // Pet rewards suit children and teenagers, not people who already know Morse
   const experienced = audience === 'learners' || audience === 'operators';
   for (const id of ['rewardOpt', 'rewardReq']) {
-    const pick = text(ctx.answers, id);
-    if (experienced && (pick === 'cat' || pick === 'dog')) patch[id] = id === 'rewardOpt' ? 'none' : 'good';
+    const picks = rewardPicks(ctx, id);
+    if (experienced && picks.some(p => p === 'cat' || p === 'dog')) {
+      const kept = picks.filter(p => p !== 'cat' && p !== 'dog');
+      patch[id] = id === 'rewardReq' && !kept.length ? ['good'] : kept;
+    }
   }
   // An exercise type that does not suit the audience goes back to the recommended one
   const what = text(ctx.answers, 'practiceWhat');
   if ((what === 'koch' && audience === 'operators') || (what === 'callsigns' && !experienced)) patch['practiceWhat'] = 'auto';
   return patch;
 }
+
+/** True when the teacher's phone is part of the session (it is the only device that uses the internet). */
+export const viaPhone = (ctx: ConditionContext): boolean => !!scenarioOf(ctx)?.phone;
 
 export const inFamily = (...families: Family[]) => (ctx: ConditionContext): boolean => {
   const scenario = scenarioOf(ctx);
@@ -362,19 +392,28 @@ const PROSIGN_RULE = /^<[A-Z]{2,}>$/;
 
 export interface Reward { word: string; text: string }
 
-/** The reward the teacher picked (a suggestion or their own), if the scenario offers one. */
-export function chosenReward(ctx: ConditionContext): Reward | null {
+/** The reward ideas ticked on a rewards question (empty when nothing is ticked). */
+export function rewardPicks(ctx: ConditionContext, id: string): string[] {
+  const value = ctx.answers[id];
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
+
+/** The rewards the teacher ticked (suggestions and their own), if the scenario offers any. */
+export function chosenRewards(ctx: ConditionContext): Reward[] {
   const scenario = scenarioOf(ctx);
-  if (!scenario || (scenario.rewards !== 'optional' && scenario.rewards !== 'required')) return null;
+  if (!scenario || (scenario.rewards !== 'optional' && scenario.rewards !== 'required')) return [];
   // A Novice is not offered rewards in a Lens demo (they would replace the demo), so a stale answer is ignored
-  if (scenario.lens && scenario.rewards === 'optional' && ctx.level === 'novice') return null;
-  const pick = text(ctx.answers, scenario.rewards === 'required' ? 'rewardReq' : 'rewardOpt', 'none');
-  if (pick === 'none') return null;
-  if (pick === 'custom') {
-    return { word: text(ctx.answers, 'rewardWord').trim().toUpperCase(), text: text(ctx.answers, 'rewardText').trim() };
+  if (scenario.lens && scenario.rewards === 'optional' && ctx.level === 'novice') return [];
+  const rewards: Reward[] = [];
+  for (const pick of rewardPicks(ctx, scenario.rewards === 'required' ? 'rewardReq' : 'rewardOpt')) {
+    if (pick === 'custom') {
+      rewards.push({ word: text(ctx.answers, 'rewardWord').trim().toUpperCase(), text: text(ctx.answers, 'rewardText').trim() });
+      continue;
+    }
+    const idea = REWARD_IDEAS.find(i => i.id === pick);
+    if (idea) rewards.push({ word: idea.word, text: idea.text });
   }
-  const idea = REWARD_IDEAS.find(i => i.id === pick);
-  return idea ? { word: idea.word, text: idea.text } : null;
+  return rewards;
 }
 
 /** True when the Expert step asked for the celebration trigger. */
@@ -390,7 +429,7 @@ const SHOW_EMOJI = '\u{1F386}';
 
 /** True when the setup uses emoji replacements, which only the full-screen conversation shows. */
 export function rewardsActive(ctx: ConditionContext): boolean {
-  return chosenReward(ctx) !== null || surpriseOn(ctx) || scenarioOf(ctx)?.rewards === 'built-in';
+  return chosenRewards(ctx).length > 0 || surpriseOn(ctx) || scenarioOf(ctx)?.rewards === 'built-in';
 }
 
 /** True when the full screen shows the conversation (rewards need it) instead of Lens. */
@@ -402,8 +441,7 @@ export function conversationView(ctx: ConditionContext): boolean {
 /** The mappings the setup needs, besides those already in the list. */
 function wantedMappings(ctx: ConditionContext): EmojiMapping[] {
   const wanted: EmojiMapping[] = [];
-  const reward = chosenReward(ctx);
-  if (reward) wanted.push({ enabled: true, match: reward.word, emoji: reward.text, meaning: 'Class reward' });
+  for (const reward of chosenRewards(ctx)) wanted.push({ enabled: true, match: reward.word, emoji: reward.text, meaning: 'Class reward' });
   if (scenarioOf(ctx)?.rewards === 'built-in') wanted.push({ enabled: true, match: '<SOS>', emoji: '🆘', meaning: 'Distress' });
   if (surpriseOn(ctx)) wanted.push({ enabled: true, match: surpriseTrigger(ctx), emoji: SHOW_EMOJI, meaning: 'Celebration' });
   return wanted;
@@ -411,9 +449,15 @@ function wantedMappings(ctx: ConditionContext): EmojiMapping[] {
 
 const sameMatch = (a: string, b: string): boolean => a.toUpperCase() === b.toUpperCase();
 
-/** The emoji list with the wanted mappings added; existing mappings are never edited or removed. */
+/**
+ * The emoji list with the wanted mappings added; existing mappings are never edited or removed.
+ * While pictures are switched off, the existing ones are switched off individually too, so turning
+ * pictures on for the rewards does not also bring back every other picture in the list.
+ */
 export function withWantedMappings(ctx: ConditionContext): EmojiMapping[] {
-  const list = [...ctx.settings.emojiMappings];
+  const list = ctx.settings.emojisEnabled
+    ? [...ctx.settings.emojiMappings]
+    : ctx.settings.emojiMappings.map(m => (m.enabled ? { ...m, enabled: false } : m));
   for (const mapping of wantedMappings(ctx)) {
     if (!list.some(m => m.enabled && sameMatch(m.match, mapping.match))) list.push(mapping);
   }
@@ -428,17 +472,22 @@ export function rewardProblems(ctx: ConditionContext): string[] {
       problems.push(`${what} must be a short word of letters or numbers (2 to 12), or a signal such as <FW>.`);
       return;
     }
-    const existing = ctx.settings.emojiMappings.find(m => m.enabled && sameMatch(m.match, word));
+    // While pictures are off, the existing ones are switched off with them, so they cannot clash
+    const existing = ctx.settings.emojisEnabled ? ctx.settings.emojiMappings.find(m => m.enabled && sameMatch(m.match, word)) : undefined;
     if (existing && existing.emoji !== text) {
       problems.push(`${word} already shows ${existing.emoji}. Choose another word, or change that picture in Settings.`);
     }
   };
-  const reward = chosenReward(ctx);
-  // A custom reward that is still being filled in is checked on its own step
-  if (reward && (reward.word || reward.text)) {
+  const rewards = chosenRewards(ctx);
+  for (const reward of rewards) {
+    // A custom reward that is still being filled in is checked on its own step
+    if (!reward.word && !reward.text) continue;
     if (!reward.text) problems.push('Say what the screen should show for the reward word.');
     else check(reward.word, reward.text, 'The reward word');
   }
+  const words = rewards.map(r => r.word.toUpperCase()).filter(Boolean);
+  const repeated = words.find((word, i) => words.indexOf(word) !== i);
+  if (repeated) problems.push(`${repeated} is used for two rewards. Give each reward its own word.`);
   if (surpriseOn(ctx)) check(surpriseTrigger(ctx), SHOW_EMOJI, 'The celebration trigger');
   return problems;
 }
@@ -602,10 +651,10 @@ function sample(ctx: ConditionContext): string {
 
 function rewardLines(ctx: ConditionContext): string[] {
   const lines: string[] = [];
-  const reward = chosenReward(ctx);
-  if (reward) lines.push(`When someone keys or types ${reward.word}, the screen shows ${reward.text}. Tell the class the word, or keep it secret.`);
+  for (const reward of chosenRewards(ctx)) {
+    lines.push(`When someone keys or types ${reward.word}, the screen shows ${reward.text}. Tell the class the word, or keep it secret.`);
+  }
   if (surpriseOn(ctx)) lines.push(`Keying or sending ${surpriseTrigger(ctx)} starts a fireworks show. The next character ends it.`);
-  if (scenarioOf(ctx)?.rewards === 'built-in') lines.push('Type <SOS> (the angle brackets make it one signal). The screen shows 🆘.');
   return lines;
 }
 
@@ -636,14 +685,16 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
       };
     case 'intro-sos':
       return {
-        before: ['Tell the class that SOS is the most famous Morse message.'],
-        during: ['Type <SOS> and press Enter. Everyone hears it as one unbroken signal and sees 🆘.',
-          'Ask the class to guess what it means before the 🆘 shows.'],
+        before: ['Tell the class that SOS is the most famous Morse message.',
+          'Before keying it, ask if anyone knows what three short presses, three long and three short mean.'],
+        during: ['Key SOS: three short presses, three long, three short, quickly and with no pauses between them (...---...). Then pause for a moment: the 🆘 appears on the screen.',
+          'Let the children try it, one at a time. Keying it themselves is the best way to remember it.',
+          'No key? Switch to Type with the Key/Type button at the top of the full screen, type <SOS> and press Enter (the angle brackets make it one signal). The 🆘 shows as it plays.'],
       };
     case 'intro-names':
       return {
         before: ['Ask each person to say their name aloud, or write the names where you can see them.'],
-        during: ['Type one name at a time and let that person listen.', 'Compare how long different names sound.'],
+        during: ['Type one name at a time and press Enter, so that person hears the whole name.', 'Compare how long different names sound.'],
       };
     case 'copy-secret':
       return {
@@ -715,6 +766,26 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
         during: ['Type a short message and press Enter. Students receive it on their phones.',
           'Their replies appear on your screen with their names and colours.'],
       };
+    case 'class-remote-lens':
+      return {
+        before: ['Set up your phone as shown below, then type one letter on it. It should play here and appear very large on this screen.'],
+        during: ['Type letters or short words on your phone, one at a time. Each letter plays here and shows large, with its dots and dashes below.',
+          'You can walk around the room: the phone controls this screen.',
+          'Ask the class to call out each letter before you type the next one.'],
+      };
+    case 'class-remote-dictate':
+      return {
+        before: ['Set up your phone as shown below. Hand out paper and pencils.'],
+        during: ['Type a short message on your phone and press Enter. It plays here while the text stays hidden.',
+          'The learners write what they hear. Send it again if they ask.',
+          'To check, hold the reveal button on this screen to show everyone the answer.'],
+      };
+    case 'class-remote-quiz':
+      return {
+        before: ['Set up your phone as shown below.', 'Give each person a key and tell them their name and colour on the screen.'],
+        during: ['Type a challenge on your phone, for example a word to answer back, and press Enter. It plays here under your name.',
+          'The class answers on their own keys. Their answers show on this screen and on your phone, so you can follow along from anywhere in the room.'],
+      };
     case 'booth-try':
       return {
         before: ['Show people which key to press.'],
@@ -740,6 +811,44 @@ function joinLines(ctx: ConditionContext): string[] {
   ];
 }
 
+/** Setting up the teacher's phone: the same room, with sending (and, for two-way sessions, receiving) matching this computer. */
+function phoneLines(ctx: ConditionContext, scenario: ScenarioInfo): string[] {
+  const room = ctx.settings.rtdbInputChannelName || 'your room name';
+  const twoWay = scenario.phone === 'two-way';
+  const sendMode = scenario.typing === 'live'
+    ? 'Live (each letter plays as you type)'
+    : 'Send on Enter (you type a message, then press Enter)';
+  const lines = [
+    'Open the app on your phone. Only your phone goes online: the students never need to.',
+    'Open Settings, then the Outputs tab, and switch on the Firebase RTDB Output card.',
+    `Channel Name: ${room}. Channel Secret: the same password you entered on this computer. They are not saved in a preset.`,
+    twoWay
+      ? 'Name: give your phone a name that is different from the one on this computer. A computer ignores messages that carry a name it uses itself.'
+      : 'Name: any name you like.',
+    'Forward: "TX only". Then open the Keyboard Encoder card and set "Used for" to TX, so that what you type counts as sent (TX).',
+    `Send mode: ${sendMode}.`,
+  ];
+  if (twoWay) {
+    lines.push(
+      'To see the answers on your phone: in Settings, open the Inputs tab, switch on the Firebase RTDB card, enter the same room name and password, and set "Used for" to RX.',
+    );
+  }
+  lines.push('Optional: turn the phone\'s volume down. The class hears everything from this computer.');
+  return lines;
+}
+
+/** How RX and TX line up between the phone and this computer. */
+function rxTxLines(scenario: ScenarioInfo): string[] {
+  const lines = [
+    'Your phone sends what you type as TX. This computer receives it as RX, so it shows in the received colour and plays the beep for received Morse.',
+    'This computer plays your phone\'s messages at the speed set here, whatever speed the phone uses.',
+  ];
+  if (scenario.phone === 'two-way') {
+    lines.push('The students\' keys count as TX on this computer and go to your phone as TX. Your phone receives them as RX.');
+  }
+  return lines;
+}
+
 /** The run sheet: plain, numbered instructions for the teacher. */
 export function runSheetFor(ctx: ConditionContext): RunSheetSection[] {
   const scenario = scenarioOf(ctx);
@@ -759,6 +868,10 @@ export function runSheetFor(ctx: ConditionContext): RunSheetSection[] {
     { heading: 'During the session', lines: [...during, ...rewardLines(ctx), ...(scenario.family === 'keyed' || scenario.family === 'online' ? signalLines(ctx) : [])] },
   ];
   if (scenario.family === 'online') sections.push({ heading: 'What students do on their own device', lines: joinLines(ctx) });
+  if (scenario.phone) {
+    sections.push({ heading: 'Set up your phone', lines: phoneLines(ctx, scenario) });
+    sections.push({ heading: 'How RX and TX line up', lines: rxTxLines(scenario) });
+  }
   sections.push({ heading: 'Afterwards', lines: [...(onMain ? [] : [LEAVE]), 'Save the setup as a preset to run it again without setting it up.'] });
   return sections;
 }
@@ -776,14 +889,18 @@ export function summaryFor(ctx: ConditionContext): string[] {
       ? 'Opens the full screen showing the whole conversation in large text.'
       : 'Opens the full screen showing one big letter at a time, with its dots and dashes.');
   if (rewardsActive(ctx) && scenario.lens) lines.push('Rewards show in the conversation, so this uses the conversation view instead of one letter at a time.');
-  const pausesApply = ['typed', 'practice-copy', 'online'].includes(scenario.family);
+  if (scenario.phone) {
+    lines.push(scenario.phone === 'two-way'
+      ? 'Your phone and this computer share a private room over the internet: your messages play here and the students\' answers go back to your phone. Students do not go online.'
+      : 'Your phone sends to this computer through a private room over the internet. Students do not go online.');
+  }
+  const pausesApply = ['typed', 'practice-copy', 'online'].includes(scenario.family) || !!scenario.phone;
   lines.push(`Morse plays ${describeSpeed(speed.wpm)}${pausesApply
     ? speed.stretched
       ? `, with longer pauses between letters (${describeSpeed(speed.effective)} overall)`
       : ', with no extra pauses'
     : ''}.`);
-  const reward = chosenReward(ctx);
-  if (reward) lines.push(`Adds a reward: ${reward.word} shows ${reward.text}.`);
+  for (const reward of chosenRewards(ctx)) lines.push(`Adds a reward: ${reward.word} shows ${reward.text}.`);
   if (surpriseOn(ctx)) lines.push('Adds a celebration signal.');
   if (blurOn(ctx)) lines.push('Typed text stays hidden until you reveal it.');
   if (scenario.family === 'practice-copy' || scenario.family === 'practice-send') lines.push('Everything stays on this computer: nothing is sent to other devices.');

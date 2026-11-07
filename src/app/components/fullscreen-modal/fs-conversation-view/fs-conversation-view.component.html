@@ -50,7 +50,7 @@
         [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
         [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char }}</span>}</span>@if (word.space) {&ngsp;}}</div>
     }
-    <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>}</div>
+    <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground"><app-morse-pattern [pattern]="decoder.rxCurrentPattern()" /></span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground"><app-morse-pattern [pattern]="decoder.txCurrentPattern()" /></span>}</div>
   } @else if (practiceView && practice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
       <strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>
@@ -86,13 +86,13 @@
     }
     @if (inputMode === 'key') {
       <!-- Key mode keeps one row for the symbols being keyed, so the text does not scroll back up when they are decoded -->
-      <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>}</div>
+      <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground"><app-morse-pattern [pattern]="decoder.rxCurrentPattern()" /></span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground"><app-morse-pattern [pattern]="decoder.txCurrentPattern()" /></span>}</div>
     } @else {
       @if (decoder.rxCurrentPattern()) {
-        <span class="cursor" [style.color]="settings.modalDisplay().rxForeground">{{ decoder.rxCurrentPattern() }}</span>
+        <span class="cursor" [style.color]="settings.modalDisplay().rxForeground"><app-morse-pattern [pattern]="decoder.rxCurrentPattern()" /></span>
       }
       @if (decoder.txCurrentPattern()) {
-        <span class="cursor" [style.color]="settings.modalDisplay().txForeground">{{ decoder.txCurrentPattern() }}</span>
+        <span class="cursor" [style.color]="settings.modalDisplay().txForeground"><app-morse-pattern [pattern]="decoder.txCurrentPattern()" /></span>
       }
     }
     @if (inputMode === 'type' && !isPractice) {

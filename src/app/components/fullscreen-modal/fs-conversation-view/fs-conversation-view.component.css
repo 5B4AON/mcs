@@ -346,14 +346,17 @@
 }
 .fb-accuracy {
   margin-top: 8px;
-  font-size: 0.8em;
+  /* Fixed size, not the (possibly huge) conversation font, so results always fit */
+  font-size: 1rem;
+  line-height: 1.35;
   color: rgba(255, 255, 255, 0.7);
 }
 .practice-session-summary {
   display: grid;
   gap: .25em;
   font-family: system-ui, sans-serif;
-  font-size: .8em;
+  /* Fixed size, not the (possibly huge) conversation font, so the session text and results always fit */
+  font-size: 1rem;
   line-height: 1.35;
   color: rgba(255, 255, 255, 0.85);
   word-break: normal;

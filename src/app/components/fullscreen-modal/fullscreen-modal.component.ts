@@ -4,7 +4,7 @@
 
 import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
-  ViewChild, effect
+  ViewChild, effect, untracked
 } from '@angular/core';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
@@ -111,6 +111,12 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {
       this.keyer.setKeyboardMappingsEnabled(this.inputMode === 'key');
+    });
+    // Lens must record whenever its view is shown, also when a setting change from outside the toolbar
+    // (a guide's Apply, a preset, Revert) turns it on while the full screen is already open
+    effect(() => {
+      const on = this.settings.settings().fullscreenLensEnabled;
+      untracked(() => this.lens.setEnabled(on));
     });
   }
 
