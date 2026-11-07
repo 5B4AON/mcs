@@ -4,6 +4,7 @@
 
 import { WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
+import { farnsworthProblems, sidetoneProblems } from './direction-checks';
 
 /**
  * Goal "Type and hear Morse": choose whether text is sent on Enter or live,
@@ -47,9 +48,13 @@ export const TYPE_FLOW: WizardFlow = {
     speedStep({ encoder: true }, {
       intro: 'Text you type is sent as Morse at this speed. You can change it later with the speed buttons on the main screen.',
     }),
-    farnsworthStep({ applies: 'tx', level: 'intermediate' }),
+    farnsworthStep({
+      applies: 'tx', level: 'intermediate',
+      validate: ctx => farnsworthProblems(ctx.settings, [ctx.settings.encoderSource], 'the text you type'),
+    }),
     soundStep({
       detail: 'The text you type is played through it. Radio, serial, MIDI and online outputs are not touched.',
+      validate: ctx => sidetoneProblems(ctx.settings, [ctx.settings.encoderSource], 'the text you type'),
     }),
     { ...screenStep('type'), level: 'intermediate' },
   ],

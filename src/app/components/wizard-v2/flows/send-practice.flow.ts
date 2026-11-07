@@ -5,6 +5,7 @@
 import { answerIs, noSendPracticeInput, sendPracticeUsesPaddle } from '../engine/conditions';
 import { ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { screenForced, screenStep, soundStep, speedStep } from './shared-steps';
+import { sendPracticeSources, sidetoneProblems } from './direction-checks';
 
 const SWITCH_MODE = 'switch-mode';
 
@@ -92,6 +93,7 @@ export const SEND_PRACTICE_FLOW: WizardFlow = {
     },
     soundStep({
       detail: 'Your keying is heard through it. Make sure it is on and at a comfortable volume.',
+      validate: ctx => sidetoneProblems(ctx.settings, sendPracticeSources(ctx.settings), 'what you key'),
     }),
     {
       id: 'mode',

@@ -42,17 +42,10 @@ import { WizardEngine } from './engine/wizard-engine';
 import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
 import { MappingPageComponent } from './pages/mapping-page.component';
-import { TeachParticipantPageComponent } from './pages/teach-participant-page.component';
 import { HelpLinkButtonComponent } from '../settings-items/help-link-button/help-link-button.component';
 import { WizardGoalId } from '../settings-modal/goal-navigator/setup-goals';
 import { LEVEL_STEP, WIZARD_LEVEL_LABELS } from './engine/levels';
 import { WizardLevelService } from '../../services/wizard-level.service';
-import {
-  TeachParticipantProfile,
-  includesScenario,
-  isTeachParticipantProfile,
-  teachParticipantChannelName,
-} from './flows/teach-participant.model';
 import { flowForGoal } from './flows/flow-registry';
 import { BackdropClickDirective } from '../backdrop-click.directive';
 import { PracticeService } from '../../services/practice.service';
@@ -73,7 +66,7 @@ type Stage = 'steps' | 'review';
   selector: 'app-setup-wizard-v2',
   standalone: true,
   imports: [FormsModule, NgComponentOutlet, ConfirmDialogComponent, BackdropClickDirective,
-    MappingPageComponent, MappingListComponent, TeachParticipantPageComponent, HelpLinkButtonComponent],
+    MappingPageComponent, MappingListComponent, HelpLinkButtonComponent],
   templateUrl: './setup-wizard-v2.component.html',
   styleUrls: ['./setup-wizard-v2.component.css'],
   providers: [
@@ -102,7 +95,6 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   @ViewChild('dialog') dialog?: ElementRef<HTMLElement>;
   @ViewChild(MappingPageComponent) private mappingPage?: MappingPageComponent;
-  @ViewChild(TeachParticipantPageComponent) private teachParticipantPage?: TeachParticipantPageComponent;
 
   readonly settings = inject(SettingsService);
   private readonly practice = inject(PracticeService);
@@ -133,46 +125,18 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
   readonly presetSaveOpen = signal(false);
   readonly presetSaveName = signal('');
   readonly presetSaveNotice = signal('');
+  readonly runSheetNotice = signal('');
   readonly registry = ITEM_REGISTRY;
 
   /** Inputs for a step item: its fixed registry inputs, look and audio state. */
   itemInputs(it: StepItem, audioRunning: boolean): Record<string, unknown> {
     const entry = ITEM_REGISTRY[it.item];
-    const engine = this.engine();
-    const teachInputs = it.item === 'rtdb-output' && engine?.flow.goal === 'teach'
-      ? { suggestedName: this.teachSuggestedName(engine) }
-      : {};
     return {
       ...entry.inputs,
       ...it.inputs,
-      ...teachInputs,
       mode: it.mode ?? 'embedded',
       ...(entry.needsAudio ? { audioRunning } : {}),
     };
-  }
-
-  private teachSuggestedName(engine: WizardEngine): string {
-    const teacher = engine.answers()['participant0'];
-    if (!isTeachParticipantProfile(teacher)) return 'Teacher';
-    return teachParticipantChannelName(
-      teacher,
-      this.scope.value(),
-    );
-  }
-
-  participantProfile(engine: WizardEngine, question: StepQuestion) {
-    return engine.answers()[question.id] as TeachParticipantProfile;
-  }
-
-  participantProfiles(engine: WizardEngine): TeachParticipantProfile[] {
-    const count = Number(engine.answers()['studentCount']);
-    if (!Number.isInteger(count) || count < 0 || count > 4) return [];
-    return Array.from({ length: count + 1 }, (_, index) => engine.answers()[`participant${index}`])
-      .filter(isTeachParticipantProfile);
-  }
-
-  participantIndex(question: StepQuestion): number {
-    return Number(question.id.replace('participant', ''));
   }
 
   private readonly focusReturnTarget = document.activeElement as HTMLElement | null;
@@ -204,8 +168,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   /** True when the user has moved any answer and has not applied yet. */
   hasDraft(): boolean {
-    return !this.applied && (!!this.engine()?.hasAnyChanges()
-      || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
+    return !this.applied && (!!this.engine()?.hasAnyChanges() || !!this.mappingPage?.isDirty());
   }
 
   /** Progress counts the engine steps plus the Review page. */
@@ -287,7 +250,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   next(): void {
     const engine = this.engine();
-    if (!engine || !this.commitTeachParticipantPage(true) || this.problems().length || !this.commitMappingPage()) return;
+    if (!engine || this.problems().length || !this.commitMappingPage()) return;
     // Leaving the level step puts the level's suggestions in place and remembers the level for the next guide
     if (engine.step().id === LEVEL_STEP.id) {
       engine.commitLevel();
@@ -303,7 +266,6 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     if (!engine) return;
     if (this.stage() === 'review') this.stage.set('steps');
     else {
-      this.commitTeachParticipantPage(false);
       this.commitMappingPage();
       if (!engine.back()) {
         this.requestClose();
@@ -315,24 +277,33 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   revert(): void {
     this.mappingPage?.reset();
-    this.teachParticipantPage?.reset();
     this.engine()?.revertStep();
   }
 
   get canRevert(): boolean {
     const engine = this.engine();
     return !!engine && this.stage() === 'steps' &&
-      (engine.stepHasChanges() || !!this.mappingPage?.isDirty() || !!this.teachParticipantPage?.isDirty());
+      (engine.stepHasChanges() || !!this.mappingPage?.isDirty());
   }
 
-  private commitTeachParticipantPage(validate: boolean): boolean {
+  // ---- Run sheet ----
+
+  /** Plain text of a run sheet, as the Copy button puts it on the clipboard. */
+  runSheetText(): string {
     const engine = this.engine();
-    const question = engine?.step().questions?.find(item => item.kind === 'participant');
-    if (!engine || !question || !this.teachParticipantPage) return true;
-    const profile = validate ? this.teachParticipantPage.build() : this.teachParticipantPage.fields();
-    if (!profile) return false;
-    engine.setAnswer(question.id, profile);
-    return true;
+    if (!engine) return '';
+    return engine.runSheet().map(section =>
+      `${section.heading}\n${section.lines.map((line, i) => `${i + 1}. ${line}`).join('\n')}`).join('\n\n');
+  }
+
+  /** Copy the run sheet; only on an explicit click. */
+  async copyRunSheet(): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(this.runSheetText());
+      this.runSheetNotice.set('Copied. Paste it somewhere you can read during the session.');
+    } catch {
+      this.runSheetNotice.set('Copying was not allowed here. Select the text and copy it by hand.');
+    }
   }
 
   // ---- Mapping pages (repeat steps) ----
@@ -417,7 +388,7 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     this.presets.reload();
     this.presetSaveNotice.set('');
     this.presetError.set('');
-    this.presetSaveName.set(suggestPresetName('My setup', this.presets.presets()));
+    this.presetSaveName.set(suggestPresetName(this.engine()?.suggestedPresetName('My setup') ?? 'My setup', this.presets.presets()));
     this.presetSaveOpen.set(!this.presets.loadError());
   }
 
@@ -483,21 +454,16 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
         this.midiInput.shutdown();
       }
     }
-    const teachContext = { settings: this.settings.settings(), answers: engine.answers(), level: engine.level() };
     // A direction the user ticked is connected now instead of waiting for the next health check
-    const teachUsesMobile = engine.flow.goal === 'teach' && includesScenario(teachContext, 'mobile');
-    if ((patch.rtdbInputEnabled && !base.rtdbInputEnabled)
-      || (teachUsesMobile && this.settings.settings().rtdbInputEnabled)) this.rtdb.startInput();
-    if ((patch.rtdbOutputEnabled && !base.rtdbOutputEnabled)
-      || (teachUsesMobile && this.settings.settings().rtdbOutputEnabled)) this.rtdb.startOutput();
+    if (patch.rtdbInputEnabled && !base.rtdbInputEnabled) this.rtdb.startInput();
+    if (patch.rtdbOutputEnabled && !base.rtdbOutputEnabled) this.rtdb.startOutput();
     if (patch.cwInputEnabled) {
       this.cwInput.updateParams();
       this.detectorEnabled.emit();
     }
     this.applied = true;
     this.tryRequested.emit(engine.flow.goal);
-    const screen = engine.answers()['screen'];
-    if (screen === 'fullscreen' || screen === 'lens') this.fullscreenRequested.emit();
+    if (engine.opensFullscreen()) this.fullscreenRequested.emit();
   }
 
   // ---- Closing ----

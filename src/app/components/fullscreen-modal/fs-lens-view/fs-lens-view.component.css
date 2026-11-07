@@ -76,7 +76,8 @@
   background: currentColor;
 }
 .lens-char.lens-blurred {
-  filter: blur(0.12em) brightness(1.4);
+  /* The letter is huge, so the blur must be wide enough to smear its thick strokes into a blob */
+  filter: blur(0.3em) brightness(1.4);
 }
 .lens-symbols {
   display: block;

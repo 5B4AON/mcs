@@ -27,6 +27,8 @@ export class FsLensViewComponent {
   @Input() blurMode: 'rx' | 'tx' | 'both' | null = null;
   /** True while the hold-to-reveal button is pressed. */
   @Input() revealing = false;
+  /** The full screen's input mode, so the empty hint names what to do. */
+  @Input() inputMode: 'key' | 'type' = 'key';
 
   constructor(
     public settings: SettingsService,

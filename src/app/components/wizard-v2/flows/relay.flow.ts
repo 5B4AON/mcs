@@ -5,6 +5,7 @@
 import { all, settingIs } from '../engine/conditions';
 import { WizardFlow } from '../engine/flow-types';
 import { leavePracticeForced, leavePracticeStep, soundStep } from './shared-steps';
+import { sidetoneProblems } from './direction-checks';
 
 /**
  * Goal "Join an online Morse conversation": each direction is a few small
@@ -103,6 +104,11 @@ export const RELAY_FLOW: WizardFlow = {
     },
     soundStep({
       detail: 'Morse received from the shared channel, and the Morse you send, is played through it.',
+      validate: ctx => sidetoneProblems(
+        ctx.settings,
+        ctx.settings.rtdbInputEnabled ? [ctx.settings.rtdbInputSource] : [],
+        'Morse from the shared channel',
+      ),
     }),
   ],
 };

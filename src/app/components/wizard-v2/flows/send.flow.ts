@@ -7,6 +7,7 @@ import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
 import { leavePracticeForced, leavePracticeStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
 import { MIDI_SUPPORTED, NOT_AVAILABLE_HINT } from './device-support';
+import { keySources, sidetoneProblems } from './direction-checks';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
 const METHODS: {
@@ -172,6 +173,11 @@ export const SEND_FLOW: WizardFlow = {
     }),
     soundStep({
       detail: 'Your keying is played through it, so you hear what you send.',
+      validate: ctx => sidetoneProblems(
+        ctx.settings,
+        keySources(ctx.settings, Array.isArray(ctx.answers['methods']) ? ctx.answers['methods'] as string[] : []),
+        'what you key',
+      ),
     }),
     { ...screenStep('key'), level: 'intermediate' },
   ],

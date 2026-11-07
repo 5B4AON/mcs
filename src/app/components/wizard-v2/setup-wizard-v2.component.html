@@ -23,7 +23,7 @@
       @switch (stage()) {
         @case ('steps') {
           @if (engine(); as eng) {
-            @if (eng.isFirst) {
+            @if (eng.isFirst && !eng.flow.noPresetStart) {
               <section class="wizard-preset-start" aria-labelledby="wizard-preset-start-title">
                 @if (presetPickerOpen()) {
                   <h3 id="wizard-preset-start-title">Start from a saved preset</h3>
@@ -139,12 +139,6 @@
                              (input)="setText(q, $event)">
                     </label>
                   }
-                  @case ('participant') {
-                    <app-teach-participant-page
-                      [profile]="participantProfile(eng, q)"
-                      [profiles]="participantProfiles(eng)"
-                      [index]="participantIndex(q)" />
-                  }
                 }
               </fieldset>
             }
@@ -155,6 +149,23 @@
               }
               <ng-container *ngComponentOutlet="registry[it.item].component;
                 inputs: itemInputs(it, audioRunning)" />
+            }
+
+            @if (step.sheet) {
+              <section class="wizard-sheet" aria-label="Run sheet">
+                @for (section of eng.runSheet(step); track section.heading) {
+                  <h4>{{ section.heading }}</h4>
+                  <ol class="wizard-sheet-list">
+                    @for (line of section.lines; track $index) {
+                      <li>{{ line }}</li>
+                    }
+                  </ol>
+                }
+                <button type="button" class="wizard-pill" (click)="copyRunSheet()">Copy the run sheet</button>
+                @if (runSheetNotice()) {
+                  <p class="wizard-note" role="status">{{ runSheetNotice() }}</p>
+                }
+              </section>
             }
 
             @if (step.page; as page) {
@@ -186,6 +197,16 @@
           @if (engine(); as eng) {
             @let review = eng.review();
             <h3 class="wizard-step-title" tabindex="-1">Review before applying</h3>
+            @if (eng.summaryLines().length) {
+              <section class="wizard-summary" aria-labelledby="wizard-summary-title">
+                <h4 id="wizard-summary-title">What this setup will do</h4>
+                <ul class="wizard-list">
+                  @for (line of eng.summaryLines(); track $index) {
+                    <li>{{ line }}</li>
+                  }
+                </ul>
+              </section>
+            }
             @if (review.steps.length || review.forced.length) {
               <p class="wizard-hint">Apply will change only these settings:</p>
               <ul class="wizard-changes">
@@ -221,7 +242,7 @@
               <div class="wizard-error" role="alert">{{ message }}</div>
             }
 
-            @if (review.skippedByLevel.length) {
+            @if (review.skippedByLevel.length && !eng.flow.skippedAreDecided) {
               <p class="wizard-note">Skipped for the {{ levelLabel(eng.level()) }} level, so these keep their current settings:
                 {{ skippedTitles(review.skippedByLevel) }}.</p>
             }

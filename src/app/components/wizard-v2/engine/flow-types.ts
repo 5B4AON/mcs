@@ -52,7 +52,7 @@ export interface StepQuestion {
   id: string;
   label: string;
   /** `single` = pick one, `select` = pick one from a dropdown, `multi` = pick any, `number` = a count, `boolean` = yes/no */
-  kind: 'single' | 'select' | 'multi' | 'number' | 'text' | 'boolean' | 'participant';
+  kind: 'single' | 'select' | 'multi' | 'number' | 'text' | 'boolean';
   options?: QuestionOption[];
   /** Start value; also what Revert restores */
   default: unknown;
@@ -98,6 +98,8 @@ export interface StepRepeat {
   listTitle?: string;
   /** Text of the list page; has a plain default */
   listIntro?: string;
+  /** Suggested names for new mappings, used in turn for each added mapping that has a blank name */
+  nameIdeas?: readonly string[];
 }
 
 /**
@@ -112,6 +114,13 @@ export interface StepPage {
   baseId: string;
   list: keyof AppSettings;
   item: string;
+}
+
+/** One headed, numbered list of a run sheet (see `WizardStep.sheet`). */
+export interface RunSheetSection {
+  heading: string;
+  /** Short plain sentences, shown as a numbered list */
+  lines: string[];
 }
 
 /** One page of the wizard. */
@@ -133,15 +142,22 @@ export interface WizardStep {
   /** Extra checks on the answers (item values are checked by the items' own descriptors) */
   validate?: (ctx: ConditionContext) => string[];
   repeat?: StepRepeat;
+  /** A run sheet: headed numbered lists computed from the answers, with a Copy button (see the Teach goal) */
+  sheet?: (ctx: ConditionContext) => RunSheetSection[];
   /** Engine-set: this is one expanded page of a repeat step */
   page?: StepPage;
 }
 
+/** A forced value, or a function that works it out from the draft and answers. */
+export type ForcedValue = {} | null | undefined | ((ctx: ConditionContext) => unknown);
+
 /** A setting the goal always sets when applied, shown separately in the review. */
 export interface ForcedSetting {
   key: keyof AppSettings;
-  value: unknown;
-  label: string;
+  /** The value, or a function of the draft and answers when it depends on them */
+  value: ForcedValue;
+  /** Plain-language line for the review; a function when it names a computed value */
+  label: string | ((ctx: ConditionContext) => string);
   /** Only forced while this holds (e.g. the user chose a path that needs the setting on) */
   when?: Condition;
 }
@@ -162,18 +178,23 @@ export interface WizardFlow {
    */
   levelDefaults?: Partial<Record<WizardLevel, Partial<AppSettings>>>;
   forced?: ForcedSetting[];
-  /** Settings keys derived from wizard-only answers rather than direct item edits. */
-  derivedKeys?: readonly (keyof AppSettings)[];
-  /** Build settings changes from wizard-only answers, preserving the starting settings. */
-  derivePatch?: (ctx: ConditionContext, base: AppSettings) => Partial<AppSettings>;
-  /** Validate shared items against forced/derived values, rather than only the editable draft. */
+  /** Validate shared items against the forced values, rather than only the editable draft. */
   validateWithFlowSettings?: boolean;
-  /** Review lines for settings derived from wizard-only answers. */
-  deriveReview?: (
-    base: AppSettings,
-    proposed: AppSettings,
-    ctx: ConditionContext,
-  ) => import('../../settings-items/item-descriptor').ItemReviewLine[];
-  /** Permit a deliberate Apply action even when selected behavior already matches settings. */
-  applyWhen?: Condition;
+  /** Replaces the standard first step that asks for the level (same question id), for a goal with its own wording */
+  levelStep?: WizardStep;
+  /** Plain-language lines for the top of the review: what this setup will do, decided from the answers */
+  summary?: (ctx: ConditionContext) => string[];
+  /** The goal's own way of deciding whether Apply opens the full screen (default: the `screen` answer is fullscreen or lens) */
+  fullscreenWhen?: Condition;
+  /** Steps skipped for the level are decided by the goal itself, so the review does not say they keep their settings */
+  skippedAreDecided?: boolean;
+  /** Hide "Start from a saved preset": the goal's result is derived from answers, so a loaded preset could not be edited */
+  noPresetStart?: boolean;
+  /** Suggested name when saving the proposed setup as a preset */
+  presetName?: (ctx: ConditionContext) => string;
+  /**
+   * Corrections to earlier answers that a change has made invalid (for example an intent that no
+   * longer suits the audience just chosen). Applied after every answer change until nothing moves.
+   */
+  reconcile?: (ctx: ConditionContext) => Record<string, unknown>;
 }

@@ -8,7 +8,7 @@ import { findChannelConflicts } from '../../../services/audio-channel-conflicts'
 import { ExternalRouteChange, compareExternalRoutes } from '../../../services/output-change-checker';
 import { ItemDescriptor, ItemReviewLine } from '../../settings-items/item-descriptor';
 import { DraftSettingsScope } from '../../settings-items/draft-settings-scope';
-import { ConditionContext, ForcedSetting, StepPage, StepQuestion, WizardAnswers, WizardFlow, WizardLevel, WizardStep } from './flow-types';
+import { ConditionContext, StepPage, StepQuestion, WizardAnswers, WizardFlow, WizardLevel, WizardStep } from './flow-types';
 import { LEVEL_QUESTION_ID, LEVEL_STEP, isWizardLevel, visibleAtLevel } from './levels';
 import { MappingKind } from '../../settings-items/mapping/mapping-registry';
 
@@ -17,6 +17,13 @@ export type ItemDescriptorLookup = (itemId: string) => ItemDescriptor;
 
 /** Finds a mapping kind by id (see `mapping-registry.ts`). */
 export type MappingKindLookup = (kindId: string) => MappingKind;
+
+/** A forced setting with its value and label worked out for the current answers. */
+interface ResolvedForced {
+  key: keyof AppSettings;
+  value: unknown;
+  label: string;
+}
 
 /** Review lines of one step. */
 export interface StepReview {
@@ -94,14 +101,14 @@ export class WizardEngine {
     private readonly kindFor: MappingKindLookup = id => { throw new Error(`No mapping kinds: ${id}`); },
     initialLevel: WizardLevel = 'novice',
   ) {
-    this.allSteps = flow.levels ? [LEVEL_STEP, ...flow.steps] : flow.steps;
+    this.allSteps = flow.levels ? [flow.levelStep ?? LEVEL_STEP, ...flow.steps] : flow.steps;
     const startLevel = flow.levels ? initialLevel : 'novice';
     for (const step of this.allSteps) {
       for (const q of step.questions ?? []) {
         this.defaults[q.id] = structuredClone(q.id === LEVEL_QUESTION_ID ? startLevel : this.defaultOf(q, startLevel));
       }
     }
-    this.answerState.set(structuredClone(this.defaults));
+    this.answerState.set(this.settled(structuredClone(this.defaults)));
     this.level = computed(() => {
       const chosen = this.answerState()[LEVEL_QUESTION_ID];
       return flow.levels && isWizardLevel(chosen) ? chosen : 'novice';
@@ -132,6 +139,28 @@ export class WizardEngine {
   /** What conditions see: the draft and the answers. */
   private context(): ConditionContext {
     return { settings: this.scope.value(), answers: this.answerState(), level: this.level() };
+  }
+
+  /** Plain-language lines the goal shows at the top of the review (what the setup will do). */
+  summaryLines(): string[] {
+    return this.flow.summary?.(this.context()) ?? [];
+  }
+
+  /** The run sheet of a step that has one, worked out from the current answers. */
+  runSheet(step: WizardStep = this.step()): ReturnType<NonNullable<WizardStep['sheet']>> {
+    return step.sheet?.(this.context()) ?? [];
+  }
+
+  /** Name to suggest when the proposed setup is saved as a preset. */
+  suggestedPresetName(fallback: string): string {
+    return this.flow.presetName?.(this.context()) ?? fallback;
+  }
+
+  /** True when Apply should open the full screen: the goal's own rule, else the screen answer. */
+  opensFullscreen(): boolean {
+    if (this.flow.fullscreenWhen) return this.flow.fullscreenWhen(this.context());
+    const screen = this.answerState()['screen'];
+    return screen === 'fullscreen' || screen === 'lens';
   }
 
   /** Start value of a question: from the settings, else the level's, else its plain default. */
@@ -249,10 +278,20 @@ export class WizardEngine {
     const repeat = step.page ? step.page : null;
     if (!repeat) return;
     const kind = this.kindFor(repeat.item);
-    const list = [...this.mappings(repeat.list), kind.create()];
+    const list = [...this.mappings(repeat.list), this.withSuggestedName(repeat, kind.create())];
     this.originsOf(repeat.list).push(null);
     this.scope.update({ [repeat.list]: list } as Partial<AppSettings>);
     this.goTo(`${repeat.baseId}#${list.length - 1}`);
+  }
+
+  /** A new mapping gets the next unused name idea of its step, when the step offers some. */
+  private withSuggestedName(page: StepPage, mapping: unknown): unknown {
+    const ideas = this.flow.steps.find(step => step.id === page.baseId)?.repeat?.nameIdeas;
+    const fields = mapping as { name?: string };
+    if (!ideas?.length || typeof fields.name !== 'string' || fields.name.trim()) return mapping;
+    const used = new Set(this.mappings(page.list).map(m => (m as { name?: string }).name));
+    const idea = ideas.find(name => !used.has(name));
+    return idea ? { ...fields, name: idea } : mapping;
   }
 
   /** Delete mapping `index`, with whatever else the kind must change; the wizard lands on the list page. */
@@ -271,7 +310,21 @@ export class WizardEngine {
 
   /** Record a wizard-only answer. */
   setAnswer(id: string, value: unknown): void {
-    this.answerState.set({ ...this.answerState(), [id]: structuredClone(value) });
+    this.answerState.set(this.settled({ ...this.answerState(), [id]: structuredClone(value) }));
+  }
+
+  /** The answers with the flow's corrections applied until nothing more changes. */
+  private settled(answers: WizardAnswers): WizardAnswers {
+    if (!this.flow.reconcile) return answers;
+    let current = answers;
+    for (let i = 0; i < 4; i++) {
+      const level = this.flow.levels && isWizardLevel(current[LEVEL_QUESTION_ID]) ? current[LEVEL_QUESTION_ID] as WizardLevel : 'novice';
+      const patch = this.flow.reconcile({ settings: this.scope.value(), answers: current, level });
+      const changed = Object.entries(patch).filter(([key, value]) => !sameJson(current[key], value));
+      if (!changed.length) break;
+      current = { ...current, ...Object.fromEntries(changed.map(([key, value]) => [key, structuredClone(value)])) };
+    }
+    return current;
   }
 
   // ---- Navigation ----
@@ -350,15 +403,12 @@ export class WizardEngine {
     this.scope.revert(keys);
     const answers = { ...this.answerState() };
     for (const q of step.questions ?? []) if (!q.preference) answers[q.id] = structuredClone(this.defaults[q.id]);
-    this.answerState.set(answers);
+    this.answerState.set(this.settled(answers));
   }
 
   /** True when any step of the flow has an answer that differs from the start. */
   hasAnyChanges(): boolean {
-    const changed = new Set(this.scope.changedKeys());
-    const derived = this.flow.derivePatch?.(this.context(), this.scope.base()) ?? {};
-    return this.steps().some(step => this.stepHasChanges(step))
-      || (this.flow.derivedKeys ?? []).some(key => changed.has(key) && key in derived);
+    return this.steps().some(step => this.stepHasChanges(step));
   }
 
   /**
@@ -371,7 +421,6 @@ export class WizardEngine {
     for (const step of this.flow.steps) {
       for (const key of this.stepKeys(step)) patch[key] = settings[key];
     }
-    for (const key of this.flow.derivedKeys ?? []) patch[key] = settings[key];
     this.scope.update(patch as Partial<AppSettings>);
     this.origins = {};
     this.seeded = {};
@@ -400,12 +449,10 @@ export class WizardEngine {
 
   /** Settings implied by selected flow choices, used when validating shared items. */
   private validationSettings(): AppSettings {
-    const base = this.scope.base();
     const forced = Object.fromEntries(
       this.activeForced().map(item => [item.key, item.value]),
     ) as Partial<AppSettings>;
-    const derived = this.flow.derivePatch?.(this.context(), base) ?? {};
-    return { ...this.scope.value(), ...forced, ...derived };
+    return { ...this.scope.value(), ...forced };
   }
 
   /** Every shown step's problems; Apply stays blocked while any remain. */
@@ -427,13 +474,17 @@ export class WizardEngine {
     for (const forced of this.activeForced()) {
       if (!sameJson(base[forced.key], forced.value)) patch[forced.key] = forced.value;
     }
-    Object.assign(patch, this.flow.derivePatch?.(this.context(), base));
     return patch as Partial<AppSettings>;
   }
 
-  /** Forced settings whose condition currently holds. */
-  private activeForced(): ForcedSetting[] {
-    return (this.flow.forced ?? []).filter(f => !f.when || f.when(this.context()));
+  /** Forced settings whose condition currently holds, with computed values and labels worked out. */
+  private activeForced(): ResolvedForced[] {
+    const ctx = this.context();
+    return (this.flow.forced ?? []).filter(f => !f.when || f.when(ctx)).map(f => ({
+      key: f.key,
+      value: typeof f.value === 'function' ? (f.value as (c: ConditionContext) => unknown)(ctx) : f.value,
+      label: typeof f.label === 'function' ? f.label(ctx) : f.label,
+    }));
   }
 
   /** What the Review step lists: changes grouped by step, then forced values. */
@@ -454,13 +505,6 @@ export class WizardEngine {
         }
       }
       if (changes.length) steps.push({ step, changes });
-    }
-    const derivedChanges = this.flow.deriveReview?.(base, proposed, this.context()) ?? [];
-    if (derivedChanges.length) {
-      steps.push({
-        step: { id: 'derived', title: 'Teaching participants', intro: '' },
-        changes: derivedChanges,
-      });
     }
     const forced = this.activeForced()
       .filter(f => !sameJson(base[f.key], f.value) && !seen.has(f.key))
@@ -486,7 +530,7 @@ export class WizardEngine {
 
   /** True when there is something to apply and nothing blocks it. */
   canApply(): boolean {
-    return (Object.keys(this.applyPatch()).length > 0 || !!this.flow.applyWhen?.(this.context())) &&
+    return Object.keys(this.applyPatch()).length > 0 &&
       this.validateFlow().length === 0 &&
       this.newConflicts().length === 0;
   }
