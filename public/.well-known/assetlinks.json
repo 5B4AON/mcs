@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.web.morse_code_studio",
+      "sha256_cert_fingerprints": [
+        "F8:43:1F:4D:95:3A:13:8B:CB:ED:41:50:B6:F4:CA:B8:17:E6:08:CA:D9:27:26:0A:88:37:51:5D:92:C8:0B:50"
+      ]
+    }
+  }
+]
