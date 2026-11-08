@@ -231,9 +231,101 @@ The same fingerprint can be checked against the keystore (asks for the password)
 
 Then deploy (`npm run build` + Firebase deploy) and check with Google's tool at <https://developers.google.com/digital-asset-links/tools/generator> (domain `morse-code-studio.web.app`, package `app.web.morse_code_studio`, the fingerprint above).
 
+## Step 8: Connect a phone with USB debugging
+
+Copying the APK to the phone through the Linux file manager (MTP) failed with "cannot write to mapped folder". Installing with `adb` over USB works instead and needs no file copy. `adb` is already part of Bubblewrap's Android SDK, so nothing extra is installed. These steps were done on a Samsung Galaxy; other phones use similar menu names.
+
+1. **Turn on Developer options** on the phone: Settings → About phone → Software information, tap **Build number** 7 times and enter the PIN if asked. The phone shows "Developer mode has been enabled".
+2. **Turn on USB debugging**: Settings → **Developer options** (a new entry near the bottom of Settings) → switch on **USB debugging**.
+3. **Connect the phone** with a USB cable that carries data (not a charge-only cable) and keep the phone unlocked. If nothing happens, pull down the notification shade, tap the USB notification and choose **Transferring files**.
+4. **Start adb and allow this computer**:
+
+   ```bash
+   ~/.bubblewrap/android_sdk/platform-tools/adb kill-server
+   ~/.bubblewrap/android_sdk/platform-tools/adb devices
+   ```
+
+   The phone shows "Allow USB debugging?" with the computer's key fingerprint. Tick **Always allow from this computer** and tap **Allow**.
+5. **Check the connection**: run `adb devices` again. The phone must be listed with the word `device` after its serial number.
+
+| `adb devices` shows | Fix |
+|---|---|
+| Empty list | USB debugging is off, the cable is charge-only, or the USB mode is "Charging only". `lsusb` shows whether Linux sees the phone at all. |
+| `unauthorized` | Accept the prompt on the phone. If it does not appear: Developer options → **Revoke USB debugging authorisations**, then unplug and plug in again. |
+| `no permissions` | Run the two commands from step 4 once with `sudo`. |
+
+USB debugging can be switched off again after testing. Developer options stay available for next time.
+
+## Step 9: Install the signed APK on the phone
+
+With the phone connected as in Step 8:
+
+```bash
+cd ~/code/mcs/android-wrapper
+~/.bubblewrap/android_sdk/platform-tools/adb install -r app-release-signed.apk
+```
+
+- `-r` replaces an app that is already installed and keeps its data, so the same command installs every new test build.
+- Expected output ends with `Success` (adb may say "Performing Incremental Install" first; that is normal). The **MCS** icon then appears in the app drawer.
+- If it fails with `INSTALL_FAILED_UPDATE_INCOMPATIBLE`, the installed copy was signed with a different key (for example a copy from Play). Remove it first with `adb uninstall app.web.morse_code_studio`, then install again.
+
+Result of the first phone test (Samsung Galaxy): no address bar, correct icon, dark splash, microphone, MIDI/serial availability and the relay all worked.
+
+### Finding: the launch looks very quick (accepted, no change)
+
+The big logo seen at launch is replaced by the main screen almost at once. Raising `splashScreenFadeOutDuration` from 300 to 600 ms made no visible difference, so it was put back to 300 (the Bubblewrap default). A 60 fps screen recording of a cold launch showed why:
+
+- The big logo is the phone's own app-opening animation (Samsung zooms the launcher icon to full screen), not the wrapper's splash, and the wrapper cannot change it.
+- Chrome then shows a dark screen for about 150 ms and the app appears at once. The whole launch takes about 0.35 s.
+- The page paints so fast (served from the service worker cache) that Chrome removes its splash with no visible fade, so the fade setting has no effect.
+
+Making the splash last longer would need a native splash with a forced delay, which Bubblewrap overwrites and Android's guidelines advise against. A fast launch is preferred, so this is accepted as normal.
+
+To measure a launch again (phone unlocked, on the home screen; this only restarts MCS):
+
+```bash
+ADB=~/.bubblewrap/android_sdk/platform-tools/adb
+$ADB shell am force-stop app.web.morse_code_studio
+($ADB shell screenrecord --time-limit 7 /sdcard/Download/mcs-launch.mp4 &); sleep 1.5
+$ADB shell am start -W -n app.web.morse_code_studio/.LauncherActivity   # prints TotalTime in ms
+sleep 7; $ADB pull /sdcard/Download/mcs-launch.mp4 /tmp/ && $ADB shell rm /sdcard/Download/mcs-launch.mp4
+```
+
+Then step through `/tmp/mcs-launch.mp4` frame by frame in a video player (or split it into frames with `ffmpeg -i /tmp/mcs-launch.mp4 -vf fps=60 frame%04d.png`).
+
+## Step 10: Create the Play Console developer account (waiting for identity review)
+
+A Google Play developer account is needed before any app can be uploaded. It is a one-time US$25 fee and is tied to one Google account for good.
+
+### Decisions (confirmed)
+
+| Item | Choice | Why / what it means |
+|---|---|---|
+| Account type | Personal ("Yourself") | Chosen at the start of #145. A new Personal account must run a closed test (at least 12 testers for 14 days) before public release. |
+| Owning Google account | The existing `5b4aon@gmail.com` account | Ownership is hard to move later, so it must be an account that is kept for good. 2-Step Verification must be on. |
+| Developer name | `5B4AON` | The "by …" line under the app title on Google Play. It can be changed at any time. |
+| Developer email (public) | `5b4aon@gmail.com` | Shown on the store listing. The same address is used in the privacy policy. |
+
+Shown publicly on Google Play for a Personal account: the legal name (from the Google Payments profile, cannot be hidden), the country and the developer email. The full address is shown only for apps that make money, and MCS is free.
+
+### Sign-up steps
+
+Ticked items are confirmed done. The others are still to do.
+
+- [x] 2-Step Verification is on for the owning Google account (<https://myaccount.google.com/security>). Sign-up requires it.
+- [x] Sign up at <https://play.google.com/console/signup> in a desktop browser, choose **Yourself**, and enter the developer name and developer email above. The contact email and contact phone are private.
+- [x] Verify the **developer email** and the **contact email** with the one-time codes Google sends to each.
+- [x] Payments profile: the legal name and address must match the government ID exactly, because this is what gets verified.
+- [x] Answer the short "About you" questions (they do not affect approval), accept the Developer Distribution Agreement and pay US$25 with a credit or debit card in the legal name (prepaid cards are refused).
+- [x] Digital Services Act trader status (EU): declared **not a trader**, because the app is free with no ads or purchases. A trader would have to publish an address and phone number on the listing.
+- [x] Verify an Android device: install the **Google Play Console** app on the phone and sign in with the same Google account.
+- [ ] Identity verification: the government ID was uploaded and is under review. Wait for the approval email (usually a few days).
+- [ ] Verify the **contact phone** with a one-time code. Play Console offers this only after identity verification is complete.
+
+Do not create the app in Play Console until the account is approved. Some choices made when creating it (default language, app or game, free or paid) cannot be undone, so they are made as a separate step.
+
 ## Next steps (not done yet)
 
-- Install `app-release-signed.apk` on a phone (Files app, or `adb install`) and check: no address bar, icon, splash colour, microphone, MIDI/serial availability, relay.
 - Create the Play Console app, upload `app-release-bundle.aab` to **internal testing**, enrol in Play App Signing, add the Play signing fingerprint (see Step 7).
 - Store listing text and images, Data safety, content rating, target audience (13+ only).
 - Closed test with at least 12 testers for 14 days (testers join through a Google Group and an opt-in link), then apply for production access.
