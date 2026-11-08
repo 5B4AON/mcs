@@ -38,7 +38,7 @@ import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-acce
 import { DraftSettingsScope } from '../settings-items/draft-settings-scope';
 import { ITEM_REGISTRY } from '../settings-items/item-registry';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
-import { StepItem, StepQuestion, WizardFlow, WizardLevel, WizardStep } from './engine/flow-types';
+import { QuestionOption, StepItem, StepQuestion, WizardFlow, WizardLevel, WizardStep } from './engine/flow-types';
 import { WizardEngine } from './engine/wizard-engine';
 import { MappingListComponent, MappingListRow } from '../settings-items/mapping/mapping-list/mapping-list.component';
 import { MappingKind, mappingKind } from '../settings-items/mapping/mapping-registry';
@@ -203,6 +203,23 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
 
   setSingle(question: StepQuestion, value: string): void {
     this.engine()?.setAnswer(question.id, value);
+  }
+
+  /** True when the stored answer is this option (or the answer it stands for). */
+  isSelected(question: StepQuestion, option: QuestionOption): boolean {
+    const current = this.answer(question);
+    return current === option.value || (option.alias !== undefined && current === option.alias);
+  }
+
+  /** Picks an option; one with its own number starts from the `start` value its flow gives (the recommended one), which the user can then change. */
+  choose(question: StepQuestion, option: QuestionOption): void {
+    this.setSingle(question, option.value);
+    if (option.number) this.engine()?.setAnswer(option.number.id, option.number.start);
+  }
+
+  setOptionNumber(option: QuestionOption, event: Event): void {
+    const value = Number((event.target as HTMLInputElement).value);
+    if (option.number && Number.isFinite(value)) this.engine()?.setAnswer(option.number.id, value);
   }
 
   setSelect(question: StepQuestion, event: Event): void {

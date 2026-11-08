@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.14.2] - 2026-11-08
+
+### Changed
+
+- **Teach guide: simpler speed and pause choices** — The speed, key speed and pause questions list plain speeds ("About one word every 8 seconds") without "Recommended" or "A little slower" prefixes. The pre-selected choice is the recommended one. Each speed appears once, from slowest to fastest, and the pause choices run from the longest pause to none. When the 5 words per minute floor leaves too few choices, a "Slightly longer pauses" choice fills the gap.
+- **Teach guide: exact speeds on the same card** — At Expert level, "An exact speed?" and "An exact overall speed?" are no longer separate steps. They are a last choice on the speed and pause questions, with a number box that opens pre-filled with the recommended value, and a line below explaining what it means.
+- **Teach guide: one choice, one entry** — Checking, typing, practice content and round length list each choice once (the recommended one is pre-selected) instead of repeating it under "Recommended: …".
+- **Texts match the audience** — The run sheet, review summary and approach descriptions now name the group the teacher chose ("the children", "the adults", "the operators") or say "everyone" and "people", instead of always saying children, class, students or learners. "Class" activities became "group" activities.
+
 ## [2.14.1] - 2026-11-07
 
 ### Added

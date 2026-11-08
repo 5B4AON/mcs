@@ -132,6 +132,9 @@
   border: 1px solid #3f4d78;
   border-radius: 6px;
 }
+.wizard-option-number {
+  margin: .2rem 0 .6rem 1.75rem;
+}
 .wizard-field input[type="color"] {
   box-sizing: border-box;
   width: 44px;

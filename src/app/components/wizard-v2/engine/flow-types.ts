@@ -41,6 +41,10 @@ export interface QuestionOption {
   hint?: string;
   /** Shown but not selectable (for example a keyer this device does not support) */
   disabled?: boolean;
+  /** Another stored answer this option stands for (for example `auto` = the choice that suits the audience), so the list needs no separate "recommended" copy */
+  alias?: string;
+  /** A number the user types beside this option while it is selected; choosing the option stores `start` under `id` */
+  number?: { id: string; label: string; min: number; max: number; start: number };
 }
 
 /**

@@ -13,7 +13,7 @@ import {
   practiceIs, practiceWhatOf, practiceWhatOptions, intentsFor, reconcileAnswers, checkingOf, knowsMorse, paddleInvolved,
   atLeast, answerAt, audienceOf, blurOn, chosenKeys, chosenRewards, rewardPicks, conversationView, describeSpeed, fontSize, inFamily, isScenario,
   participantCount, presetNameFor, rewardProblems, rewardsActive, runSheetFor, scenarioOf, scenariosFor, sendPracticeIds,
-  speedPlan, summaryFor, typingMode, usesKey, viaPhone, withWantedMappings,
+  forAudience, speedPlan, summaryFor, typingMode, usesKey, viaPhone, withWantedMappings,
 } from './teach-scenarios';
 
 /*
@@ -44,8 +44,8 @@ const LEVEL_STEP_TEACH: WizardStep = {
     ...LEVEL_QUESTION,
     options: [
       { value: 'novice', label: 'Novice', hint: 'New to Morse or to this app. A few simple questions, with good choices already made for you. No special equipment needed.' },
-      { value: 'intermediate', label: 'Intermediate', hint: 'You know the basics. Adds class activities where several people have their own key, and choices about speed and room size.' },
-      { value: 'expert', label: 'Expert', hint: 'You want every option: plugged-in keys, students joining over the internet, exact speeds and extra surprises.' },
+      { value: 'intermediate', label: 'Intermediate', hint: 'You know the basics. Adds group activities where several people have their own key, and choices about speed and room size.' },
+      { value: 'expert', label: 'Expert', hint: 'You want every option: plugged-in keys, people joining over the internet, exact speeds and extra surprises.' },
     ],
   }],
 };
@@ -55,9 +55,9 @@ const LEVEL_STEP_TEACH: WizardStep = {
 const INTENT_OPTIONS: (QuestionOption & { minLevel: 'novice' | 'intermediate' })[] = [
   { value: 'introduce', label: 'Show first-timers what Morse is', hint: 'A short, friendly demo that shows and plays Morse. No experience needed.', minLevel: 'novice' },
   { value: 'send', label: 'Show how Morse is sent', hint: 'Someone presses a key and the screen turns it into letters.', minLevel: 'novice' },
-  { value: 'copy', label: 'Show how Morse is copied', hint: 'Play Morse and let the class work out what it says.', minLevel: 'novice' },
-  { value: 'check', label: 'Check what learners can do', hint: 'Test how well learners copy or send Morse, with a result at the end.', minLevel: 'novice' },
-  { value: 'class', label: 'Run a class activity', hint: 'Several people take part at once, each with their own key.', minLevel: 'intermediate' },
+  { value: 'copy', label: 'Show how Morse is copied', hint: 'Play Morse and let everyone work out what it says.', minLevel: 'novice' },
+  { value: 'check', label: 'Check what people can do', hint: 'Test how well people copy or send Morse, with a result at the end.', minLevel: 'novice' },
+  { value: 'class', label: 'Run a group activity', hint: 'Several people take part at once, each with their own key.', minLevel: 'intermediate' },
   { value: 'booth', label: 'Let people take turns, at a fair or in class', hint: 'People come up one at a time to try Morse, and can win rewards. Nothing to set up between turns.', minLevel: 'novice' },
 ];
 
@@ -87,7 +87,7 @@ function approachStep(intent: Intent, title: string, intro: string, fallback: st
       label: title,
       kind: 'single',
       default: fallback,
-      optionsFrom: ctx => scenariosFor(intent, ctx.level, audienceOf(ctx)).map(s => ({ value: s.value, label: s.label, hint: s.hint })),
+      optionsFrom: ctx => scenariosFor(intent, ctx.level, audienceOf(ctx)).map(s => ({ value: s.value, label: forAudience(s.label, audienceOf(ctx)), hint: forAudience(s.hint, audienceOf(ctx)) })),
     }],
     validate: ctx => scenarioOf(ctx) ? [] : ['Choose one of the options.'],
   };
@@ -169,7 +169,7 @@ const KEY_STEPS: WizardStep[] = [
   {
     id: 'keyboardPeople',
     title: 'Keyboard keys for everyone',
-    intro: 'Each key in the list is one person. Keys you set up earlier are listed first, so rename them, switch them off or delete them. Then add a key for the teacher and one for each student who uses the keyboard. Use Detect to press each key, then give each its own name and colour so everyone can tell whose text is whose. New keys start with a friendly animal name, which you can change.',
+    intro: 'Each key in the list is one person. Keys you set up earlier are listed first, so rename them, switch them off or delete them. Then add a key for the teacher and one for each person who uses the keyboard. Use Detect to press each key, then give each its own name and colour so everyone can tell whose text is whose. New keys start with a friendly animal name, which you can change.',
     helpSection: 's4-1',
     when: all(usesKey('keyboard'), keys('many')),
     repeat: { list: 'keyboardInputMappings', item: 'keyboard-mapping-editor', nameIdeas: ANIMALS },
@@ -265,11 +265,11 @@ const KEY_STEPS: WizardStep[] = [
   {
     id: 'crew',
     title: 'Is everyone covered?',
-    intro: 'Everyone who takes part needs a key of their own. A shared mouse or touch screen counts as one person. You need at least two people: you and one student.',
+    intro: 'Everyone who takes part needs a key of their own. A shared mouse or touch screen counts as one person. You need at least two people: you and one other.',
     when: keys('many'),
     validate: ctx => participantCount(ctx.settings, chosenKeys(ctx)) >= 2
       ? []
-      : ['Add a key for yourself and at least one student.'],
+      : ['Add a key for yourself and at least one other person.'],
   },
 ];
 
@@ -278,8 +278,8 @@ const KEY_STEPS: WizardStep[] = [
 const PRACTICE_STEPS: WizardStep[] = [
   {
     id: 'practiceWhat',
-    title: 'What should learners work on?',
-    intro: 'Choose what the exercise contains. Every learner gets the same exercise, and everything stays on this computer.',
+    title: 'What should people work on?',
+    intro: 'Choose what the exercise contains. Everyone gets the same exercise, and everything stays on this computer.',
     helpSection: 's3-5',
     when: practiceFamilies,
     questions: [{ id: 'practiceWhat', label: 'Content', kind: 'single', default: 'auto', optionsFrom: practiceWhatOptions }],
@@ -288,7 +288,7 @@ const PRACTICE_STEPS: WizardStep[] = [
     id: 'kochLesson',
     level: 'intermediate',
     title: 'Which lesson?',
-    intro: 'Lesson 1 has two letters. Each lesson adds more, and the exercise mixes the new letters with the earlier ones. Pick the lesson your class has reached.',
+    intro: 'Lesson 1 has two letters. Each lesson adds more, and the exercise mixes the new letters with the earlier ones. Pick the lesson your group has reached.',
     helpSection: 's3-5',
     when: all(practiceFamilies, koch),
     questions: [{ id: 'kochLesson', label: 'Lesson', kind: 'select', default: '1', options: KOCH_OPTIONS }],
@@ -297,20 +297,18 @@ const PRACTICE_STEPS: WizardStep[] = [
     id: 'practiceChecking',
     level: 'intermediate',
     title: 'How are answers checked?',
-    intro: 'Choose how learners show what they heard.',
+    intro: 'Choose how people show what they heard.',
     helpSection: 's3-5',
     when: all(isScenario('check-copy'), not(koch)),
     questions: [{
       id: 'practiceChecking', label: 'Checking', kind: 'single', default: 'auto',
       optionsFrom: ctx => {
         const recommended = checkingOf({ ...ctx, answers: { ...ctx.answers, practiceChecking: 'auto' } });
-        const names = { typealong: 'learners type what they hear', blur: 'learners write on paper', listen: 'just listen' };
         return [
-          { value: 'auto', label: `Recommended: ${names[recommended]}`, hint: recommended === 'blur' ? 'Young children usually write on paper. The text stays hidden until you reveal it.' : 'The app marks each answer when the round ends.' },
-          { value: 'typealong', label: 'Learners type what they hear', hint: 'The app marks each answer when the round ends.' },
-          { value: 'blur', label: 'Learners write on paper', hint: 'The text stays hidden; hold the reveal button to show the answer.' },
+          { value: 'typealong', label: 'Everyone types what they hear', hint: 'The app marks each answer when the round ends.' },
+          { value: 'blur', label: 'Everyone writes on paper', hint: recommended === 'blur' ? 'Young children usually write on paper. The text stays hidden until you reveal it.' : 'The text stays hidden; hold the reveal button to show the answer.' },
           { value: 'listen', label: 'Just listen', hint: 'Nothing is checked. Good for a first listen.' },
-        ];
+        ].map(option => option.value === recommended ? { ...option, alias: 'auto' } : option);
       },
     }],
   },
@@ -318,13 +316,13 @@ const PRACTICE_STEPS: WizardStep[] = [
     id: 'sendChecking',
     level: 'intermediate',
     title: 'When are keyed letters marked?',
-    intro: 'Choose when the learner finds out what they got right.',
+    intro: 'Choose when the person keying finds out what they got right.',
     helpSection: 's3-6',
     when: isScenario('check-send'),
     questions: [{
       id: 'sendChecking', label: 'Marking', kind: 'single', default: 'live',
       options: [
-        { value: 'live', label: 'As they key', hint: 'Each letter turns green or red straight away. Encouraging for beginners.' },
+        { value: 'live', label: 'As they key', hint: 'Each letter turns green or red straight away. Encouraging.' },
         { value: 'auto', label: 'At the end of the round', hint: 'Nothing shows until the round ends, then you see the result.' },
         { value: 'manual', label: 'When you press Check', hint: 'You decide when the round is finished.' },
       ],
@@ -334,24 +332,29 @@ const PRACTICE_STEPS: WizardStep[] = [
     id: 'roundLength',
     level: 'intermediate',
     title: 'How long is a round?',
-    intro: 'A round is one set of items to copy or key. The recommended length suits your audience.',
+    intro: 'A round is one set of items to copy or key.',
     helpSection: 's3-5',
     when: practiceFamilies,
     questions: [{
       id: 'roundLength', label: 'Round length', kind: 'single', default: 'recommended',
-      optionsFrom: ctx => (['shorter', 'recommended', 'longer'] as const).map(choice => {
-        const items = roundGroups({ ...ctx, answers: { ...ctx.answers, roundLength: choice } });
-        const label = { shorter: 'Shorter', recommended: 'Recommended', longer: 'Longer' }[choice];
-        const hint = { shorter: 'Quick rounds, good when time is short.', recommended: 'Suits your audience.', longer: 'More to do in each round.' }[choice];
-        return { value: choice, label: `${label}: ${items} items`, hint };
-      }),
+      // Shortest to longest, each size once (the limits of 1 and 10 items can make two choices equal)
+      optionsFrom: ctx => {
+        const seen = new Set<number>();
+        return (['recommended', 'shorter', 'longer'] as const).flatMap(choice => {
+          const items = roundGroups({ ...ctx, answers: { ...ctx.answers, roundLength: choice } });
+          if (seen.has(items)) return [];
+          seen.add(items);
+          const hint = { shorter: 'Quick rounds, good when time is short.', recommended: 'Suits your audience.', longer: 'More to do in each round.' }[choice];
+          return [{ items, option: { value: choice, label: `${items} item${items === 1 ? '' : 's'} in a round`, hint } as QuestionOption }];
+        }).sort((a, b) => a.items - b.items).map(entry => entry.option);
+      },
     }],
   },
   {
     id: 'rounds',
     level: 'expert',
     title: 'How many rounds?',
-    intro: 'Several rounds give each learner a score for every round and an average.',
+    intro: 'Several rounds give each person a score for every round and an average.',
     helpSection: 's3-5',
     when: practiceFamilies,
     questions: [{ id: 'rounds', label: 'Rounds in a session', kind: 'number', default: 1, min: 1, max: 5 }],
@@ -364,14 +367,14 @@ const TYPED_STEPS: WizardStep[] = [
   {
     id: 'reveal',
     title: 'Hide the text until you reveal it?',
-    intro: 'Learners work it out first: by listening and writing on paper, or from the dots and dashes. Holding the reveal button shows everyone the answer.',
+    intro: 'Everyone works it out first: by listening and writing on paper, or from the dots and dashes. Holding the reveal button shows everyone the answer.',
     helpSection: 's8-4',
     when: ctx => !!scenarioOf(ctx)?.blur,
     questions: [{
       id: 'reveal', label: 'Typed text', kind: 'single', default: 'hide',
       options: [
         { value: 'hide', label: 'Hide it', hint: 'The text is blurred until you hold the reveal button.' },
-        { value: 'show', label: 'Show it as it plays', hint: 'Learners can read along while they listen.' },
+        { value: 'show', label: 'Show it as it plays', hint: 'Everyone can read along while they listen.' },
       ],
     }],
   },
@@ -388,14 +391,17 @@ const TYPED_STEPS: WizardStep[] = [
         const live = scenarioOf(ctx)?.typing === 'live';
         return [
           {
-            value: 'auto',
-            label: `Recommended: ${live ? 'each letter plays as you type' : 'type a message, then play it'}`,
+            value: 'live', label: 'Each letter plays as you type', ...(live ? { alias: 'auto' } : {}),
             hint: live
               ? 'Best for showing Morse: the audience sees and hears every letter the moment you type it.'
+              : 'Immediate. The audience sees and hears every letter as it is typed.',
+          },
+          {
+            value: 'enter', label: 'Type a message, then play it', ...(live ? {} : { alias: 'auto' }),
+            hint: live
+              ? 'Press Enter to play the message. Lets you correct mistakes first.'
               : 'Best for this session: you prepare or correct the message first, then press Enter to play it.',
           },
-          { value: 'live', label: 'Each letter plays as you type', hint: 'Immediate. The audience sees and hears every letter as it is typed.' },
-          { value: 'enter', label: 'Type a message, then play it', hint: 'Press Enter to play the message. Lets you correct mistakes first.' },
         ];
       },
     }],
@@ -426,21 +432,37 @@ const playsMorse: Condition = any(inFamily('typed', 'practice-copy', 'online'), 
 /** True when the speed matters: Morse is played, or a paddle (whose key speed sets the dots) is in use. */
 const speedMatters: Condition = any(playsMorse, all(inFamily('keyed', 'practice-send'), paddleInvolved));
 
-const speedOptions = (ctx: ConditionContext): QuestionOption[] => (['slower', 'recommended', 'faster'] as const).map(choice => {
-  const plan = speedPlan({ ...ctx, answers: { ...ctx.answers, speed: choice, exactWpm: 0 } });
-  const label = { slower: 'A little slower', recommended: 'Recommended', faster: 'A little faster' }[choice];
-  return {
-    value: choice,
-    label: `${label}: ${describeSpeed(plan.wpm)}`,
-    hint: ctx.level === 'expert' ? `That is ${plan.wpm} words per minute.` : undefined,
-  };
-});
+const sentence = (text: string): string => text.charAt(0).toUpperCase() + text.slice(1);
+
+/** Speed choices from slowest to fastest, each speed once (a clamp at 5 or 50 can make two choices equal), then the expert's exact speed. */
+const speedOptions = (ctx: ConditionContext): QuestionOption[] => {
+  const seen = new Set<number>();
+  const options = (['recommended', 'slower', 'faster'] as const).flatMap(choice => {
+    const wpm = speedPlan({ ...ctx, answers: { ...ctx.answers, speed: choice, exactWpm: 0 } }).wpm;
+    if (seen.has(wpm)) return [];
+    seen.add(wpm);
+    return [{ wpm, option: {
+      value: choice,
+      label: sentence(describeSpeed(wpm)),
+      hint: ctx.level === 'expert' ? `That is ${wpm} words per minute.` : undefined,
+    } as QuestionOption }];
+  }).sort((a, b) => a.wpm - b.wpm).map(entry => entry.option);
+  if (ctx.level !== 'expert') return options;
+  const recommended = speedPlan({ ...ctx, answers: { ...ctx.answers, speed: 'recommended', exactWpm: 0 } }).wpm;
+  const exact = speedPlan({ ...ctx, answers: { ...ctx.answers, speed: 'exact' } }).wpm;
+  return [...options, {
+    value: 'exact',
+    label: 'Exact speed in words per minute',
+    hint: `That is ${describeSpeed(exact)}.`,
+    number: { id: 'exactWpm', label: 'Words per minute', min: 5, max: 50, start: recommended },
+  }];
+};
 
 const SPEED_STEP: WizardStep = {
   id: 'speed',
   level: 'intermediate',
   title: 'How fast should it be?',
-  intro: 'The recommended speed suits your audience. Slower is kinder for beginners. Faster keeps experienced learners interested.',
+  intro: 'Slower is easier to follow. Faster keeps people who know Morse interested.',
   helpSection: 's3-2',
   when: all(inScenario, playsMorse),
   questions: [{ id: 'speed', label: 'Speed', kind: 'single', default: 'recommended', optionsFrom: speedOptions }],
@@ -451,20 +473,10 @@ const KEY_SPEED_STEP: WizardStep = {
   id: 'keySpeed',
   level: 'intermediate',
   title: 'How fast is the key?',
-  intro: 'A paddle makes the dots and dashes for you, so its speed decides how long they are. The recommended speed suits your audience, and slower is kinder for beginners. A straight key is timed by the hand, so this only applies to paddles.',
+  intro: 'A paddle makes the dots and dashes for you, so its speed decides how long they are. Slower is easier to follow. A straight key is timed by the hand, so this only applies to paddles.',
   helpSection: 's4-1',
   when: all(inScenario, not(playsMorse), speedMatters),
   questions: [{ id: 'speed', label: 'Key speed', kind: 'single', default: 'recommended', optionsFrom: speedOptions }],
-};
-
-const EXACT_SPEED_STEP: WizardStep = {
-  id: 'exactSpeed',
-  level: 'expert',
-  title: 'An exact speed?',
-  intro: 'Optional. Type a speed in words per minute (5 to 50) to override the choice above, or leave 0 to keep it. The pauses between letters follow the next question.',
-  helpSection: 's3-2',
-  when: all(inScenario, speedMatters),
-  questions: [{ id: 'exactWpm', label: 'Words per minute (0 = use the choice above)', kind: 'number', default: 0, min: 0, max: 50 }],
 };
 
 /** The pauses question: Novice sessions get the audience's pauses behind the scenes; everyone else chooses. */
@@ -472,41 +484,49 @@ const PAUSES_STEP: WizardStep = {
   id: 'pauses',
   level: 'intermediate',
   title: 'Extra pauses between letters?',
-  intro: 'Longer pauses between letters and words make Morse easier to follow, because each letter has time to sink in. The recommended pauses suit your audience and speed. With no extra pauses, letters and words follow each other at the full speed you chose, which is harder for beginners.',
+  intro: 'Longer pauses between letters and words make Morse easier to follow, because each letter has time to sink in. With no extra pauses, letters and words follow each other at the full speed you chose, which is harder to follow.',
   helpSection: 's8-5',
   when: all(inScenario, playsMorse),
   questions: [{
     id: 'pauses', label: 'Pauses', kind: 'single', default: 'recommended',
+    // From the longest pause to none, each overall speed once (the recommended choice wins a tie)
     optionsFrom: ctx => {
-      const recommended = speedPlan({ ...ctx, answers: { ...ctx.answers, pauses: 'recommended', exactOverall: 0 } });
-      // When the recommended choice already has no extra pauses, "no extra pauses" would be the same choice twice
-      return (['recommended', 'none', 'more'] as const).filter(choice => choice !== 'none' || recommended.stretched).map(choice => {
-      const plan = speedPlan({ ...ctx, answers: { ...ctx.answers, pauses: choice, exactOverall: 0 } });
-      const overall = describeSpeed(plan.effective);
-      const text = {
-        recommended: plan.stretched ? `Recommended: longer pauses, ${overall} overall` : 'Recommended: no extra pauses',
-        none: 'No extra pauses: every letter and word at the full speed',
-        more: `Even longer pauses: ${overall} overall`,
-      }[choice];
-      const hint = {
-        recommended: 'A good balance for your audience.',
-        none: 'The Morse runs at the speed you chose with normal spacing. Challenging for beginners.',
-        more: 'Lots of thinking time between letters. Good for the very first lessons.',
-      }[choice];
-      return { value: choice, label: text, hint: ctx.level === 'expert' ? `${hint} That is ${plan.effective} words per minute overall.` : hint };
-      });
+      const planOf = (pauses: string) => speedPlan({ ...ctx, answers: { ...ctx.answers, pauses, exactOverall: 0 } });
+      const seen = new Set<number>();
+      const choices: ('recommended' | 'more' | 'none' | 'slightly')[] = ['recommended', 'more', 'none'];
+      // The 5 wpm floor (or a recommendation of no pauses) can leave fewer than three distinct choices; a halfway one fills the gap
+      if (new Set(choices.map(choice => planOf(choice).effective)).size < 3) choices.push('slightly');
+      const options = choices.flatMap(choice => {
+        const plan = planOf(choice);
+        if (seen.has(plan.effective)) return [];
+        seen.add(plan.effective);
+        const noPauses = !plan.stretched;
+        const label = `${sentence(describeSpeed(plan.effective))} overall`;
+        const hint = noPauses
+          ? `No extra pauses: every letter and word at the full speed.${choice === 'none' ? ' Harder to follow.' : ' A good balance for your audience.'}`
+          : {
+            recommended: 'Longer pauses between letters. A good balance for your audience.',
+            more: 'Longer pauses: lots of thinking time between letters. Good for the very first lessons.',
+            slightly: 'Slightly longer pauses: a little thinking time between letters, closer to the full speed.',
+            none: '',
+          }[choice];
+        return [{ effective: plan.effective, option: {
+          value: choice,
+          label,
+          hint: ctx.level === 'expert' ? `${hint} That is ${plan.effective} words per minute overall.` : hint,
+        } as QuestionOption }];
+      }).sort((a, b) => a.effective - b.effective).map(entry => entry.option);
+      if (ctx.level !== 'expert') return options;
+      const wpm = speedPlan(ctx).wpm;
+      const exact = speedPlan({ ...ctx, answers: { ...ctx.answers, pauses: 'exact' } }).effective;
+      return [...options, {
+        value: 'exact',
+        label: 'Exact overall speed in words per minute',
+        hint: `That is ${describeSpeed(exact)} overall.`,
+        number: { id: 'exactOverall', label: 'Overall words per minute', min: 5, max: wpm, start: planOf('recommended').effective },
+      }];
     },
   }],
-};
-
-const EXACT_PAUSES_STEP: WizardStep = {
-  id: 'exactPauses',
-  level: 'expert',
-  title: 'An exact overall speed?',
-  intro: 'Optional. With extra pauses the overall speed is lower than the speed of each letter. Type the overall speed in words per minute (5 to 50, and not above the speed of each letter) to override the choice above, or leave 0 to keep it.',
-  helpSection: 's8-5',
-  when: all(inScenario, playsMorse),
-  questions: [{ id: 'exactOverall', label: 'Overall words per minute (0 = use the choice above)', kind: 'number', default: 0, min: 0, max: 50 }],
 };
 
 function rewardOptions(ctx: ConditionContext): QuestionOption[] {
@@ -585,7 +605,7 @@ const FUN_STEPS: WizardStep[] = [
     questions: [{
       id: 'signals', label: 'Special signals', kind: 'single', default: 'on',
       options: [
-        { value: 'on', label: 'Switch them on', hint: 'Recommended. The run sheet tells you what to say.' },
+        { value: 'on', label: 'Switch them on', hint: 'The run sheet tells you what to say.' },
         { value: 'off', label: 'Leave them off', hint: 'You will clear the screen from the menu instead.' },
       ],
     }],
@@ -603,7 +623,7 @@ const PHONE_STEPS: WizardStep[] = [
     id: 'phoneIn',
     level: 'expert',
     title: 'Link your phone',
-    intro: 'Your phone sends to this computer over the internet through a room name and password that only you know. Only your phone goes online: the students never do. Tick the box, choose a room name and password, and keep them to yourself. The run sheet then shows how to set up your phone with the same details.',
+    intro: 'Your phone sends to this computer over the internet through a room name and password that only you know. Only your phone goes online: nobody else does. Tick the box, choose a room name and password, and keep them to yourself. The run sheet then shows how to set up your phone with the same details.',
     helpSection: 's10-3',
     when: viaPhone,
     items: [{ item: 'rtdb-input-connect' }],
@@ -612,18 +632,18 @@ const PHONE_STEPS: WizardStep[] = [
   {
     id: 'phoneOut',
     level: 'expert',
-    title: 'Send the students\' answers to your phone',
-    intro: 'Tick the box so what the students key on this computer also shows on your phone. The room name and password are the same as in the last step.',
+    title: 'Send the answers to your phone',
+    intro: 'Tick the box so what is keyed on this computer also shows on your phone. The room name and password are the same as in the last step.',
     helpSection: 's10-4',
     when: phoneTwoWay,
     items: [{ item: 'rtdb-output-connect', inputs: { sharedChannel: true } }],
-    validate: ctx => ctx.settings.rtdbOutputEnabled ? [] : ['Tick the box so your phone receives the students\' answers.'],
+    validate: ctx => ctx.settings.rtdbOutputEnabled ? [] : ['Tick the box so your phone receives the answers.'],
   },
   {
     id: 'phoneName',
     level: 'expert',
     title: 'A name for this computer',
-    intro: 'This computer sends the students\' answers under this name unless a key has its own. Give it a name that is different from the name you will use on your phone: a device ignores messages that carry a name it uses itself.',
+    intro: 'This computer sends the answers keyed here under this name unless a key has its own. Give it a name that is different from the name you will use on your phone: a device ignores messages that carry a name it uses itself.',
     helpSection: 's10-4',
     when: phoneTwoWay,
     items: [{ item: 'rtdb-output-identity' }],
@@ -634,25 +654,25 @@ const ONLINE_STEPS: WizardStep[] = [
   {
     id: 'roomIn',
     title: 'Your room',
-    intro: 'Students join over the internet by using the same room name and password as you. Tick the box, choose a room name and password, and keep them to yourself until class starts. Anyone who knows both can join.',
+    intro: 'People join over the internet by using the same room name and password as you. Tick the box, choose a room name and password, and keep them to yourself until you start. Anyone who knows both can join.',
     helpSection: 's10-3',
     when: isScenario('class-online'),
     items: [{ item: 'rtdb-input-connect' }],
-    validate: ctx => ctx.settings.rtdbInputEnabled ? [] : ['Tick the box so you can see what students send.'],
+    validate: ctx => ctx.settings.rtdbInputEnabled ? [] : ['Tick the box so you can see what others send.'],
   },
   {
     id: 'roomOut',
-    title: 'Let students see your messages',
-    intro: 'Tick the box so your typed messages reach the students. The room name and password are the same as in the last step.',
+    title: 'Let others see your messages',
+    intro: 'Tick the box so your typed messages reach the others. The room name and password are the same as in the last step.',
     helpSection: 's10-4',
     when: isScenario('class-online'),
     items: [{ item: 'rtdb-output-connect', inputs: { sharedChannel: true } }],
-    validate: ctx => ctx.settings.rtdbOutputEnabled ? [] : ['Tick the box so students receive your messages.'],
+    validate: ctx => ctx.settings.rtdbOutputEnabled ? [] : ['Tick the box so others receive your messages.'],
   },
   {
     id: 'roomName',
     title: 'Your name and colour',
-    intro: 'Students see this next to everything you send.',
+    intro: 'Others see this next to everything you send.',
     helpSection: 's10-4',
     when: isScenario('class-online'),
     items: [{ item: 'rtdb-output-identity' }],
@@ -667,7 +687,7 @@ const ONLINE_STEPS: WizardStep[] = [
     questions: [{
       id: 'onlineScreen', label: 'Show it on', kind: 'single', default: 'full',
       options: [
-        { value: 'full', label: 'The full screen (recommended)', hint: 'Large text, and each person in their own colour.' },
+        { value: 'full', label: 'The full screen', hint: 'Large text, and each person in their own colour.' },
         { value: 'main', label: 'The main screen', hint: 'Stays on the screen you are on now. Handy on a small laptop.' },
       ],
     }],
@@ -724,7 +744,7 @@ const FORCED: ForcedSetting[] = [
   { key: 'encoderWpm', value: ctx => speedPlan(ctx).wpm, label: ctx => `Play Morse ${describeSpeed(speedPlan(ctx).wpm)}`, when: playsMorse },
   { key: 'keyerWpm', value: ctx => speedPlan(ctx).wpm, label: ctx => `Set the key speed to ${describeSpeed(speedPlan(ctx).wpm)}`, when: keyedFamilies },
   { key: 'txDecoderWpm', value: ctx => speedPlan(ctx).wpm, label: 'Start reading keyed Morse at that speed', when: keyedFamilies },
-  { key: 'farnsworthEnabled', value: ctx => speedPlan(ctx).stretched, label: ctx => speedPlan(ctx).stretched ? 'Longer pauses between letters and words, so beginners can keep up' : 'Turn off the longer pauses: normal spacing between letters and words', when: playsMorse },
+  { key: 'farnsworthEnabled', value: ctx => speedPlan(ctx).stretched, label: ctx => speedPlan(ctx).stretched ? 'Longer pauses between letters and words, so each letter has time to sink in' : 'Turn off the longer pauses: normal spacing between letters and words', when: playsMorse },
   { key: 'farnsworthInputMode', value: 'wpm', label: 'Set the longer pauses by the overall speed', when: all(playsMorse, stretched) },
   { key: 'farnsworthEffectiveWpm', value: ctx => speedPlan(ctx).effective, label: ctx => `Overall speed with the pauses: ${describeSpeed(speedPlan(ctx).effective)}`, when: all(playsMorse, stretched) },
   { key: 'farnsworthAppliesTo', value: 'both', label: 'Use the longer pauses for everything played here', when: all(playsMorse, stretched) },
@@ -776,12 +796,12 @@ const FORCED: ForcedSetting[] = [
 
   // Students' room: what you type has to count as sent, and sent text has to be what the room receives
   { key: 'encoderSource', value: 'tx', label: 'Count what you type as sent', when: inFamily('online') },
-  { key: 'rtdbOutputForward', value: ctx => ctx.settings.rtdbOutputForward === 'rx' ? 'tx' : ctx.settings.rtdbOutputForward, label: 'Share what you type with the students', when: inFamily('online') },
+  { key: 'rtdbOutputForward', value: ctx => ctx.settings.rtdbOutputForward === 'rx' ? 'tx' : ctx.settings.rtdbOutputForward, label: 'Share what you type with the room', when: inFamily('online') },
 
   // The teacher's phone: what arrives counts as received, plays at the speed set here, and (two-way) the students' keys go back as sent
   { key: 'rtdbInputSource', value: 'rx', label: 'Show what arrives from your phone as received (RX)', when: viaPhone },
   { key: 'rtdbInputOverrideWpm', value: true, label: 'Play your phone\'s messages at the speed set here', when: viaPhone },
-  { key: 'rtdbOutputForward', value: 'tx', label: 'Send what the students key to your phone (TX)', when: phoneTwoWay },
+  { key: 'rtdbOutputForward', value: 'tx', label: 'Send what is keyed here to your phone (TX)', when: phoneTwoWay },
 
   // Rewards, signals
   { key: 'emojisEnabled', value: true, label: 'Show pictures for rewards on the full screen', when: rewardsActive },
@@ -843,8 +863,8 @@ export const TEACH_FLOW: WizardFlow = {
     },
     approachStep('introduce', 'What kind of first look?', 'Choose a demo that fits your audience.', 'lens', intent('introduce')),
     approachStep('send', 'How should it be shown?', 'Choose how people see Morse being sent.', 'one', intent('send')),
-    approachStep('copy', 'How should learners copy?', 'Choose how the class listens to Morse and works out what it says.', 'paper', intent('copy')),
-    approachStep('check', 'What do you want to check?', 'Choose copying (learners listen) or sending (learners key).', 'copy', intent('check')),
+    approachStep('copy', 'How should people copy?', 'Choose how everyone listens to Morse and works out what it says.', 'paper', intent('copy')),
+    approachStep('check', 'What do you want to check?', 'Choose copying (people listen) or sending (people key).', 'copy', intent('check')),
     approachStep('class', 'What kind of activity?', 'Choose the activity.', 'chat', intent('class')),
     approachStep('booth', 'What should visitors do?', 'Choose what visitors do at your stand.', 'try', intent('booth')),
     {
@@ -874,9 +894,7 @@ export const TEACH_FLOW: WizardFlow = {
     ROOM_STEP,
     SPEED_STEP,
     KEY_SPEED_STEP,
-    EXACT_SPEED_STEP,
     PAUSES_STEP,
-    EXACT_PAUSES_STEP,
     RUN_SHEET_STEP,
   ],
 };

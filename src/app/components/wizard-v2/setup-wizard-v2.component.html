@@ -90,14 +90,20 @@
                     @let options = questionOptions(eng, q);
                     @for (opt of options; track opt.value) {
                       <label class="wizard-check">
-                        <input type="radio" [name]="q.id" [checked]="answer(q) === opt.value"
-                               [disabled]="opt.disabled" (change)="setSingle(q, opt.value)">
+                        <input type="radio" [name]="q.id" [checked]="isSelected(q, opt)"
+                               [disabled]="opt.disabled" (change)="choose(q, opt)">
                         {{ opt.label }}
                       </label>
+                      @if (opt.number && isSelected(q, opt)) {
+                        <label class="wizard-field wizard-option-number">{{ opt.number.label }}
+                          <input type="number" [min]="opt.number.min" [max]="opt.number.max"
+                                 [value]="eng.answers()[opt.number.id]" (input)="setOptionNumber(opt, $event)">
+                        </label>
+                      }
                     }
                     <!-- The explanation of the selected choice only, under the list -->
                     @for (opt of options; track opt.value) {
-                      @if (opt.hint && answer(q) === opt.value) {
+                      @if (opt.hint && isSelected(q, opt)) {
                         <p class="wizard-note" role="status">{{ opt.hint }}</p>
                       }
                     }

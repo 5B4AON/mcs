@@ -40,6 +40,9 @@ export interface AudienceInfo {
   wordLengths: number[];
   /** Example text for the run sheet */
   sample: string;
+  /** How the run sheet and approach texts name the group ("the children") and one member ("a child") */
+  people: string;
+  one: string;
   minLevel: WizardLevel;
 }
 
@@ -47,27 +50,27 @@ export const AUDIENCES: Record<Audience, AudienceInfo> = {
   kids: {
     label: 'Young children', short: 'Kids', minLevel: 'novice',
     hint: 'Very slow, with long pauses between letters, and very large text.',
-    wpm: 8, effective: 4, font: 72, groups: 3, wordLengths: [3], sample: 'CAT DOG SUN',
+    wpm: 8, effective: 4, font: 72, groups: 3, wordLengths: [3], sample: 'CAT DOG SUN', people: 'the children', one: 'a child',
   },
   teens: {
     label: 'Teenagers', short: 'Teens', minLevel: 'novice',
     hint: 'Slow, with some extra pauses between letters, and large text.',
-    wpm: 10, effective: 6, font: 64, groups: 4, wordLengths: [3, 4], sample: 'HELLO WORLD',
+    wpm: 10, effective: 6, font: 64, groups: 4, wordLengths: [3, 4], sample: 'HELLO WORLD', people: 'the teenagers', one: 'a teenager',
   },
   public: {
     label: 'Adults (a class, a club or the public at an event)', short: 'Public', minLevel: 'novice',
     hint: 'Slow and easy to follow, with large text that reads from the back of the room.',
-    wpm: 8, effective: 5, font: 64, groups: 3, wordLengths: [3, 4], sample: 'HELLO',
+    wpm: 8, effective: 5, font: 64, groups: 3, wordLengths: [3, 4], sample: 'HELLO', people: 'the adults', one: 'an adult',
   },
   learners: {
     label: 'People who already know some Morse', short: 'Learners', minLevel: 'novice',
     hint: 'A steady speed with short pauses between letters.',
-    wpm: 12, effective: 8, font: 48, groups: 5, wordLengths: [3, 4, 5], sample: 'THE QUICK BROWN FOX',
+    wpm: 12, effective: 8, font: 48, groups: 5, wordLengths: [3, 4, 5], sample: 'THE QUICK BROWN FOX', people: 'the learners', one: 'a learner',
   },
   operators: {
     label: 'Experienced operators', short: 'Operators', minLevel: 'intermediate',
     hint: 'A brisk speed with normal spacing.',
-    wpm: 18, effective: 18, font: 36, groups: 10, wordLengths: [4, 5], sample: 'CQ CQ DE',
+    wpm: 18, effective: 18, font: 36, groups: 10, wordLengths: [4, 5], sample: 'CQ CQ DE', people: 'the operators', one: 'an operator',
   },
 };
 
@@ -86,6 +89,21 @@ const text = (answers: Answers, id: string, fallback = ''): string =>
 export function audienceOf(ctx: ConditionContext): Audience {
   const chosen = text(ctx.answers, 'audience');
   return chosen in AUDIENCES ? chosen as Audience : 'teens';
+}
+
+const capital = (value: string): string => value.charAt(0).toUpperCase() + value.slice(1);
+
+/**
+ * Fills {people}, {People}, {one} and {One} in a text with the audience's own words, so a text never
+ * calls adults "children". Without an audience the words are generic (the summary and preset names
+ * already name the audience).
+ */
+export function forAudience(value: string, audience?: Audience): string {
+  const people = audience ? AUDIENCES[audience].people : 'people';
+  const one = audience ? AUDIENCES[audience].one : 'a person';
+  return value
+    .replace(/\{people\}/g, people).replace(/\{People\}/g, capital(people))
+    .replace(/\{one\}/g, one).replace(/\{One\}/g, capital(one));
 }
 
 // ---- Scenarios ----
@@ -143,7 +161,7 @@ export const SCENARIOS: ScenarioInfo[] = [
   {
     id: 'intro-sos', intent: 'introduce', value: 'sos', minLevel: 'novice', family: 'keyed',
     label: 'The SOS demo: key it yourself',
-    hint: 'You and the class key the famous distress signal (three short, three long, three short) and a 🆘 appears on the screen. Fun, easy to remember, and everyone learns to send it. No key? You can type it instead.',
+    hint: 'You and {people} key the famous distress signal (three short, three long, three short) and a 🆘 appears on the screen. Fun, easy to remember, and everyone learns to send it. No key? You can type it instead.',
     lens: false, keys: 'one', blur: false, rewards: 'built-in', typing: 'none', exclude: ['learners', 'operators'],
   },
   {
@@ -167,7 +185,7 @@ export const SCENARIOS: ScenarioInfo[] = [
   {
     id: 'copy-paper', intent: 'copy', value: 'paper', minLevel: 'novice', family: 'typed',
     label: 'Listen and write it down',
-    hint: 'You type. The class listens and writes what they hear on paper. The text stays hidden until you reveal it.',
+    hint: 'You type. Everyone listens and writes what they hear on paper. The text stays hidden until you reveal it.',
     lens: false, keys: 'none', blur: true, rewards: 'optional', typing: 'enter',
   },
   {
@@ -179,43 +197,43 @@ export const SCENARIOS: ScenarioInfo[] = [
   {
     id: 'copy-chart', intent: 'copy', value: 'chart', minLevel: 'novice', family: 'typed',
     label: 'Read the dots and dashes',
-    hint: 'You type a letter and the screen shows only its dots and dashes, large. The class works out the letter with a Morse chart, then you reveal it.',
+    hint: 'You type a letter and the screen shows only its dots and dashes, large. Everyone works out the letter with a Morse chart, then you reveal it.',
     lens: true, keys: 'none', blur: true, rewards: 'optional', typing: 'live', exclude: ['operators'],
   },
   {
     id: 'copy-ladder', intent: 'copy', value: 'ladder', minLevel: 'intermediate', family: 'typed',
     label: 'A speed ladder',
-    hint: 'Play the same text again and again, a little faster each time, so learners feel themselves improving.',
+    hint: 'Play the same text again and again, a little faster each time, so {people} feel themselves improving.',
     lens: false, keys: 'none', blur: false, rewards: 'optional', typing: 'enter',
   },
   {
     id: 'check-copy', intent: 'check', value: 'copy', minLevel: 'novice', family: 'practice-copy',
-    label: 'How well can learners copy Morse?',
-    hint: 'The app plays Morse and learners type or write what they hear, then you see how they did.',
+    label: 'How well can {people} copy Morse?',
+    hint: 'The app plays Morse and {people} type or write what they hear, then you see how they did.',
     lens: false, keys: 'none', blur: false, rewards: 'none', typing: 'none',
   },
   {
     id: 'check-send', intent: 'check', value: 'send', minLevel: 'novice', family: 'practice-send',
-    label: 'How well can learners send Morse?',
-    hint: 'The screen shows text. A learner keys it and the app marks what they got right.',
+    label: 'How well can {people} send Morse?',
+    hint: 'The screen shows text. {One} keys it and the app marks what they got right.',
     lens: false, keys: 'one', blur: false, rewards: 'none', typing: 'none',
   },
   {
     id: 'class-chat', intent: 'class', value: 'chat', minLevel: 'intermediate', family: 'keyed',
-    label: 'A class conversation',
-    hint: 'You and your students each have a key. Everyone\'s text appears on one shared screen, each person in their own colour.',
+    label: 'A group conversation',
+    hint: 'You and {people} each have a key. Everyone\'s text appears on one shared screen, each person in their own colour.',
     lens: false, keys: 'many', blur: false, rewards: 'optional', typing: 'none',
   },
   {
     id: 'class-quiz', intent: 'class', value: 'quiz', minLevel: 'intermediate', family: 'keyed',
-    label: 'A class quiz',
-    hint: 'Like a conversation, with a reward that appears when a student keys the right answer word.',
+    label: 'A group quiz',
+    hint: 'Like a conversation, with a reward that appears when {one} keys the right answer word.',
     lens: false, keys: 'many', blur: false, rewards: 'required', typing: 'none',
   },
   {
     id: 'class-online', intent: 'class', value: 'online', minLevel: 'expert', family: 'online',
-    label: 'Students join from their own devices',
-    hint: 'Students open the app on their phones and join your room over the internet. Everyone\'s text appears on your screen.',
+    label: '{People} join from their own devices',
+    hint: '{People} open the app on their phones and join your room over the internet. Everyone\'s text appears on your screen.',
     lens: false, keys: 'none', blur: false, rewards: 'optional', typing: 'enter',
   },
   {
@@ -227,13 +245,13 @@ export const SCENARIOS: ScenarioInfo[] = [
   {
     id: 'class-remote-dictate', intent: 'class', value: 'remoteDictate', minLevel: 'expert', family: 'typed',
     label: 'Dictate from your phone',
-    hint: 'You type a message on your phone. It plays on the computer while the text stays hidden, and the learners write down what they hear. Only your phone goes online.',
+    hint: 'You type a message on your phone. It plays on the computer while the text stays hidden, and {people} write down what they hear. Only your phone goes online.',
     lens: false, keys: 'none', blur: true, rewards: 'none', typing: 'enter', phone: 'receive',
   },
   {
     id: 'class-remote-quiz', intent: 'class', value: 'remoteQuiz', minLevel: 'expert', family: 'keyed',
     label: 'Challenges from your phone, answers on local keys',
-    hint: 'You send questions or challenges from your phone. The class hears them on the computer and answers on their own keys, and their answers show on the computer and on your phone. Only your phone goes online.',
+    hint: 'You send questions or challenges from your phone. Everyone hears them on the computer and answers on their own keys, and their answers show on the computer and on your phone. Only your phone goes online.',
     lens: false, keys: 'many', blur: false, rewards: 'optional', typing: 'none', phone: 'two-way',
   },
   {
@@ -316,8 +334,8 @@ export const isScenario = (...ids: string[]) => (ctx: ConditionContext): boolean
 
 // ---- Speed, size and typing ----
 
-export type SpeedChoice = 'recommended' | 'slower' | 'faster';
-const SPEED_FACTOR: Record<SpeedChoice, number> = { recommended: 1, slower: 0.75, faster: 1.33 };
+export type SpeedChoice = 'recommended' | 'slower' | 'faster' | 'exact';
+const SPEED_FACTOR: Record<SpeedChoice, number> = { recommended: 1, slower: 0.75, faster: 1.33, exact: 1 };
 
 const clamp = (value: number, low: number, high: number): number => Math.min(high, Math.max(low, value));
 
@@ -330,19 +348,23 @@ export function answerAt(ctx: ConditionContext, level: WizardLevel, id: string, 
 export function speedPlan(ctx: ConditionContext): { wpm: number; effective: number; stretched: boolean } {
   const base = AUDIENCES[audienceOf(ctx)];
   const choice = answerAt(ctx, 'intermediate', 'speed', 'recommended') as SpeedChoice;
-  const exact = ctx.level === 'expert' ? Number(ctx.answers['exactWpm']) : 0;
+  const exact = ctx.level === 'expert' && choice === 'exact' ? Number(ctx.answers['exactWpm']) : 0;
   const wpm = exact > 0
     ? clamp(Math.round(exact), 5, 50)
     : clamp(Math.round(base.wpm * (SPEED_FACTOR[choice] ?? 1)), 5, 50);
   // Novice sessions always use the audience's pauses; Intermediate and Expert choose them
   const pauses = answerAt(ctx, 'intermediate', 'pauses', 'recommended');
-  const exactOverall = ctx.level === 'expert' ? Number(ctx.answers['exactOverall']) : 0;
+  const exactOverall = ctx.level === 'expert' && pauses === 'exact' ? Number(ctx.answers['exactOverall']) : 0;
   const scaled = base.effective * wpm / base.wpm;
+  const recommended = clamp(Math.round(scaled), 5, wpm);
+  const longer = clamp(Math.round(scaled * 0.7), 5, wpm);
+  // Used when the floor of 5 wpm (or no extra pauses) leaves too few distinct choices: halfway between the pauses and the full speed
+  const slightly = Math.round(((recommended < wpm ? recommended : longer) + wpm) / 2);
   const effective = pauses === 'none'
     ? wpm
-    : exactOverall > 0
+    : pauses === 'exact' && exactOverall > 0
       ? clamp(Math.round(exactOverall), 5, wpm)
-      : clamp(Math.round(pauses === 'more' ? scaled * 0.7 : scaled), 5, wpm);
+      : pauses === 'more' ? longer : pauses === 'slightly' ? slightly : recommended;
   return { wpm, effective, stretched: effective < wpm };
 }
 
@@ -381,8 +403,8 @@ export interface RewardIdea { id: string; word: string; text: string; for: strin
 
 export const REWARD_IDEAS: RewardIdea[] = [
   { id: 'good', word: 'GOOD', text: '⭐ Well done!', for: 'Any word to be proud of' },
-  { id: 'cat', word: 'CAT', text: '🐱 Meow!', for: 'A favourite with young children' },
-  { id: 'dog', word: 'DOG', text: '🐶 Woof!', for: 'A favourite with young children' },
+  { id: 'cat', word: 'CAT', text: '🐱 Meow!', for: 'A favourite with children and teenagers' },
+  { id: 'dog', word: 'DOG', text: '🐶 Woof!', for: 'A favourite with children and teenagers' },
   { id: 'wow', word: 'WOW', text: '🎉 Wow!', for: 'A celebration' },
   { id: 'yes', word: 'YES', text: '✅ Correct!', for: 'Quiz answers' },
 ];
@@ -442,7 +464,7 @@ export function conversationView(ctx: ConditionContext): boolean {
 /** The mappings the setup needs, besides those already in the list. */
 function wantedMappings(ctx: ConditionContext): EmojiMapping[] {
   const wanted: EmojiMapping[] = [];
-  for (const reward of chosenRewards(ctx)) wanted.push({ enabled: true, match: reward.word, emoji: reward.text, meaning: 'Class reward' });
+  for (const reward of chosenRewards(ctx)) wanted.push({ enabled: true, match: reward.word, emoji: reward.text, meaning: 'Reward' });
   if (scenarioOf(ctx)?.rewards === 'built-in') wanted.push({ enabled: true, match: '<SOS>', emoji: '🆘', meaning: 'Distress' });
   if (surpriseOn(ctx)) wanted.push({ enabled: true, match: surpriseTrigger(ctx), emoji: SHOW_EMOJI, meaning: 'Celebration' });
   return wanted;
@@ -611,8 +633,8 @@ export function checkingOf(ctx: ConditionContext): 'typealong' | 'blur' | 'liste
   return audienceOf(ctx) === 'kids' ? 'blur' : 'typealong';
 }
 
-/** The content choices for the audience; the first says what is recommended. */
-export function practiceWhatOptions(ctx: ConditionContext): { value: string; label: string; hint: string }[] {
+/** The content choices for the audience; the one that suits it stands for the stored `auto` answer. */
+export function practiceWhatOptions(ctx: ConditionContext): { value: string; label: string; hint: string; alias?: string }[] {
   const audience = audienceOf(ctx);
   const experienced = audience === 'learners' || audience === 'operators';
   const kinds: PracticeWhat[] = [
@@ -621,10 +643,7 @@ export function practiceWhatOptions(ctx: ConditionContext): { value: string; lab
     ...(experienced ? ['callsigns' as const] : []),
   ];
   const recommended = practiceWhatOf({ ...ctx, answers: { ...ctx.answers, practiceWhat: 'auto' } });
-  return [
-    { value: 'auto', label: `Recommended: ${PRACTICE_WHAT_TEXT[recommended].label.toLowerCase()}`, hint: PRACTICE_WHAT_TEXT[recommended].hint },
-    ...kinds.map(kind => ({ value: kind, ...PRACTICE_WHAT_TEXT[kind] })),
-  ];
+  return kinds.map(kind => ({ value: kind, ...PRACTICE_WHAT_TEXT[kind], ...(kind === recommended ? { alias: 'auto' } : {}) }));
 }
 
 /** True when the exercise is made of Koch lessons. */
@@ -653,7 +672,7 @@ function sample(ctx: ConditionContext): string {
 function rewardLines(ctx: ConditionContext): string[] {
   const lines: string[] = [];
   for (const reward of chosenRewards(ctx)) {
-    lines.push(`When someone keys or types ${reward.word}, the screen shows ${reward.text}. Tell the class the word, or keep it secret.`);
+    lines.push(`When someone keys or types ${reward.word}, the screen shows ${reward.text}. Tell ${AUDIENCES[audienceOf(ctx)].people} the word, or keep it secret.`);
   }
   if (surpriseOn(ctx)) lines.push(`Keying or sending ${surpriseTrigger(ctx)} starts a fireworks show. The next character ends it.`);
   return lines;
@@ -677,19 +696,21 @@ function signalLines(ctx: ConditionContext): string[] {
 /** Steps for each scenario: what to do before the session and during it. */
 function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]; during: string[] } {
   const hello = sample(ctx);
+  const people = AUDIENCES[audienceOf(ctx)].people;
+  const one = AUDIENCES[audienceOf(ctx)].one;
   switch (scenario.id) {
     case 'intro-lens':
       return {
         before: ['Say what Morse is in one sentence: letters sent as short and long beeps.'],
         during: [`Type a word such as ${hello} and watch each letter appear large with its dots and dashes.`,
-          'Ask what the class notices: some letters are quick, some are long.'],
+          `Ask ${people} what they notice: some letters are quick, some are long.`],
       };
     case 'intro-sos':
       return {
-        before: ['Tell the class that SOS is the most famous Morse message.',
+        before: [`Tell ${people} that SOS is the most famous Morse message.`,
           'Before keying it, ask if anyone knows what three short presses, three long and three short mean.'],
         during: ['Key SOS: three short presses, three long, three short, quickly and with no pauses between them (...---...). Then pause for a moment: the 🆘 appears on the screen.',
-          'Let the children try it, one at a time. Keying it themselves is the best way to remember it.',
+          `Let ${people} try it, one at a time. Keying it themselves is the best way to remember it.`,
           'No key? Switch to Type with the Key/Type button at the top of the full screen, type <SOS> and press Enter (the angle brackets make it one signal). The 🆘 shows as it plays.'],
       };
     case 'intro-names':
@@ -701,7 +722,7 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
       return {
         before: ['Prepare a short secret message of a few words.'],
         during: ['Type it and press Enter. Everyone hears it while the text stays hidden.',
-          'Replay the last line with the replay button (the circular arrow) as often as the class needs.',
+          'Replay the last line with the replay button (the circular arrow) as often as needed.',
           'Hold the reveal button to show the answer to everyone.'],
       };
     case 'send-one':
@@ -718,27 +739,27 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
     case 'copy-paper':
       return {
         before: ['Give everyone paper and a pen.', `Prepare a few words such as ${hello}.`],
-        during: ['Type a word and press Enter. The class listens and writes it down. Replay it with the replay button if they ask.',
+        during: ['Type a word and press Enter. Everyone listens and writes it down. Replay it with the replay button if they ask.',
           'Hold the reveal button to show the answer, then talk about what was hard.'],
       };
     case 'copy-chart':
       return {
-        before: ['Hand out a printed Morse chart or put one on the wall, so the class can look the symbols up.'],
+        before: ['Hand out a printed Morse chart or put one on the wall, so everyone can look the symbols up.'],
         during: ['Type one letter at a time. The screen shows only its dots and dashes, large, and the letter stays hidden.',
-          'The class finds the letter in the chart.', 'Hold the reveal button to show the letter and check their answer.'],
+          'Everyone finds the letter in the chart.', 'Hold the reveal button to show the letter and check their answer.'],
       };
     case 'copy-ladder':
       return {
         before: [`Choose one text, for example ${hello}.`],
         during: ['Play it once. Then raise the speed a little with Morse Speeds in the menu and play it again.',
-          'Repeat until the class finds it hard, then go back one step.'],
+          'Repeat until it gets hard to follow, then go back one step.'],
       };
     case 'check-copy': {
       const how = checkingOf(ctx);
       const checking = practiceWhatOf(ctx) === 'koch' || how === 'typealong'
-        ? 'Learners type what they hear; the app marks it at the end.'
-        : how === 'blur' ? 'Learners write on paper; hold the reveal button to show the answer.'
-        : 'Learners just listen; nothing is checked.';
+        ? `${capital(people)} type what they hear; the app marks it at the end.`
+        : how === 'blur' ? `${capital(people)} write on paper; hold the reveal button to show the answer.`
+        : `${capital(people)} just listen; nothing is checked.`;
       return {
         before: [`The round plays ${practiceContent(ctx)}.`, 'Press the round button on the full screen (the large play button) when everyone is ready.'],
         during: [checking, 'When the round ends, talk through the result.'],
@@ -746,25 +767,25 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
     }
     case 'check-send':
       return {
-        before: [`The prompts are ${practiceContent(ctx)}.`, 'Make sure the learner can reach the key.'],
-        during: ['The learner keys the text on the screen. The app marks each character.',
+        before: [`The prompts are ${practiceContent(ctx)}.`, `Make sure ${one} can reach the key.`],
+        during: ['The text on the screen is keyed by one person at a time. The app marks each character.',
           'When the round ends, talk through the result, then use the button on the full screen for the next round.'],
       };
     case 'class-chat':
       return {
         before: ['Give each person a key and tell them their name and colour on the screen.', 'Agree who goes first.'],
-        during: ['Take turns keying short messages. Everyone sees whose text is whose.', 'Ask the class to answer the last message in Morse.'],
+        during: ['Take turns keying short messages. Everyone sees whose text is whose.', `Ask ${people} to answer the last message in Morse.`],
       };
     case 'class-quiz':
       return {
         before: ['Prepare questions whose answer is the reward word.', 'Give each person a key and their name on screen.'],
-        during: ['Ask a question. The first student to key the right word gets the reward on the screen.'],
+        during: [`Ask a question. The first person to key the right word gets the reward on the screen.`],
       };
     case 'class-online':
       return {
         before: ['Note the room name and password: they are not saved in a preset.',
-          'Give students the joining steps below on a board or slide.'],
-        during: ['Type a short message and press Enter. Students receive it on their phones.',
+          `Give ${people} the joining steps below on a board or slide.`],
+        during: [`Type a short message and press Enter. ${capital(people)} receive it on their phones.`,
           'Their replies appear on your screen with their names and colours.'],
       };
     case 'class-remote-lens':
@@ -772,20 +793,20 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
         before: ['Set up your phone as shown below, then type one letter on it. It should play here and appear very large on this screen.'],
         during: ['Type letters or short words on your phone, one at a time. Each letter plays here and shows large, with its dots and dashes below.',
           'You can walk around the room: the phone controls this screen.',
-          'Ask the class to call out each letter before you type the next one.'],
+          'Ask everyone to call out each letter before you type the next one.'],
       };
     case 'class-remote-dictate':
       return {
         before: ['Set up your phone as shown below. Hand out paper and pencils.'],
         during: ['Type a short message on your phone and press Enter. It plays here while the text stays hidden.',
-          'The learners write what they hear. Send it again if they ask.',
+          'Everyone writes what they hear. Send it again if they ask.',
           'To check, hold the reveal button on this screen to show everyone the answer.'],
       };
     case 'class-remote-quiz':
       return {
         before: ['Set up your phone as shown below.', 'Give each person a key and tell them their name and colour on the screen.'],
         during: ['Type a challenge on your phone, for example a word to answer back, and press Enter. It plays here under your name.',
-          'The class answers on their own keys. Their answers show on this screen and on your phone, so you can follow along from anywhere in the room.'],
+          'Everyone answers on their own keys. Their answers show on this screen and on your phone, so you can follow along from anywhere in the room.'],
       };
     case 'booth-try':
       return {
@@ -802,13 +823,14 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
   }
 }
 
-/** Joining steps for students who use their own devices. */
+/** Joining steps for people who use their own devices. */
 function joinLines(ctx: ConditionContext): string[] {
+  const audience = audienceOf(ctx);
   return [
     'Open the app on your phone.',
     'Open the Setup Wizard and choose "Talk over the internet".',
     `Enter the room name (${ctx.settings.rtdbInputChannelName || 'your room name'}) and the room password.`,
-    'Pick your name and colour. An animal emoji makes a fun name.',
+    ...(audience === 'kids' || audience === 'teens' ? ['Pick your name and colour. An animal emoji makes a fun name.'] : ['Pick your name and colour.']),
   ];
 }
 
@@ -820,7 +842,7 @@ function phoneLines(ctx: ConditionContext, scenario: ScenarioInfo): string[] {
     ? 'Live (each letter plays as you type)'
     : 'Send on Enter (you type a message, then press Enter)';
   const lines = [
-    'Open the app on your phone. Only your phone goes online: the students never need to.',
+    'Open the app on your phone. Only your phone goes online: nobody else needs to.',
     'Open Settings, then the Outputs tab, and switch on the Firebase RTDB Output card.',
     `Channel Name: ${room}. Channel Secret: the same password you entered on this computer. They are not saved in a preset.`,
     twoWay
@@ -834,7 +856,7 @@ function phoneLines(ctx: ConditionContext, scenario: ScenarioInfo): string[] {
       'To see the answers on your phone: in Settings, open the Inputs tab, switch on the Firebase RTDB card, enter the same room name and password, and set "Used for" to RX.',
     );
   }
-  lines.push('Optional: turn the phone\'s volume down. The class hears everything from this computer.');
+  lines.push('Optional: turn the phone\'s volume down. Everyone hears everything from this computer.');
   return lines;
 }
 
@@ -845,7 +867,7 @@ function rxTxLines(scenario: ScenarioInfo): string[] {
     'This computer plays your phone\'s messages at the speed set here, whatever speed the phone uses.',
   ];
   if (scenario.phone === 'two-way') {
-    lines.push('The students\' keys count as TX on this computer and go to your phone as TX. Your phone receives them as RX.');
+    lines.push('The keys used here count as TX on this computer and go to your phone as TX. Your phone receives them as RX.');
   }
   return lines;
 }
@@ -868,7 +890,7 @@ export function runSheetFor(ctx: ConditionContext): RunSheetSection[] {
     },
     { heading: 'During the session', lines: [...during, ...rewardLines(ctx), ...(scenario.family === 'keyed' || scenario.family === 'online' ? signalLines(ctx) : [])] },
   ];
-  if (scenario.family === 'online') sections.push({ heading: 'What students do on their own device', lines: joinLines(ctx) });
+  if (scenario.family === 'online') sections.push({ heading: 'What people do on their own device', lines: joinLines(ctx) });
   if (scenario.phone) {
     sections.push({ heading: 'Set up your phone', lines: phoneLines(ctx, scenario) });
     sections.push({ heading: 'How RX and TX line up', lines: rxTxLines(scenario) });
@@ -883,16 +905,16 @@ export function summaryFor(ctx: ConditionContext): string[] {
   if (!scenario) return [];
   const audience = AUDIENCES[audienceOf(ctx)];
   const speed = speedPlan(ctx);
-  const lines = [`${scenario.label}, for ${audience.label.toLowerCase()}.`];
+  const lines = [`${forAudience(scenario.label).replace(/\?$/, '')}, for ${audience.label.charAt(0).toLowerCase()}${audience.label.slice(1)}.`];
   lines.push(scenario.family === 'online' && text(ctx.answers, 'onlineScreen') === 'main'
-    ? 'Students\' text shows on the main screen.'
+    ? 'Everyone\'s text shows on the main screen.'
     : conversationView(ctx)
       ? 'Opens the full screen showing the whole conversation in large text.'
       : 'Opens the full screen showing one big letter at a time, with its dots and dashes.');
   if (scenario.phone) {
     lines.push(scenario.phone === 'two-way'
-      ? 'Your phone and this computer share a private room over the internet: your messages play here and the students\' answers go back to your phone. Students do not go online.'
-      : 'Your phone sends to this computer through a private room over the internet. Students do not go online.');
+      ? 'Your phone and this computer share a private room over the internet: your messages play here and the answers keyed here go back to your phone. Nobody else goes online.'
+      : 'Your phone sends to this computer through a private room over the internet. Nobody else goes online.');
   }
   const pausesApply = ['typed', 'practice-copy', 'online'].includes(scenario.family) || !!scenario.phone;
   lines.push(`Morse plays ${describeSpeed(speed.wpm)}${pausesApply
@@ -910,6 +932,6 @@ export function summaryFor(ctx: ConditionContext): string[] {
 /** Suggested preset name, kept inside the name length limit. */
 export function presetNameFor(ctx: ConditionContext): string {
   const scenario = scenarioOf(ctx);
-  const name = scenario ? `${scenario.label} (${AUDIENCES[audienceOf(ctx)].short})` : 'Teaching setup';
+  const name = scenario ? `${forAudience(scenario.label)} (${AUDIENCES[audienceOf(ctx)].short})` : 'Teaching setup';
   return name.length > 40 ? `${name.slice(0, 39)}…` : name;
 }
