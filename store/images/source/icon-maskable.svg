@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!--
+    Morse Code Studio maskable icon (Android adaptive / launcher icons).
+    Same design as public/favicon.svg, but the background fills the whole
+    square and the symbols are scaled to 78% so they stay inside the
+    maskable safe zone (centre circle, 80% of the width).
+  -->
+  <rect width="128" height="128" fill="#1a1a2e"/>
+  <g transform="translate(64 64) scale(0.78) translate(-64 -64)" fill="#e8a838">
+    <rect x="18" y="32" width="52" height="16" rx="8"/>
+    <circle cx="94" cy="40" r="10"/>
+    <circle cx="34" cy="88" r="10"/>
+    <rect x="58" y="80" width="52" height="16" rx="8"/>
+  </g>
+</svg>

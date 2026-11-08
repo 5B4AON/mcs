@@ -31,6 +31,17 @@ yarn-error.log
 # Firebase
 .firebase/
 
+# Store wrappers: signing keys and build output must never be committed
+*.keystore
+*.jks
+key.properties
+signing.properties
+*.aab
+*.apk
+*.idsig
+/android-wrapper/**/build/
+/android-wrapper/.gradle/
+
 # Miscellaneous
 /.angular/cache
 .sass-cache/

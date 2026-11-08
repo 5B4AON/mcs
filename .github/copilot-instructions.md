@@ -255,6 +255,7 @@ npm test         # ng test — Karma + Jasmine (no tests written yet)
 - **Web Serial API**: DTR/RTS keying for radio transmitters, DSR/CTS/DCD/RI polling for key/paddle input, WinKeyer protocol
 - **Web MIDI API**: external controller input/output
 - **PWA**: service worker via `ngsw-config.json`, manifest in `public/manifest.webmanifest`, `registerWhenStable:30000`
+- **Store deployment (issue #145, in progress)**: canonical origin `https://morse-code-studio.web.app` (fixed: the Android package is bound to it). `public/.well-known/assetlinks.json` (TWA domain verification; `firebase.json` no longer ignores dotfiles so it deploys), `public/privacy.html` (static privacy policy, no JS; keep it true to what the app stores and sends), maskable and monochrome icons rendered from `store/images/source/*.svg` (keep the symbols inside the central 80% safe zone). Signing keys and wrapper build output are gitignored and must never be committed
 
 ## Security
 - Do NOT open public issues for vulnerabilities — use email or GitHub private vulnerability reporting (see `SECURITY.md`)
