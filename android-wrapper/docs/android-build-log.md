@@ -400,9 +400,27 @@ EF:E6:06:CC:90:89:8F:E3:51:D6:EC:41:89:55:5A:83:1A:D5:30:AC:B6:2B:66:95:99:3E:FE
 
 It was added to `public/.well-known/assetlinks.json` before the upload key fingerprint from Step 7. Play's snippet lists only its own key, so it is merged into the existing statement rather than pasted over it: both keys must stay, one for Play installs and one for sideloaded test APKs.
 
+## Step 13: Deploy assetlinks and install from Play
+
+1. The owner deployed the site, then opened `https://morse-code-studio.web.app/.well-known/assetlinks.json` and saw both fingerprints.
+2. Checked with the [Digital Asset Links tool](https://developers.google.com/digital-asset-links/tools/generator): domain `morse-code-studio.web.app`, package `app.web.morse_code_studio`, the Play app signing fingerprint from Step 12. Result: "Host https://morse-code-studio.web.app grants app deep linking to app.web.morse_code_studio."
+3. Uninstalled the sideloaded copy from Step 9 (phone settings or `adb uninstall app.web.morse_code_studio`). A Play install is signed with Google's key and cannot replace a copy signed with the upload key.
+4. Opened the **Join on the web** link on the phone with the tester account and accepted the invite.
+5. Installed from the Play Store. Result: no address bar, same look and behaviour as the sideloaded copy.
+
+**Finding:** a new app's first release takes time to become installable even after it shows "Available". For about 15 minutes, the Store page showed "Item not found", then "Something went wrong on our end" and "The item that you were attempting to purchase could not be found", switching back and forth. Nothing needed changing.
+
+What happened in order:
+
+1. While waiting, the owner tried installing with adb. The phone refused and said the app must be installed from the Play Store. This is most likely the **automatic protection** chosen when the app was created: it blocks copies that were not installed by Play.
+2. Back in the Play Store, the page now showed an **Update** button instead of Install. Tapping it installed the app.
+
+It is not certain which of these fixed it: Play simply finishing after enough time, or the adb attempt followed by an update through Play. Most likely it was just time.
+
+If waiting is not an option, Play Console → **App bundle explorer** → version → **Downloads** → **Signed, universal APK** gives the Play-signed APK. With automatic protection on, a sideloaded copy may be refused or sent to Play as described above.
+
 ## Next steps (not done yet)
 
-- Deploy the site so the new `assetlinks.json` is live, check it with the Digital Asset Links tool, then install from the internal-testing link and check there is no address bar.
 - Store listing text and images, Data safety, content rating, target audience (13+ only).
 - Closed test with at least 12 testers for 14 days (testers join through a Google Group and an opt-in link), then apply for production access.
 
