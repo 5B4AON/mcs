@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+  <meta charset="utf-8">
+  <title>Privacy Policy – Morse Code Studio</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="How Morse Code Studio handles your data: no accounts, no tracking, microphone audio processed on your device, optional relay sends only the latest Morse character.">
+  <meta name="theme-color" content="#1a1a2e">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <style>
+    :root { color-scheme: dark; }
+    body {
+      margin: 0;
+      background: #1a1a2e;
+      color: #dde;
+      font: 1rem/1.6 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+    main { max-width: 720px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+    h1 { color: #e8a838; font-size: 1.6rem; margin: .5rem 0 .25rem; }
+    h2 { color: #8cf; font-size: 1.15rem; margin: 2rem 0 .5rem; }
+    a { color: #8cf; }
+    a:focus-visible { outline: 2px solid #e8a838; outline-offset: 2px; }
+    .updated { color: #99a; margin: 0 0 1.5rem; }
+    .summary { background: #232342; border: 1px solid #556; border-radius: 12px; padding: .75rem 1.25rem; }
+    li { margin: .35rem 0; }
+    code { background: #232342; padding: 0 .3em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Privacy Policy</h1>
+    <p class="updated">Morse Code Studio · Last updated 8 November 2026</p>
+
+    <div class="summary">
+      <p><strong>In short:</strong></p>
+      <ul>
+        <li>No account, no sign-in, no advertising, no analytics and no tracking.</li>
+        <li>Microphone sound is analysed on your device and is never recorded or uploaded.</li>
+        <li>Your settings stay on your device.</li>
+        <li>Like any website, the app is downloaded from a web server (Google Firebase Hosting). Apart from that, nothing you key, type or decode leaves your device unless <em>you</em> switch on the online relay, which then sends only the latest Morse character with the channel, name, colour and speed you chose.</li>
+      </ul>
+    </div>
+
+    <h2>Who we are</h2>
+    <p>Morse Code Studio is a free Morse code encoder, decoder, keyer and trainer, developed by an individual radio amateur (5B4AON). It runs as a web app at <a href="https://morse-code-studio.web.app/">morse-code-studio.web.app</a>. The versions in app stores open the same web app, so this policy covers all of them.</p>
+
+    <h2>What stays on your device</h2>
+    <ul>
+      <li><strong>Settings, presets and small app preferences</strong> (speeds, colours, key mappings, names you enter, relay channel name and secret, which hints you have dismissed) are saved in your browser's local storage. They are not sent anywhere, except that the relay uses the channel name and secret to reach its channel (see below). Clearing the app's site data or uninstalling the app deletes them.</li>
+      <li><strong>Microphone sound</strong>, when you switch on a microphone or CW tone input, is analysed in real time on your device to detect Morse tones. It is never recorded, stored or uploaded.</li>
+      <li><strong>Text</strong> you type, key or decode is shown on screen only and is not saved or sent, unless you use the relay described below.</li>
+      <li><strong>Practice results</strong> are kept only for the current session.</li>
+    </ul>
+
+    <h2>Device permissions</h2>
+    <p>The app asks for a permission only after you choose a feature that needs it, and works without any of them.</p>
+    <ul>
+      <li><strong>Microphone</strong>: to hear a straight key or decode Morse tones. The device scan in Settings also asks for it, only to read the names of your audio devices so that settings can be kept per device; the names are stored on your device only.</li>
+      <li><strong>MIDI and serial devices</strong>: to connect a key, paddle, keyer or radio interface you select.</li>
+      <li><strong>Vibration and keeping the screen on</strong>: only if you switch these on.</li>
+    </ul>
+    <p>None of these give the app access to anything else on your device.</p>
+
+    <h2>The online relay (optional, off by default)</h2>
+    <p>The relay lets two or more devices exchange Morse over the internet. It uses Google Firebase Realtime Database, and the app connects to it only after you switch the relay on. The channel name and secret you enter form the address of the channel on the server, so they are sent to it. When you switch on relay sending, each character you send is written to that channel, together with:</p>
+    <ul>
+      <li>the character itself,</li>
+      <li>the name and colour you set for the sender (any text you like; it need not be your real name),</li>
+      <li>the sending speed (WPM) and a server time stamp.</li>
+    </ul>
+    <p>Each new character replaces the previous one, so only the latest character of a channel is held on the server. It stays there until the channel is used again or removed by the operator's clean-up. Anyone who knows the channel name and secret can read it, so do not send personal information through the relay. When you switch on relay receiving, the app reads the same channel. Your connection to Firebase is handled by Google under the <a href="https://firebase.google.com/support/privacy">Firebase privacy and security terms</a>.</p>
+
+    <h2>Hosting, updates and other connections</h2>
+    <p>The app is served by Google Firebase Hosting. Whenever the app is opened or checks for a new version, the server receives the usual technical data of a web request, such as your IP address and browser type, to deliver the app and keep it secure. We do not use this data to identify you, and the app itself sends no information about you or your use of it.</p>
+    <p>Links to other websites (for example GitHub) are opened only when you tap them, and those sites have their own privacy policies.</p>
+    <p>If you install the app from an app store, the store provider (for example Google Play) handles the download and its own data under its own privacy policy.</p>
+
+    <h2>Age guidance</h2>
+    <p>Morse Code Studio is intended for users aged 13 and over. Younger learners should use it with a teacher, parent or club leader. The app has no accounts and does not ask users for personal information; the only text it can send is what a user types into the relay's name and channel fields. When using the relay with younger learners, choose made-up names rather than real ones.</p>
+
+    <h2>Your choices</h2>
+    <ul>
+      <li>Leave the relay off and nothing you key, type or decode leaves your device.</li>
+      <li>Delete your settings at any time by clearing the app's data or uninstalling it.</li>
+      <li>For any question about this policy, or to ask for relay data on a channel you used to be removed, contact us at the address below.</li>
+    </ul>
+
+    <h2>Changes to this policy</h2>
+    <p>If the app starts handling data differently, this page will be updated and the date at the top changed.</p>
+
+    <h2>Contact</h2>
+    <p>Email: <a href="mailto:5b4aon@gmail.com">5b4aon@gmail.com</a></p>
+
+    <p><a href="/">← Back to Morse Code Studio</a></p>
+  </main>
+</body>
+</html>

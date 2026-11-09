@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <!--
+    Morse Code Studio monochrome icon (Android 13+ themed icons).
+    Symbols only, one colour on a transparent background; the launcher
+    tints it. Same safe-zone scaling as icon-maskable.svg.
+  -->
+  <g transform="translate(64 64) scale(0.78) translate(-64 -64)" fill="#ffffff">
+    <rect x="18" y="32" width="52" height="16" rx="8"/>
+    <circle cx="94" cy="40" r="10"/>
+    <circle cx="34" cy="88" r="10"/>
+    <rect x="58" y="80" width="52" height="16" rx="8"/>
+  </g>
+</svg>

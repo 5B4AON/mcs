@@ -1,0 +1,20 @@
+Send, receive and practise Morse code with a browser-based studio for learning, demonstrations and CW operation.
+
+SEND MORSE
+Type text and play it as timed Morse audio. Choose Send on Enter, Live or Copy Practice, and adjust the sending speed and spacing.
+
+KEY AND DECODE
+Use the built-in keyboard, mouse or touchscreen keyers. Listen to incoming Morse tones through a microphone and decode CW in real time. MIDI keying is available only in browsers and on devices that support it. USB-serial and WinKeyer support is unavailable on Android. Keyboard and touch keying require the app to stay in the foreground.
+
+PRACTISE AND DISPLAY
+Build your skills with Copy Practice or Send Practice, including progressive Koch lessons. Open the full-screen conversation view for a larger, customisable display, or use Lens to show one character and its dots and dashes.
+
+OPTIONAL ONLINE RELAY
+The optional relay lets devices exchange Morse characters over the internet. It is off by default and needs an internet connection. When enabled, it sends each new character with the name, colour and speed you choose. Do not send personal information through the relay.
+
+PRIVACY
+No account is required. The app has no ads, analytics or tracking. Microphone audio is processed on your device and is not recorded or uploaded. Permissions are requested only after you choose a feature that needs one. Read the privacy policy at https://morse-code-studio.web.app/privacy.html.
+
+Morse Code Studio is intended for ages 13 and over. Younger learners should use it with a teacher, parent or club leader.
+
+The app needs an internet connection to load. After it has loaded and cached, core features can work offline; the relay and other online features need a connection.
