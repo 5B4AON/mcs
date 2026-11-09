@@ -5,6 +5,7 @@
       "namespace": "android_app",
       "package_name": "app.web.morse_code_studio",
       "sha256_cert_fingerprints": [
+        "EF:E6:06:CC:90:89:8F:E3:51:D6:EC:41:89:55:5A:83:1A:D5:30:AC:B6:2B:66:95:99:3E:FE:82:D4:10:33:65",
         "F8:43:1F:4D:95:3A:13:8B:CB:ED:41:50:B6:F4:CA:B8:17:E6:08:CA:D9:27:26:0A:88:37:51:5D:92:C8:0B:50"
       ]
     }

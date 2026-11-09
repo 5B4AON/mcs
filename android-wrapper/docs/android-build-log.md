@@ -227,7 +227,7 @@ The same fingerprint can be checked against the keystore (asks for the password)
 ~/.bubblewrap/jdk/jdk-17.0.11+9/bin/keytool -list -v -keystore ~/keys/mcs-upload.keystore -alias mcs-upload | grep SHA256
 ```
 
-**Still to do:** after the first upload to Play with Play App Signing, Play re-signs the app with its own key. Its SHA-256 (Play Console → Test and release → App integrity → App signing) must be **added** to the same list. Keep the upload key fingerprint too, so sideloaded test APKs still work. A missing Play fingerprint is the usual cause of an address bar appearing in the store-installed app.
+**Later (done in Step 12):** after the first upload to Play with Play App Signing, Play re-signs the app with its own key. Its SHA-256 was **added** to the same list. The upload key fingerprint stays too, so sideloaded test APKs still work. A missing Play fingerprint is the usual cause of an address bar appearing in the store-installed app.
 
 Then deploy (`npm run build` + Firebase deploy) and check with Google's tool at <https://developers.google.com/digital-asset-links/tools/generator> (domain `morse-code-studio.web.app`, package `app.web.morse_code_studio`, the fingerprint above).
 
@@ -293,7 +293,7 @@ sleep 7; $ADB pull /sdcard/Download/mcs-launch.mp4 /tmp/ && $ADB shell rm /sdcar
 
 Then step through `/tmp/mcs-launch.mp4` frame by frame in a video player (or split it into frames with `ffmpeg -i /tmp/mcs-launch.mp4 -vf fps=60 frame%04d.png`).
 
-## Step 10: Create the Play Console developer account (waiting for identity review)
+## Step 10: Create the Play Console developer account
 
 A Google Play developer account is needed before any app can be uploaded. It is a one-time US$25 fee and is tied to one Google account for good.
 
@@ -319,14 +319,90 @@ Ticked items are confirmed done. The others are still to do.
 - [x] Answer the short "About you" questions (they do not affect approval), accept the Developer Distribution Agreement and pay US$25 with a credit or debit card in the legal name (prepaid cards are refused).
 - [x] Digital Services Act trader status (EU): declared **not a trader**, because the app is free with no ads or purchases. A trader would have to publish an address and phone number on the listing.
 - [x] Verify an Android device: install the **Google Play Console** app on the phone and sign in with the same Google account.
-- [ ] Identity verification: the government ID was uploaded and is under review. Wait for the approval email (usually a few days).
-- [ ] Verify the **contact phone** with a one-time code. Play Console offers this only after identity verification is complete.
+- [x] Identity verification: upload the government ID and wait for the approval email (it took about one day).
+- [x] Verify the **contact phone** with the SMS code. Play Console offers this only after identity verification is complete. Once done, the dashboard shows the **Create app** button.
 
 Do not create the app in Play Console until the account is approved. Some choices made when creating it (default language, app or game, free or paid) cannot be undone, so they are made as a separate step.
 
+## Step 11: Rebuild and create the app in Play Console
+
+### Rebuild before the first upload
+
+The bundle was rebuilt so it matches the final `twa-manifest.json` (the splash fade test value had been put back to 300 ms):
+
+```bash
+cd ~/code/mcs/android-wrapper
+npx @bubblewrap/cli@1.27.0 build
+```
+
+Checks on the new build (no password needed):
+
+```bash
+BT=$(ls -d ~/.bubblewrap/android_sdk/build-tools/* | tail -1)
+$BT/aapt2 dump resources app-release-signed.apk | grep -A1 splashScreenFadeOutDuration   # () 300
+$BT/aapt2 dump badging app-release-signed.apk | grep -E "^package|uses-permission"
+```
+
+Result: package `app.web.morse_code_studio`, version code `1`, version name `1`, target SDK 36, and only the internal `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`.
+
+### Create app
+
+In Play Console: **Home → Create app**. The form asked for the package name too.
+
+| Field | Answer | Notes |
+|---|---|---|
+| App name | `Morse Code Studio` | Shown on Google Play; can be changed later. |
+| Package name | `app.web.morse_code_studio` | Play showed "Package name available". It can never change. |
+| Default language | English (United Kingdom) – en-GB | Base language of the store listing only (not the app UI). Matches the British spelling in the app; can be changed later. |
+| App or game | App | Can be changed later in Store settings. |
+| Free or paid | Free | A free app can never become paid after publishing. |
+| Automatic protection | Left **on** | Play adds an installer check: copies installed from other sources are asked to get the app from Play. Local `adb` test installs of our own APK are not affected. It can be turned off later under App integrity. |
+| Declarations | All ticked | Developer Programme Policies, Play app signing Terms of Service, US export laws. |
+
+After **Create app**, the dashboard showed "Get ready to publish your app" with the route: internal testing (optional), finish setting up the app, closed test (at least 12 opted-in testers for at least 14 days), then apply for production access. The closed-test counter showed 0 testers.
+
+When creating the first release, choose the default **Use Google-generated key** for Play App Signing. Its SHA-256 is then added to `assetlinks.json` (Step 7).
+
+## Step 12: First internal-testing release and Play App Signing
+
+### Testers
+
+Play Console → **Test and release → Testing → Internal testing → Testers**: created an email list with the owner's Google account. The **Join on the web** link stays disabled until the list is ticked for the track (**Save changes**) and a release has been published to the track.
+
+### Release
+
+**Internal testing → Create new release**:
+
+1. Uploaded `~/code/mcs/android-wrapper/app-release-bundle.aab` (the Step 11 rebuild).
+2. Play reported "Google Play enhanced your app bundle":
+   - **App bundle is signed by Google Play**: Play App Signing was switched on with a Google-generated key without a separate question. The local keystore is now the **upload key**.
+   - **Automatic protection is on** (chosen when creating the app).
+   - **App text is not automatically translated**: left off; the app's text is in the web app, which this feature does not reach.
+3. Release name: `1 (1)` (filled in by Play). Release notes, with the language tag Play requires:
+
+   ```
+   <en-GB>
+   First internal test of the Android app.
+   </en-GB>
+   ```
+
+4. **Next** → **Preview and confirm** showed no errors or warnings: version 1 (1), API 24+, target SDK 36, 583 KB for a new install. Then **Save and publish**. Internal-testing releases reach only the listed testers.
+
+### Play app signing fingerprint
+
+The old menu path (Test and release → App integrity) now says "App integrity settings have moved". The fingerprints are at: **Protected with Play → Play Store protection → Protect app signing key → Manage Play app signing**. That page shows the **App signing key** and **Upload key** tabs, and a ready **Digital Asset Links JSON** snippet containing the app signing key.
+
+App signing key SHA-256 (Play):
+
+```
+EF:E6:06:CC:90:89:8F:E3:51:D6:EC:41:89:55:5A:83:1A:D5:30:AC:B6:2B:66:95:99:3E:FE:82:D4:10:33:65
+```
+
+It was added to `public/.well-known/assetlinks.json` before the upload key fingerprint from Step 7. Play's snippet lists only its own key, so it is merged into the existing statement rather than pasted over it: both keys must stay, one for Play installs and one for sideloaded test APKs.
+
 ## Next steps (not done yet)
 
-- Create the Play Console app, upload `app-release-bundle.aab` to **internal testing**, enrol in Play App Signing, add the Play signing fingerprint (see Step 7).
+- Deploy the site so the new `assetlinks.json` is live, check it with the Digital Asset Links tool, then install from the internal-testing link and check there is no address bar.
 - Store listing text and images, Data safety, content rating, target audience (13+ only).
 - Closed test with at least 12 testers for 14 days (testers join through a Google Group and an opt-in link), then apply for production access.
 
