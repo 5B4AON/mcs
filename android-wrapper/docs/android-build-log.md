@@ -419,10 +419,81 @@ It is not certain which of these fixed it: Play simply finishing after enough ti
 
 If waiting is not an option, Play Console → **App bundle explorer** → version → **Downloads** → **Signed, universal APK** gives the Play-signed APK. With automatic protection on, a sideloaded copy may be refused or sent to Play as described above.
 
-## Next steps (not done yet)
+## Step 14: Prepare and publish the closed test
 
-- Store listing text and images, Data safety, content rating, target audience (13+ only).
-- Closed test with at least 12 testers for 14 days (testers join through a Google Group and an opt-in link), then apply for production access.
+The Play developer account is personal, so production access requires at least 12 testers to remain opted in to a closed test for 14 continuous days. Group membership alone does not count: each tester must join the group and opt in to the Alpha test using its test link. The Play Console track is **Closed testing → Alpha**.
+
+### Track setup and release
+
+1. Selected all countries/regions, including **Add rest of world**, and left the track unsynced from production.
+2. Set testers to the Google Group `morse-code-studio-testers@googlegroups.com`; set the feedback contact to the developer email already published in the privacy policy.
+3. Created the Alpha release using the existing Play app bundle, version code 1 (`1 (1.0.0)`); no new bundle was uploaded. Release notes:
+
+   ```
+   <en-GB>
+   First closed test of Morse Code Studio on Android. Please try sending, receiving and practice modes, and send feedback by email.
+   </en-GB>
+   ```
+
+4. Saved the release to Publishing overview, checked the pending changes and quick checks, then sent the changes for review.
+5. Submission 1 contained 15 changes. Submitted 9 November 2026 at 21:38; Play marked it **Published** at 21:46. This published the Alpha closed test and the submitted policy, store listing and store settings changes. It did **not** make the app publicly available through a production release.
+6. Managed publishing was **off**. Consequently, changes sent for review are published as soon as approved. Review and switch this on before a production release if launch timing needs to be controlled.
+
+### Tester links and onboarding
+
+The track's "How testers join your test" section provides two different links:
+
+- **Join on the web** (use as the main link in email): `https://play.google.com/apps/testing/app.web.morse_code_studio`
+- **Join on Android** (shortcut to the Play Store app): `https://play.google.com/store/apps/details?id=app.web.morse_code_studio`
+
+The closed test is published, so the links are active. A tester must be a member of the Google Group and sign in to Play with the same Google account. Anyone still opted in to the earlier internal test must opt out of it before joining Alpha. The tester opens the opt-in link and taps **Become a tester**; the Android link is then used to install the app. A group member who joins later can still find the opt-in post in the group's conversation history.
+
+Count each person's continuous opt-in period, not just Google Group membership. Keep at least 12 testers opted in for 14 continuous days. Encourage testers to use the app and provide feedback during the test; retaining the app installed is a practical request for convenient testing, separate from the opt-in requirement.
+
+### Tester communications
+
+**Group conversation** (post in Google Groups after recruiting testers):
+
+> **Subject:** Morse Code Studio Android test: please join now
+>
+> Hi everyone,
+>
+> The Morse Code Studio Android closed test is live. Thank you for helping test the app.
+>
+> 1. Open the web opt-in link and sign in with the same Google account you used to join this group: https://play.google.com/apps/testing/app.web.morse_code_studio
+> 2. Tap **Become a tester**. If you joined the earlier internal test, opt out of that test first.
+> 3. Install Morse Code Studio from Google Play on your Android device: https://play.google.com/store/apps/details?id=app.web.morse_code_studio
+> 4. Please stay opted in for 14 days. Google requires at least 12 testers to remain opted in throughout that period. Try the app now and then, and send a short note about what worked, what did not, or what was unclear. Reply here or email the developer contact listed in the group.
+>
+> Thank you for helping get Morse Code Studio onto Google Play!
+>
+> 73,
+> 5B4AON
+
+**Recruitment email** (send individually or use BCC; invite people to join the group before posting the opt-in conversation):
+
+> **Subject:** Help test Morse Code Studio on Android
+>
+> Hi,
+>
+> I'm preparing to publish Morse Code Studio, a free app for learning, practising, sending and decoding Morse code. Google requires at least 12 testers to remain opted in to a closed test for 14 days before a new personal developer account can apply for production access. I'd be grateful if you could help.
+>
+> You need an Android phone or tablet and the Google account you use for the Play Store. Please join the testers group with that account: https://groups.google.com/g/morse-code-studio-testers
+>
+> Once you're a member, I'll post a separate message in the group with the test opt-in and installation links. Please opt in when it arrives, stay opted in for 14 days, try the app now and then, and send a short note about what worked or could be clearer. You can reply in the group or email the contact address listed there.
+>
+> Thank you for supporting the project and the Morse community.
+>
+> 73,
+> 5B4AON
+
+Use BCC for a multi-recipient recruitment email. Group members' email-notification preferences vary, so the post remains available in the group conversation history.
+
+## Next steps
+
+- Recruit testers and verify that at least 12 have opted in to Alpha; note each tester's opt-in date and collect feedback.
+- After 12 testers have each remained opted in for 14 continuous days, prepare the production access application with an honest summary of recruitment, engagement and feedback.
+- Before a production submission, review managed publishing and the public listing once more.
 
 ## Releasing a new wrapper version later
 

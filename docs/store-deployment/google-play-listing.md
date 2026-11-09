@@ -23,6 +23,8 @@ Play assets are in `store/images/play/`. The source icon is `store/images/source
 
 The feature graphic is original artwork, not an app screenshot. Keep important content near the centre, avoid store badges, pricing, rankings, testimonials, time-sensitive claims and device mockups, and check the current Play Console requirements before upload.
 
+Play Console's [AI asset declaration](https://support.google.com/googleplay/android-developer/answer/17262077?hl=en-GB) is made per asset. The owner labelled the app icon and feature graphic as AI-generated; the screenshots are genuine captures with ordinary crops.
+
 ## Phone screenshots
 
 Screenshots must show the real app. Do not create, redraw or composite app screens. Capture them from the installed Play build on the owner's phone, then review each image for legibility, private information and current UI before adding it under `store/images/play/screenshots/`.
@@ -47,3 +49,5 @@ The owner approved these six screenshots, their order and the crops for the Play
 ## Owner review and submission
 
 The owner reviews the title, descriptions, graphics and screenshots together. Only after explicit approval should the text and assets be entered in Play Console; this repository work does not submit or publish the listing.
+
+The owner reported saving the listing and completing the asset labels on 9 November 2026. The listing was included in Play Console submission 1, which was marked **Published** at 21:46 on 9 November 2026 as part of the Alpha closed-test release. This is not a public production release.
