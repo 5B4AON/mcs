@@ -36,6 +36,7 @@ import { MorsePatternComponent } from './components/morse-pattern/morse-pattern.
 import { FireworksComponent, MAIN_LAUNCH_DELAY_MS } from './components/fireworks/fireworks.component';
 import { CollapseDirective } from './components/collapse.directive';
 import { SendPromptComponent } from './components/send-prompt/send-prompt.component';
+import { CwScopeComponent } from './components/cw-scope/cw-scope.component';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
@@ -72,7 +73,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, SendPromptComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, SendPromptComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -116,14 +117,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   symbolsRefFocusFallback: HTMLElement | null = null;
 
   // ---- CW audio input state ----
-  /** Current CW Goertzel magnitude for the CW level meter */
-  cwLevel = 0;
-  /** Active detection threshold (auto or manual) */
-  cwThreshold = 0;
   /** True when the CW tone detector reports key-down */
   cwKeyDown = false;
-  /** Auto-scaling maximum for the CW level meter display */
-  cwLevelMax = 0.01;
 
   /** Auto-scaling maximum for the mic level meter display */
   levelMeterMax = 0.01;
@@ -320,7 +315,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           // Record input for loop detection (skip RTDB chars and relay-allowed
           // entries — relay traffic is intentional, not a hardware loop)
           if (!entry.fromRtdb && !isRelayEntry) {
-            this.loopDetection.recordInput(entry.char);
+            this.loopDetection.recordInput(entry.char, entry.inputPath ?? entry.type);
           }
 
           // Skip if loop is suppressed
@@ -328,7 +323,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
           // Record as output for loop detection
           if (!entry.fromRtdb) {
-            this.loopDetection.recordOutput(entry.char);
+            this.loopDetection.recordOutput(entry.char, entry.inputPath ?? entry.type);
           }
 
           // Forward to WinKeyer (all entries including RTDB-sourced)
@@ -583,30 +578,29 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
-    // CW audio input key events → decoder — use configured source (RX or TX)
+    // CW audio input → decoder (source RX or TX as set). The detector times
+    // dits, dahs and gaps itself; key edges only drive the sidetone and vibration.
+    const cwOpts = () => {
+      const s = this.settings.settings();
+      return { name: s.cwInputName || undefined, color: s.cwInputColor || undefined, externalTiming: true };
+    };
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
         this.cwKeyDown = evt.down;
-        const s = this.settings.settings();
-        const source = s.cwInputSource;
-        const opts = { name: s.cwInputName || undefined, color: s.cwInputColor || undefined };
+        const source = this.settings.settings().cwInputSource;
         if (evt.down) {
-          this.decoder.onKeyDown('cwAudio', source, opts);
+          this.decoder.onKeyDown('cwAudio', source, cwOpts());
         } else {
-          this.decoder.onKeyUp('cwAudio', source, opts);
+          this.decoder.onKeyUp('cwAudio', source, cwOpts());
         }
-      })
-    );
-
-    // CW level meter
-    this.subs.push(
-      this.cwInput.level$.subscribe(lvl => {
-        this.cwLevel = lvl.magnitude;
-        this.cwThreshold = lvl.threshold;
-        if (lvl.magnitude > this.cwLevelMax) {
-          this.cwLevelMax = lvl.magnitude * 1.5;
-        }
-      })
+      }),
+      this.cwInput.decode$.subscribe(evt => {
+        const source = this.settings.settings().cwInputSource;
+        if (evt.type === 'pattern' && !evt.pattern) this.decoder.clearPattern('cwAudio');
+        else if (evt.type === 'pattern') this.decoder.externalPattern('cwAudio', source, evt.pattern, cwOpts(), evt.unitMs);
+        else if (evt.type === 'char') this.decoder.externalCharacter('cwAudio', source, evt.pattern, cwOpts(), evt.wpm);
+        else this.decoder.externalWord('cwAudio', source, cwOpts());
+      }),
     );
 
     // Firebase RTDB incoming characters → decoder display + sidetone only
@@ -1453,6 +1447,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Send practice mode ----
 
   /** Send practice shows its prompt and keyed text; keying works as usual. */
+  /** The CW scope takes the typing box's place while the CW detector is on (not in practice modes) */
+  get cwScopeShown(): boolean {
+    const s = this.settings.settings();
+    return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+  }
+
   get sendPracticeActive(): boolean {
     return this.settings.settings().encoderMode === 'send-practice';
   }

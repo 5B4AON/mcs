@@ -98,12 +98,57 @@
   </p>
 </div>
 
-<h3>How It Works</h3>
 <p>
-  A narrow-band Goertzel filter is tuned to the configured CW frequency
-  (default 600 Hz). When the tone amplitude exceeds the threshold, the key
-  is considered down.
+  You can also simply put a phone or laptop next to a radio's speaker: the
+  detector finds the tone, adapts to the volume and the noise, and decodes
+  15&ndash;40 WPM with a delay of well under half a second.
 </p>
+
+<h3>How It Works</h3>
+<ol>
+  <li><strong>Find the tone.</strong> About 50 times a second the detector
+      scans 400&ndash;900 Hz in 10 Hz steps. A tone that is clearly above the
+      rest of the band <em>and</em> switches on and off is taken as CW; a
+      steady carrier or hum is ignored. It locks within a fraction of a
+      second, follows a drifting tone, and moves to a new station only when
+      a clearly stronger one keeps sending.</li>
+  <li><strong>Filter.</strong> The audio is mixed down at the locked
+      frequency and passed through a narrow filter whose width follows the
+      speed (wider for fast Morse, narrower for slow Morse), so the noise is
+      kept out without blurring the dits.</li>
+  <li><strong>Learn the levels (auto gain).</strong> From the last three
+      seconds the detector learns the noise level and the tone level and puts
+      a key-down level and a lower key-up level between them. Loud or quiet,
+      near or far, fading or not: the levels follow. With only noise the
+      levels stay invalid, so nothing is decoded.</li>
+  <li><strong>Time and decode.</strong> The detector measures the speed from
+      the dits and dahs it hears and decides dits, dahs, letter gaps and word
+      gaps itself, on the audio clock, so a busy screen cannot disturb the
+      timing. Extra-long word gaps (Farnsworth) are learned too.</li>
+</ol>
+
+<h3 id="s6-1-scope">The CW Scope</h3>
+<p>
+  While the detector is on, a scope takes the place of the typing box on the
+  main screen and sits above the text in full screen (it is hidden in the
+  practice modes; switch the detector off to type on the main screen
+  again).
+</p>
+<ul>
+  <li><strong>Left:</strong> the last 2.5 seconds, newest at the right. The
+      faint grey trace is everything the microphone hears; the blue area is
+      the tone at the locked frequency (brighter while the key is down, with
+      a green mark underneath).</li>
+  <li><strong>Lines:</strong> amber is the key-down level, dashed cyan the
+      key-up level and grey the noise. They move as the detector adapts.
+      The picture scales itself to the signal.</li>
+  <li><strong>Highlighted band</strong> at the right edge: the sliding
+      window the tone search is working on.</li>
+  <li><strong>Right:</strong> the spectrum from 400 to 900 Hz, with an amber
+      marker on the locked tone.</li>
+  <li><strong>Status line:</strong> <em>Searching</em>, or <em>Locked</em>
+      with the tone, the measured speed and the signal-to-noise ratio.</li>
+</ul>
 
 <figure class="diagram-figure">
   <figcaption>CW Audio Input &mdash; From Radio</figcaption>
@@ -116,26 +161,26 @@
 
 <h3 id="s6-1-settings">Settings</h3>
 <ul>
-  <li><strong>Audio Input Device</strong> — The sound card receiving radio
-      audio.</li>
-  <li><strong>Input Channel</strong> — Left or Right.</li>
-  <li><strong>CW Tone Frequency</strong> — Match your radio's sidetone / BFO
-      offset. Typically 500–700 Hz.</li>
-  <li><strong>CW Tone Bandwidth</strong> — Width of the detection passband
-      in Hz (100–500). For example, at 600 Hz centre frequency and 100 Hz
-      bandwidth the passband is 550–650 Hz. Narrower bandwidth is more
-      selective against nearby interference but requires a more precise
-      frequency setting. Default: 100 Hz.</li>
-  <li><strong>Auto Threshold</strong> — When enabled, the detector
-      automatically tracks the noise floor and signal level, adjusting the
-      threshold dynamically. Recommended for most use.</li>
-  <li><strong>Manual Threshold</strong> — Available when Auto Threshold is off.
-      Set by hand using the slider for fixed-level signals.</li>
-  <li><strong>Debounce</strong> — Filters brief noise spikes. 5–10 ms is
-      typical for clean signals.</li>
   <li><strong>Used for</strong> — Decoder source (RX or TX). See
       <em>Chapter 5: Decoder Source Routing</em>.</li>
+  <li><strong>Audio Input Device</strong> — The microphone or sound card
+      receiving the radio audio.</li>
+  <li><strong>Input Channel</strong> — <em>Both (left + right)</em> (the
+      default) mixes the two channels, which suits a phone microphone or a
+      mono source. Pick <em>Left</em> or <em>Right</em> when the radio audio
+      is on only one channel of a stereo input. Changing the device or the
+      channel while the detector runs restarts it.</li>
 </ul>
+<p>
+  There is nothing to tune: the detector finds the tone (400–900 Hz), the
+  speed, the gain and the key-down / key-up levels by itself, and ignores
+  short noise spikes. The levels it chose are drawn as lines on the scope.
+</p>
+<p>
+  If the sidetone is on and plays this source, switching the detector on
+  asks whether to mute the sidetone, so the detector does not hear its own
+  tone through the speaker.
+</p>
 <h3>Name &amp; Colour</h3>
 <p>
   The CW Tone Detector has optional <strong>Name</strong> and
@@ -151,9 +196,8 @@
   <p>
     On Windows, install "VB-Cable" or "Virtual Audio Cable". Route your SDR
     receiver's audio output to the virtual cable. In Morse Code Studio, select
-    the virtual cable as the Audio Input Device. Set the CW frequency to match
-    your SDR's BFO offset. Enable Auto Threshold. The decoder now shows
-    decoded CW text live.
+    the virtual cable as the Audio Input Device and switch the detector on.
+    Once the scope shows "Locked", the decoder shows the CW text live.
   </p>
 </div>
 

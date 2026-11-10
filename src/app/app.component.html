@@ -258,20 +258,6 @@
         }
       }
     </div>
-    @if (settings.settings().cwInputEnabled) {
-      <div class="decoded-actions">
-        <div class="level-meter-group inline-meter">
-          <svg class="level-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="8" width="4" height="12" rx="1"/></svg>
-          <div class="level-meter-track">
-            <div class="level-meter-fill cw-fill" [style.width.%]="cwLevel * 100 / cwLevelMax"></div>
-            <div class="level-meter-threshold"
-                 [style.left.%]="cwThreshold * 100 / cwLevelMax"
-                 title="Auto Threshold"></div>
-          </div>
-        </div>
-      </div>
-    }
-
     @if (showTryMorseGuide) {
       <section class="try-morse-guide" aria-labelledby="try-morse-title">
         <div class="try-morse-guide-heading">
@@ -307,9 +293,11 @@
     <div class="encoder-input-row">
       @if (sendPracticeActive) {
         <app-send-prompt />
+      } @else if (cwScopeShown) {
+        <app-cw-scope />
       }
       <textarea #encoderInput rows="2"
-                [style.display]="sendPracticeActive ? 'none' : null"
+                [style.display]="sendPracticeActive || cwScopeShown ? 'none' : null"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (practice.feedbackMode() === 'typealong'

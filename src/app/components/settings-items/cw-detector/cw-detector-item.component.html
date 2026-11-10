@@ -43,7 +43,7 @@
     </label>
 
     <label>Audio Input Device:
-      <select [value]="s().cwInputDeviceId" (change)="onSettingChange('cwInputDeviceId', $event)">
+      <select [value]="s().cwInputDeviceId" (change)="onCwInputChange('cwInputDeviceId', $event)">
         <option value="default" [selected]="s().cwInputDeviceId === 'default'">System Default</option>
         @for (dev of devices.inputDevices(); track dev.deviceId) {
           <option [value]="dev.deviceId" [selected]="dev.deviceId === s().cwInputDeviceId">{{ dev.label }}</option>
@@ -52,57 +52,22 @@
     </label>
 
     <label>Input Channel:
-      <select [value]="s().cwInputChannel" (change)="onCwParamChange('cwInputChannel', $event)">
+      <select [value]="s().cwInputChannel" (change)="onCwInputChange('cwInputChannel', $event)">
+        <option value="both" [selected]="s().cwInputChannel === 'both'">Both (left + right)</option>
         <option value="left" [selected]="s().cwInputChannel === 'left'">Left</option>
         <option value="right" [selected]="s().cwInputChannel === 'right'">Right</option>
       </select>
     </label>
 
-    <label>CW Tone Frequency (Hz):
-      <input type="number" min="200" max="2000" step="10"
-             [value]="s().cwInputFrequency"
-             (change)="onCwParamChange('cwInputFrequency', $event)">
-    </label>
-
-    <label>CW Tone Bandwidth (Hz):
-      <input type="number" min="100" max="500" step="10"
-             [value]="s().cwInputBandwidth"
-             (change)="onCwParamChange('cwInputBandwidth', $event)">
-    </label>
-
     <div class="cw-hint">
-      Typical tone: 500–700 Hz. Passband: {{ s().cwInputFrequency - s().cwInputBandwidth / 2 }}–{{ s().cwInputFrequency + s().cwInputBandwidth / 2 }} Hz.
-      <app-help-link-button section="s6-1-settings" label="Help: tone and bandwidth" />
+      Finds the tone between 400 and 900 Hz, the speed and the noise and tone levels by itself.
+      The scope on the main screen shows what it hears.
+      <app-help-link-button section="s6-1-scope" label="Help: CW scope" />
     </div>
 
-    <label>
-      <input type="checkbox" [checked]="s().cwInputAutoThreshold"
-             (change)="onCwParamChange('cwInputAutoThreshold', $event)">
-      Auto Threshold
-    </label>
-
-    @if (!s().cwInputAutoThreshold) {
-      <label>Manual Threshold:
-        <input type="range" min="0.0001" max="0.5" step="0.0001"
-               [value]="s().cwInputThreshold"
-               (input)="onCwParamChange('cwInputThreshold', $event)">
-        {{ (s().cwInputThreshold * 1000).toFixed(2) }}m
-      </label>
+    @if (scope.isLive && cwInput.status(); as st) {
+      <div class="cw-auto-info">{{ statusText(st) }}</div>
     }
-
-    @if (cwNoiseFloor > 0 || cwSignalPeak > 0) {
-      <div class="cw-auto-info">
-        Noise: {{ (cwNoiseFloor * 1000).toFixed(2) }}m
-        &nbsp;|&nbsp; Peak: {{ (cwSignalPeak * 1000).toFixed(2) }}m
-        &nbsp;|&nbsp; Threshold: {{ (cwThreshold * 1000).toFixed(2) }}m
-      </div>
-    }
-
-    <label>Debounce (ms):
-      <input type="number" min="1" max="100"
-             [value]="s().cwInputDebounceMs"
-             (change)="onCwParamChange('cwInputDebounceMs', $event)">
-    </label>
 
     <div class="card-section-divider"></div>
 

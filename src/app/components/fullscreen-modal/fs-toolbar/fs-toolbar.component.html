@@ -12,19 +12,6 @@
     <span [class.selected]="inputMode === 'type'">Type</span>
   </button>
 
-  <!-- CW level meter (left-aligned) -->
-  @if (settings.settings().cwInputEnabled) {
-    <div class="level-meter-group fs-inline-meter">
-      <svg class="level-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="10" width="4" height="10" rx="1"/><rect x="10" y="4" width="4" height="16" rx="1"/><rect x="18" y="8" width="4" height="12" rx="1"/></svg>
-      <div class="level-meter-track">
-        <div class="level-meter-fill cw-fill" [style.width.%]="cwLevel * 100 / cwLevelMax"></div>
-        <div class="level-meter-threshold"
-             [style.left.%]="cwThreshold * 100 / cwLevelMax"
-             title="Auto Threshold"></div>
-      </div>
-    </div>
-  }
-
   <!-- Right spacer -->
   <div class="fs-toolbar-spacer"></div>
 

@@ -28,6 +28,13 @@ export interface DecoderKeyOptions {
   name?: string;
   /** Optional text colour override (CSS colour string from MIDI mapping) */
   color?: string;
+  /**
+   * True when the input classifies its own elements and gaps (the CW tone
+   * detector does it on the audio clock): key events then only drive the
+   * monitoring outputs, and text arrives through externalPattern(),
+   * externalCharacter() and externalWord().
+   */
+  externalTiming?: boolean;
 }
 
 /**
@@ -43,6 +50,7 @@ type PipelineOutput = 'audio' | 'serial' | 'vibration' | 'midi';
 interface DecoderPipeline {
   source: 'rx' | 'tx';
   perfectTiming: boolean;
+  externalTiming: boolean;
   fromMidi: boolean;
   fromSerial: boolean;
   name: string;
@@ -257,7 +265,7 @@ export class MorseDecoderService {
     const now = performance.now();
 
     // If there was a previous key-up on this pipeline, measure the silence gap
-    if (pipeline.keyUpTime > 0) {
+    if (pipeline.keyUpTime > 0 && !pipeline.externalTiming) {
       const silenceMs = now - pipeline.keyUpTime;
       this.handleSilence(pipeline, path, silenceMs);
 
@@ -383,6 +391,8 @@ export class MorseDecoderService {
     }
     pipeline.activatedOutputs.clear();
 
+    if (pipeline.externalTiming) return;
+
     // Choose threshold: fixed keyer timing for perfect elements,
     // adaptive calibration for human-timed input
     const threshold = pipeline.perfectTiming
@@ -425,6 +435,44 @@ export class MorseDecoderService {
     }, wordTimeout);
   }
 
+  // ---- Inputs that classify their own timing (CW tone detector) ----
+
+  /** Show the dots and dashes received so far for the character in progress */
+  externalPattern(path: InputPath, source: 'rx' | 'tx', pattern: string, opts: DecoderKeyOptions, unitMs: number): void {
+    const pipeline = this.getOrCreatePipeline(path, source, { ...opts, externalTiming: true });
+    pipeline.pattern = pattern;
+    this.updatePatternSignals(pipeline);
+    this.lens.show(`decoder:${path}`, this.lensMeta(pipeline), pattern, null, pattern, unitMs);
+  }
+
+  /** Add a finished character, classified by the input itself */
+  externalCharacter(path: InputPath, source: 'rx' | 'tx', pattern: string, opts: DecoderKeyOptions, wpm: number): void {
+    const pipeline = this.getOrCreatePipeline(path, source, { ...opts, externalTiming: true });
+    this.setEstimatedWpm(source, wpm);
+    pipeline.pattern = pattern;
+    this.finishCharacter(pipeline, path);
+  }
+
+  /** Add a word space, decided by the input itself */
+  externalWord(path: InputPath, source: 'rx' | 'tx', opts: DecoderKeyOptions): void {
+    const pipeline = this.getOrCreatePipeline(path, source, { ...opts, externalTiming: true });
+    this.finishWord(pipeline, path);
+  }
+
+  /** Drop the character in progress on one input (for example when it stops) */
+  clearPattern(path: InputPath): void {
+    const pipeline = this.pipelines.get(path);
+    if (!pipeline || !pipeline.pattern) return;
+    pipeline.pattern = '';
+    this.updatePatternSignals(pipeline);
+  }
+
+  /** Speed measured by an input that classifies its own timing */
+  private setEstimatedWpm(source: 'rx' | 'tx', wpm: number): void {
+    if (!(wpm > 0)) return;
+    this.estimatedWpmSignalForSource(source).set(Math.max(1, Math.min(60, Math.round(wpm))));
+  }
+
   /** Clear all decoded text and pipeline state */
   clearOutput(): void {
     this.decodedText.set('');
@@ -461,6 +509,7 @@ export class MorseDecoderService {
       pipeline = {
         source,
         perfectTiming: opts?.perfectTiming ?? false,
+        externalTiming: opts?.externalTiming ?? false,
         fromMidi: opts?.fromMidi ?? false,
         fromSerial: opts?.fromSerial ?? false,
         name: opts?.name ?? '',
@@ -478,6 +527,7 @@ export class MorseDecoderService {
       // Update mutable options (source/flags may change between calls)
       pipeline.source = source;
       pipeline.perfectTiming = opts?.perfectTiming ?? false;
+      pipeline.externalTiming = opts?.externalTiming ?? false;
       pipeline.fromMidi = opts?.fromMidi ?? false;
       pipeline.fromSerial = opts?.fromSerial ?? false;
       pipeline.name = opts?.name ?? '';

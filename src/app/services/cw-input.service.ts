@@ -11,7 +11,7 @@ import { SettingsService } from './settings.service';
 /**
  * Represents a key state change detected from an incoming CW audio tone.
  * @property down  - true when the CW tone is present (key down)
- * @property time  - AudioContext currentTime when the event occurred
+ * @property time  - audio time of the edge (seconds of input since the detector started)
  */
 export interface CwKeyEvent {
   down: boolean;
@@ -19,17 +19,85 @@ export interface CwKeyEvent {
 }
 
 /**
- * CW input level metering data for the UI.
- * @property magnitude  - current Goertzel filter output at the CW frequency
- * @property threshold  - active detection threshold (auto or manual)
- * @property noiseFloor - auto-tracked minimum magnitude (background noise)
- * @property signalPeak - auto-tracked maximum magnitude (tone present)
+ * CW input level data for the UI.
+ * @property magnitude  - current envelope at the locked frequency
+ * @property threshold  - learned key-down level
+ * @property noiseFloor - learned noise level
+ * @property signalPeak - learned tone level
  */
 export interface CwLevelEvent {
   magnitude: number;
   threshold: number;
   noiseFloor: number;
   signalPeak: number;
+}
+
+/** Text decisions made by the detector on the audio clock */
+export type CwDecodeEvent =
+  | { type: 'pattern'; pattern: string; unitMs: number }
+  | { type: 'char'; pattern: string; unitMs: number; wpm: number }
+  | { type: 'word' };
+
+/** What the detector is doing, for the status line */
+export interface CwStatus {
+  /** search: looking for a keyed tone; locked: following one */
+  state: 'search' | 'locked';
+  /** Frequency being decoded (Hz) */
+  freq: number;
+  /** Measured speed */
+  wpm: number;
+  /** Tone above noise (dB) */
+  snrDb: number;
+  /** Width of one tone-search block (ms): the sliding analysis window */
+  windowMs: number;
+}
+
+/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB" or "Searching 400–900 Hz…" */
+export function cwStatusText(st: CwStatus): string {
+  if (st.state === 'search') return 'Searching for a CW tone (400–900 Hz)…';
+  return `Locked · ${Math.round(st.freq)} Hz · ${st.wpm} WPM · ${Math.max(0, Math.round(st.snrDb))} dB`;
+}
+
+/**
+ * The last few seconds of detector data for the scope, one entry per
+ * millisecond. Written outside Angular's zone and read by the canvas on
+ * each animation frame, so it never triggers change detection.
+ */
+export class CwScopeBuffer {
+  static readonly SIZE = 8192;
+  readonly env = new Float32Array(CwScopeBuffer.SIZE);
+  readonly raw = new Float32Array(CwScopeBuffer.SIZE);
+  readonly key = new Uint8Array(CwScopeBuffer.SIZE);
+  /** Total entries written; the newest is at (count - 1) % SIZE */
+  count = 0;
+  hi = 0;
+  lo = 0;
+  noise = 0;
+  signal = 0;
+  /** Search spectrum (dB above the band's noise) and its first bin and step (Hz) */
+  spectrum: Float32Array | null = null;
+  specLo = 400;
+  specStep = 10;
+  /** performance.now() of the last write, so the scope can tell when data stops */
+  updatedAt = 0;
+
+  push(env: Float32Array, raw: Float32Array, key: Uint8Array): void {
+    const n = CwScopeBuffer.SIZE;
+    for (let i = 0; i < env.length; i++) {
+      const j = (this.count + i) % n;
+      this.env[j] = env[i];
+      this.raw[j] = raw[i];
+      this.key[j] = key[i];
+    }
+    this.count += env.length;
+    this.updatedAt = performance.now();
+  }
+
+  clear(): void {
+    this.count = 0;
+    this.hi = this.lo = this.noise = this.signal = 0;
+    this.spectrum = null;
+  }
 }
 
 /**
@@ -42,11 +110,12 @@ export interface CwLevelEvent {
  * How it works:
  *  1. Opens the selected audio input device as a stereo stream.
  *  2. A ChannelSplitterNode extracts just the configured channel (L or R).
- *  3. A Goertzel algorithm in an AudioWorklet measures the magnitude at
- *     the configured CW frequency (narrow-band, ~30 Hz bandwidth).
- *  4. Auto-threshold tracks noise floor and signal peak, placing the
- *     detection threshold at 30% between them for fast key-down response.
- *  5. Key-down/key-up events are sent to the main thread for decoding.
+ *  3. The cw-detect-processor AudioWorklet finds and locks onto the keyed
+ *     tone (or uses the set frequency), learns the noise and tone levels and
+ *     the speed, and decides dits, dahs, letter and word gaps itself, on the
+ *     audio clock (see public/cw-detect-processor.js).
+ *  4. Key edges go out on keyEvent$ (sidetone, vibration); the text
+ *     decisions on decode$; status and scope data for the UI.
  *
  * The service supports per-channel selection so you can route multiple
  * signals on a stereo cable (e.g. left = receiver audio, right = unused).
@@ -65,8 +134,14 @@ export class CwInputService {
   /** CW magnitude, threshold, and tracking data for UI level meter */
   readonly level$ = new Subject<CwLevelEvent>();
 
-  /** Calibration measurement results — used for manual threshold setup */
-  readonly calibration$ = new Subject<{ state: string; rms: number }>();
+  /** Dots and dashes, finished characters and word gaps, decided by the detector */
+  readonly decode$ = new Subject<CwDecodeEvent>();
+
+  /** Detector state for the status line; null while the detector is not running */
+  readonly status = signal<CwStatus | null>(null);
+
+  /** Scope data (no change detection) */
+  readonly scope = new CwScopeBuffer();
 
   private started = false;
 
@@ -98,8 +173,8 @@ export class CwInputService {
    *  2. Load the cw-detect-processor AudioWorklet
    *  3. Open the selected audio input device (processing disabled)
    *  4. Split stereo → select configured channel → merge back to mono
-   *  5. Connect to worklet for Goertzel tone detection
-   *  6. Send initial frequency and threshold parameters
+   *  5. Connect to the detector worklet
+   *  6. Send the starting speed
    *  7. Install keep-alive to prevent browser suspension
    */
   async start(): Promise<void> {
@@ -137,47 +212,28 @@ export class CwInputService {
       source = this.audioCtx.createMediaStreamSource(this.stream);
     }
 
-    // Split stereo input and pick the selected channel (left=0, right=1)
-    const splitter = this.audioCtx.createChannelSplitter(2);
-    source.connect(splitter);
-    const chIdx = s.cwInputChannel === 'right' ? 1 : 0;
-
-    // Merge the selected channel into a mono stream for the worklet
-    const merger = this.audioCtx.createChannelMerger(1);
-    splitter.connect(merger, chIdx, 0);
-
+    // The worklet takes one channel: 'both' lets Web Audio mix left and right
+    // into mono ((L + R) / 2); otherwise the chosen channel is split off
     this.workletNode = new AudioWorkletNode(this.audioCtx, 'cw-detect-processor', {
       channelCount: 1,
       channelCountMode: 'explicit',
+      channelInterpretation: 'speakers',
     });
+    let feed: AudioNode = source;
+    if (s.cwInputChannel !== 'both') {
+      const splitter = this.audioCtx.createChannelSplitter(2);
+      source.connect(splitter);
+      const merger = this.audioCtx.createChannelMerger(1);
+      splitter.connect(merger, s.cwInputChannel === 'right' ? 1 : 0, 0);
+      feed = merger;
+    }
 
-    this.workletNode.port.onmessage = (e) => {
-      const data = e.data;
-      if (data.type === 'keyChange') {
-        this.zone.run(() => this.onKeyChange(data.down, data.time));
-      } else if (data.type === 'level') {
-        this.zone.run(() => this.level$.next({
-          magnitude: data.magnitude,
-          threshold: data.threshold,
-          noiseFloor: data.noiseFloor,
-          signalPeak: data.signalPeak,
-        }));
-      } else if (data.type === 'calibration') {
-        this.zone.run(() => this.calibration$.next({ state: data.state, rms: data.rms }));
-      }
-    };
+    this.workletNode.port.onmessage = (e) => this.onWorkletMessage(e.data);
 
     // Send initial parameters
-    this.workletNode.port.postMessage({
-      frequency: s.cwInputFrequency,
-      bandwidth: s.cwInputBandwidth,
-      sampleRate: this.audioCtx.sampleRate,
-      debounceMs: s.cwInputDebounceMs,
-      autoThreshold: s.cwInputAutoThreshold,
-      threshold: s.cwInputThreshold,
-    });
+    this.workletNode.port.postMessage(this.workletParams());
 
-    merger.connect(this.workletNode);
+    feed.connect(this.workletNode);
     // Must connect to destination to keep worklet alive (silent output)
     this.workletNode.connect(this.audioCtx.destination);
 
@@ -187,20 +243,55 @@ export class CwInputService {
     this.started = true;
   }
 
+  /** The detector tunes itself; it only gets the starting speed, used until it has measured one */
+  private workletParams(): Record<string, unknown> {
+    return { wpm: this.settings.settings().rxDecoderWpm };
+  }
+
   /**
-   * Update detection parameters in the running worklet without restarting.
-   * Called when the user adjusts CW frequency, threshold, or debounce.
+   * Worklet messages arrive outside Angular's zone. Key edges and text enter
+   * the zone straight away; level and status at most 5 times a second; scope
+   * data never does.
    */
-  updateParams(): void {
-    if (!this.workletNode) return;
-    const s = this.settings.settings();
-    this.workletNode.port.postMessage({
-      frequency: s.cwInputFrequency,
-      bandwidth: s.cwInputBandwidth,
-      debounceMs: s.cwInputDebounceMs,
-      autoThreshold: s.cwInputAutoThreshold,
-      threshold: s.cwInputThreshold,
-    });
+  private onWorkletMessage(data: any): void {
+    switch (data.type) {
+      case 'key':
+        this.zone.run(() => this.onKeyChange(data.down, data.time));
+        break;
+      case 'pattern':
+        this.zone.run(() => this.decode$.next({ type: 'pattern', pattern: data.pattern, unitMs: data.unitMs }));
+        break;
+      case 'char':
+        this.zone.run(() => this.decode$.next({ type: 'char', pattern: data.pattern, unitMs: data.unitMs, wpm: data.wpm }));
+        break;
+      case 'word':
+        this.zone.run(() => this.decode$.next({ type: 'word' }));
+        break;
+      case 'scope':
+        this.scope.push(data.env, data.raw, data.key);
+        this.scope.hi = data.hi;
+        this.scope.lo = data.lo;
+        this.scope.noise = data.noise;
+        this.scope.signal = data.signal;
+        if (data.spectrum) {
+          this.scope.spectrum = data.spectrum;
+          this.scope.specLo = data.specLo;
+          this.scope.specStep = data.specStep;
+        }
+        break;
+      case 'stat':
+        this.zone.run(() => {
+          this.status.set({
+            state: data.state, freq: data.freq, wpm: data.wpm,
+            snrDb: data.snrDb, windowMs: data.windowMs,
+          });
+          this.level$.next({
+            magnitude: data.env, threshold: data.hi,
+            noiseFloor: data.noise, signalPeak: data.signal,
+          });
+        });
+        break;
+    }
   }
 
   /**
@@ -229,6 +320,13 @@ export class CwInputService {
     }, this.STUCK_KEY_MS);
   }
 
+  /** Rebuild the pipeline when it is running (a new device or channel takes effect) */
+  async restart(): Promise<void> {
+    if (!this.started) return;
+    await this.stop();
+    await this.start();
+  }
+
   /** Stop the CW input pipeline and release all resources */
   async stop(): Promise<void> {
     if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
@@ -237,6 +335,8 @@ export class CwInputService {
       this.keyIsDown = false;
       this.zone.run(() => this.keyEvent$.next({ down: false, time: performance.now() }));
     }
+    // Drop a character that was still being received
+    if (this.started) this.zone.run(() => this.decode$.next({ type: 'pattern', pattern: '', unitMs: 0 }));
     this.clearKeepAlive();
     try { this.workletNode?.disconnect(); } catch { }
     for (const track of this.stream?.getTracks() ?? []) {
@@ -257,6 +357,8 @@ export class CwInputService {
     this.workletNode = null;
     this.stream = null;
     this.started = closeFailed;
+    this.status.set(null);
+    this.scope.clear();
     if (closeFailed) {
       throw new Error('The CW input audio context could not be closed.');
     }
@@ -298,11 +400,5 @@ export class CwInputService {
     if (this.audioCtx) {
       this.audioCtx.onstatechange = null;
     }
-  }
-
-  /** Ask the worklet to measure the current magnitude level for manual calibration */
-  calibrate(state: 'open' | 'closed'): void {
-    if (!this.workletNode) return;
-    this.workletNode.port.postMessage({ calibrate: state });
   }
 }
