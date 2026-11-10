@@ -29,17 +29,10 @@ export const DECODE_FLOW: WizardFlow = {
     },
     {
       id: 'tone',
-      title: 'Tune the detector',
-      intro: 'Match the tone from your radio (usually 500–700 Hz).',
+      title: 'Where the sound comes from',
+      intro: 'The detector finds the tone (400–900 Hz), the speed and the levels by itself. Pick the input it listens to.',
       helpSection: 's6-1',
       items: [{ item: 'cw-detector-tune' }],
-      validate: ctx => {
-        const s = ctx.settings;
-        const errors: string[] = [];
-        if (s.cwInputFrequency < 200 || s.cwInputFrequency > 2000) errors.push('Tone frequency must be between 200 and 2000 Hz.');
-        if (s.cwInputBandwidth < 100 || s.cwInputBandwidth > 500) errors.push('Bandwidth must be between 100 and 500 Hz.');
-        return errors;
-      },
     },
   ],
 };

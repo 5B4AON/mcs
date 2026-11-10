@@ -1,0 +1,64 @@
+:host {
+  display: block;
+  flex: 1;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+/* Same frame as the typing box it replaces */
+.cw-scope {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: .25rem;
+  padding: .35rem .45rem .3rem;
+  background: #181c22;
+  border: 1px solid #2e3a44;
+  box-shadow: inset 3px 3px 8px rgba(0,0,0,.65), inset -2px -2px 5px rgba(255,255,255,.05);
+  border-radius: 4px;
+}
+.cw-scope-canvas {
+  display: block;
+  width: 100%;
+  height: 4.2rem;
+  border-radius: 3px;
+}
+.cw-scope-status {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: .15rem .75rem;
+  font-family: system-ui, sans-serif;
+  font-size: .75rem;
+  line-height: 1.1rem;
+  color: #9ab;
+  font-weight: normal;
+  letter-spacing: normal;
+  text-transform: none;
+}
+.cw-scope-text {
+  color: #cde;
+  font-variant-numeric: tabular-nums;
+}
+.cw-scope-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: .3rem;
+  white-space: nowrap;
+}
+.lg {
+  display: inline-block;
+  width: .9rem;
+  height: 0;
+  margin-left: .35rem;
+  border-top: 2px solid;
+}
+.lg-hi { border-color: #fb3; }
+.lg-lo { border-color: #4dd; border-top-style: dashed; }
+.lg-win {
+  height: .7rem;
+  width: .5rem;
+  border: 1px solid rgba(255,255,255,.35);
+  background: rgba(255,255,255,.12);
+}

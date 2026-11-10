@@ -16,6 +16,7 @@ import { ViewportService } from '../../services/viewport.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
+import { CwScopeComponent } from '../cw-scope/cw-scope.component';
 import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
 
 /**
@@ -32,7 +33,7 @@ import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-
 @Component({
   selector: 'app-fullscreen-modal',
   standalone: true,
-  imports: [FsToolbarComponent, FsConversationViewComponent, SendPromptComponent],
+  imports: [FsToolbarComponent, FsConversationViewComponent, SendPromptComponent, CwScopeComponent],
   templateUrl: './fullscreen-modal.component.html',
   styleUrls: ['./fullscreen-modal.component.css'],
 })
@@ -88,6 +89,12 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** Send practice in Key mode pins its prompt box above the output area. */
   get sendPromptShown(): boolean {
     return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice';
+  }
+
+  /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
+  get cwScopeShown(): boolean {
+    const s = this.settings.settings();
+    return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
   /** Font stack chosen in the fullscreen menu. */

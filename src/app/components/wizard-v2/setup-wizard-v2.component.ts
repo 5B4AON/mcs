@@ -484,10 +484,8 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
     // A direction the user ticked is connected now instead of waiting for the next health check
     if (patch.rtdbInputEnabled && !base.rtdbInputEnabled) this.rtdb.startInput();
     if (patch.rtdbOutputEnabled && !base.rtdbOutputEnabled) this.rtdb.startOutput();
-    if (patch.cwInputEnabled) {
-      this.cwInput.updateParams();
-      this.detectorEnabled.emit();
-    }
+    if (patch.cwInputEnabled) this.detectorEnabled.emit();
+    else if (patch.cwInputDeviceId !== undefined || patch.cwInputChannel !== undefined) await this.cwInput.restart();
     this.applied = true;
     this.tryRequested.emit(engine.flow.goal);
     if (engine.opensFullscreen()) this.fullscreenRequested.emit();

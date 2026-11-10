@@ -351,11 +351,6 @@
   gap: .5rem;
   margin-bottom: .5rem;
 }
-.level-meter-group.inline-meter {
-  flex: 0 1 280px;
-  margin: 0 1.5rem;
-  min-width: 80px;
-}
 .level-icon {
   flex-shrink: 0;
   color: #8cf;
@@ -633,16 +628,6 @@
 .blur-reveal-btn-main svg {
   display: block;
   pointer-events: none;
-}
-
-.decoded-actions {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-top: 1rem;
-}
-.decoded-actions .level-meter-group.inline-meter {
-  margin: 0 .75rem 0 0;
 }
 
 /* ===== Encoder ===== */
@@ -1317,11 +1302,6 @@ select { max-width: 300px; }
   letter-spacing: .5px;
 }
 
-/* CW audio input styles */
-.cw-fill {
-  background: linear-gradient(90deg, #07a, #0cf 70%, #0ff) !important;
-}
-
 /* ===== Expand (fullscreen) icon button ===== */
 .expand-btn {
   width: 40px;
@@ -1423,17 +1403,8 @@ select { max-width: 300px; }
   .level-meter-group {
     min-width: 0;
   }
-  .level-meter-group.inline-meter {
-    margin: 0 0.25rem;
-  }
-  .decoded-actions .level-meter-group.inline-meter {
-    margin: 0 .5rem 0 0;
-  }
   .level-icon {
     display: none;
-  }
-  .decoded-actions .level-icon {
-    display: block;
   }
   .level-value {
     display: none;
@@ -1446,14 +1417,6 @@ select { max-width: 300px; }
   }
   .panel h2 {
     font-size: 1rem;
-  }
-
-  .decoded-actions {
-    flex-wrap: nowrap;
-  }
-  .decoded-actions button:not(.clear-icon-btn):not(.expand-btn) {
-    flex: 1;
-    min-width: 0;
   }
 
   .encoder-input-row {

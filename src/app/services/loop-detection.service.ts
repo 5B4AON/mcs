@@ -26,14 +26,20 @@ import { Injectable, signal } from '@angular/core';
  *  suppression is automatically lifted.
  *
  * Not all character matches indicate a loop — the operator may
- * legitimately re-key the same characters. The detector requires
- * a minimum sequence length (default 3 chars) and a tight time
- * window (default 5 seconds) to reduce false positives.
+ * legitimately re-key the same characters, and a station on the air
+ * repeats its call. Every character carries the input it came from, and a
+ * match counts only when each echoed character arrived through a different
+ * input than the one that produced the output (a real loop comes back on
+ * another path, e.g. keyer → radio → CW detector). A minimum sequence
+ * length (6 chars) and a tight time window (5 seconds) further reduce
+ * false positives.
  */
 
 interface TimestampedChar {
   char: string;
   time: number;
+  /** Input the character came from (input path or decoder source) */
+  source: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -76,10 +82,10 @@ export class LoopDetectionService {
    * Call this whenever a decoded character is forwarded to any output
    * (WinKeyer, RTDB, serial, opto, sidetone).
    */
-  recordOutput(char: string): void {
+  recordOutput(char: string, source: string): void {
     if (char === ' ') return; // ignore spaces — too common
     const now = performance.now();
-    this.outputBuffer.push({ char, time: now });
+    this.outputBuffer.push({ char, time: now, source });
     this.trimBuffer(this.outputBuffer, now);
   }
 
@@ -90,10 +96,10 @@ export class LoopDetectionService {
    *
    * @returns true if a loop was detected (caller should suppress outputs)
    */
-  recordInput(char: string): boolean {
+  recordInput(char: string, source: string): boolean {
     if (char === ' ') return this.loopDetected(); // ignore spaces
     const now = performance.now();
-    this.inputBuffer.push({ char, time: now });
+    this.inputBuffer.push({ char, time: now, source });
     this.trimBuffer(this.inputBuffer, now);
 
     if (this.checkForLoop(now)) {
@@ -153,6 +159,9 @@ export class LoopDetectionService {
       const candidateSequence = candidate.map(c => c.char).join('');
 
       if (candidateSequence !== inputSequence) continue;
+
+      // The same input repeating itself is not an echo
+      if (candidate.some((c, k) => c.source === recentInput[k].source)) continue;
 
       // Check timing: output should precede input within the time window
       const outputTime = candidate[0].time;

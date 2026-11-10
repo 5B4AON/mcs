@@ -93,59 +93,6 @@
   display: none;
 }
 
-/* ---- CW level meter (inline in toolbar) ---- */
-.level-meter-group.fs-inline-meter {
-  flex: 0 1 280px;
-  min-width: 80px;
-  margin-left: 0.75em;
-  margin-right: 0.25em;
-}
-.level-meter-group.fs-inline-meter .level-icon {
-  flex-shrink: 0;
-  color: #8cf;
-  display: block;
-}
-.level-meter-group {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex: 1;
-  min-width: 120px;
-}
-.level-label {
-  font-size: .8rem;
-  color: #999;
-  white-space: nowrap;
-}
-.level-meter-track {
-  position: relative;
-  flex: 1;
-  height: 16px;
-  background: #222;
-  border: 1px solid #444;
-  border-radius: 3px;
-  overflow: hidden;
-}
-.level-meter-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #0a0, #ff0 70%, #f00);
-  transition: width 40ms linear;
-  min-width: 0;
-}
-.level-meter-threshold {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 2px;
-  background: #f44;
-  box-shadow: 0 0 4px #f44;
-  pointer-events: none;
-  z-index: 1;
-}
-.cw-fill {
-  background: linear-gradient(90deg, #07a, #0cf 70%, #0ff) !important;
-}
-
 /* ---- Spacer ---- */
 .fs-toolbar-spacer {
   flex: 1;
@@ -550,11 +497,6 @@ label { user-select: none; }
   .fs-toolbar {
     padding: 0.2rem 10px;
     gap: 10px;
-  }
-  .level-meter-group.fs-inline-meter {
-    min-width: 60px;
-    margin-left: .5rem;
-    margin-right: .5rem;
   }
 }
 

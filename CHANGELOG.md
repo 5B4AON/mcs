@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.0] - 2026-11-10
+
+### Added
+
+- **Self-tuning CW tone detector** — The CW Tone Detector was rebuilt for a phone or microphone placed next to a radio. It finds the tone between 400 and 900 Hz and locks onto it, follows the speed (about 15–40 WPM), sets its own gain for loud and weak signals, learns the key-down and key-up levels from the noise and the signal, ignores short noise spikes and follows fading. Letters and word gaps are decided from the measured speed, so decoded text now has proper spaces, and it appears less than half a second behind the sound. The first letter heard while it locks is kept.
+- **Live CW scope** — While the detector is on, the main-screen input box area (and the same place in the full screen) shows a scope of the received tone with the detection window highlighted and the key-down and key-up levels drawn as lines that move as they adjust, plus a status line ("Searching" or "Locked" with tone and speed).
+- **Input Channel: Both** — The detector can listen to the left channel, the right channel or both mixed (the new default, suited to phone microphones and mono sources).
+- **Sidetone prompt** — Switching the detector on while the sidetone plays that source asks whether to mute the sidetone, so the detector does not hear its own tone.
+
+### Changed
+
+- **Simpler CW Tone Detector card** — Only the input device and channel are left. Auto-tune, tone frequency, bandwidth, Auto Threshold, manual threshold and debounce were removed because the detector sets all of them itself. Changing the device or channel while it runs restarts it. The Decode guide's page is now "Where the sound comes from".
+- **Level bar removed** — The CW level bar above the input box and in the full-screen toolbar was replaced by the scope.
+
+### Fixed
+
+- **No false "feedback loop" warning** — A station repeating its call or you keying "CQ CQ CQ" no longer triggers the loop warning. Only an echo that comes back through a different input (for example keyed text heard again by the CW detector) counts.
+
 ## [2.14.2] - 2026-11-08
 
 ### Changed

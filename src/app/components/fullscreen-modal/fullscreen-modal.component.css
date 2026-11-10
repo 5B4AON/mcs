@@ -77,6 +77,17 @@
 .fs-fit.prompt-on.touch-on {
   --fs-reserve: 168px;
 }
+/* CW detector: the scope sits in the same place as the Send practice prompt */
+.fs-cw-scope {
+  flex: none;
+  margin-bottom: .35rem;
+}
+.fs-fit.scope-on {
+  --fs-reserve: 156px;
+}
+.fs-fit.scope-on.touch-on {
+  --fs-reserve: 192px;
+}
 
 /* ---- Responsive ---- */
 @media (max-width: 480px) {

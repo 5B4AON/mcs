@@ -527,11 +527,10 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
       }
 
       const cwMoved = before.cwInputEnabled && restored.cwInputEnabled
-        && before.cwInputDeviceId !== restored.cwInputDeviceId;
+        && (before.cwInputDeviceId !== restored.cwInputDeviceId || before.cwInputChannel !== restored.cwInputChannel);
       if (before.cwInputEnabled && (!restored.cwInputEnabled || cwMoved)) await this.cwInput.stop();
       if (restored.cwInputEnabled) {
         if (!before.cwInputEnabled || cwMoved) await this.cwInput.start();
-        else this.cwInput.updateParams();
       }
     }
 

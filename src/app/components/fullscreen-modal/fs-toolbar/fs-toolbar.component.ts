@@ -12,7 +12,6 @@ import { MorseSpeedsComponent } from '../../morse-speeds/morse-speeds.component'
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings, ModalDisplaySettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
-import { CwInputService, CwLevelEvent } from '../../../services/cw-input.service';
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService } from '../../../services/morse-encoder.service';
 import { DisplayBufferService } from '../../../services/display-buffer.service';
@@ -78,11 +77,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Fonts offered in the kebab menu. */
   readonly fonts = FULLSCREEN_FONTS;
-
-  // ---- CW level meter state ----
-  cwLevel = 0;
-  cwLevelMax = 0.01;
-  cwThreshold = 0;
 
   // ---- Menu state ----
   private kebabOpen = false;
@@ -154,7 +148,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     public encoder: MorseEncoderService,
     public rtdb: FirebaseRtdbService,
     private devices: AudioDeviceService,
-    private cwInput: CwInputService,
     private displayBuffers: DisplayBufferService,
     private practice: PracticeService,
     private lens: LensService,
@@ -172,16 +165,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     document.addEventListener('pointerdown', this.outsidePressHandler, true);
-    // Subscribe to CW detector level for the inline level meter
-    this.subs.push(
-      this.cwInput.level$.subscribe((lvl: CwLevelEvent) => {
-        this.cwLevel = lvl.magnitude;
-        this.cwThreshold = lvl.threshold;
-        if (lvl.magnitude > this.cwLevelMax) {
-          this.cwLevelMax = lvl.magnitude * 1.5;
-        }
-      })
-    );
   }
 
   ngOnDestroy(): void {

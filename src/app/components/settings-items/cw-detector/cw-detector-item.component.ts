@@ -2,12 +2,12 @@
  * Morse Code Studio
  */
 
-import { Component, Input, OnDestroy, OnInit, computed, inject } from '@angular/core';
+import { Component, Input, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
 import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
-import { CwInputService, CwLevelEvent } from '../../../services/cw-input.service';
+import { ConfirmService } from '../../../services/confirm.service';
+import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -15,10 +15,11 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 /**
  * Settings item — CW Tone Detector.
  *
- * Goertzel-based CW audio tone detector: device/channel, tone frequency and
- * bandwidth, auto or manual threshold, debounce, name and colour. The detector
- * is only started, stopped or retuned in live Settings; a wizard draft just
- * holds the values.
+ * CW audio tone detector: RX/TX, device, channel (left, right or both mixed),
+ * name and colour. Tone, speed and levels are found by the detector itself.
+ * Switching it on offers to mute a sidetone that would play along. The
+ * detector is only started, stopped or restarted in live Settings; a wizard
+ * draft just holds the values.
  */
 @Component({
   selector: 'app-cw-detector-item',
@@ -27,7 +28,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
   templateUrl: './cw-detector-item.component.html',
   styles: [':host { display: contents; }'],
 })
-export class CwDetectorItemComponent implements OnInit, OnDestroy {
+export class CwDetectorItemComponent {
   /** Card look (Settings) or flat look (wizard step) */
   @Input() mode: 'card' | 'embedded' = 'card';
   /** Wizard only: hide the on/off tick and always show the tuning fields (the wizard never switches the detector on by itself) */
@@ -39,15 +40,10 @@ export class CwDetectorItemComponent implements OnInit, OnDestroy {
   readonly scope = inject(SETTINGS_SCOPE);
   readonly devices = inject(AudioDeviceService);
   readonly cwInput = inject(CwInputService);
+  private readonly confirm = inject(ConfirmService);
 
   /** Current values from the scope */
   readonly s = this.scope.value;
-
-  cwNoiseFloor = 0;
-  cwSignalPeak = 0;
-  cwThreshold = 0;
-
-  private subs: Subscription[] = [];
 
   /** The CW input and the pilot-tone mic key must not share one mic device */
   readonly cwInputConflict = computed<string | null>(() => {
@@ -59,18 +55,9 @@ export class CwDetectorItemComponent implements OnInit, OnDestroy {
       : null;
   });
 
-  ngOnInit(): void {
-    this.subs.push(
-      this.cwInput.level$.subscribe((lvl: CwLevelEvent) => {
-        this.cwNoiseFloor = lvl.noiseFloor;
-        this.cwSignalPeak = lvl.signalPeak;
-        this.cwThreshold = lvl.threshold;
-      }),
-    );
-  }
-
-  ngOnDestroy(): void {
-    this.subs.forEach(sub => sub.unsubscribe());
+  /** One-line detector state, the same wording as the scope's status line */
+  statusText(st: CwStatus): string {
+    return cwStatusText(st);
   }
 
   /** Handle a string or numeric setting change */
@@ -81,22 +68,38 @@ export class CwDetectorItemComponent implements OnInit, OnDestroy {
     this.scope.update({ [key]: value } as Partial<AppSettings>);
   }
 
-  /** Master switch; the detector starts or stops only in live Settings with audio running */
+  /**
+   * Master switch; the detector starts or stops only in live Settings with
+   * audio running. Switching it on first offers to mute a sidetone that would
+   * play every received tone: near a microphone the detector would hear it.
+   */
   async onCwEnabledChange(checked: boolean): Promise<void> {
+    if (checked && this.sidetoneFollowsDetector()) {
+      const mute = await this.confirm.ask({
+        title: 'Mute the sidetone?',
+        message: 'The sidetone would play every tone the CW detector hears. If the microphone can hear the '
+          + 'speaker, the detector hears its own echo and decodes it again. Mute the sidetone? '
+          + 'You can turn it back on in Settings → Outputs → Sidetone.',
+        confirmLabel: 'Mute sidetone',
+        cancelLabel: 'Keep sidetone',
+      });
+      if (mute) this.scope.update({ sidetoneEnabled: false });
+    }
     this.scope.update({ cwInputEnabled: checked });
     if (!this.scope.isLive || !this.audioRunning) return;
     if (checked) await this.cwInput.start();
     else await this.cwInput.stop();
   }
 
-  /** Detector parameter changes (select, checkbox, number or range) */
-  onCwParamChange(key: keyof AppSettings, event: Event): void {
-    const el = event.target as HTMLInputElement;
-    let value: string | number | boolean;
-    if (el.type === 'checkbox') value = el.checked;
-    else if (el.tagName === 'SELECT' || isNaN(parseFloat(el.value))) value = el.value;
-    else value = parseFloat(el.value);
-    this.scope.update({ [key]: value } as Partial<AppSettings>);
-    if (this.scope.isLive) this.cwInput.updateParams();
+  /** The sidetone is on and plays the direction (RX or TX) the detector feeds */
+  private sidetoneFollowsDetector(): boolean {
+    const s = this.s();
+    return s.sidetoneEnabled && (s.sidetoneForward === 'both' || s.sidetoneForward === s.cwInputSource);
+  }
+
+  /** A new device or channel rewires the audio input, so a running detector restarts */
+  async onCwInputChange(key: 'cwInputDeviceId' | 'cwInputChannel', event: Event): Promise<void> {
+    this.scope.update({ [key]: (event.target as HTMLSelectElement).value } as Partial<AppSettings>);
+    if (this.scope.isLive) await this.cwInput.restart();
   }
 }
