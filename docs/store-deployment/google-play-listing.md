@@ -31,7 +31,7 @@ Screenshots must show the real app. Do not create, redraw or composite app scree
 
 Play currently requires at least two screenshots for the listing. Phone screenshots must be JPEG or 24-bit PNG without alpha, at least 320px and at most 3,840px on each side; the longer side cannot exceed twice the shorter side. For eligibility in recommendation formats, Play recommends at least four portrait screenshots at 1080×1920px or larger. Confirm the requirements shown in Play Console before upload.
 
-The approved six phone screenshots are in `store/images/play/screenshots/`; upload the ordered PNGs.
+The approved seven phone screenshots are in `store/images/play/screenshots/`; upload the ordered PNGs.
 
 | Order | File | Alt text |
 |---|---|---|
@@ -41,10 +41,11 @@ The approved six phone screenshots are in `store/images/play/screenshots/`; uplo
 | 4 | `04-setup-wizard.png` | Setup Wizard goal list for typing, keying, practice, teaching and decoding Morse. |
 | 5 | `05-copy-practice-results.png` | Copy Practice results showing two round scores and an average. |
 | 6 | `06-fullscreen-conversation.png` | Full-screen Morse conversation with colour-coded messages and prosigns. |
+| 7 | `07-cw-tone-detection.png` | Main screen with the CW tone detector locked to a 601 Hz signal and displaying the live audio waveform. |
 
-These are real captures from the installed app, cropped without stretching or compositing. All six meet Play's basic phone screenshot size and aspect-ratio limits. Four are 1080×2160 (2:1), and two are 1080×1880; the latter crop removes the lower touch-key area so it is not cut off. They do not use the exact 9:16 ratio recommended for certain recommendation placements. Six is within Play's phone maximum of eight and exceeds the listing minimum of two.
+These are real captures from the installed app, cropped without stretching or compositing. All seven meet Play's basic phone screenshot size and aspect-ratio limits. Five are 1080×2160 (2:1), and two are 1080×1880; the latter crop removes the lower touch-key area so it is not cut off. They do not use the exact 9:16 ratio recommended for certain recommendation placements. Seven is within Play's phone maximum of eight and exceeds the listing minimum of two.
 
-The owner approved these six screenshots, their order and the crops for the Play listing. The full-screen conversation contains another operator's callsign; the owner confirmed its public use is authorised. Do not expose relay channel details, secrets or notifications. Add concise alt text (140 characters or fewer) for each screenshot in Play Console.
+The owner approved the original six screenshots and added the CW tone detection capture as number seven. The full-screen conversation contains another operator's callsign; the owner confirmed its public use is authorised. Do not expose relay channel details, secrets or notifications. Add concise alt text (140 characters or fewer) for each screenshot in Play Console.
 
 ## Owner review and submission
 
