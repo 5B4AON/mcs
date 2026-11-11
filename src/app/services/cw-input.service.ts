@@ -7,6 +7,8 @@ import { Subject } from 'rxjs';
 import { isContextPaused } from './audio-context-state';
 import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
+import { addWorkletModule, loadWorkletSource, preloadWorkletModule } from './worklet-module';
+import { canRunCwDetectWorker, cwDetectWorkerSource } from './cw-detect-worker';
 
 /**
  * Represents a key state change detected from an incoming CW audio tone.
@@ -42,6 +44,8 @@ export type CwDecodeEvent =
 export interface CwStatus {
   /** search: looking for a keyed tone; locked: following one */
   state: 'search' | 'locked';
+  /** Squelch: open while decoding, closed while it waits for the rhythm of real Morse */
+  gate: 'open' | 'closed';
   /** Frequency being decoded (Hz) */
   freq: number;
   /** Measured speed */
@@ -52,9 +56,10 @@ export interface CwStatus {
   windowMs: number;
 }
 
-/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB" or "Searching 400–900 Hz…" */
+/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB", "Listening for Morse…" or "Searching 400–900 Hz…" */
 export function cwStatusText(st: CwStatus): string {
   if (st.state === 'search') return 'Searching for a CW tone (400–900 Hz)…';
+  if (st.gate === 'closed') return `Listening for Morse at ${Math.round(st.freq)} Hz…`;
   return `Locked · ${Math.round(st.freq)} Hz · ${st.wpm} WPM · ${Math.max(0, Math.round(st.snrDb))} dB`;
 }
 
@@ -116,6 +121,9 @@ export class CwScopeBuffer {
  *     audio clock (see public/cw-detect-processor.js).
  *  4. Key edges go out on keyEvent$ (sidetone, vibration); the text
  *     decisions on decode$; status and scope data for the UI.
+ * In Chromium browsers the same processor runs in a Web Worker fed by a
+ * MediaStreamTrackProcessor instead (cw-detect-worker.ts): no AudioContext,
+ * so the detector also runs when audio restarts without a click after a reload.
  *
  * The service supports per-channel selection so you can route multiple
  * signals on a stereo cable (e.g. left = receiver audio, right = unused).
@@ -124,6 +132,9 @@ export class CwScopeBuffer {
 export class CwInputService {
   private audioCtx: AudioContext | null = null;
   private workletNode: AudioWorkletNode | null = null;
+  /** The detector in a Web Worker (Chromium): no AudioContext, so no click is needed after a reload */
+  private worker: Worker | null = null;
+  private workerTrack: MediaStreamTrack | null = null;
   private stream: MediaStream | null = null;
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   private keepAliveSource: ConstantSourceNode | null = null;
@@ -161,14 +172,21 @@ export class CwInputService {
     private settings: SettingsService,
     private zone: NgZone,
     private loopDetection: LoopDetectionService,
-  ) {}
+  ) {
+    // In memory from the start, so the detector can start without the server
+    preloadWorkletModule('cw-detect-processor.js');
+  }
 
   get isStarted(): boolean {
     return this.started;
   }
 
   /**
-   * Start the CW audio input pipeline:
+   * Start the CW audio input pipeline. Where the browser can read the
+   * microphone's samples directly (Chromium: MediaStreamTrackProcessor), the
+   * detector runs in a Web Worker with no AudioContext, so it listens at once
+   * even when audio restarts by itself after a reload (browsers keep an
+   * AudioContext started without a click suspended). Otherwise:
    *  1. Create an AudioContext at 48 kHz
    *  2. Load the cw-detect-processor AudioWorklet
    *  3. Open the selected audio input device (processing disabled)
@@ -183,9 +201,6 @@ export class CwInputService {
     const s = this.settings.settings();
     if (!s.cwInputEnabled) return;
 
-    this.audioCtx = new AudioContext({ sampleRate: 48000 });
-    await this.audioCtx.audioWorklet.addModule('cw-detect-processor.js');
-
     // Request audio input with selected device, disable all processing.
     // Use { exact: false } so the browser MUST disable processing;
     // a plain `false` is only an "ideal" hint that Chrome may ignore.
@@ -199,7 +214,23 @@ export class CwInputService {
       } as any
     };
 
-    this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    if (canRunCwDetectWorker()) {
+      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+      if (await this.startWorker(this.stream, s.cwInputChannel)) {
+        this.started = true;
+        return;
+      }
+      // The worker did not get going: fall back to the AudioWorklet with the same input
+      this.audioCtx = new AudioContext({ sampleRate: 48000 });
+      await addWorkletModule(this.audioCtx, 'cw-detect-processor.js');
+    } else {
+      // The context is created first, while a Start Audio click still counts (iOS)
+      this.audioCtx = new AudioContext({ sampleRate: 48000 });
+      await addWorkletModule(this.audioCtx, 'cw-detect-processor.js');
+      this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    }
+    // Some browsers let audio run without a click while the microphone is open
+    this.audioCtx.resume().catch(() => {});
 
     let source: MediaStreamAudioSourceNode;
     try {
@@ -208,7 +239,7 @@ export class CwInputService {
       // Some browsers (iOS) ignore the requested 48 kHz and then refuse an input at another rate: retry at the device's own rate
       await this.audioCtx.close().catch(() => {});
       this.audioCtx = new AudioContext();
-      await this.audioCtx.audioWorklet.addModule('cw-detect-processor.js');
+      await addWorkletModule(this.audioCtx, 'cw-detect-processor.js');
       source = this.audioCtx.createMediaStreamSource(this.stream);
     }
 
@@ -241,6 +272,52 @@ export class CwInputService {
     this.installKeepAlive(this.audioCtx);
 
     this.started = true;
+  }
+
+  /**
+   * Run the detector in a Web Worker fed straight from the microphone track.
+   * Resolves false (and cleans up) when the browser refuses any step or no
+   * audio arrives within two seconds; the caller then uses the AudioWorklet.
+   */
+  private async startWorker(stream: MediaStream, channel: string): Promise<boolean> {
+    const track = stream.getAudioTracks()[0];
+    const src = track ? await loadWorkletSource('cw-detect-processor.js') : null;
+    if (!track || !src) return false;
+    const TrackProcessor = (globalThis as unknown as {
+      MediaStreamTrackProcessor: new (init: { track: MediaStreamTrack }) => { readable: ReadableStream };
+    }).MediaStreamTrackProcessor;
+    let url = '';
+    try {
+      url = URL.createObjectURL(new Blob([cwDetectWorkerSource(src)], { type: 'text/javascript' }));
+      // A clone, so the original track still feeds the AudioWorklet if this fails
+      const clone = track.clone();
+      this.workerTrack = clone;
+      const ready = this.zone.runOutsideAngular(() => new Promise<boolean>((resolve) => {
+        const worker = new Worker(url);
+        this.worker = worker;
+        const timer = setTimeout(() => resolve(false), 2000);
+        worker.onmessage = (e) => {
+          if (e.data?.type === '__ready') { clearTimeout(timer); resolve(true); return; }
+          this.onWorkletMessage(e.data);
+        };
+        worker.onerror = () => { clearTimeout(timer); resolve(false); };
+        const readable = new TrackProcessor({ track: clone }).readable;
+        worker.postMessage(this.workletParams());
+        worker.postMessage({ __init: true, readable, channel }, [readable as unknown as Transferable]);
+      }));
+      if (await ready) return true;
+    } catch { /* not supported after all */ } finally {
+      if (url) URL.revokeObjectURL(url);
+    }
+    this.stopWorker();
+    return false;
+  }
+
+  private stopWorker(): void {
+    this.worker?.terminate();
+    this.worker = null;
+    try { this.workerTrack?.stop(); } catch { }
+    this.workerTrack = null;
   }
 
   /** The detector tunes itself; it only gets the starting speed, used until it has measured one */
@@ -282,7 +359,7 @@ export class CwInputService {
       case 'stat':
         this.zone.run(() => {
           this.status.set({
-            state: data.state, freq: data.freq, wpm: data.wpm,
+            state: data.state, gate: data.gate === 'open' ? 'open' : 'closed', freq: data.freq, wpm: data.wpm,
             snrDb: data.snrDb, windowMs: data.windowMs,
           });
           this.level$.next({
@@ -338,6 +415,7 @@ export class CwInputService {
     // Drop a character that was still being received
     if (this.started) this.zone.run(() => this.decode$.next({ type: 'pattern', pattern: '', unitMs: 0 }));
     this.clearKeepAlive();
+    this.stopWorker();
     try { this.workletNode?.disconnect(); } catch { }
     for (const track of this.stream?.getTracks() ?? []) {
       try { track.stop(); } catch { }
@@ -370,6 +448,8 @@ export class CwInputService {
    * Uses three layers: silent ConstantSourceNode, onstatechange, and polling.
    */
   private installKeepAlive(ctx: AudioContext): void {
+    // Started without a click (autostart after a reload), the browser keeps the context suspended
+    this.paused.set(isContextPaused(ctx));
     ctx.onstatechange = () => {
       if (isContextPaused(ctx)) ctx.resume().catch(() => {});
       this.paused.set(isContextPaused(ctx));

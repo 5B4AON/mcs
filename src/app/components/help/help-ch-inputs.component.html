@@ -111,11 +111,13 @@
       rest of the band <em>and</em> switches on and off is taken as CW; a
       steady carrier or hum is ignored. It locks within a fraction of a
       second, follows a drifting tone, and moves to a new station only when
-      a clearly stronger one keeps sending.</li>
+      a clearly stronger one keeps sending. While it decodes, another
+      station a little off the frequency cannot pull it away.</li>
   <li><strong>Filter.</strong> The audio is mixed down at the locked
       frequency and passed through a narrow filter whose width follows the
-      speed (wider for fast Morse, narrower for slow Morse), so the noise is
-      kept out without blurring the dits.</li>
+      speed (wider for fast Morse, narrower for slow Morse), so the noise and
+      stations about 35 Hz or more away are kept out without blurring the
+      dits.</li>
   <li><strong>Learn the levels (auto gain).</strong> From the last three
       seconds the detector learns the noise level and the tone level and puts
       a key-down level and a lower key-up level between them. Loud or quiet,
@@ -125,6 +127,18 @@
       the dits and dahs it hears and decides dits, dahs, letter gaps and word
       gaps itself, on the audio clock, so a busy screen cannot disturb the
       timing. Extra-long word gaps (Farnsworth) are learned too.</li>
+  <li><strong>Squelch.</strong> Noise alone sometimes crosses the levels
+      too, which would print random E's and T's. So the detector holds the
+      text back until what it hears is clearly Morse: dits and dahs of one
+      speed in the right proportions (a dah is three dits), with proper
+      gaps, each a clean tone on the same pitch, at a steady speed. Then the
+      held letters appear at once, so the start of a transmission is not
+      lost. A short reply such as <em>TU</em> or <em>R</em> is enough; a
+      single short letter on its own (<em>E</em>, <em>T</em>, <em>I</em>,
+      <em>A</em>) cannot be told from noise and may be dropped. When the
+      pitch or the speed starts to wander, or the Morse stops, the squelch
+      closes again, so the noise after a transmission is not decoded. A
+      station heard in the last half minute reopens it faster.</li>
 </ol>
 
 <h3 id="s6-1-scope">The CW Scope</h3>
@@ -138,7 +152,8 @@
   <li><strong>Left:</strong> the last 2.5 seconds, newest at the right. The
       faint grey trace is everything the microphone hears; the blue area is
       the tone at the locked frequency (brighter while the key is down, with
-      a green mark underneath).</li>
+      a green mark underneath). While the squelch is still holding the text
+      back, the mark underneath is grey.</li>
   <li><strong>Lines:</strong> amber is the key-down level, dashed cyan the
       key-up level and grey the noise. They move as the detector adapts.
       The picture scales itself to the signal.</li>
@@ -146,8 +161,10 @@
       window the tone search is working on.</li>
   <li><strong>Right:</strong> the spectrum from 400 to 900 Hz, with an amber
       marker on the locked tone.</li>
-  <li><strong>Status line:</strong> <em>Searching</em>, or <em>Locked</em>
-      with the tone, the measured speed and the signal-to-noise ratio.</li>
+  <li><strong>Status line:</strong> <em>Searching</em>; <em>Listening for
+      Morse</em> when a tone is found but the squelch is still closed; or
+      <em>Locked</em> with the tone, the measured speed and the
+      signal-to-noise ratio.</li>
 </ul>
 
 <figure class="diagram-figure">
@@ -179,7 +196,16 @@
 <p>
   If the sidetone is on and plays this source, switching the detector on
   asks whether to mute the sidetone, so the detector does not hear its own
-  tone through the speaker.
+  tone through the speaker. Switching the detector off while the sidetone is
+  off asks whether to turn the sidetone back on.
+</p>
+<p>
+  When the page is reloaded or the app is opened again with audio running,
+  audio and the detector start again by themselves. In Chrome, Edge and
+  other Chromium browsers (Android included) the detector listens at once.
+  Other browsers may let it listen only after you click, tap or press a key
+  on the page; until then the status line says <em>Audio input is waiting
+  for a click</em> with a <strong>Resume audio</strong> button.
 </p>
 <h3>Name &amp; Colour</h3>
 <p>

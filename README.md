@@ -10,7 +10,7 @@ Connect a physical key or paddle, and decoded Morse code appears instantly in a 
 
 ## Features
 
-**Decode** — Decodes incoming Morse code in real time from a radio receiver's audio (or a phone held next to the speaker) via a self-tuning CW tone detector that finds the tone, speed, gain and levels by itself and shows them on a live scope. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
+**Decode** — Decodes incoming Morse code in real time from a radio receiver's audio (or a phone held next to the speaker) via a self-tuning CW tone detector that finds the tone, speed, gain and levels by itself, holds back noise until it hears real Morse, and shows it all on a live scope. Dual RX/TX calibration pools auto-calibrate independently so your sending speed and the other station's speed never interfere with each other.
 
 **Encode** — Converts typed text into perfectly timed Morse code audio. Supports "Send on Enter" (compose then send), "Live" (send as you type), and "Practice" (self-study CW trainer) modes.
 

@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.1] - 2026-11-11
+
+### Added
+
+- **Morse squelch for the CW Tone Detector** — Noise no longer prints random E's and T's or drives the speed up to 60 WPM. The detector holds the text back until it hears real Morse (dits and dahs of one speed in the right proportions, with proper gaps, each a clean tone at the locked frequency), then shows the held letters at once, so the start of a transmission is kept. A short reply such as TU or R is enough; a lone E or T may be dropped. It closes again when the Morse stops or turns into noise. The status line shows "Listening for Morse…" while it waits, and the scope's key marks are grey for the held-back part.
+
+### Fixed
+
+- **No noise decoding after a transmission** — When the station stopped and the radio turned the noise up, the detector could stay "Locked" and print random letters while its speed and pitch wandered. It now opens only when the marks share one pitch and a steady speed, and a letter whose timing drags the speed away is dropped, so the noise after a transmission stays silent.
+- **First T of a word no longer lost** — A word starting with two single-element letters (such as "TE" in TEST) lost its first letter.
+- **CW detector after a reload** — After a page reload or a browser restart the detector (and the pilot-tone mic key) did not start with audio at all, because audio started before this device's saved settings were loaded; it now starts as soon as they are. When audio restarted by itself after a page reload or a browser restart, the browser kept the detector paused until something on the page was clicked. In Chrome, Edge and other Chromium browsers (Android included) the detector now runs outside the browser's audio engine and listens straight away. In other browsers the status line says "Audio input is waiting for a click" with a **Resume audio** button, the scope says "Click or tap anywhere to start the CW detector", and any click, tap or key press resumes it. The detector's code is also kept in memory once the app has loaded, so it can be started even if the connection to the server is lost.
+- **Slower Morse after fast Morse** — After a fast station, a slower one was often ignored or garbled at first (H read as TTTT), because it was measured at the old speed. The detector now also measures each new burst at its own speed, keeps the last speed while it is only hearing noise, and keeps decoding a station through brief level dips.
+- **Audio inputs start without the server** — The CW detector and the pilot-tone mic key are kept in memory from the moment the app loads, so starting audio no longer fails when the connection to the server has gone.
+
+### Changed
+
+- **Sidetone prompt when the detector is switched off** — Switching the CW Tone Detector off while the sidetone is off now asks whether to turn the sidetone back on.
+- **Nearby stations ignored** — The detector's filter is narrower, and while it decodes, another station a little off the frequency can no longer pull it away. Stations about 35 Hz or more away are kept out, and decoding in noise and fading is more accurate.
+
 ## [2.15.0] - 2026-11-10
 
 ### Added

@@ -155,9 +155,9 @@
            [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
            [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
            [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
-        <span>{{ audioNeedsTap ? 'Audio is paused.' : audioStatusMessage }}</span>
+        <span>{{ audioNeedsTap ? (viewport.iosLayout ? 'Audio is paused.' : 'Audio input is waiting for a click.') : audioStatusMessage }}</span>
         @if (audioNeedsTap) {
-          <button class="audio-retry-stop-btn" (click)="resumeAudio()">Tap to resume audio</button>
+          <button class="audio-retry-stop-btn" (click)="resumeAudio()">{{ viewport.iosLayout ? 'Tap to resume audio' : 'Resume audio' }}</button>
         }
         @if (audioState === 'failed' && audioRunning) {
           <button class="audio-retry-stop-btn" (click)="retryStopAudio()" [disabled]="audioStarting">

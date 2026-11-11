@@ -530,11 +530,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.dropStaleModalEntries();
     document.addEventListener('pointerdown', this.outsidePressHandler, true);
-    if (this.viewport.iosLayout) {
-      this.ngZone.runOutsideAngular(() => {
-        for (const type of this.gestureEvents) document.addEventListener(type, this.gestureResumeHandler, true);
-      });
-    }
+    this.ngZone.runOutsideAngular(() => {
+      for (const type of this.gestureEvents) document.addEventListener(type, this.gestureResumeHandler, true);
+    });
     this.modalBack.host = {
       push: () => this.pushModalState('dialog'),
       pop: () => this.popModalState(),
@@ -973,20 +971,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /**
-   * iOS only: audio is running but a context is paused (autostart after a refresh,
-   * a phone call, an app switch) and the background retries have not recovered it.
+   * Audio is running but a context is paused and the background retries have not
+   * recovered it. On iOS any context (autostart after a refresh, a phone call, an
+   * app switch). Elsewhere only the inputs: after a reload audio restarts without a
+   * click, and browsers keep such a context suspended until the user interacts. The
+   * output resumes with the first key press, but the CW detector and the mic key
+   * must listen before anyone touches the page.
    */
   get audioNeedsTap(): boolean {
-    return this.viewport.iosLayout && this.audioRunning
-      && (this.audioOutput.paused() || this.audioInput.paused() || this.cwInput.paused());
+    if (!this.audioRunning) return false;
+    const inputPaused = this.audioInput.paused() || this.cwInput.paused();
+    return this.viewport.iosLayout ? inputPaused || this.audioOutput.paused() : inputPaused;
   }
 
   /**
-   * iOS only: resumes paused audio on the next touch or key press anywhere. iOS accepts
-   * resume() only inside a user gesture, so the next tap (typically the first key
-   * press) does it and no button needs to be found. The "Tap to resume audio"
-   * button calls the same method. Registered only on iOS and outside Angular's
-   * zone, so other platforms see no extra change detection.
+   * Resumes paused audio on the next touch, click or key press anywhere. Browsers
+   * accept resume() only inside a user gesture (iOS strictly), so the next tap does
+   * it and no button needs to be found. The "Tap to resume audio" button calls the
+   * same method. Registered outside Angular's zone, so it adds no change detection.
    */
   private readonly gestureResumeHandler = (): void => {
     if (this.audioNeedsTap) void this.resumeAudio();
@@ -1044,6 +1046,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       await this.audioOutput.start();
 
       await this.refreshDeviceConfig();
+
+      // After a reload the device profile loads only now (settings were defaults
+      // above), so start the inputs it enables; both calls do nothing if already running
+      stage = 'microphone input';
+      await this.audioInput.start();
+      stage = 'CW input';
+      await this.cwInput.start();
 
       this.audioRunning = true;
       this.audioState = 'running';

@@ -50,7 +50,10 @@ export class CwScopeComponent implements AfterViewInit, OnDestroy {
   /** Status line under the trace */
   statusText(): string {
     const st = this.cwInput.status();
-    return st ? cwStatusText(st) : 'Start Audio to see the CW detector.';
+    if (st) return cwStatusText(st);
+    // AudioWorklet path only (non-Chromium): after a reload the browser holds the detector until a click
+    if (this.cwInput.isStarted && this.cwInput.paused()) return 'Click or tap anywhere to start the CW detector.';
+    return 'Start Audio to see the CW detector.';
   }
 
   ngAfterViewInit(): void {
@@ -90,7 +93,7 @@ export class CwScopeComponent implements AfterViewInit, OnDestroy {
     if (!canvas || !ctx || this.width < 10 || this.height < 10) return;
     const buf = this.cwInput.scope;
     const st = this.cwInput.status();
-    const statusKey = st ? `${st.state}${st.windowMs}` : 'off';
+    const statusKey = st ? `${st.state}${st.gate}${st.windowMs}` : 'off';
     if (buf.count === this.lastCount && statusKey === this.lastStatusKey) return;
     this.lastCount = buf.count;
     this.lastStatusKey = statusKey;
@@ -136,7 +139,8 @@ export class CwScopeComponent implements AfterViewInit, OnDestroy {
           const j = (buf.count - 1 - i) % CwScopeBuffer.SIZE;
           if (buf.env[j] > env) env = buf.env[j];
           if (buf.raw[j] > raw) raw = buf.raw[j];
-          if (buf.key[j]) key = 1;
+          if (buf.key[j] === 1) key = 2;
+          else if (buf.key[j] === 2 && !key) key = 1;
         }
         // Raw sound: a faint mirrored waveform around the middle
         const rh = Math.min(1, raw / (this.scale * 2)) * plotH / 2;
@@ -144,10 +148,11 @@ export class CwScopeComponent implements AfterViewInit, OnDestroy {
         ctx.fillRect(x, top + plotH / 2 - rh, 1, rh * 2);
         // Tone envelope
         const y = yOf(env);
-        ctx.fillStyle = key ? 'rgba(80,190,255,0.85)' : 'rgba(80,150,210,0.55)';
+        // key: 0 up, 1 held back by the squelch (dim), 2 decoded (green)
+        ctx.fillStyle = key === 2 ? 'rgba(80,190,255,0.85)' : 'rgba(80,150,210,0.55)';
         ctx.fillRect(x, y, 1, base - y);
         if (key) {
-          ctx.fillStyle = '#3d3';
+          ctx.fillStyle = key === 2 ? '#3d3' : 'rgba(150,160,150,0.5)';
           ctx.fillRect(x, base + 2, 1, 3);
         }
       }

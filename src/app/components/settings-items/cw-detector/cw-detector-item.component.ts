@@ -17,7 +17,8 @@ import { SETTINGS_SCOPE } from '../settings-scope';
  *
  * CW audio tone detector: RX/TX, device, channel (left, right or both mixed),
  * name and colour. Tone, speed and levels are found by the detector itself.
- * Switching it on offers to mute a sidetone that would play along. The
+ * Switching it on offers to mute a sidetone that would play along, and
+ * switching it off offers to turn a muted sidetone back on. The
  * detector is only started, stopped or restarted in live Settings; a wizard
  * draft just holds the values.
  */
@@ -72,6 +73,7 @@ export class CwDetectorItemComponent {
    * Master switch; the detector starts or stops only in live Settings with
    * audio running. Switching it on first offers to mute a sidetone that would
    * play every received tone: near a microphone the detector would hear it.
+   * Switching it off offers to turn a muted sidetone back on.
    */
   async onCwEnabledChange(checked: boolean): Promise<void> {
     if (checked && this.sidetoneFollowsDetector()) {
@@ -84,6 +86,15 @@ export class CwDetectorItemComponent {
         cancelLabel: 'Keep sidetone',
       });
       if (mute) this.scope.update({ sidetoneEnabled: false });
+    } else if (!checked && !this.s().sidetoneEnabled) {
+      const unmute = await this.confirm.ask({
+        title: 'Turn the sidetone back on?',
+        message: 'The sidetone is off. Turn it back on now that the CW detector is off? '
+          + 'You can also change it later in Settings → Outputs → Sidetone.',
+        confirmLabel: 'Turn sidetone on',
+        cancelLabel: 'Keep it off',
+      });
+      if (unmute) this.scope.update({ sidetoneEnabled: true });
     }
     this.scope.update({ cwInputEnabled: checked });
     if (!this.scope.isLive || !this.audioRunning) return;

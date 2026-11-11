@@ -8,6 +8,7 @@ import { AudioOutputService } from './audio-output.service';
 import { isContextPaused } from './audio-context-state';
 import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
+import { addWorkletModule, preloadWorkletModule } from './worklet-module';
 
 /**
  * Represents a key state change detected by the audio worklet.
@@ -74,7 +75,10 @@ export class AudioInputService {
     private zone: NgZone,
     private audioOutput: AudioOutputService,
     private loopDetection: LoopDetectionService,
-  ) {}
+  ) {
+    // In memory from the start, so the mic key can start without the server
+    preloadWorkletModule('key-detect-processor.js');
+  }
 
   get isStarted(): boolean {
     return this.started;
@@ -96,7 +100,7 @@ export class AudioInputService {
     if (!s.micInputEnabled) return;
 
     this.audioCtx = new AudioContext({ sampleRate: 48000 });
-    await this.audioCtx.audioWorklet.addModule('key-detect-processor.js');
+    await addWorkletModule(this.audioCtx, 'key-detect-processor.js');
 
     // Request mic with selected device, disable all processing.
     // Use { exact: false } so the browser MUST disable processing;
@@ -113,6 +117,8 @@ export class AudioInputService {
     };
 
     this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+    // Some browsers let audio run without a click while the microphone is open
+    this.audioCtx.resume().catch(() => {});
 
     let source: MediaStreamAudioSourceNode;
     try {
@@ -121,7 +127,7 @@ export class AudioInputService {
       // Some browsers (iOS) ignore the requested 48 kHz and then refuse a microphone at another rate: retry at the device's own rate
       await this.audioCtx.close().catch(() => {});
       this.audioCtx = new AudioContext();
-      await this.audioCtx.audioWorklet.addModule('key-detect-processor.js');
+      await addWorkletModule(this.audioCtx, 'key-detect-processor.js');
       source = this.audioCtx.createMediaStreamSource(this.stream);
     }
 
@@ -252,6 +258,8 @@ export class AudioInputService {
       this.keepAliveSource.start();
     } catch { /* older browser fallback */ }
 
+    // Started without a click (autostart after a reload), the browser keeps the context suspended
+    this.paused.set(isContextPaused(ctx));
     ctx.onstatechange = () => {
       if (isContextPaused(ctx)) ctx.resume().catch(() => {});
       this.paused.set(isContextPaused(ctx));
