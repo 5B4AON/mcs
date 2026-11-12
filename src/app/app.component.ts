@@ -33,6 +33,9 @@ import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
 import { MorsePatternComponent } from './components/morse-pattern/morse-pattern.component';
+import { KochHelpOverlayComponent } from './components/koch-help-overlay/koch-help-overlay.component';
+import { KochHelpService } from './services/koch-help.service';
+import { isTouchDevice } from './services/settings-common';
 import { FireworksComponent, MAIN_LAUNCH_DELAY_MS } from './components/fireworks/fireworks.component';
 import { CollapseDirective } from './components/collapse.directive';
 import { SendPromptComponent } from './components/send-prompt/send-prompt.component';
@@ -73,7 +76,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, SendPromptComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -249,6 +252,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public autoFullscreen: AutoFullscreenService,
     public practice: PracticeService,
     public sendPractice: SendPracticeService,
+    public kochHelp: KochHelpService,
     private sendPracticeGate: SendPracticeGateService,
     public viewport: ViewportService,
     public installHint: InstallHintService,
@@ -385,8 +389,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const buf = this.encoder.buffer();
       const idx = this.encoder.sentIndex();
       const isPractice = this.settings.settings().encoderMode === 'practice';
-      // A replay is already on screen: it is sent but not shown again
-      const replay = this.encoder.replayMode();
       const completions = this.encoder.sendCompletions();
       const sendCompleted = completions !== this.lastSendCompletions;
       this.lastSendCompletions = completions;
@@ -401,7 +403,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           if (isPractice) {
             // Only flush remaining chars if practice is still playing
             // (not if we aborted — state would be 'idle')
-            if (this.practice.state() !== 'idle' && !replay) {
+            if (this.practice.state() !== 'idle') {
               let i = this.lastSentIdx;
               while (i < this.lastSentBuf.length) {
                 const { token, endIdx } = this.encoder.extractToken(this.lastSentBuf, i);
@@ -409,7 +411,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
                 i = endIdx;
               }
             }
-          } else if (!replay) {
+          } else {
             const es = this.settings.settings();
             const encSource = es.encoderSource;
             const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
@@ -445,9 +447,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         let i = this.lastSentIdx;
         while (i < idx) {
           const { token, endIdx } = this.encoder.extractToken(buf, i);
-          if (replay) {
-            // Already on screen
-          } else if (isPractice) {
+          if (isPractice) {
             this.practice.pushPracticeChar(token);
           } else {
             const es = this.settings.settings();
@@ -976,12 +976,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * app switch). Elsewhere only the inputs: after a reload audio restarts without a
    * click, and browsers keep such a context suspended until the user interacts. The
    * output resumes with the first key press, but the CW detector and the mic key
-   * must listen before anyone touches the page.
+   * must listen before anyone touches the page. On a touch screen a paused output
+   * is reported too once it has stayed paused for a moment (`stalled`): a phone that
+   * has been idle can take a while to wake, and a context started without a tap stays
+   * silent until one, while the button above already says audio is running.
    */
   get audioNeedsTap(): boolean {
     if (!this.audioRunning) return false;
     const inputPaused = this.audioInput.paused() || this.cwInput.paused();
-    return this.viewport.iosLayout ? inputPaused || this.audioOutput.paused() : inputPaused;
+    if (this.viewport.iosLayout) return inputPaused || this.audioOutput.paused();
+    return inputPaused || (isTouchDevice() && this.audioOutput.stalled());
+  }
+
+  /** Words for the paused-audio notice: the input and the output wait for different things. */
+  get audioNeedsTapMessage(): string {
+    if (this.viewport.iosLayout) return 'Audio is paused.';
+    return this.audioInput.paused() || this.cwInput.paused()
+      ? 'Audio input is waiting for a click.'
+      : 'Audio output is waiting for a tap.';
   }
 
   /**
@@ -993,7 +1005,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly gestureResumeHandler = (): void => {
     if (this.audioNeedsTap) void this.resumeAudio();
   };
-  private readonly gestureEvents = ['touchend', 'click', 'keydown'];
+  private readonly gestureEvents = ['touchend', 'pointerup', 'click', 'keydown'];
   async resumeAudio(): Promise<void> {
     await Promise.allSettled([
       this.audioOutput.resumeFromGesture(),
@@ -1008,10 +1020,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * Chrome remembers granted permissions so this works without a user gesture.
    */
   private async autoStartAudio(): Promise<void> {
-    await this.startAudio();
+    await this.startAudio(false);
   }
 
-  private async startAudio(): Promise<void> {
+  /**
+   * @param waitForOutput Wait (briefly) until the output is really running before reporting
+   *   "running". Not after a reload: with no gesture yet the output stays suspended, and the
+   *   paused-audio notice and the next tap deal with it.
+   */
+  private async startAudio(waitForOutput = true): Promise<void> {
     this.audioStarting = true;
     this.audioState = 'starting';
     this.audioStatusMessage = 'Starting audio...';
@@ -1044,6 +1061,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
       stage = 'audio output';
       await this.audioOutput.start();
+      if (waitForOutput) await this.audioOutput.waitUntilRunning();
 
       await this.refreshDeviceConfig();
 
@@ -1235,8 +1253,25 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.settings.settings().encoderMode === 'enter' && event.key === 'Enter') {
       event.preventDefault();
+      const hasText = textarea.value.trim().length > 0;
+      if (hasText && this.encoder.replayPending()) this.encoder.stopReplay();
+      // While a send is running, new text is queued behind it; an empty box pauses it
+      if (hasText && this.encoder.isSending()) {
+        this.appendEncoderText(textarea);
+        return;
+      }
       this.requestEncoderTx(textarea);
     }
+  }
+
+  /** Queue the input box text behind the unsent text in the encoder buffer, separated by a space, and empty the box. */
+  private appendEncoderText(textarea: HTMLTextAreaElement): void {
+    const text = textarea.value.trim();
+    if (!text) return;
+    const buffer = this.encoder.buffer();
+    this.encoder.enqueue(buffer && !/\s$/.test(buffer) ? ' ' + text : text);
+    textarea.value = '';
+    this.encoderInputHasText = false;
   }
 
   onEncoderInput(textarea: HTMLTextAreaElement): void {
@@ -1295,7 +1330,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** True when there is text to transmit: typed in the textarea or waiting (also paused) in the encoder buffer. */
   get canStartTx(): boolean {
-    return !this.encoder.isSending() && (this.encoderInputHasText || this.encoder.buffer().length > this.encoder.sentIndex());
+    return !this.encoder.isSending() && (this.encoder.replayPending()
+      || this.encoderInputHasText || this.encoder.buffer().length > this.encoder.sentIndex());
   }
 
   /** Gate encoder starts when configured destinations can transmit externally. */
@@ -1304,7 +1340,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.toggleEncoderTx(textarea);
       return;
     }
-    if (!textarea.value.trim() && this.encoder.buffer().length <= this.encoder.sentIndex()) return;
+    if (!textarea.value.trim() && !this.encoder.replayPending()
+        && this.encoder.buffer().length <= this.encoder.sentIndex()) return;
     const destinations = this.getExternalEncoderDestinations();
     if (destinations.length && !this.sameDestinations(destinations, this.confirmedDestinations)) {
       this.openExternalConfirmation('external-send', destinations);
@@ -1410,9 +1447,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleEncoderTx(textarea: HTMLTextAreaElement): void {
     if (this.encoder.isSending()) {
       this.encoder.stopTx();
+    } else if (this.encoder.replayPending()) {
+      this.encoder.startTx();
     } else {
       if (this.settings.settings().encoderMode === 'live' && textarea.value.trim()) {
         this.encoder.setBuffer(textarea.value);
+        return;
+      }
+      // A paused send continues; text typed meanwhile is queued behind it
+      if (this.settings.settings().encoderMode === 'enter' && this.encoder.buffer().length > this.encoder.sentIndex()) {
+        this.appendEncoderText(textarea);
+        this.encoder.startTx();
         return;
       }
       // In 'enter' mode, submit textarea text if there are characters to send
@@ -1556,16 +1601,29 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.mainRevealing = false;
   }
 
+  /** The lesson help button is offered in Koch practice. */
+  get kochHelpShown(): boolean {
+    return this.kochHelp.kind() !== null;
+  }
+
+  /** The help cannot start while a round plays or something else is being sent or replayed. */
+  get kochHelpDisabled(): boolean {
+    if (this.kochHelp.playing()) return false;
+    if (this.kochHelp.mode() === 'countdown' || this.encoder.isSending() || this.encoder.replayPending()) return true;
+    return this.kochHelp.kind() === 'copy' && this.practice.state() === 'playing';
+  }
+
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get mainReplayAvailable(): boolean {
     if (this.encoder.replayPending()) return true;
     if (this.sendPracticeActive) return this.sendPractice.state() === 'keying' && this.sendPractice.hintChar() !== '';
     if (!this.displayBuffers.mainOutput.hasText()) return false;
     if (this.settings.settings().encoderMode === 'practice') {
-      return this.practice.state() === 'finished' && this.practice.referenceText() !== '';
+      return this.practice.replayableText() !== '';
     }
-    return !this.encoder.isSending() && this.encoder.buffer().length <= this.encoder.sentIndex()
-      && !this.encoderInputHasText && this.displayBuffers.mainOutput.lastLine() !== null;
+    return !this.encoder.isSending()
+      && (!this.encoderInputHasText || this.encoder.buffer().length > this.encoder.sentIndex())
+      && this.displayBuffers.mainOutput.lastLine() !== null;
   }
 
   /** True while a replay is playing or paused; the button then stops it. */
@@ -1575,7 +1633,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /**
    * Replay what is on the main screen without drawing it again. In practice mode the
-   * finished sequence plays again; otherwise the last line goes out through the encoder's
+   * completed part of the sequence plays again; otherwise the last line goes through the encoder's
    * outputs, after the usual confirmation when it would key or relay externally. In both
    * cases the send button (practice button in practice) pauses and resumes it, and pressing
    * the replay button while one is playing or paused stops it.
@@ -1588,7 +1646,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     const practiceMode = this.settings.settings().encoderMode === 'practice';
     if (this.encoder.replayPending()) {
       if (practiceMode) this.practice.stopReplay();
-      else this.encoder.clearBuffer();
+      else this.encoder.stopReplay();
       return;
     }
     if (practiceMode) {

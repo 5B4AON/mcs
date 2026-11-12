@@ -1,0 +1,70 @@
+/* Fills the positioned box it sits in; the box is the size container. */
+:host {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  border-radius: inherit;
+}
+.kh {
+  position: absolute;
+  inset: 0;
+  container-type: size;
+  box-sizing: border-box;
+  /* Keeps clear of the round buttons at the right edge */
+  padding: 0 64px 0 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(12, 14, 24, 0.6);
+  user-select: none;
+  -webkit-user-select: none;
+}
+.kh-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 6cqw;
+  width: 100%;
+}
+.kh-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7cqh;
+  transition: opacity 0.15s;
+}
+.kh-cell.kh-pending {
+  opacity: 0.4;
+}
+.kh-char {
+  font-family: ui-monospace, 'Courier New', monospace;
+  font-weight: 700;
+  font-size: min(42cqh, calc(60cqw / var(--n, 1)));
+  line-height: 0.9;
+  color: #fff;
+  /* Black outline so the letter reads on any text behind it */
+  -webkit-text-stroke: 0.07em #000;
+  paint-order: stroke fill;
+  text-shadow: 0 1px 4px #000;
+}
+.kh-symbols {
+  display: block;
+  width: min(calc(70cqw / var(--n, 1)), calc(9cqh * var(--w, 19)));
+  aspect-ratio: var(--w, 19) / 1;
+  height: auto;
+  overflow: visible;
+}
+.kh-symbols circle,
+.kh-symbols rect {
+  fill: #8fd3ff;
+  stroke: #000;
+  stroke-width: 0.22;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
+}
+/* The countdown number alone, a little larger than a lesson letter */
+.kh-count .kh-char {
+  font-size: 60cqh;
+}

@@ -1,0 +1,23 @@
+@if (help.visible()) {
+  <div class="kh" role="status" aria-live="polite" [attr.aria-label]="announcement">
+    <div class="kh-row" [class.kh-count]="help.mode() === 'countdown'" [style.--n]="help.cells().length">
+      @for (cell of help.cells(); track $index) {
+        <div class="kh-cell" [class.kh-pending]="cell.state === 'pending'">
+          <div class="kh-char" aria-hidden="true">{{ cell.char }}</div>
+          @if (cell.morse) {
+          <svg class="kh-symbols" [attr.viewBox]="'0 0 ' + geometry(cell).viewWidth + ' 1'"
+               [style.--w]="geometry(cell).viewWidth" aria-hidden="true" focusable="false">
+            @for (el of geometry(cell).elements; track $index) {
+              @if (el.kind === 'dot') {
+                <circle [attr.cx]="el.x + 0.5" cy="0.5" r="0.5"/>
+              } @else {
+                <rect [attr.x]="el.x" y="0" [attr.width]="el.width" height="1" rx="0.5"/>
+              }
+            }
+          </svg>
+          }
+        </div>
+      }
+    </div>
+  </div>
+}

@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.3] - 2026-11-12
+
+### Added
+
+- **Koch lesson help** — In Koch practice (Copy and Send, main screen and full screen) a round **?** button above the replay button plays the characters the lesson introduces (K and M in lesson 1, one new character after that) and shows each with its dots and dashes in a see-through panel over the output area. The sound stays on this device. The first Start of each lesson in a session plays it by itself; your next Start shows a 3, 2, 1 countdown and then the round begins. It also works while a lesson is paused.
+- **Replay a paused send** — Pausing a send or a Copy Practice round and pressing replay now plays what has already played, and the paused input stays paused until you resume it.
+- **Enter while sending** — In Send on Enter mode, Enter with new text in the input box adds it to the end of the message being sent, and Enter in an empty box pauses and resumes. In the full-screen Type mode Enter pauses and resumes too.
+
+### Fixed
+
+- **No sound for the first seconds on a phone** — After the app had been idle, the status could say audio was running while the first dots and dashes were silent. Tones now wait until the audio has really resumed, "Starting audio…" stays until the output runs, and on a touch screen "Audio output is waiting for a tap" with a **Resume audio** button appears if it stays paused.
+- **Help links** — Links in Help were dark blue on the dark background; they are now light blue, and the last line (GitHub and licence) is a little larger.
+- **Go to lesson in Send practice** — The next lesson's introduction plays first, then Start begins the round.
+
 ## [2.15.2] - 2026-11-12
 
 ### Fixed

@@ -6,6 +6,7 @@ import { Injectable, signal, computed } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { DecoderSource } from './settings-common';
 import { MorseEncoderService } from './morse-encoder.service';
+import { KochHelpService } from './koch-help.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { PracticeContentOptions, PracticeSequenceGenerator } from './practice-content';
 import { PracticeFeedback, computePracticeFeedback, practiceAccuracy } from './practice-scoring';
@@ -37,6 +38,13 @@ export class PracticeService {
 
   /** The generated reference sequence (uppercased, space-separated groups) */
   readonly referenceText = signal('');
+
+  /** The finished sequence, or the completed part of a paused sequence. */
+  readonly replayableText = computed(() => {
+    if (this.state() === 'finished') return this.referenceText();
+    if (this.state() === 'paused') return this.encoder.buffer().slice(0, this.encoder.sentIndex()).trim();
+    return '';
+  });
 
   /** Per-character feedback after a round (empty until 'finished') */
   readonly feedback = signal<PracticeFeedback[]>([]);
@@ -81,15 +89,25 @@ export class PracticeService {
 
   /** Builds the sequences and remembers recent characters and used words */
   private readonly generator = new PracticeSequenceGenerator();
+  private replayReturnState: 'paused' | 'finished' | null = null;
 
   constructor(
     private settings: SettingsService,
     private encoder: MorseEncoderService,
     private displayBuffers: DisplayBufferService,
+    private kochHelp: KochHelpService,
   ) {}
 
-  /** Generate a new sequence and start playback */
+  /**
+   * Generate a new sequence and start playback. In a Koch lesson the first start plays the new
+   * characters, and the start after that counts down first (see `KochHelpService.beforeRound`).
+   */
   start(): void {
+    if (this.kochHelp.beforeRound('copy', () => this.start())) return;
+    this.begin();
+  }
+
+  private begin(): void {
     const text = this.generateSequence();
     this.referenceText.set(text);
     this.feedback.set([]);
@@ -158,22 +176,23 @@ export class PracticeService {
     this.playSequence(text);
   }
 
-  /**
-   * Play the finished sequence again as sound only. The text on screen is not
-   * touched or drawn again; the state follows playback so the practice button
-   * pauses and resumes it like any other practice playback.
-   */
+  /** Replay the completed part of a paused or finished sequence without drawing it again. */
   replay(): void {
-    const text = this.referenceText();
-    if (!text || this.state() !== 'finished') return;
+    const state = this.state();
+    if (state !== 'paused' && state !== 'finished') return;
+    const text = this.replayableText();
+    if (!text || !this.encoder.startReplay(text)) return;
+    this.replayReturnState = state;
     this.state.set('playing');
-    this.encoder.startReplay(text);
   }
 
-  /** Stop a replay for good (not a pause) and go back to the finished state. */
+  /** Stop a replay and return to the paused or finished sequence. */
   stopReplay(): void {
-    this.encoder.clearBuffer();
-    if (this.state() === 'playing' || this.state() === 'paused') this.state.set('finished');
+    this.encoder.stopReplay();
+    if (this.replayReturnState !== null) {
+      this.state.set(this.replayReturnState);
+      this.replayReturnState = null;
+    }
   }
 
   /** Generate a new sequence and start */
@@ -181,7 +200,7 @@ export class PracticeService {
     this.start();
   }
 
-  /** Pause playback (finishes current character) */
+  /** Pause playback; an interrupted character is retried on resume. */
   pause(): void {
     if (this.state() === 'playing') {
       this.encoder.stopTx();
@@ -192,6 +211,8 @@ export class PracticeService {
   /** Resume playback from where we left off */
   resume(): void {
     if (this.state() === 'paused') {
+      // A lesson help playing over the pause gives way to the lesson
+      if (this.replayReturnState === null && this.encoder.replayMode()) this.encoder.stopReplay();
       this.state.set('playing');
       this.encoder.startTx();
     }
@@ -199,8 +220,10 @@ export class PracticeService {
 
   /** Abort current practice session */
   abort(): void {
+    this.kochHelp.cancelPending();
     this.encoder.stopTx();
     this.encoder.clearBuffer();
+    this.replayReturnState = null;
     this.state.set('idle');
     this.feedback.set([]);
     this.userInput.set('');
@@ -282,6 +305,7 @@ export class PracticeService {
     // Clear previous display + encoder state
     this.displayBuffers.clearAll();
     this.encoder.clearBuffer();
+    this.replayReturnState = null;
 
     this.state.set('playing');
 
@@ -291,6 +315,7 @@ export class PracticeService {
 
   /** Start the next playback round in the current multi-round session. */
   private startMultiRound(): void {
+    if (this.kochHelp.beforeRound('copy', () => this.startMultiRound())) return;
     this.sessionStage.set('in-progress');
     this.start();
   }
@@ -300,8 +325,14 @@ export class PracticeService {
    * (isSending transitions from true to false while in practice mode).
    */
   onEncoderFinished(): void {
-    if (this.state() === 'playing') {
-      this.state.set('finished');
+    if (this.state() !== 'playing') return;
+    if (this.encoder.replayPending()) {
+      this.state.set('paused');
+    } else if (this.replayReturnState !== null) {
+      this.state.set(this.replayReturnState);
+      this.replayReturnState = null;
+    } else {
+      this.state.set(this.encoder.sentIndex() < this.encoder.buffer().length ? 'paused' : 'finished');
     }
   }
 

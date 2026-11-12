@@ -62,6 +62,10 @@ export class AudioOutputService {
   /** True while any output context is paused (suspended, or interrupted on iOS) and has not recovered */
   readonly paused = signal(false);
 
+  /** True once the contexts have stayed paused for a moment, so a short resume after returning to the app does not count. */
+  readonly stalled = signal(false);
+  private stalledTimer: ReturnType<typeof setTimeout> | null = null;
+
   // ---- Keep-alive: prevents browser from suspending idle audio contexts ----
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   /** Inaudible ultrasonic oscillators that keep each context's audio graph active */
@@ -248,16 +252,9 @@ export class AudioOutputService {
   /** Key down */
   keyDown(source: 'rx' | 'tx' = 'tx'): void {
     if (!this.started) return;
-    const wasSuspended = this.anyContextSuspended();
-    this.ensureResumed();
     const s = this.settings.settings();
     const ramp = 0.005;
-
-    if (wasSuspended) {
-      setTimeout(() => this.applyKeyDown(s, ramp, source), 15);
-    } else {
-      this.applyKeyDown(s, ramp, source);
-    }
+    this.whenRunning(() => this.applyKeyDown(s, ramp, source));
   }
 
   private applyKeyDown(
@@ -282,15 +279,8 @@ export class AudioOutputService {
   /** Key up */
   keyUp(): void {
     if (!this.started) return;
-    const wasSuspended = this.anyContextSuspended();
-    this.ensureResumed();
     const ramp = 0.005;
-
-    if (wasSuspended) {
-      setTimeout(() => this.applyKeyUp(ramp), 15);
-    } else {
-      this.applyKeyUp(ramp);
-    }
+    this.whenRunning(() => this.applyKeyUp(ramp));
   }
 
   private applyKeyUp(ramp: number): void {
@@ -311,16 +301,17 @@ export class AudioOutputService {
   /** Timed tone for encoder — plays sidetone + opto (radio keying), filtered by forward mode */
   scheduleTone(durationMs: number, source: 'rx' | 'tx' = 'tx'): Promise<void> {
     if (!this.started) return Promise.resolve();
-    const wasSuspended = this.anyContextSuspended();
-    this.ensureResumed();
+    const begun = performance.now();
 
     const doSchedule = () => {
       const s = this.settings.settings();
       const ramp = 0.003;
+      // A tone that had to wait for the resume plays only what is left of it
+      const dur = (durationMs - (performance.now() - begun)) / 1000;
+      if (dur < 0.02) return;
       if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
         const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
         const now = ctx.currentTime;
-        const dur = durationMs / 1000;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
@@ -328,18 +319,13 @@ export class AudioOutputService {
       if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
         const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
         const now = ctx.currentTime;
-        const dur = durationMs / 1000;
         this.optoGain.gain.cancelScheduledValues(now);
         this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
         this.releaseGain(this.optoGain.gain, now + dur, ramp);
       }
     };
 
-    if (wasSuspended) {
-      setTimeout(doSchedule, 15);
-    } else {
-      doSchedule();
-    }
+    this.whenRunning(doSchedule);
     return new Promise(resolve => setTimeout(resolve, durationMs));
   }
 
@@ -352,27 +338,23 @@ export class AudioOutputService {
    */
   scheduleSidetoneOnly(durationMs: number, source: 'rx' | 'tx' = 'rx'): Promise<void> {
     if (!this.started) return Promise.resolve();
-    const wasSuspended = this.anyContextSuspended();
-    this.ensureResumed();
+    const begun = performance.now();
 
     const doSchedule = () => {
       const s = this.settings.settings();
+      const dur = (durationMs - (performance.now() - begun)) / 1000;
+      if (dur < 0.02) return;
       if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
         const ramp = 0.003;
         const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
         const now = ctx.currentTime;
-        const dur = durationMs / 1000;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
       }
     };
 
-    if (wasSuspended) {
-      setTimeout(doSchedule, 15);
-    } else {
-      doSchedule();
-    }
+    this.whenRunning(doSchedule);
     return new Promise(resolve => setTimeout(resolve, durationMs));
   }
 
@@ -524,14 +506,6 @@ export class AudioOutputService {
     }
   }
 
-  /** Check if any context is currently suspended */
-  private anyContextSuspended(): boolean {
-    for (const ctx of this.allContexts()) {
-      if (isContextPaused(ctx)) return true;
-    }
-    return false;
-  }
-
   /** Awaitable version of ensureResumed for test/diagnostic methods */
   private async ensureResumedAsync(): Promise<void> {
     for (const ctx of this.allContexts()) {
@@ -551,7 +525,48 @@ export class AudioOutputService {
   }
 
   private updatePaused(): void {
-    this.paused.set(this.allContexts().some(ctx => isContextPaused(ctx)));
+    const paused = this.allContexts().some(ctx => isContextPaused(ctx));
+    this.paused.set(paused);
+    if (!paused) {
+      if (this.stalledTimer) {
+        clearTimeout(this.stalledTimer);
+        this.stalledTimer = null;
+      }
+      this.stalled.set(false);
+    } else if (!this.stalledTimer && !this.stalled()) {
+      this.stalledTimer = setTimeout(() => {
+        this.stalledTimer = null;
+        this.stalled.set(this.allContexts().some(ctx => isContextPaused(ctx)));
+      }, 1500);
+    }
+  }
+
+  /**
+   * Wait until the output contexts are really running (or the time is up). After a long idle
+   * period a phone needs a moment to wake the audio hardware, and a context created without a
+   * user gesture stays suspended; callers use this so "running" is not shown while it is silent.
+   */
+  async waitUntilRunning(timeoutMs = 2500): Promise<void> {
+    this.ensureResumed();
+    const deadline = Date.now() + timeoutMs;
+    while (this.allContexts().some(ctx => isContextPaused(ctx)) && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 50));
+    }
+    this.updatePaused();
+  }
+
+  /**
+   * Run `fn` once every paused context is running again (at once when none is paused). Waiting for
+   * the resume, instead of a fixed delay, keeps the first tones from being scheduled on a clock that
+   * has not started yet, which would silence them.
+   */
+  private whenRunning(fn: () => void): void {
+    const paused = this.allContexts().filter((ctx): ctx is AudioContext => !!ctx && isContextPaused(ctx));
+    if (paused.length === 0) {
+      fn();
+      return;
+    }
+    void Promise.allSettled(paused.map(ctx => ctx.resume())).then(fn);
   }
 
   /** All active AudioContexts */
@@ -622,6 +637,11 @@ export class AudioOutputService {
 
   private clearKeepAlive(): void {
     this.paused.set(false);
+    this.stalled.set(false);
+    if (this.stalledTimer) {
+      clearTimeout(this.stalledTimer);
+      this.stalledTimer = null;
+    }
     if (this.keepAliveTimer) {
       clearInterval(this.keepAliveTimer);
       this.keepAliveTimer = null;

@@ -102,8 +102,8 @@
         <div class="fs-line fs-line-placeholder" aria-hidden="true">&nbsp;</div>
       }
       <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
-        [class.sending]="$first && encoder.isSending()"
-        [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
+        [class.sending]="$first && encoder.isSending() && !encoder.replayMode()"
+        [style.color]="$first && encoder.isSending() && !encoder.replayMode() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
         [innerHTML]="formatPendingText(char)"></span>}<span class="cursor type-cursor" aria-hidden="true"></span></span>
       <!-- Type mode also shows the symbols as they sound (typed, received and keyed), in a row of their own that keeps its height -->
       <div class="fs-pattern-row">@if (decoder.rxCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().rxForeground"><app-morse-pattern [pattern]="decoder.rxCurrentPattern()" /></span>}@if (decoder.txCurrentPattern()) {<span class="cursor" [style.color]="settings.modalDisplay().txForeground"><app-morse-pattern [pattern]="decoder.txCurrentPattern()" /></span>}@for (playing of playingPatterns; track $index) {<span class="cursor" [style.color]="playing.color || (playing.source === 'rx' ? settings.modalDisplay().rxForeground : settings.modalDisplay().txForeground)"><app-morse-pattern [pattern]="playing.pattern" /></span>}</div>
@@ -113,8 +113,8 @@
           <div class="fs-line fs-line-placeholder" aria-hidden="true">&nbsp;</div>
         }
         <span class="fs-encoder-inline">@for (char of encoderPendingChars(); track $index) {<span
-          [class.sending]="$first && encoder.isSending()"
-          [style.color]="$first && encoder.isSending() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
+          [class.sending]="$first && encoder.isSending() && !encoder.replayMode()"
+          [style.color]="$first && encoder.isSending() && !encoder.replayMode() ? settings.modalDisplay().sendingForeground : settings.modalDisplay().bufferForeground"
           [innerHTML]="formatPendingText(char)"></span>}</span>
       }
       @if (!conversationLines.length && !decoder.rxCurrentPattern() && !decoder.txCurrentPattern() && !encoderPendingChars().length) {
@@ -127,12 +127,34 @@
   }
 </div>
 
+@if (kochHelpShown) {
+  <app-koch-help-overlay [style.top.px]="overlayTop" />
+}
 @if (celebrating) {
   <app-fireworks />
 } @else if (showEmojiActive) {
   <app-fireworks [launchDelayMs]="0" />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
+  @if (kochHelpShown) {
+    <button class="fs-float-btn fs-float-ghost" [class.playing]="kochHelp.playing()"
+            [disabled]="kochHelpDisabled"
+            (mousedown)="$event.preventDefault()"
+            (click)="onKochHelp()"
+            [title]="kochHelp.playing() ? 'Stop the lesson help' : 'Hear and see this lesson\'s new characters'"
+            [attr.aria-label]="kochHelp.playing() ? 'Stop the lesson help' : 'Hear and see this lesson\'s new characters'">
+      @if (kochHelp.playing()) {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      } @else {
+        <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      }
+    </button>
+  }
   @if (blurMode) {
     <button class="fs-float-btn fs-float-ghost" [class.playing]="replayStops"
             [disabled]="!replayAvailable"
@@ -199,13 +221,16 @@
     </button>
   } @else if (practiceView) {
     <button class="fs-float-btn fs-float-play" (click)="practiceAction()"
-            [attr.aria-label]="practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
+            [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)"
+            [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
     </button>
   } @else if (inputMode === 'type') {
     <button class="fs-float-btn" [class.fs-float-tx-active]="encoder.isSending()"
-            [class.fs-float-tx-ready]="!encoder.isSending() && encoderPendingChars().length > 0"
-            [disabled]="!encoder.isSending() && !hasTextToTransmit" (click)="toggleTx()" [attr.aria-label]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+            [class.fs-float-tx-ready]="!encoder.isSending() && hasTextToTransmit"
+            [disabled]="!encoder.isSending() && !hasTextToTransmit" (click)="toggleTx()"
+            [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')"
+            [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
     </button>
   }

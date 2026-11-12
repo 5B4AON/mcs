@@ -5,6 +5,7 @@
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { MorseEncoderService } from './morse-encoder.service';
+import { KochHelpService } from './koch-help.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { PracticeContentOptions, PracticeSequenceGenerator } from './practice-content';
@@ -175,6 +176,7 @@ export class SendPracticeService {
     private encoder: MorseEncoderService,
     private decoder: MorseDecoderService,
     private displayBuffers: DisplayBufferService,
+    private kochHelp: KochHelpService,
   ) {
     // Collect the keying of the picked keys while a prompt waits to be keyed
     effect(() => {
@@ -252,8 +254,16 @@ export class SendPracticeService {
     }
   }
 
-  /** Generate a new prompt and wait for the keying. */
+  /**
+   * Generate a new prompt and wait for the keying. In a Koch lesson the first start plays the new
+   * characters, and the start after that counts down first (see `KochHelpService.beforeRound`).
+   */
   start(): void {
+    if (this.kochHelp.beforeRound('send', () => this.start())) return;
+    this.begin();
+  }
+
+  private begin(): void {
     this.stopPrompt();
     this.clearGrace();
     this.referenceText.set(this.generator.generate(this.contentOptions()));
@@ -281,11 +291,12 @@ export class SendPracticeService {
 
   /** Stop the prompt sound. */
   stopPrompt(): void {
-    if (this.encoder.replayPending()) this.encoder.clearBuffer();
+    if (this.encoder.replayPending()) this.encoder.stopReplay();
   }
 
   /** Abort the round or session without a result. */
   abort(): void {
+    this.kochHelp.cancelPending();
     this.stopPrompt();
     this.clearGrace();
     this.state.set('idle');
@@ -317,8 +328,13 @@ export class SendPracticeService {
     this.abort();
     this.referenceText.set('');
     this.displayBuffers.clearAll();
-    if (this.isMultiRound()) this.startRound();
-    else this.start();
+    if (this.isMultiRound()) {
+      // If the lesson help takes over, the briefing waits for the next Start
+      this.sessionStage.set('briefing');
+      this.startRound();
+    } else {
+      this.start();
+    }
   }
 
   /** True once after `goToKochLesson` changed the lesson: the screen must not be cleared for it. */
@@ -329,6 +345,7 @@ export class SendPracticeService {
   }
 
   private startRound(): void {
+    if (this.kochHelp.beforeRound('send', () => this.startRound())) return;
     this.sessionStage.set('in-progress');
     this.start();
   }

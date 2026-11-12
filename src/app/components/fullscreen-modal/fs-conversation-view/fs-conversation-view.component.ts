@@ -15,6 +15,8 @@ import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
 import { SendPracticeService } from '../../../services/send-practice.service';
+import { KochHelpService } from '../../../services/koch-help.service';
+import { KochHelpOverlayComponent } from '../../koch-help-overlay/koch-help-overlay.component';
 import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
@@ -40,7 +42,7 @@ import * as sendPracticeUi from '../../settings-items/send-practice/send-practic
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent],
+  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -141,8 +143,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Pending encoder characters shown inline with the conversation. */
   readonly encoderPendingChars = computed(() => {
     const buffer = this.encoder.buffer();
-    // A replay is already on screen as sent text, so it is not drawn again as pending text
-    if (this.settings.settings().encoderMode === 'practice' || this.encoder.replayMode()) return [];
+    if (this.settings.settings().encoderMode === 'practice') return [];
     return buffer.slice(this.encoder.sentIndex()).split('');
   });
 
@@ -170,6 +171,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     private mouseKeyer: MouseKeyerService,
     public practice: PracticeService,
     public sendPractice: SendPracticeService,
+    public kochHelp: KochHelpService,
     private sanitizer: DomSanitizer,
   ) {
     // The reveal button is disabled without text, so a hold cannot end by itself when the text goes
@@ -209,13 +211,36 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return this.displayBuffers.fullscreenConversation.hasText();
   }
 
+  /** The lesson help button is offered where the Koch practice is on screen (Copy in Type mode, Send in Key mode). */
+  get kochHelpShown(): boolean {
+    const kind = this.kochHelp.kind();
+    return (kind === 'copy' && this.practiceView) || (kind === 'send' && this.sendPracticeView);
+  }
+
+  /** The help cannot start while a round plays or something else is being sent or replayed. */
+  get kochHelpDisabled(): boolean {
+    if (this.kochHelp.playing()) return false;
+    if (this.kochHelp.mode() === 'countdown' || this.encoder.isSending() || this.encoder.replayPending()) return true;
+    return this.kochHelp.kind() === 'copy' && this.practice.state() === 'playing';
+  }
+
+  /** Where the conversation starts inside the full-screen body, so the help overlay leaves the Send prompt above it uncovered. */
+  get overlayTop(): number {
+    return this.conversationAreaRef?.nativeElement.offsetTop ?? 0;
+  }
+
+  /** Play the lesson's new characters, or stop them. */
+  onKochHelp(): void {
+    this.kochHelp.toggle();
+    this.requestTypeInputFocus();
+  }
+
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get replayAvailable(): boolean {
     if (this.encoder.replayPending()) return true;
     if (!this.hasText) return false;
-    if (this.isPractice) return this.practice.state() === 'finished' && this.practice.referenceText() !== '';
-    return !this.encoder.isSending() && this.encoder.buffer().length <= this.encoder.sentIndex()
-      && this.displayBuffers.fullscreenConversation.lastLine() !== null;
+    if (this.isPractice) return this.practice.replayableText() !== '';
+    return !this.encoder.isSending() && this.displayBuffers.fullscreenConversation.lastLine() !== null;
   }
 
   /** True while a replay is playing or paused; the button then stops it. */
@@ -224,15 +249,15 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   }
 
   /**
-   * Replay what is on screen without drawing it again. In practice the finished sequence plays
-   * again; otherwise the last line is sent through the encoder's outputs, after the app's
+   * Replay what is on screen without drawing it again. In practice the completed part of the
+   * sequence plays again; otherwise the last line is sent through the encoder's outputs, after the app's
    * confirmation when they are external. The practice button (TX button in Type mode) pauses and
    * resumes it, and pressing the replay button while one is playing or paused stops it.
    */
   onReplay(): void {
     if (this.encoder.replayPending()) {
       if (this.isPractice) this.practice.stopReplay();
-      else this.encoder.clearBuffer();
+      else this.encoder.stopReplay();
     } else if (this.isPractice) {
       this.practice.replay();
     } else {
@@ -333,7 +358,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** True when the encoder holds unsent text, including a replay that is paused. */
   get hasTextToTransmit(): boolean {
-    return this.encoder.buffer().slice(this.encoder.sentIndex()).trim().length > 0;
+    return this.encoder.replayPending() || this.encoder.buffer().slice(this.encoder.sentIndex()).trim().length > 0;
   }
 
   /** Start or stop the current encoder transmission. */
@@ -387,7 +412,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     } else if (!isPractice) {
       if (inputEvent.inputType.startsWith('delete')) {
         const buffer = this.encoder.buffer();
-        const minimum = this.encoder.isSending() ? this.encoder.sentIndex() + 1 : this.encoder.sentIndex();
+        const minimum = this.encoder.isSending() && !this.encoder.replayMode()
+          ? this.encoder.sentIndex() + 1 : this.encoder.sentIndex();
         if (buffer.length > minimum) this.encoder.setBuffer(buffer.slice(0, -1));
       } else if (inputEvent.data) {
         for (const char of inputEvent.data) {
@@ -406,7 +432,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     if (event.key !== 'Enter') return;
     event.preventDefault();
     if (this.settings.settings().encoderMode === 'practice') this.practiceAction();
-    else if (this.settings.settings().encoderMode === 'enter') this.encoder.startTx();
+    else if (this.settings.settings().encoderMode === 'enter') this.encoder.toggleTx();
   }
 
   /** Return typing focus after an action button has taken it. */

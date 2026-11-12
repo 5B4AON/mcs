@@ -155,7 +155,7 @@
            [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
            [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
            [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
-        <span>{{ audioNeedsTap ? (viewport.iosLayout ? 'Audio is paused.' : 'Audio input is waiting for a click.') : audioStatusMessage }}</span>
+        <span>{{ audioNeedsTap ? audioNeedsTapMessage : audioStatusMessage }}</span>
         @if (audioNeedsTap) {
           <button class="audio-retry-stop-btn" (click)="resumeAudio()">{{ viewport.iosLayout ? 'Tap to resume audio' : 'Resume audio' }}</button>
         }
@@ -218,6 +218,27 @@
              [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}</div>
       @if (celebrating) {
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
+      }
+      <app-koch-help-overlay />
+      @if (kochHelpShown) {
+        <button class="blur-reveal-btn-main blur-help-btn-main" [class.playing]="kochHelp.playing()"
+                [class.help-alone]="!mainBlurMode && !sendPracticeActive"
+                [disabled]="kochHelpDisabled"
+                (mousedown)="$event.preventDefault()"
+                (click)="kochHelp.toggle()"
+                [title]="kochHelp.playing() ? 'Stop the lesson help' : 'Hear and see this lesson\'s new characters'"
+                [attr.aria-label]="kochHelp.playing() ? 'Stop the lesson help' : 'Hear and see this lesson\'s new characters'">
+          @if (kochHelp.playing()) {
+            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          } @else {
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+          }
+        </button>
       }
       @if (mainBlurMode || sendPracticeActive) {
         <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"
@@ -393,16 +414,23 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         } @else if (practice.state() === 'playing') {
-          <button #practiceActionButton class="tx-icon-btn practice-pause" (click)="practicePause()" title="Pause" aria-label="Pause">
+          <button #practiceActionButton class="tx-icon-btn practice-pause" (click)="practicePause()"
+                  [title]="encoder.replayPending() ? 'Pause replay' : 'Pause'"
+                  [attr.aria-label]="encoder.replayPending() ? 'Pause replay' : 'Pause'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
         } @else if (practice.state() === 'paused') {
-          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceResume()" title="Resume" aria-label="Resume">
+          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceResume()"
+                  [title]="encoder.replayPending() ? 'Resume replay' : 'Resume'"
+                  [attr.aria-label]="encoder.replayPending() ? 'Resume replay' : 'Resume'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
           </button>
         }
       } @else {
-        <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="canStartTx" [disabled]="!encoder.isSending() && !canStartTx" (click)="requestEncoderTx(encoderInput)" [title]="encoder.isSending() ? 'Stop transmitting' : 'Start transmitting'">
+        <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="canStartTx"
+                [disabled]="!encoder.isSending() && !canStartTx" (click)="requestEncoderTx(encoderInput)"
+                [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')"
+                [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
         </button>
       }

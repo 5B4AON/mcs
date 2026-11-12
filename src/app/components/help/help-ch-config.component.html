@@ -250,8 +250,8 @@
 </p>
 <ul>
   <li><strong>What is replayed</strong> &mdash; the last line on screen (the
-      most recent run of RX or TX text). In Copy Practice it is the sequence
-      that just finished.</li>
+      most recent run of RX or TX text). In Copy Practice it is the part of
+      the current sequence that has played.</li>
   <li><strong>Silent on screen</strong> &mdash; the replay is not added to the
       text again and Lens does not change, so the blurred text stays exactly
       as it was.</li>
@@ -261,17 +261,22 @@
       and vibration. When it would key or relay externally, the usual
       <em>Confirm external send</em> dialog appears first (in Copy Practice the
       practice pipeline setting decides, as for normal practice).</li>
-  <li><strong>Pause and resume</strong> &mdash; use the send button. In Type
-      mode of full screen it is the transmit button; in Copy Practice it is the
-      practice Pause / Resume button. A character that was cut short plays
-      again in full when you resume.</li>
+  <li><strong>Replay a paused send</strong> &mdash; pause the send or Copy
+      Practice round to replay what has already played. The unfinished input
+      stays paused until the replay finishes or is stopped; then use the send
+      or practice button to continue it.</li>
+  <li><strong>Pause and resume the replay</strong> &mdash; use the send button.
+      In Type mode of full screen it is the transmit button; in Copy Practice
+      it is the practice Pause / Resume button. This controls the replay, not
+      the paused input. A character cut short plays again in full on resume.</li>
   <li><strong>Stop</strong> &mdash; while a replay plays or is paused the
       replay button turns into a stop square; press it to end the replay.
       <strong>Clear &rarr; Input area</strong> stops it too.</li>
   <li><strong>When it is unavailable</strong> &mdash; the replay and eye
       buttons are disabled while there is no text on screen. Replay is also
-      disabled while something else is being sent, while the input area holds
-      unsent text, and in Copy Practice until the sequence has finished.</li>
+      disabled while something else is being sent, and in Copy Practice before
+      the first character has played. On the main screen, replay also waits
+      when the input area holds a new draft and no send is paused.</li>
 </ul>
 
 <!-- 8.5 Farnsworth / Wordsworth Timing -->

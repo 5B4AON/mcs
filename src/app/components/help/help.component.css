@@ -143,6 +143,23 @@
   color: #e8e8e8;
 }
 
+/* Links (web addresses and § cross-references) in the light blue of the help headings */
+::ng-deep .help-chapter a {
+  color: #66ccff;
+  text-decoration: underline;
+}
+::ng-deep .help-chapter a:visited {
+  color: #b9a3ff;
+}
+::ng-deep .help-chapter a:hover {
+  color: #b8deff;
+}
+::ng-deep .help-chapter a:focus-visible {
+  outline: 2px solid #66ccff;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 ::ng-deep .help-chapter em {
   color: #88bbdd;
   font-style: italic;
@@ -285,7 +302,7 @@
 /* ---- About footer ---- */
 ::ng-deep .about-footer {
   margin-top: 1rem;
-  font-size: .85rem;
+  font-size: 1rem;
   color: #889;
 }
 
