@@ -10,7 +10,7 @@
  * two characters.
  *
  * PIPELINE (per input sample, carrying state from window to window):
- *  1. DC blocker; the last 0.6 s of audio is kept in a ring buffer.
+ *  1. DC blocker; the last 5 s of audio is kept in a ring buffer.
  *  2. Tone search: every ~21 ms a Hann-windowed Goertzel bank (400–900 Hz,
  *     10 Hz steps) measures each frequency. Each bin's power is averaged and
  *     compared to the median of all bins (the noise), and its on/off
@@ -18,7 +18,7 @@
  *  3. Lock: the same peak must win several blocks; the frequency is refined
  *     between bins, then followed slowly. After 5 s without the tone the
  *     detector searches again; a much stronger tone elsewhere takes over.
- *     When it locks, the buffered audio is run through the detector again,
+ *     When it locks, the last 0.6 s is run through the detector again,
  *     so the characters heard while it was still searching are not lost.
  *  4. Envelope: the audio is mixed down with a sine/cosine at the locked
  *     frequency and low-pass filtered (4th-order Butterworth). The filter
@@ -48,9 +48,9 @@
  *     each mark a steady tone at the locked frequency (phase coherence over
  *     the mark, little energy outside the filter, all on the same pitch
  *     within a few Hz, at a speed that is not pinned at the 50 WPM limit;
- *     at least three marks). Then the held marks are
- *     split again with the fitted speed and released, so the first letters
- *     are kept (a short burst such as TU or R decodes; a lone E cannot be
+ *     at least three marks). Then the held marks are revisited with the fitted
+ *     speed and levels, split and released, so the first letters are kept
+ *     (a short burst such as TU or R decodes; a lone E cannot be
  *     told from noise and is dropped). While open, marks that do not fit
  *     (too short, much weaker than the station, or no tone) are ignored, a
  *     character with a mark that drags the speed away from the station's is
@@ -104,6 +104,8 @@ const SQ_UNIT_DEV = Math.log(1.33); // a mark that drags the speed this far from
 const SQ_DOUBT = 0.8;     // while open, letters are held back while the fit score is under this
 const SQ_WEAK_OPEN = 0.5; // a stretch this much weaker than the last station heard...
 const SQ_WEAK_M = 6;      // ...needs this many marks to open (noise after a station ends is weak)
+const LOCK_REPLAY_MS = 600;
+const OPEN_REPLAY_MS = 5000;
 const LV_LIN = new Float64Array(LV_BINS);
 for (let b = 0; b < LV_BINS; b++) LV_LIN[b] = Math.pow(10, ((b + 0.5) / 2 - 120) / 20);
 
@@ -129,9 +131,10 @@ class Biquad {
   }
 }
 
-class CwDetectProcessor extends AudioWorkletProcessor {
-  constructor() {
-    super();
+class CwDetector {
+  constructor(port, recovering = false) {
+    this.port = port;
+    this.recovering = recovering;
     this.sr = sampleRate;
 
     // Settings
@@ -139,8 +142,9 @@ class CwDetectProcessor extends AudioWorkletProcessor {
 
     // DC blocker and the replay ring
     this.dcX = 0; this.dcY = 0;
-    this.ring = new Float32Array(Math.round(this.sr * 0.6));
+    this.ring = new Float32Array(recovering ? 0 : Math.round(this.sr * OPEN_REPLAY_MS / 1000));
     this.ringPos = 0; this.ringFill = 0;
+    this.ringEndIdx = 0;
     this.sampleIdx = -1;
 
     // Tone search
@@ -217,6 +221,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
     this.keyPosted = false;
     this.trustUnit = this.unitMs; this.trustMarks = []; this.trustGaps = [];
     this.trustMs = -1e9; this.trustFreq = 0;
+    this.recoveryAfterMs = -1e9;
     // Typical strength of the station's marks above the noise (0 = not known yet)
     this.ampRef = 0; this.trustAmp = 0;
 
@@ -254,6 +259,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
       ring[this.ringPos] = y;
       this.ringPos = this.ringPos + 1 === ringLen ? 0 : this.ringPos + 1;
       if (this.ringFill < ringLen) this.ringFill++;
+      this.ringEndIdx = this.sampleIdx + 1;
 
       this._demod(y, this.sampleIdx);
       this.sampleIdx++;
@@ -433,9 +439,10 @@ class CwDetectProcessor extends AudioWorkletProcessor {
   }
 
   _replayRing() {
-    const ring = this.ring, len = ring.length, fill = this.ringFill;
+    const ring = this.ring, len = ring.length;
+    const fill = Math.min(this.ringFill, Math.round(this.sr * LOCK_REPLAY_MS / 1000));
     let pos = (this.ringPos - fill + len) % len;
-    const firstIdx = this.sampleIdx - fill;
+    const firstIdx = this.ringEndIdx - fill;
     for (let k = 0; k < fill; k++) {
       this._demod(ring[pos], firstIdx + k);
       pos = pos + 1 === len ? 0 : pos + 1;
@@ -511,7 +518,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
     const U = this.unitMs;
     this.nowMs = ms;
 
-    if (++this.lvCount >= (this.levelOk ? 20 : 5)) {
+    if (!this.recovering && ++this.lvCount >= (this.levelOk ? 20 : 5)) {
       this.lvCount = 0;
       this._levelsFromHist();
       if (this.levelOk) { this.goodMu = this.mu; this.goodSig = this.sig; this.goodSdev = this.sdev; this.goodMs = ms; }
@@ -580,7 +587,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
       if (this.gateOpen) {
         // Hang time: a long silence ends the transmission; the station stays trusted for a while
         if (g >= Math.max(1500, 3 * this.wordGapMs)) this._closeGate(ms, true);
-      } else if (this.run.length && g >= Math.max(1200, 2 * this.wordGapMs)) {
+      } else if (!this.recovering && this.run.length && g >= Math.max(1200, 2 * this.wordGapMs)) {
         this._decideRun(ms);
       }
     }
@@ -650,7 +657,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
       this._updateWordGap();
     }
     // Follow the station's pitch from its own marks (other stations never move it)
-    if (qual.score >= SQ_Q_STRONG) this._setFreq(this.freq + Math.max(-4, Math.min(4, 0.25 * qual.offHz)));
+    if (!this.recovering && qual.score >= SQ_Q_STRONG) this._setFreq(this.freq + Math.max(-4, Math.min(4, 0.25 * qual.offHz)));
     if (this.gateOpen) {
       const U = this.unitMs;
       const cls = this._markClass(m, U);
@@ -669,7 +676,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
         this.port.postMessage({ type: 'pattern', pattern: this._pattern(), unitMs: this.unitMs });
         if (this.goodEma >= 0.8) this._saveTrust(t);
       }
-    } else {
+    } else if (!this.recovering) {
       this._tryOpen(t);
     }
   }
@@ -937,11 +944,84 @@ class CwDetectProcessor extends AudioWorkletProcessor {
   }
 
   /**
+   * Revisit the opening at the now-known pitch, speed and levels. Only use it
+   * if every mark that opened the gate is still present (the first may have
+   * been detected late) and the recovered opening forms a clean, fitting
+   * stretch. Never revisit audio already released.
+   */
+  _recoverOpening(st, ms) {
+    const end = Math.min(this.ringEndIdx, Math.round(this.nowMs * this.sr / 1000));
+    const start = Math.max(this.ringEndIdx - this.ringFill, Math.ceil(this.recoveryAfterMs * this.sr / 1000));
+    if (end <= start) return null;
+
+    const detector = new CwDetector({ postMessage() {} }, true);
+    detector.state = 'locked';
+    detector.unitMs = this.unitMs;
+    detector._setFreq(this.freq);
+    detector._updateFilter(true);
+    detector.lvAdd = false;
+    detector.levelOk = true;
+    detector.mu = this.curMu;
+    detector.sig = this.curSig;
+    detector.sdev = this.levelOk ? this.sdev : this.goodSdev;
+    detector.pk = this.pk;
+    detector.replaying = true;
+    const len = this.ring.length;
+    let pos = (this.ringPos - (this.ringEndIdx - start) + len) % len;
+    for (let idx = start; idx < end; idx++) {
+      detector._demod(this.ring[pos], idx);
+      pos = pos + 1 === len ? 0 : pos + 1;
+    }
+    // The live mark that opened the gate has just ended; the replay stops on its edge
+    if (detector.keyDown) detector._endMark(detector.pendUp >= 0 ? detector.pendUp : detector.nowMs);
+
+    // A mark already sounding at the beginning of the buffer may be incomplete.
+    const safeStart = start * 1000 / this.sr + Math.max(40, this.unitMs);
+    const run = detector.run;
+    let first = run.findIndex((e) => e.k === 'm' && e.t0 >= safeStart);
+    if (first < 0) return null;
+    // Start after the last mark that is off pitch, unclean or weak: a noise blip
+    // shortly before the station would otherwise join (and spoil) the stretch.
+    for (let j = first; j < run.length; j++) {
+      const e = run[j];
+      if (e.k === 'm' && (Math.abs(e.o) > SQ_OFF_BAD || e.q < SQ_Q_TRUST || e.a < SQ_WEAK_OPEN * st.amp)) first = j + 1;
+    }
+    while (first < run.length && run[first].k !== 'm') first++;
+    if (first >= run.length) return null;
+    const recovered = detector._stretch(this.unitMs, first);
+    if (!this._opens(recovered, ms) || recovered.M < st.M) return null;
+    const marks = run.slice(recovered.j0).filter((e) => e.k === 'm');
+
+    const original = this.run.slice(st.j0).filter((e) => e.k === 'm');
+    const tolerance = Math.max(15, 0.4 * this.unitMs);
+    let i = 0;
+    let extendedFirst = false;
+    for (const mark of marks) {
+      const old = original[i];
+      if (!old) break;
+      const same = Math.abs(mark.t0 - old.t0) <= tolerance &&
+        Math.abs(mark.d - old.d) <= tolerance &&
+        this._markClass(mark.d, this.unitMs) === this._markClass(old.d, this.unitMs);
+      // Acquisition can catch just the tail of the first mark, even as a dit
+      // instead of a dah. Its restored end must still agree with the live edge.
+      const extended = i === 0 && mark.t0 < old.t0 - tolerance &&
+        Math.abs(mark.t0 + mark.d - old.t0 - old.d) <= tolerance;
+      if (same || extended) {
+        i++;
+        extendedFirst ||= extended;
+      }
+    }
+    return i === original.length && (recovered.M > st.M || extendedFirst)
+      ? { run: detector.run, start: recovered.j0 } : null;
+  }
+
+  /**
    * Start decoding and release the held-back marks of the fitting stretch, split
    * into letters and words again with the speed fitted now (the gaps were judged
    * against an older guess while the gate was closed).
    */
   _openGate(st, ms) {
+    const recovered = this._recoverOpening(st, ms);
     if (!this.ampRef || !this._trusted(ms)) this.ampRef = st.amp;
     this.gateOpen = true;
     this.goodEma = 1;
@@ -953,8 +1033,9 @@ class CwDetectProcessor extends AudioWorkletProcessor {
     this.wordStart = true;
     const U = this.unitMs;
     let cur = [];
-    for (let j = st.j0; j < this.run.length; j++) {
-      const e = this.run[j];
+    const run = recovered ? recovered.run : this.run;
+    for (let j = recovered ? recovered.start : st.j0; j < run.length; j++) {
+      const e = run[j];
       if (e.k === 'm') { cur.push(e.d); continue; }
       if (e.k !== 'g' || e.d < 2 * U || !cur.length) continue;
       this._postChar(cur);
@@ -981,6 +1062,7 @@ class CwDetectProcessor extends AudioWorkletProcessor {
   _closeGate(ms, keepTrust) {
     if (!this.gateOpen) return;
     this.gateOpen = false;
+    this.recoveryAfterMs = Math.max(ms, this.nowMs);
     if (keepTrust) this.trustMs = Math.max(this.trustMs, ms);
     // A normal end (long silence) shows what was held; closing on a poor fit drops it
     if (keepTrust) this._flushDoubt();
@@ -1127,6 +1209,17 @@ class CwDetectProcessor extends AudioWorkletProcessor {
         windowMs: Math.round(this.searchN * 1000 / this.sr),
       });
     }
+  }
+}
+
+class CwDetectProcessor extends AudioWorkletProcessor {
+  constructor() {
+    super();
+    this.detector = new CwDetector(this.port);
+  }
+
+  process(inputs) {
+    return this.detector.process(inputs);
   }
 }
 

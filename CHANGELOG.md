@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.2] - 2026-11-12
+
+### Fixed
+
+- **CW Tone Detector keeps the start of a transmission** — With a weak signal or background noise, the first letters of a transmission were often lost or wrong (HELLO came out as EELLO, SLO or LO). Once it recognises Morse, the detector now goes back over the last few seconds of audio using the tone, speed and levels it has just learned, and recovers the opening. It uses the recovered start only if it agrees with what was already heard. Noise is still ignored.
+
 ## [2.15.1] - 2026-11-11
 
 ### Added
