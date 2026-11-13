@@ -204,6 +204,26 @@ export function timingsFromWpm(wpm: number) {
   };
 }
 
+/** First of the private-use characters that stand for a silent pause in text sent by the encoder (e-book playback). */
+const PAUSE_TOKEN_BASE = 0xE000;
+/** The longest pause, in quarters of a word gap */
+const PAUSE_TOKEN_MAX = 40;
+
+/**
+ * A one-character token for a pause of `quarters` quarter word gaps, placed in text between characters.
+ * The encoder waits that long and plays and forwards nothing; it never appears on screen.
+ */
+export function pauseToken(quarters: number): string {
+  return String.fromCharCode(PAUSE_TOKEN_BASE + Math.min(PAUSE_TOKEN_MAX, Math.max(1, Math.round(quarters))));
+}
+
+/** The length of a pause token in quarter word gaps, or 0 when `token` is not one. */
+export function pauseQuarters(token: string): number {
+  if (token.length !== 1) return 0;
+  const n = token.charCodeAt(0) - PAUSE_TOKEN_BASE;
+  return n >= 1 && n <= PAUSE_TOKEN_MAX ? n : 0;
+}
+
 /** Farnsworth/Wordsworth settings subset needed by adjustGapTimings(). */
 export interface FarnsworthSettings {
   farnsworthEnabled: boolean;

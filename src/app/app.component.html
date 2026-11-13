@@ -225,6 +225,21 @@
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }
       <app-koch-help-overlay />
+      @if (ebookActive && ebook.loaded()) {
+        <button class="blur-reveal-btn-main" [disabled]="ebook.loading()"
+                (mousedown)="$event.preventDefault()" (click)="openBook()"
+                title="Contents: go to a page or start over" aria-label="Book contents: go to a page or start over">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="9" y1="6" x2="21" y2="6"/>
+            <line x1="9" y1="12" x2="21" y2="12"/>
+            <line x1="9" y1="18" x2="21" y2="18"/>
+            <circle cx="4.5" cy="6" r="1" fill="currentColor"/>
+            <circle cx="4.5" cy="12" r="1" fill="currentColor"/>
+            <circle cx="4.5" cy="18" r="1" fill="currentColor"/>
+          </svg>
+        </button>
+      }
       @if (kochHelpShown) {
         <button class="blur-reveal-btn-main blur-help-btn-main" [class.playing]="kochHelp.playing()"
                 [class.help-alone]="!mainBlurMode && !sendPracticeActive"
@@ -387,11 +402,14 @@
       @if (sendPracticeActive) {
         <!-- Send practice control: start, check, next -->
         <button class="tx-icon-btn" [class.tx-ready]="sendPractice.state() !== 'keying'"
-                [class.practice-results]="sendPractice.state() === 'keying'"
+                [class.practice-results]="sendPractice.state() === 'keying' && !ebookActive"
+                [class.practice-pause]="sendPractice.state() === 'keying' && ebookActive"
                 [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
                 (click)="sendPracticeAdvance()"
                 [title]="sendPractice.actionLabel()" [attr.aria-label]="sendPractice.actionLabel()">
-          @if (sendPractice.state() === 'keying') {
+          @if (sendPractice.state() === 'keying' && ebookActive) {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          } @else if (sendPractice.state() === 'keying') {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           } @else {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
@@ -487,7 +505,8 @@
                         (settingsRequested)="openSettings()"
                         (wizardRequested)="openGoals()"
                         (presetsRequested)="openGoalPresets()"
-                        (replayRequested)="requestReplay($event)"></app-fullscreen-modal>
+                        (replayRequested)="requestReplay($event)"
+                        (bookRequested)="openBook()"></app-fullscreen-modal>
 }
 
 <!-- ========== SETTINGS MODAL ========== -->
@@ -524,6 +543,10 @@
 @if (showSymbolsRef) {
   <app-symbols-ref [focusReturnFallback]="symbolsRefFocusFallback"
                    (closed)="closeSymbolsRef()"></app-symbols-ref>
+}
+
+@if (showBook) {
+  <app-book-dialog (closed)="showBook = false"></app-book-dialog>
 }
 
 <!-- ========== HELP MODAL ========== -->

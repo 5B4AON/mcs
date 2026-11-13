@@ -16,7 +16,15 @@ export interface EbookBlock {
   chapterStart?: boolean;
   /** A very long paragraph was cut here at a sentence end: the same paragraph goes on, so no paragraph pause */
   continued?: boolean;
+  /**
+   * Where the block starts in the book, in characters of reading text (bytes of the file for text and
+   * Markdown, so approximate for UTF-8 with accents). Pages and jumps are counted in these.
+   */
+  offset?: number;
 }
+
+/** About one printed page of text, in the unit of `EbookBlock.offset`; page numbers do not depend on screen or font. */
+export const EBOOK_PAGE_CHARS = 1500;
 
 /** Where the reader is: an absolute block index (stable while old blocks are dropped) and a text offset in it. */
 export interface EbookPosition {

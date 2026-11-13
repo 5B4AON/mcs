@@ -13,6 +13,7 @@ import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
 import { LensService } from '../../services/lens.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
+import { EbookService } from '../../services/ebook.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
@@ -58,6 +59,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** Emitted when the user requests Presets (opened above this modal) */
   @Output() presetsRequested = new EventEmitter<void>();
+  /** The Book button was pressed: the app opens the Book dialog above this modal */
+  @Output() bookRequested = new EventEmitter<void>();
   /** Asks the app to replay a line through the encoder (it asks for confirmation when outputs are external). */
   @Output() replayRequested = new EventEmitter<string>();
 
@@ -88,7 +91,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** Send practice in Key mode pins its prompt box above the output area. */
   get sendPromptShown(): boolean {
-    return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice';
+    return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice' && !this.ebook.active();
   }
 
   /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
@@ -114,6 +117,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private lens: LensService,
     private devices: AudioDeviceService,
     public viewport: ViewportService,
+    private ebook: EbookService,
   ) {
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {
@@ -135,7 +139,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   ngAfterViewInit(): void {
     if (this.fullscreenDialog) {
-      focusDialog(this.fullscreenDialog.nativeElement, this.inputMode === 'type' ? '.fs-type-input' : '.fs-conversation');
+      // A book needs no typing, so the on-screen keyboard must not come up
+      focusDialog(this.fullscreenDialog.nativeElement, this.inputMode === 'type' && !this.ebook.active() ? '.fs-type-input' : '.fs-conversation');
     }
   }
 

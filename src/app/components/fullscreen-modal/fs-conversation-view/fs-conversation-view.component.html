@@ -5,14 +5,20 @@
        (keydown)="onTypeKeydown($event)">
 
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" [class.lens-on]="lensView"
-     [class.key-mode]="inputMode === 'key'" [class.celebrate]="celebrating"
+     [class.key-mode]="inputMode === 'key'" [class.celebrate]="celebrating" [class.ebook-on]="ebookView"
+     [style.color]="ebookView ? settings.modalDisplay().rxForeground : null"
+     [style.--eb-played]="ebookView ? ebookColors.played : null"
+     [style.--eb-current]="ebookView ? ebookColors.current : null"
+     [style.--eb-current-bg]="ebookView ? ebookColors.currentBackground : null"
      [style.--lens-side]="lensSideInset"
      [style.--lens-bottom]="lensBottomInset"
      [attr.tabindex]="inputMode === 'key' ? 0 : -1"
      (click)="onConversationClick()"
      [class.blur-rx]="blurMode === 'rx'" [class.blur-tx]="blurMode === 'tx'" [class.blur-both]="blurMode === 'both'"
      [class.blur-revealing]="revealing" #conversationArea>
-  @if (lensView) {
+  @if (ebookView) {
+    <app-ebook-reader />
+  } @else if (lensView) {
     <app-fs-lens-view [blurMode]="blurMode" [revealing]="revealing" [inputMode]="inputMode"></app-fs-lens-view>
   } @else if (sendPracticeView && sendPractice.sessionStage() === 'briefing') {
     <section class="practice-session-summary" aria-live="polite">
@@ -190,7 +196,18 @@
       </svg>
     </button>
   }
+  @if (ebookView && ebook.loaded()) {
+    <button class="fs-float-btn fs-float-ghost" (mousedown)="$event.preventDefault()" (click)="bookRequested.emit()"
+            title="Contents: go to a page or start over" aria-label="Book contents: go to a page or start over">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <line x1="9" y1="6" x2="21" y2="6"/><line x1="9" y1="12" x2="21" y2="12"/><line x1="9" y1="18" x2="21" y2="18"/>
+        <circle cx="4.5" cy="6" r="1" fill="currentColor"/><circle cx="4.5" cy="12" r="1" fill="currentColor"/><circle cx="4.5" cy="18" r="1" fill="currentColor"/>
+      </svg>
+    </button>
+  }
   @if (sendPracticeView) {
+    @if (!ebookView) {
     <button class="fs-float-btn fs-float-ghost" [class.playing]="sendPractice.promptPlaying()"
             [disabled]="sendPractice.state() !== 'keying' || sendPractice.hintChar() === ''"
             (mousedown)="$event.preventDefault()"
@@ -210,10 +227,13 @@
         </svg>
       }
     </button>
+    }
     <button class="fs-float-btn fs-float-play" (click)="sendPracticeAction()"
             [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
             [attr.aria-label]="sendPractice.actionLabel()" [title]="sendPractice.actionLabel()">
-      @if (sendPractice.state() === 'keying') {
+      @if (sendPractice.state() === 'keying' && ebookView) {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+      } @else if (sendPractice.state() === 'keying') {
         <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       } @else {
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
@@ -223,7 +243,11 @@
     <button class="fs-float-btn fs-float-play" (click)="practiceAction()"
             [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)"
             [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
-      <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      @if (ebookView && practice.state() === 'playing') {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
+      } @else {
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+      }
     </button>
   } @else if (inputMode === 'type') {
     <button class="fs-float-btn" [class.fs-float-tx-active]="encoder.isSending()"

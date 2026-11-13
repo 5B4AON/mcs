@@ -30,6 +30,8 @@ import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { SendPracticeService } from './services/send-practice.service';
 import { EbookReaderComponent } from './components/ebook-reader/ebook-reader.component';
+import { BookDialogComponent } from './components/book-dialog/book-dialog.component';
+import { EbookService } from './services/ebook.service';
 import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
@@ -77,7 +79,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, BookDialogComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -111,6 +113,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   wizardGoal: WizardGoalId = 'type';
   /** Whether the Help modal is visible */
   showHelp = false;
+  /** The e-book's Book dialog (page, jump, start over) */
+  showBook = false;
   /** Visible control to focus if the Help trigger is hidden when Help closes */
   helpFocusFallback: HTMLElement | null = null;
   /** Help section to scroll to when opened from a contextual link */
@@ -252,6 +256,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public wakeLock: WakeLockService,
     public autoFullscreen: AutoFullscreenService,
     public practice: PracticeService,
+    public ebook: EbookService,
     public sendPractice: SendPracticeService,
     public kochHelp: KochHelpService,
     private sendPracticeGate: SendPracticeGateService,
@@ -540,6 +545,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       restore: () => this.restoreModalState(),
     };
     this.subs.push(this.helpLinks.requested$.subscribe(id => this.showHelpOnTop(id)));
+    // Resume was chosen for a book loaded in Settings: leave Settings and start reading in that practice
+    this.subs.push(this.ebook.resumed$.subscribe(kind => this.readBookNow(kind)));
     this.subs.push(this.clear.inputCleared$.subscribe(() => {
       if (this.encoderInputRef) this.encoderInputRef.nativeElement.value = '';
     }));
@@ -1513,11 +1520,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
+  /** Open the Book dialog; a Copy practice that is playing is paused first. */
+  openBook(): void {
+    if (this.practice.state() === 'playing') this.practice.pause();
+    this.showBook = true;
+  }
+
   /** An e-book is the content of the practice mode that is on: its reader takes the output area and the typing box's place. */
   get ebookActive(): boolean {
-    const s = this.settings.settings();
-    return (s.encoderMode === 'practice' && s.practiceContentMode === 'ebook')
-      || (s.encoderMode === 'send-practice' && s.sendPracticeContentMode === 'ebook');
+    return this.ebook.active();
   }
 
   get sendPracticeActive(): boolean {
@@ -1571,6 +1582,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    // A book is read as it is: the text blur setting does not apply
+    if (this.ebook.active()) return null;
     if (s.encoderMode === 'send-practice') return null;
     // Practice mode blur/typealong: blur the practice source direction
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
@@ -1822,6 +1835,30 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.activeModal) return;
     if (this.ignoringPopState) this.fullscreenAfterWizard = true;
     else this.openModal();
+  }
+
+  /**
+   * The learner chose Resume for a book loaded from a practice card: close Settings, which shows the screen
+   * it was opened from (the main screen or the full screen), and switch to that card's practice with the book.
+   * Nothing is played; Start does that.
+   */
+  private readBookNow(kind: 'copy' | 'send'): void {
+    const mode = kind === 'copy' ? 'practice' : 'send-practice';
+    if (this.settings.settings().encoderMode === 'practice' && mode !== 'practice') this.practice.reset();
+    this.settings.update(kind === 'copy'
+      ? { encoderMode: mode, practiceEnabled: true, practiceContentMode: 'ebook' }
+      : { encoderMode: mode, sendPracticeEnabled: true, sendPracticeContentMode: 'ebook' });
+    // The Resume question has just taken its own history entry off with a Back that is still on its way.
+    // Closing Settings now would send a second Back, and the one popstate flag lets only one of them pass:
+    // the other would close the full screen. So wait until the first has been handled.
+    const close = (tries: number): void => {
+      if (this.ignoringPopState && tries < 50) {
+        window.setTimeout(() => close(tries + 1), 20);
+        return;
+      }
+      this.closeSettings();
+    };
+    close(0);
   }
 
   /** Close settings modal — also clear reconnect banner if user re-enabled MIDI */

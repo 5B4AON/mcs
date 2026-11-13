@@ -23,6 +23,13 @@
 .fs-conversation.vk-open {
   padding-bottom: 0;
 }
+/* The e-book reader fills the area and scrolls the text itself (its own styles are in ebook-reader.component.css) */
+.fs-conversation.ebook-on {
+  position: relative;
+  overflow: hidden;
+  padding: 0;
+  text-shadow: none;
+}
 /* Lens fills the area and positions its own content */
 .fs-conversation.lens-on {
   position: relative;

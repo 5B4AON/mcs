@@ -20,6 +20,7 @@ export class EbookWindow {
   private iterator: AsyncIterator<EbookBlock> | null;
   private reading: Promise<void> = Promise.resolve();
   private ended = false;
+  private failure: Error | null = null;
 
   constructor(
     source: EbookBlockSource,
@@ -39,9 +40,22 @@ export class EbookWindow {
     return this.firstIndex + this.blocks.length;
   }
 
-  /** True once the source has no more blocks */
+  /** True once the source has no more blocks (or stopped for a reason: see `failed`) */
   get done(): boolean {
     return this.ended;
+  }
+
+  /** Why reading the source stopped early (a lost connection, an unreadable file), or null. */
+  get failed(): Error | null {
+    return this.failure;
+  }
+
+  /** Stop reading the source and let go of it (a web download is cancelled). */
+  dispose(): void {
+    const iterator = this.iterator;
+    this.iterator = null;
+    this.ended = true;
+    void iterator?.return?.(undefined)?.catch(() => undefined);
   }
 
   /** The block with this absolute index, if it is in the window. */
@@ -65,7 +79,16 @@ export class EbookWindow {
 
   private async fill(position: number): Promise<void> {
     while (!this.ended && this.textAfter(position) < this.ahead) {
-      const next = await this.iterator?.next();
+      let next: IteratorResult<EbookBlock> | undefined;
+      try {
+        next = await this.iterator?.next();
+      } catch (e) {
+        // The source broke off: what has been read stays, and the book ends here
+        this.failure = e instanceof Error ? e : new Error(String(e));
+        this.ended = true;
+        this.iterator = null;
+        break;
+      }
       if (!next || next.done) {
         this.ended = true;
         this.iterator = null;

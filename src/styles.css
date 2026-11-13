@@ -206,12 +206,11 @@ button.kebab-help-btn:has(.pill-icon)::after {
   gap: .5rem;
   min-width: 7.5rem;
   max-width: 240px;
-  min-height: 40px;
-  padding: .5rem 1.1rem;
+  padding: .45rem 1.1rem;
   border: none;
   border-radius: 999px;
   font: inherit;
-  font-size: .9rem;
+  font-size: .78rem;
   font-weight: 600;
   letter-spacing: .3px;
   text-align: center;
@@ -263,6 +262,7 @@ button.kebab-help-btn:has(.pill-icon)::after {
   width: fit-content;
   margin: .6rem auto 0;
 }
+/* Text pills are the height of the kebab menu pills (.kebab-help-btn): .45rem padding, .78rem text, on touch screens too */
 /* Several pills of one action group: equal width (the widest text), no wider than needed,
    side by side while the row fits and stacked when it does not (the nearest container
    query box is the row that holds the group, see .calibration-row / .serial-port-row) */
@@ -283,11 +283,6 @@ button.kebab-help-btn:has(.pill-icon)::after {
 @container (max-width: 17.5rem) {
   .pill-group {
     grid-auto-flow: row;
-  }
-}
-@media (pointer: coarse) {
-  .pill-btn {
-    min-height: 44px;
   }
 }
 

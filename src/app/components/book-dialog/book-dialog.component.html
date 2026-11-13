@@ -1,0 +1,54 @@
+<div class="bk-overlay" (appBackdropClick)="closed.emit()" [appBackClose]="backClose">
+  <div #dialog class="bk-dialog" role="dialog" aria-modal="true" tabindex="-1" aria-label="Book"
+       (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
+
+    <div class="bk-header">
+      <h3>Book</h3>
+      <button type="button" class="bk-close-btn" (click)="closed.emit()" title="Close" aria-label="Close">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+
+    <div class="bk-body">
+      @if (ebook.info(); as info) {
+        <div class="bk-title">{{ info.name }} <span>({{ info.format }}{{ info.origin ? ', ' + info.origin : '' }})</span></div>
+      }
+      <div class="bk-page" role="status">
+        Page {{ ebook.page() }} of {{ ebook.totalExact() ? '' : 'about ' }}{{ ebook.totalPages() }}
+      </div>
+
+      <label class="bk-field">
+        Go to page
+        <input type="number" inputmode="numeric" min="1" [max]="ebook.totalPages()" [value]="target()"
+               [disabled]="ebook.loading()" (input)="onNumber($event)" (keydown.enter)="go()">
+      </label>
+      <input type="range" class="bk-slider" min="1" [max]="ebook.totalPages()" [value]="target()"
+             [disabled]="ebook.loading() || ebook.totalPages() < 2" aria-label="Page" (input)="onSlider($event)">
+
+      @if (ebook.chapters().length > 1) {
+        <div class="bk-chapters-title" id="bk-chapters-label">Chapters</div>
+        <div class="bk-chapters" role="list" aria-labelledby="bk-chapters-label">
+          @for (chapter of ebook.chapters(); track $index) {
+            <button type="button" class="bk-chapter" role="listitem" [class.current]="isCurrentChapter($index)"
+                    [attr.aria-current]="isCurrentChapter($index) ? 'true' : null"
+                    [disabled]="ebook.loading()" (click)="goChapter(chapter)">{{ chapter.title }}</button>
+          }
+        </div>
+      }
+
+      @if (ebook.loading()) {
+        <div class="bk-note" role="status">Reading from there...</div>
+      }
+      @if (ebook.error()) {
+        <div class="bk-error" role="alert">{{ ebook.error() }}</div>
+      }
+    </div>
+
+    <div class="bk-actions">
+      <button type="button" class="pill-btn" [disabled]="ebook.loading()" (click)="startOver()">Start over</button>
+      <button type="button" class="pill-btn pill-primary" [disabled]="ebook.loading() || target() === ebook.page()" (click)="go()">
+        Go to page {{ target() }}
+      </button>
+    </div>
+  </div>
+</div>

@@ -23,7 +23,7 @@
   </label>
 
   @if (s().sendPracticeContentMode === 'ebook') {
-    <app-ebook-load />
+    <app-ebook-load kind="send" />
   }
 
   <!-- Koch method: the lesson sets the character pool -->
@@ -97,7 +97,8 @@
   @if (s().sendPracticeContentMode === 'ebook') {
     <div class="cw-hint">
       The next character is highlighted in the book. Key it and the highlight moves on; a wrong key leaves it where it is.
-      There is no scoring or rounds.
+      There is no scoring or rounds. Click a word to start from there, or use the Book button to jump to a page.
+      While the mouse is one of your keys, a click would key, so only the Book button jumps.
     </div>
   } @else {
   <!-- Checking -->

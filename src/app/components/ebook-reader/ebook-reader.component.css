@@ -111,6 +111,25 @@ app-ebook-reader {
   white-space: nowrap;
 }
 
+/*
+ * In the full-screen view the text takes the view's size, line height and row gap (the font size is
+ * fitted by the view), and the bottom reserve stays free for the touch keys and the round buttons.
+ */
+.fs-conversation.ebook-on app-ebook-reader {
+  bottom: var(--fs-reserve, 60px);
+}
+.fs-conversation.ebook-on .eb-scroll {
+  padding: 0 .75rem;
+  line-height: var(--fs-lh, 1.5);
+  scrollbar-color: currentColor transparent;
+}
+.fs-conversation.ebook-on .eb-block {
+  margin-bottom: max(var(--fs-gap, 0px), .6em);
+}
+.fs-conversation.ebook-on .eb-quote {
+  border-left-color: currentColor;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .eb-c {
     transition: none;

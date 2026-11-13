@@ -69,6 +69,8 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
   private drawn: unknown = null;
   private resize: ResizeObserver | null = null;
   private focusEl: HTMLElement | null = null;
+  /** The line height in pixels, measured once per size (measuring forces the page to be laid out) */
+  private lineHeight = 0;
   private firstScroll = true;
   private readonly reduceMotion = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -84,6 +86,7 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     this.zone.runOutsideAngular(() => {
       // The box may only get its size after the first drawing
       this.resize = new ResizeObserver(() => {
+        this.lineHeight = 0;
         if (this.focusEl) this.follow(this.focusEl);
       });
       this.resize.observe(this.scrollRef.nativeElement);
@@ -151,8 +154,10 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     const here = this.views.get(pos.block);
     const focus = here ? (this.setBlock(here, pos.at) ?? here.el) : undefined;
     this.status.set(this.ebook.atEnd ? 'End of the book.' : '');
+    // The line only changes when the word does, so a new character in the same word costs no measuring
+    const moved = focus !== this.focusEl;
     this.focusEl = focus ?? null;
-    if (focus) this.follow(focus);
+    if (focus && moved) this.follow(focus);
   }
 
   private build(index: number, block: EbookBlock): BlockView {
@@ -249,7 +254,8 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     const view = scroll.getBoundingClientRect();
     const target = box.top - view.top + scroll.scrollTop + box.height / 2 - scroll.clientHeight / 2;
     const distance = Math.abs(target - scroll.scrollTop);
-    const line = parseFloat(getComputedStyle(scroll).lineHeight) || 20;
+    this.lineHeight ||= parseFloat(getComputedStyle(scroll).lineHeight) || 20;
+    const line = this.lineHeight;
     if (distance < line * 0.6) return;
     const instant = this.reduceMotion || this.firstScroll || distance > scroll.clientHeight * 2;
     this.firstScroll = false;

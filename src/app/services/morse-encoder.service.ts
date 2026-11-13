@@ -5,7 +5,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
-import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
+import { MORSE_TABLE, timingsFromWpm, adjustGapTimings, pauseQuarters } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { VibrationOutputService } from './vibration-output.service';
@@ -25,6 +25,32 @@ export interface PlayingPattern {
   /** Optional colour override from the input */
   color?: string;
 }
+
+/**
+ * Local playback (Copy practice on this device only, local replays) is placed on the audio clock:
+ * the next tokens are scheduled this far ahead of the one that is sounding, so a busy page cannot
+ * stretch a gap, and the first token of a run starts after a short headroom.
+ */
+const LOCAL_LEAD_S = 0.2;
+const LOCAL_START_S = 0.02;
+/** A gap shorter than this needs no snap-to-silence event after the tone before it (see `scheduleToneAt`) */
+const SNAP_GAP_MS = 35;
+
+/** A token placed on the audio clock, waiting for its turn to start sounding. */
+interface LocalToken {
+  idx: number;
+  endIdx: number;
+  /** Audio-clock time at which it starts */
+  at: number;
+  /** Tones of its elements: start offset from `at` and length, in ms */
+  elements: { offset: number; dur: number }[];
+  /** Dots and dashes of the character, for the replay's progress */
+  morse: string;
+  source: 'rx' | 'tx';
+}
+
+/** A streamed text drops what it has sent from the front of the buffer once this much has been sent */
+const STREAM_COMPACT_AT = 600;
 
 /**
  * Morse Encoder Service — converts typed text to perfectly timed morse output.
@@ -51,6 +77,9 @@ export class MorseEncoderService {
 
   /** Index into buffer: characters up to this index have been sent */
   readonly sentIndex = signal(0);
+
+  /** Characters dropped from the front of the buffer so far by a streamed text (see `appendText`) */
+  readonly trimmed = signal(0);
 
   /** Whether TX is active */
   readonly isSending = signal(false);
@@ -101,6 +130,14 @@ export class MorseEncoderService {
   /** A replay that has not finished: playing, or paused and waiting for the TX button. */
   readonly replayPending = computed(() => this.replayMode() && this.replayIndex() < this.replayText.length);
 
+  /** Timers of the things shown or felt while a local token plays (sprite, replay progress, vibration); they never carry the timing */
+  private localTimers = new Set<ReturnType<typeof setTimeout>>();
+  private localActive = false;
+  private localKeyDown = false;
+
+  /** The buffer is fed with `appendText`, so what has been sent is dropped from its front as it goes */
+  private streaming = false;
+
   /** Currently sending (internal lock) */
   private sending = false;
   private abortController: AbortController | null = null;
@@ -126,6 +163,7 @@ export class MorseEncoderService {
 
   /** Enqueue text for sending */
   enqueue(text: string): void {
+    this.streaming = false;
     const previous = this.buffer();
     const next = previous + text.toUpperCase();
     this.resetForwardedIfTokenChanged(previous, next);
@@ -142,6 +180,8 @@ export class MorseEncoderService {
 
   /** Set entire buffer (e.g. from textarea) */
   setBuffer(text: string): void {
+    this.streaming = false;
+    this.trimmed.set(0);
     const upper = text.toUpperCase();
     const oldSent = this.sentIndex();
     const oldBuf = this.buffer();
@@ -190,6 +230,7 @@ export class MorseEncoderService {
     this.isSending.set(false);
     this.abortController?.abort();
     this.cancelWordGapTimer();
+    if (this.localActive) this.cancelLocal();
   }
 
   /** Toggle TX */
@@ -201,10 +242,36 @@ export class MorseEncoderService {
     }
   }
 
+  /**
+   * Add text to the end of the buffer without replacing it and without starting to send (a long text
+   * is fed in pieces: e-book playback). Text that has been sent is dropped from the front as it
+   * goes, so the buffer stays small; `trimmed` counts what was dropped, which keeps
+   * `trimmed() + sentIndex()` the number of characters sent since the text started.
+   */
+  appendText(text: string): void {
+    if (!this.streaming) {
+      this.streaming = true;
+      this.trimmed.set(0);
+    }
+    this.buffer.update(b => b + text.toUpperCase());
+  }
+
+  /** Drop what a streamed text has sent from the front of the buffer. */
+  private compactStream(): number {
+    const sent = this.sentIndex();
+    if (!this.streaming || sent < STREAM_COMPACT_AT) return 0;
+    this.buffer.update(b => b.slice(sent));
+    this.sentIndex.set(0);
+    this.trimmed.update(t => t + sent);
+    return sent;
+  }
+
   /** Clear the send buffer */
   clearBuffer(): void {
     this.stopTx();
     this.resetReplay();
+    this.streaming = false;
+    this.trimmed.set(0);
     this.buffer.set('');
     this.sentIndex.set(0);
     this.forwardedIndex = -1;
@@ -213,6 +280,8 @@ export class MorseEncoderService {
 
   /** Submit text in 'enter' mode */
   submitText(text: string): void {
+    this.streaming = false;
+    this.trimmed.set(0);
     this.buffer.set(text.toUpperCase());
     this.sentIndex.set(0);
     this.forwardedIndex = -1;
@@ -299,7 +368,9 @@ export class MorseEncoderService {
     const replay = this.replayMode();
 
     try {
-      while (this.isSending() && (replay
+      const local = this.isLocalOnly(this.settings.settings());
+      if (local) await this.runLocal(signal, replay);
+      while (!local && this.isSending() && (replay
         ? this.replayIndex() < this.replayText.length
         : this.sentIndex() < this.buffer().length)) {
         if (signal.aborted) break;
@@ -315,7 +386,7 @@ export class MorseEncoderService {
         // interrupted by a pause is played again in full on resume but forwarded only once,
         // because the external outputs time and send it themselves.
         const forwardedIndex = replay ? this.replayForwardedIndex : this.forwardedIndex;
-        if (!isPracticeLocal && forwardedIndex !== idx) {
+        if (!isPracticeLocal && forwardedIndex !== idx && pauseQuarters(token) === 0) {
           if (replay) this.replayForwardedIndex = idx;
           else this.forwardedIndex = idx;
 
@@ -340,6 +411,7 @@ export class MorseEncoderService {
         } else {
           this.forwardedIndex = -1;
           this.sentIndex.set(endIdx);
+          this.compactStream();
         }
         this.typedPattern.set(null);
 
@@ -373,12 +445,171 @@ export class MorseEncoderService {
     }
   }
 
+  // ---- Local playback on the audio clock ----
+
+  /** The timings of the current speed and Farnsworth settings (the same as `sendCharacter` uses). */
+  private currentTimings(s: ReturnType<SettingsService['settings']>): ReturnType<typeof timingsFromWpm> {
+    const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
+    return adjustGapTimings(timingsFromWpm(s.encoderWpm), s.encoderWpm, fwSource, s);
+  }
+
+  /**
+   * Play the text on this device only, with the timing kept on the audio clock. Every token's start
+   * is the previous start plus the previous length, computed in audio time, so tones, gaps, letter
+   * gaps, word gaps and pauses are exact whatever the page is doing. Tokens are placed about
+   * `LOCAL_LEAD_S` ahead of the one sounding; the timers here only wake the loop and move the sent
+   * index (the highlight) when a token starts. A pause or stop drops what is placed, and the token
+   * that was sounding is played again in full on resume, as before.
+   */
+  private async runLocal(signal: AbortSignal, replay: boolean): Promise<void> {
+    const text = (): string => replay ? this.replayText : this.buffer();
+    // Moves the index to a token (or the end) and returns how many characters a streamed text dropped
+    const setIndex = (i: number): number => {
+      if (replay) {
+        this.replayForwardedIndex = -1;
+        this.replayIndex.set(i);
+        return 0;
+      }
+      this.forwardedIndex = -1;
+      this.sentIndex.set(i);
+      return this.compactStream();
+    };
+    const clock = (): number => this.audioOutput.clockTime() ?? performance.now() / 1000;
+    const wait = (until: number): Promise<void> => this.sleep(Math.max(0, (until - clock()) * 1000), signal);
+
+    await this.audioOutput.ready();
+    if (signal.aborted) return;
+    this.localActive = true;
+    const queue: LocalToken[] = [];
+    let cursor = replay ? this.replayIndex() : this.sentIndex();
+    // When the next token to place starts
+    let next = clock() + LOCAL_START_S;
+    try {
+      for (;;) {
+        // Place tokens until the audio clock has enough of them ahead
+        while (cursor < text().length && next - clock() < LOCAL_LEAD_S && !signal.aborted) {
+          const { token, endIdx } = this.extractToken(text(), cursor);
+          // The page stalled for longer than the look-ahead: carry on from now rather than in the past
+          if (next < clock()) next = clock() + 0.005;
+          const placed = this.placeLocalToken(token, cursor, endIdx, next);
+          queue.push(placed.token);
+          next += placed.lengthMs / 1000;
+          cursor = endIdx;
+        }
+        if (signal.aborted) return;
+
+        if (queue.length === 0) {
+          if (cursor < text().length) {
+            await wait(next - LOCAL_LEAD_S);
+            if (signal.aborted) return;
+            continue;
+          }
+          // Everything has started: the last token still has to finish
+          await wait(next);
+          if (signal.aborted) return;
+          const dropped = setIndex(cursor);
+          cursor -= dropped;
+          // More text may have arrived meanwhile: the timeline goes on from here without a gap
+          if (cursor < text().length) continue;
+          return;
+        }
+
+        const head = queue.shift() as LocalToken;
+        await wait(head.at);
+        if (signal.aborted) return;
+        const dropped = setIndex(head.idx);
+        if (dropped) {
+          cursor -= dropped;
+          for (const q of queue) {
+            q.idx -= dropped;
+            q.endIdx -= dropped;
+          }
+        }
+        this.showLocalToken(head, replay);
+      }
+    } finally {
+      this.localActive = false;
+      if (signal.aborted) this.cancelLocal();
+    }
+  }
+
+  /** Put one token on the audio clock at `at` and say how long it takes (its sound, the gap after it, or a pause). */
+  private placeLocalToken(
+    token: string, idx: number, endIdx: number, at: number,
+  ): { token: LocalToken; lengthMs: number } {
+    const s = this.settings.settings();
+    const timings = this.currentTimings(s);
+    const source = s.encoderSource;
+    const placed: LocalToken = { idx, endIdx, at, elements: [], morse: '', source };
+
+    const quarters = pauseQuarters(token);
+    if (quarters > 0) return { token: placed, lengthMs: timings.interWord * quarters / 4 };
+    // A word gap is 7 dit units; the 3 after the last element of the letter before it are already counted
+    if (token === ' ') return { token: placed, lengthMs: timings.interWord - timings.interChar };
+    const morse = MORSE_TABLE[token];
+    if (!morse) return { token: placed, lengthMs: 0 };
+
+    placed.morse = morse;
+    let offset = 0;
+    for (let i = 0; i < morse.length; i++) {
+      const dur = morse[i] === '.' ? timings.dit : timings.dah;
+      const last = i === morse.length - 1;
+      this.audioOutput.scheduleToneAt(at + offset / 1000, dur, source, last || timings.intraChar > SNAP_GAP_MS);
+      placed.elements.push({ offset, dur });
+      offset += dur + (last ? 0 : timings.intraChar);
+    }
+    return { token: placed, lengthMs: offset + timings.interChar };
+  }
+
+  /** A token has started sounding: the sprite, the replay progress and the vibration follow its elements. */
+  private showLocalToken(q: LocalToken, replay: boolean): void {
+    if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
+    q.elements.forEach((e, i) => {
+      this.localLater(e.offset, () => {
+        this.localKeyDown = true;
+        this.elementEvent$.next({ down: true });
+        void this.vibrationOutput.schedulePulse(e.dur, q.source);
+        if (this.replayMode()) this.replayProgress.update(p => p && { ...p, pattern: q.morse.slice(0, i + 1) });
+      });
+      this.localLater(e.offset + e.dur, () => {
+        this.localKeyDown = false;
+        this.elementEvent$.next({ down: false });
+      });
+    });
+  }
+
+  private localLater(ms: number, fn: () => void): void {
+    const id = setTimeout(() => {
+      this.localTimers.delete(id);
+      fn();
+    }, ms);
+    this.localTimers.add(id);
+  }
+
+  /** Drop what local playback has placed on the audio clock and its pending timers. */
+  private cancelLocal(): void {
+    for (const id of this.localTimers) clearTimeout(id);
+    this.localTimers.clear();
+    this.audioOutput.cancelScheduledTones();
+    if (this.localKeyDown) {
+      this.localKeyDown = false;
+      this.elementEvent$.next({ down: false });
+    }
+  }
+
   private async sendCharacter(char: string, signal: AbortSignal): Promise<void> {
     const s = this.settings.settings();
     const baseTimings = timingsFromWpm(s.encoderWpm);
     const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
     const timings = adjustGapTimings(baseTimings, s.encoderWpm, fwSource, s);
     const source = s.encoderSource;
+
+    // A pause (e-book playback): silence for a number of quarter word gaps, nothing played or shown
+    const pause = pauseQuarters(char);
+    if (pause > 0) {
+      await this.sleep(timings.interWord * pause / 4, signal);
+      return;
+    }
 
     if (char === ' ') {
       // Word space = 7 dit units total; 3 already elapsed as inter-char
