@@ -311,7 +311,7 @@
 .help-close-btn,
 .help-search-btn {
   position: fixed;
-  top: 14px;
+  top: calc(14px + var(--vv-top));
   right: 18px;
   z-index: 10100;
   width: 40px;
@@ -370,7 +370,8 @@
 /* ---- Floating search bar ---- */
 .help-search-bar {
   position: fixed;
-  top: 64px;
+  /* --vv-top follows the visual viewport, so the bar stays in view when a phone keyboard pans the page */
+  top: calc(64px + var(--vv-top));
   right: 18px;
   z-index: 10200;
   box-sizing: border-box;
@@ -445,6 +446,26 @@
 .help-search-step:disabled {
   opacity: .4;
   cursor: default;
+}
+/* Narrow screens: the field takes the whole first row; count and buttons sit on a second row */
+@media (max-width: 600px) {
+  .help-search-bar {
+    flex-wrap: wrap;
+    border-radius: 28px;
+    padding: 8px 10px;
+  }
+  .help-search-input {
+    flex: 1 0 100%;
+  }
+  .help-search-count {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 6px;
+    text-align: left;
+  }
+  .help-search-divider {
+    display: none;
+  }
 }
 @media (pointer: coarse) {
   /* 16 px stops iOS zooming the page when the field gets focus */

@@ -11,7 +11,7 @@
 
 <!-- Floating search bar: stays open, over the text, until dismissed -->
 @if (searchOpen) {
-  <div class="help-search-bar" role="search">
+  <div #searchBar class="help-search-bar" role="search">
     <input #searchInput type="search" class="help-search-input" placeholder="Search Help"
            aria-label="Search Help" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search"
            [value]="searchQuery" (input)="onSearchInput($any($event.target).value)"

@@ -97,6 +97,7 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   hitsCapped = false;
 
   @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchBar') searchBar?: ElementRef<HTMLElement>;
   @ViewChild('searchButton') searchButton?: ElementRef<HTMLButtonElement>;
 
   private scrollListener: (() => void) | null = null;
@@ -155,7 +156,7 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
     this.searchOpen = true;
     setTimeout(() => {
       const input = this.searchInput?.nativeElement;
-      input?.focus();
+      input?.focus({ preventScroll: true });
       input?.select();
     });
     if (this.searchQuery) this.runSearch();
@@ -198,6 +199,8 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   }
 
   private static readonly MAX_HITS = 3000;
+  /** Fallback space from the top of the screen taken by the floating buttons and search bar */
+  private static readonly BAR_CLEARANCE = 130;
   private static readonly BLOCKS = 'p,li,td,th,h1,h2,h3,h4,pre,div,figcaption,summary,dt,dd,tr';
 
   /**
@@ -286,9 +289,27 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   private select(index: number, scroll = true): void {
     this.hitIndex = index;
     this.paintHighlights();
-    if (scroll) {
-      this.hits[index].startContainer.parentElement?.scrollIntoView({ block: 'center', behavior: 'auto' });
-    }
+    if (scroll) this.revealHit(this.hits[index]);
+  }
+
+  /**
+   * Scroll the Help text so the hit sits in the visible band below the search bar. Only the Help
+   * scroller moves: `scrollIntoView` would also pan the page's visual viewport while the on-screen
+   * keyboard is open, which pushes the floating search bar out of sight.
+   */
+  private revealHit(hit: Range): void {
+    const scroller = this.scrollContainer.nativeElement;
+    const vv = window.visualViewport;
+    const viewTop = vv?.offsetTop ?? 0;
+    const viewBottom = viewTop + (vv?.height ?? window.innerHeight);
+    // Below the bar as it is now (one row wide, two rows on a narrow screen), plus a margin
+    const barBottom = this.searchBar?.nativeElement.getBoundingClientRect().bottom ?? viewTop + HelpComponent.BAR_CLEARANCE;
+    const bandTop = Math.max(barBottom, viewTop) + 16;
+    const bandBottom = viewBottom - 24;
+    const rect = hit.getBoundingClientRect();
+    if (rect.top >= bandTop && rect.bottom <= bandBottom) return;
+    const wanted = bandTop + Math.max(0, bandBottom - bandTop) / 2;
+    scroller.scrollTop += rect.top + rect.height / 2 - wanted;
   }
 
   private paintHighlights(): void {
