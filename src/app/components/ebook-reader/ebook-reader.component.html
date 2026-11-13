@@ -2,6 +2,9 @@
   <div class="eb-empty" role="status">
     @if (ebook.loading()) {
       Opening the book...
+    } @else if (ebook.error()) {
+      {{ ebook.error() }}<br>
+      Choose the book again in Settings, under Copy Practice or Send Practice.
     } @else {
       No e-book is loaded.<br>
       Choose a file in Settings, under Copy Practice or Send Practice.

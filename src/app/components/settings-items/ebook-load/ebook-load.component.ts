@@ -21,7 +21,7 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
       <div class="cw-hint">
         Read a book, article or your own notes. Text (.txt), Markdown (.md), web page (.html) and EPUB (.epub) files work, in English.
         <app-help-link-button section="s3-7" label="Help: E-book practice" />
-        A file stays on this device and is read as you go; a web address is fetched by your browser straight from that site, and many sites do not allow that.
+        A file stays on this device and is read as you go, and the last book opens again by itself where you stopped; a web address is fetched by your browser straight from that site, and many sites do not allow that.
       </div>
       <input #fileInput type="file" hidden accept=".txt,.text,.md,.markdown,.html,.htm,.xhtml,.epub,text/plain,text/markdown,text/html,application/epub+zip"
              (change)="onFileChosen($event)">

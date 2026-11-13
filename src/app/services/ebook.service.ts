@@ -10,6 +10,7 @@ import { EbookChapter, epubOpener } from './ebook-epub';
 import { zipBytesOf } from './ebook-zip';
 import { EbookLoadError, UrlBook, blobSource, openUrlSource, urlFormat, urlToBlob } from './ebook-sources';
 import { forgetResume, loadResume, resumeIdForFile, resumeIdForUrl, saveResume } from './ebook-resume';
+import { LastBook, forgetLastBook, loadLastBook, loadLastFile, rememberFile, rememberUrl } from './ebook-last';
 import { ConfirmService } from './confirm.service';
 import { playableChars, playableIndexAt } from './ebook-playable';
 import { EbookWindow } from './ebook-window';
@@ -40,8 +41,10 @@ const SAVE_EVERY_MS = 2000;
  * E-book Service — the one book Copy Practice and Send Practice read from.
  *
  * Holds the loaded file's name, the reading position and the sliding window of parsed text
- * (`EbookWindow`). The book is read from the file piece by piece and is never stored: not in the
- * settings, the profiles, the presets or an export. Loading is always a user action.
+ * (`EbookWindow`). The book is read from the file piece by piece and is never part of the settings, the
+ * profiles, the presets or an export. The last book (its web address, or a copy of the chosen file kept in
+ * IndexedDB) and the place in it are remembered on this device, and the book reopens at that place by itself
+ * when E-book practice is on. Loading a different book is always a user action.
  */
 @Injectable({ providedIn: 'root' })
 export class EbookService {
@@ -108,8 +111,22 @@ export class EbookService {
   private saveEnabled = false;
   /** Where a fresh start stands: not remembered until the reading moves from it */
   private baseline: EbookPosition | null = null;
+  /** True once the last book has been reopened (or tried) in this stretch of E-book practice */
+  private restoreTried = false;
 
   constructor(private settings: SettingsService, private confirm: ConfirmService) {
+    // Starting the app (or switching to E-book practice) with no book loaded reopens the last one where it stopped
+    effect(() => {
+      if (!this.active()) {
+        this.restoreTried = false;
+        return;
+      }
+      untracked(() => {
+        if (this.restoreTried || this.loaded() || this.loading()) return;
+        this.restoreTried = true;
+        void this.restoreLast();
+      });
+    });
     // The place in the book is written every couple of seconds while it moves, and when the page is left;
     // it lives under its own key, so no Save button is involved
     effect(() => {
@@ -142,6 +159,7 @@ export class EbookService {
       format === 'epub' ? epubOpener(zipBytesOf(file)) : ebookOpener(blobSource(file), format),
       { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '' },
       resumeIdForFile(file.name, file.size),
+      () => void rememberFile(file),
     );
   }
 
@@ -149,7 +167,7 @@ export class EbookService {
    * Open a text file or page from a web address, fetched straight from the browser (many sites do not
    * allow that: the message then says to download the file). Only ever started by a click.
    */
-  async loadUrl(address: string): Promise<EbookLoadResult> {
+  async loadUrl(address: string, auto = false): Promise<EbookLoadResult> {
     this.loading.set(true);
     this.error.set('');
     let book: UrlBook;
@@ -180,13 +198,40 @@ export class EbookService {
       opener,
       { name: book.name, format: FORMAT_LABEL[format], bytes: book.source.size() ?? 0, origin: book.host },
       resumeIdForUrl(book.href),
+      () => rememberUrl(book.href),
+      auto,
     );
   }
 
-  /** Make a book that has been opened the current one, and offer to go on where the learner stopped. */
-  private async install(opener: EbookOpener, info: EbookInfo, resumeId: string): Promise<EbookLoadResult> {
+  /** Reopen the book that was loaded last, at the place where it stopped, without asking. Does nothing when there is none. */
+  async restoreLast(): Promise<EbookLoadResult> {
+    const last: LastBook | null = loadLastBook();
+    if (!last) return 'failed';
+    if (last.kind === 'url') return this.loadUrl(last.href, true);
+    const file = await loadLastFile(last);
+    if (!file) {
+      forgetLastBook();
+      return 'failed';
+    }
+    const format = ebookFormat(file.name, file.type);
+    if (!format) return 'failed';
+    return this.install(
+      format === 'epub' ? epubOpener(zipBytesOf(file)) : ebookOpener(blobSource(file), format),
+      { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '' },
+      resumeIdForFile(file.name, file.size),
+      null,
+      true,
+    );
+  }
+
+  /**
+   * Make a book that has been opened the current one, and offer to go on where the learner stopped
+   * (an `auto` reopening at start-up goes on there without asking). `remember` keeps the book as the last one.
+   */
+  private async install(opener: EbookOpener, info: EbookInfo, resumeId: string, remember: (() => void) | null, auto = false): Promise<EbookLoadResult> {
     const window = await this.read(opener, 0);
     if (!window) return 'failed';
+    remember?.();
     this.flushSave();
     this.window?.dispose();
     this.opener = opener;
@@ -200,9 +245,20 @@ export class EbookService {
     this.revision.update(n => n + 1);
     this.info.set(info);
     this.chapters.set('chapters' in opener ? await (opener as { chapters(): Promise<EbookChapter[]> }).chapters().catch(() => []) : []);
-    const resumed = await this.offerResume(resumeId, info.name);
+    const resumed = auto ? await this.resumeSilently(resumeId) : await this.offerResume(resumeId, info.name);
     this.saveEnabled = true;
     return resumed ? 'resumed' : 'loaded';
+  }
+
+  /** Go on from the remembered place without asking. */
+  private async resumeSilently(id: string): Promise<boolean> {
+    const saved = loadResume(id);
+    const start = this.window?.held()[0]?.offset ?? 0;
+    if (!saved || saved.offset <= start) return false;
+    await this.restartAt(saved.offset, saved.exact);
+    // A place that cannot be read any more leaves the book at its start
+    if (this.error()) this.error.set('');
+    return true;
   }
 
   /** The book was read before: ask whether to go on from the page where it stopped. */
@@ -344,6 +400,7 @@ export class EbookService {
 
   /** Forget the book. */
   remove(): void {
+    forgetLastBook();
     this.flushSave();
     this.saveEnabled = false;
     this.resumeId = null;
