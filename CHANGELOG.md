@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.15.4] - 2026-11-13
+
+### Added
+
+- **Search in Help** — A lens button left of the Help close button (or Ctrl/Cmd+F) opens a floating search bar that stays over the text until you close it. It highlights every match, marks the current one, shows its position (for example 3/48), and has previous and next buttons (Enter and Shift+Enter also work). Escape closes the search first, then Help.
+- **Speaker icon in the stopped-audio message** — The main screen now says "Audio is stopped. Press 🔈 above to begin." with a small speaker icon, so it is clear which button starts audio.
+
+### Changed
+
+- **Fullscreen Touch Keyer** — The Touch Keyer card, its wizard steps, the review labels and Help 4.3 are renamed to "Fullscreen Touch Keyer", and Help states plainly that it works only in the full-screen view, not on the main screen.
+- **Help title** — It now reads just "Morse Code Studio"; the version is in Settings → Other → App Updates.
+- **Practice words** — Copy Practice no longer uses sexual, vulgar, violent or religious words.
+
+### Fixed
+
+- **Silence after a reload on a phone** — When audio restarted by itself after the app was reopened, the first tap or key press now resumes it straight away instead of waiting for the retry timer or the paused-audio notice.
+- **Crackle over typed and practice text** — Typed, Copy Practice and relayed text now play their sidetone on a separate output with a larger buffer, which should stop the random cracks heard over the Morse on some phones. Hand keying keeps its small buffer, so its latency is unchanged.
+
 ## [2.15.3] - 2026-11-12
 
 ### Added

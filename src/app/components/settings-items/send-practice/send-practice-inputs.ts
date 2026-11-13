@@ -68,7 +68,7 @@ export function sendPracticeInputRows(s: AppSettings): SendPracticeInputRow[] {
   }));
   rows.push({ id: 'mouse', group: 'Mouse', label: 'Mouse keyer', color: '', available: s.mouseKeyerEnabled });
   rows.push({
-    id: 'touch', group: 'Touch', label: 'Touch keyer and sprite key', color: '',
+    id: 'touch', group: 'Touch', label: 'Fullscreen touch keyer and sprite key', color: '',
     available: s.touchKeyerEnabled || s.spriteButtonEnabled,
   });
   rows.push({ id: 'mic', group: 'Microphone', label: 'Straight key via microphone', color: '', available: s.micInputEnabled });

@@ -99,6 +99,10 @@
   font-size: .82rem;
   overflow-wrap: anywhere;
 }
+.audio-inline-icon {
+  display: inline-block;
+  vertical-align: -3px;
+}
 .audio-inline-status.audio-status-stopped,
 .audio-inline-status.audio-status-failed {
   color: #ffb4aa;

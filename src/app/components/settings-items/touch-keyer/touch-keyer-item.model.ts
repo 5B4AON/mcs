@@ -54,9 +54,9 @@ export const TOUCH_KEYER_FIELD_RULES: SettingsFieldRules = {
 };
 
 const REVIEW_LABELS = {
-  touchKeyerEnabled: 'Touch keyer',
-  touchKeyerSource: 'Touch keyer source',
-  touchKeyerMode: 'Touch mode',
+  touchKeyerEnabled: 'Fullscreen touch keyer',
+  touchKeyerSource: 'Fullscreen touch keyer source',
+  touchKeyerMode: 'Fullscreen touch mode',
   touchLeftPaddle: 'Left paddle',
   touchRightPaddle: 'Right paddle',
   touchReversePaddles: 'Reverse paddles',

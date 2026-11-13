@@ -91,7 +91,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** True while start/stop is in progress (shows spinner) */
   audioStarting = false;
   audioState: 'stopped' | 'starting' | 'running' | 'stopping' | 'failed' = 'stopped';
-  audioStatusMessage = 'Audio is stopped. Start Audio to begin.';
+  audioStatusMessage = 'Audio is stopped. Press the speaker button above to begin.';
   audioFailureMessage: string | null = null;
   /** Current mic input level for the level meter bar */
   micLevel = 0;
@@ -999,11 +999,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /**
    * Resumes paused audio on the next touch, click or key press anywhere. Browsers
    * accept resume() only inside a user gesture (iOS strictly), so the next tap does
-   * it and no button needs to be found. The "Tap to resume audio" button calls the
-   * same method. Registered outside Angular's zone, so it adds no change detection.
+   * it and no button needs to be found. It acts as soon as any context is paused, not
+   * only once the paused-audio notice shows: after a reload the output waits for the
+   * first tap, and waiting for the notice (1.5 s) or the 500 ms retry timer would add
+   * to the silence. The "Tap to resume audio" button calls the same method. Registered
+   * outside Angular's zone, so it adds no change detection.
    */
   private readonly gestureResumeHandler = (): void => {
-    if (this.audioNeedsTap) void this.resumeAudio();
+    if (this.audioOutput.paused() || this.audioInput.paused() || this.cwInput.paused()) {
+      void this.resumeAudio();
+    }
   };
   private readonly gestureEvents = ['touchend', 'pointerup', 'click', 'keydown'];
   async resumeAudio(): Promise<void> {
@@ -1111,7 +1116,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         this.audioStatusMessage = this.audioFailureMessage;
       } else {
         this.audioState = 'stopped';
-        this.audioStatusMessage = 'Audio is stopped. Start Audio to begin.';
+        this.audioStatusMessage = 'Audio is stopped. Press the speaker button above to begin.';
       }
     } finally {
       this.audioStarting = false;

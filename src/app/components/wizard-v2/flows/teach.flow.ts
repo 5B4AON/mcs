@@ -218,8 +218,8 @@ const KEY_STEPS: WizardStep[] = [
   {
     id: 'touch',
     level: 'intermediate',
-    title: 'Touch keyer',
-    intro: 'Choose how the touch screen keys. Only one person can use it.',
+    title: 'Fullscreen touch keyer',
+    intro: 'Choose how the touch screen keys in the full-screen view. Only one person can use it.',
     helpSection: 's4-3',
     when: usesKey('touch'),
     items: [{ item: 'touch-keyer-mode' }],
@@ -227,7 +227,7 @@ const KEY_STEPS: WizardStep[] = [
   {
     id: 'touchPaddle',
     level: 'intermediate',
-    title: 'Touch paddle behaviour',
+    title: 'Fullscreen touch paddle behaviour',
     intro: 'Two touch buttons work as a paddle. Choose which side is which and how holding both buttons behaves.',
     helpSection: 'paddle-modes',
     when: all(usesKey('touch'), settingIs('touchKeyerMode', 'paddle')),
@@ -236,8 +236,8 @@ const KEY_STEPS: WizardStep[] = [
   {
     id: 'touchName',
     level: 'intermediate',
-    title: 'Name and colour of the touch screen',
-    intro: 'A name and colour label whatever is keyed on the touch screen, so everyone sees who it is.',
+    title: 'Name and colour of the fullscreen touch keyer',
+    intro: 'A name and colour label whatever is keyed on the fullscreen touch keyer, so everyone sees who it is.',
     helpSection: 's4-3',
     when: all(usesKey('touch'), keys('many')),
     items: [{ item: 'touch-keyer-identity' }],
@@ -732,7 +732,7 @@ const stretched: Condition = ctx => speedPlan(ctx).stretched;
 const KEY_FLAGS: { kind: KeyKind; key: 'keyboardKeyerEnabled' | 'mouseKeyerEnabled' | 'touchKeyerEnabled' | 'midiInputEnabled' | 'serialInputEnabled'; phrase: string }[] = [
   { kind: 'keyboard', key: 'keyboardKeyerEnabled', phrase: 'keyboard keys' },
   { kind: 'mouse', key: 'mouseKeyerEnabled', phrase: 'mouse keyer' },
-  { kind: 'touch', key: 'touchKeyerEnabled', phrase: 'touch keyer' },
+  { kind: 'touch', key: 'touchKeyerEnabled', phrase: 'fullscreen touch keyer' },
   { kind: 'midi', key: 'midiInputEnabled', phrase: 'plugged-in MIDI keys' },
   { kind: 'serial', key: 'serialInputEnabled', phrase: 'serial keys' },
 ];

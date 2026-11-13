@@ -25,6 +25,7 @@
 /* ---- Title ---- */
 .help-title {
   margin: 0 0 24px;
+  padding-right: 110px;
   font-size: 22px;
   color: #66ccff;
 }
@@ -307,7 +308,8 @@
 }
 
 /* ---- Close button ---- */
-.help-close-btn {
+.help-close-btn,
+.help-search-btn {
   position: fixed;
   top: 14px;
   right: 18px;
@@ -326,10 +328,15 @@
   transition: background 0.15s;
   padding: 0;
 }
-.help-close-btn:hover {
+.help-search-btn {
+  right: 68px;
+}
+.help-close-btn:hover,
+.help-search-btn:hover {
   background: #3a4050;
 }
-.help-close-btn:active {
+.help-close-btn:active,
+.help-search-btn:active {
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);
@@ -355,7 +362,93 @@
 /* Desktop browsers draw a scrollbar (about 15px) at the right edge: keep both floating buttons clear of it */
 @media (pointer: fine) {
   .help-close-btn { right: 36px; }
+  .help-search-btn { right: 86px; }
   .help-home-btn { right: 38px; }
+  .help-search-bar { right: 36px; }
+}
+
+/* ---- Floating search bar ---- */
+.help-search-bar {
+  position: fixed;
+  top: 64px;
+  right: 18px;
+  z-index: 10200;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 420px;
+  max-width: calc(100vw - 36px);
+  padding: 8px 10px 8px 14px;
+  background: rgba(30, 34, 40, .94);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid #556;
+  border-radius: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .55);
+}
+.help-search-input {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: #12161a;
+  color: #fff;
+  border: 1px solid #556;
+  border-radius: 20px;
+  font: inherit;
+  font-size: 15px;
+}
+.help-search-input:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+}
+.help-search-count {
+  flex: none;
+  min-width: 3.2em;
+  text-align: right;
+  color: #a8d8ff;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.help-search-divider {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 0;
+  background: #556;
+}
+.help-search-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.help-search-step:hover:not(:disabled) {
+  background: #3a4050;
+}
+.help-search-step:active:not(:disabled) {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+.help-search-step:disabled {
+  opacity: .4;
+  cursor: default;
+}
+@media (pointer: coarse) {
+  /* 16 px stops iOS zooming the page when the field gets focus */
+  .help-search-input { font-size: 16px; }
 }
 .help-home-btn:hover {
   background: #3a3f4b;

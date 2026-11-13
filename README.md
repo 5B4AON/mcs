@@ -44,7 +44,7 @@ Multiple MIDI devices can be used simultaneously — each MIDI Input and MIDI Ou
 
 ### Keyboard, Mouse and Touch
 
-The built-in keyboard, mouse, and touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The keyboard keyer supports **multiple independent mappings**, each with its own mode (straight key or paddle), key bindings, paddle mode, decoder source (RX/TX), reverse paddles toggle, and optional **Name** and **Colour** for multi-user conversation views. The mouse and touch keyers also support optional **Name** and **Colour**. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
+The built-in keyboard, mouse, and fullscreen touch keyers require no extra hardware — convenient for practice and portable use. All five keyer modes are supported. The keyboard keyer supports **multiple independent mappings**, each with its own mode (straight key or paddle), key bindings, paddle mode, decoder source (RX/TX), reverse paddles toggle, and optional **Name** and **Colour** for multi-user conversation views. The mouse and fullscreen touch keyers also support optional **Name** and **Colour**. The main limitation is that **the browser tab must be in focus** to receive these events, so they are not suitable for background operation.
 
 ### Serial Port (Web Serial API)
 

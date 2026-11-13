@@ -1,5 +1,5 @@
 <!-- Touch Keyer -->
-<app-item-shell cardId="touch-keyer-card" title="Touch Keyer" [mode]="mode"
+<app-item-shell cardId="touch-keyer-card" title="Fullscreen Touch Keyer" [mode]="mode"
                 [enabled]="forceEnabled ? null : s().touchKeyerEnabled"
                 (enabledChange)="scope.update({ touchKeyerEnabled: $event })">
   <span item-badges>
@@ -8,8 +8,8 @@
 
   @if (part === 'all') {
   <div class="keyer-hint">
-    On-screen touch buttons key Morse.
-    <app-help-link-button section="s4-3" label="Help: touch keyer" />
+    Fullscreen touch buttons key Morse.
+    <app-help-link-button section="s4-3" label="Help: fullscreen touch keyer" />
   </div>
 }
 

@@ -19,7 +19,7 @@ const METHODS: {
 }[] = [
   { id: 'keyboard', label: 'Keyboard keyer', phrase: 'keyboard key or paddle', key: 'keyboardKeyerEnabled' },
   { id: 'mouse', label: 'Mouse keyer', phrase: 'mouse keyer', key: 'mouseKeyerEnabled' },
-  { id: 'touch', label: 'Touch keyer', phrase: 'touch keyer', key: 'touchKeyerEnabled' },
+  { id: 'touch', label: 'Fullscreen touch keyer', phrase: 'fullscreen touch keyer', key: 'touchKeyerEnabled' },
   { id: 'midi', label: 'MIDI keyer', phrase: 'MIDI keyer', key: 'midiInputEnabled' },
 ];
 
@@ -130,8 +130,8 @@ export const SEND_FLOW: WizardFlow = {
     },
     {
       id: 'touch',
-      title: 'Touch keyer',
-      intro: 'Choose how the touch screen keys.',
+      title: 'Fullscreen touch keyer',
+      intro: 'Choose how the touch screen keys. It works only in the full-screen view, not on the main screen.',
       helpSection: 's4-3',
       when: answerIncludes('methods', 'touch'),
       items: [{ item: 'touch-keyer-mode' }],
@@ -139,7 +139,7 @@ export const SEND_FLOW: WizardFlow = {
     {
       id: 'touchPaddle',
       level: 'intermediate',
-      title: 'Touch paddle behaviour',
+      title: 'Fullscreen touch paddle behaviour',
       intro: 'Two touch buttons work as a paddle. Choose which side is which and how holding both buttons behaves.',
       helpSection: 'paddle-modes',
       when: all(answerIncludes('methods', 'touch'), settingIs('touchKeyerMode', 'paddle')),
@@ -148,8 +148,8 @@ export const SEND_FLOW: WizardFlow = {
     {
       id: 'touchName',
       level: 'expert',
-      title: 'Name and colour of touch keying',
-      intro: 'Optional. A name and colour label the text you key by touch, so it stands out where names are shown.',
+      title: 'Name and colour of fullscreen touch keying',
+      intro: 'Optional. A name and colour label the text you key by touch in full screen, so it stands out where names are shown.',
       helpSection: 's4-3',
       when: answerIncludes('methods', 'touch'),
       items: [{ item: 'touch-keyer-identity' }],

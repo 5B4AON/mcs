@@ -53,6 +53,19 @@ export class AudioOutputService {
   private optoSource: ConstantSourceNode | null = null; // DC offset for DC opto mode
   private optoGain: GainNode | null = null;            // Opto key-on/key-off envelope
 
+  // ---- Sidetone for scheduled text (own context with a larger buffer) ----
+  /**
+   * Sidetone for tones the app schedules itself (typed, practice and relayed text). It has its own
+   * context with a larger output buffer, because on phones a small buffer can run dry when the
+   * page is busy and the engine then adds a crack over the tone. Hand keying (keyDown/keyUp)
+   * keeps the small buffer of the main sidetone, so its latency does not grow.
+   */
+  private textCtx: AudioContext | null = null;
+  private textOsc: OscillatorNode | null = null;
+  private textGain: GainNode | null = null;
+  private textMerger: ChannelMergerNode | null = null;
+  private textChannel: string | null = null;
+
   // ---- Pilot tone (always-on, own context) ----
   private pilotCtx: AudioContext | null = null;
   private pilotOsc: OscillatorNode | null = null;
@@ -104,6 +117,8 @@ export class AudioOutputService {
       await this.startShared(sideDevId, s);
     }
 
+    await this.startText(sideDevId, s);
+
     // Start pilot tone for key detection (only when mic input is enabled)
     if (s.micInputEnabled) {
       await this.startPilot(s);
@@ -111,6 +126,63 @@ export class AudioOutputService {
 
     this.installKeepAlive();
     this.started = true;
+  }
+
+  /** Sidetone path for scheduled text; on failure the main sidetone plays that text instead. */
+  private async startText(
+    deviceId: string,
+    s: ReturnType<typeof this.settings.settings>
+  ): Promise<void> {
+    try {
+      const ctx = new AudioContext({ sampleRate: 48000, latencyHint: 'playback' });
+      this.textCtx = ctx;
+      await this.trySetSinkId(ctx, deviceId);
+      ctx.destination.channelCount = 2;
+      ctx.destination.channelCountMode = 'explicit';
+      ctx.destination.channelInterpretation = 'discrete';
+
+      this.textOsc = ctx.createOscillator();
+      this.textOsc.type = 'sine';
+      this.textOsc.frequency.value = s.sidetoneFrequency;
+      this.textGain = ctx.createGain();
+      this.textGain.gain.value = 0;
+      this.textOsc.connect(this.textGain);
+      this.textMerger = ctx.createChannelMerger(2);
+      this.routeText(s);
+      this.textMerger.connect(ctx.destination);
+      this.textOsc.start();
+    } catch (err) {
+      console.warn('Could not start the text sidetone context:', err);
+      await this.stopText();
+    }
+  }
+
+  private routeText(s: ReturnType<typeof this.settings.settings>): void {
+    if (!this.textMerger || !this.textGain || s.sidetoneOutputChannel === this.textChannel) return;
+    this.textChannel = s.sidetoneOutputChannel;
+    this.textGain.disconnect();
+    for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
+      this.textGain.connect(this.textMerger, 0, idx);
+    }
+  }
+
+  private async stopText(): Promise<void> {
+    try { this.textOsc?.stop(); } catch { }
+    try { this.textMerger?.disconnect(); } catch { }
+    const ctx = this.textCtx;
+    this.textOsc = null;
+    this.textGain = null;
+    this.textMerger = null;
+    this.textChannel = null;
+    this.textCtx = null;
+    await ctx?.close().catch(() => {});
+  }
+
+  /** Gain and clock for sidetone of scheduled text: the large-buffer path when it exists. */
+  private textSidetone(): { gain: GainNode; ctx: AudioContext } | null {
+    if (this.textGain && this.textCtx) return { gain: this.textGain, ctx: this.textCtx };
+    if (!this.sidetoneGain) return null;
+    return { gain: this.sidetoneGain, ctx: (this.separateDevices ? this.sidetoneCtx : this.sharedCtx)! };
   }
 
   // ---------- Shared device (stereo merge) ----------
@@ -254,7 +326,7 @@ export class AudioOutputService {
     if (!this.started) return;
     const s = this.settings.settings();
     const ramp = 0.005;
-    this.whenRunning(() => this.applyKeyDown(s, ramp, source));
+    this.whenRunning(() => this.applyKeyDown(s, ramp, source), this.keyingContexts());
   }
 
   private applyKeyDown(
@@ -280,7 +352,7 @@ export class AudioOutputService {
   keyUp(): void {
     if (!this.started) return;
     const ramp = 0.005;
-    this.whenRunning(() => this.applyKeyUp(ramp));
+    this.whenRunning(() => this.applyKeyUp(ramp), this.keyingContexts());
   }
 
   private applyKeyUp(ramp: number): void {
@@ -309,12 +381,12 @@ export class AudioOutputService {
       // A tone that had to wait for the resume plays only what is left of it
       const dur = (durationMs - (performance.now() - begun)) / 1000;
       if (dur < 0.02) return;
-      if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
-        const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
-        const now = ctx.currentTime;
-        this.sidetoneGain.gain.cancelScheduledValues(now);
-        this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-        this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+      const text = this.textSidetone();
+      if (s.sidetoneEnabled && text && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
+        const now = text.ctx.currentTime;
+        text.gain.gain.cancelScheduledValues(now);
+        text.gain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
+        this.releaseGain(text.gain.gain, now + dur, ramp);
       }
       if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
         const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
@@ -344,13 +416,13 @@ export class AudioOutputService {
       const s = this.settings.settings();
       const dur = (durationMs - (performance.now() - begun)) / 1000;
       if (dur < 0.02) return;
-      if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
+      const text = this.textSidetone();
+      if (s.sidetoneEnabled && text && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
         const ramp = 0.003;
-        const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
-        const now = ctx.currentTime;
-        this.sidetoneGain.gain.cancelScheduledValues(now);
-        this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-        this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+        const now = text.ctx.currentTime;
+        text.gain.gain.cancelScheduledValues(now);
+        text.gain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
+        this.releaseGain(text.gain.gain, now + dur, ramp);
       }
     };
 
@@ -360,6 +432,7 @@ export class AudioOutputService {
 
   async stop(): Promise<void> {
     this.clearKeepAlive();
+    await this.stopText();
     try { this.sidetoneOsc?.stop(); } catch { }
     try { this.optoOsc?.stop(); } catch { }
     try { this.optoSource?.stop(); } catch { }
@@ -456,6 +529,8 @@ export class AudioOutputService {
     if (!this.started) return;
     if (this.sidetoneOsc) this.sidetoneOsc.frequency.value = s.sidetoneFrequency;
     if (this.optoOsc && s.optoMode === 'ac') this.optoOsc.frequency.value = s.optoFrequency;
+    if (this.textOsc) this.textOsc.frequency.value = s.sidetoneFrequency;
+    this.routeText(s);
     if (this.pilotOsc) this.pilotOsc.frequency.value = s.pilotFrequency;
     if (this.pilotGain) this.pilotGain.gain.value = s.pilotAmplitude;
     if (!this.separateDevices && this.merger) {
@@ -560,8 +635,8 @@ export class AudioOutputService {
    * the resume, instead of a fixed delay, keeps the first tones from being scheduled on a clock that
    * has not started yet, which would silence them.
    */
-  private whenRunning(fn: () => void): void {
-    const paused = this.allContexts().filter((ctx): ctx is AudioContext => !!ctx && isContextPaused(ctx));
+  private whenRunning(fn: () => void, contexts: (AudioContext | null)[] = this.allContexts()): void {
+    const paused = contexts.filter((ctx): ctx is AudioContext => !!ctx && isContextPaused(ctx));
     if (paused.length === 0) {
       fn();
       return;
@@ -569,9 +644,14 @@ export class AudioOutputService {
     void Promise.allSettled(paused.map(ctx => ctx.resume())).then(fn);
   }
 
+  /** The contexts hand keying uses: a paused text context must not hold up a key press. */
+  private keyingContexts(): (AudioContext | null)[] {
+    return [this.sharedCtx, this.sidetoneCtx, this.optoCtx];
+  }
+
   /** All active AudioContexts */
   private allContexts(): (AudioContext | null)[] {
-    return [this.sharedCtx, this.sidetoneCtx, this.optoCtx, this.pilotCtx];
+    return [this.sharedCtx, this.sidetoneCtx, this.optoCtx, this.textCtx, this.pilotCtx];
   }
 
   /**
