@@ -130,7 +130,24 @@ export class MidiOutputService implements OnDestroy {
    * send the note-off on the correct port and channel even if settings
    * change between note-on and note-off.
    */
-  private activeNotes = new Map<string, { note: number; channel: number; output: MIDIOutput }>();
+  private activeNotes = new Map<string, { note: number; channel: number; output: MIDIOutput; seq: number }>();
+
+  /** Numbers the note-ons, so a note-off that was placed ahead of time does not release a later note-on of the same note */
+  private noteSeq = 0;
+
+  /**
+   * Where the next character may start (page clock, ms) when it is not given a start time: the end of
+   * the last one, including its letter gap. Playing from it, instead of waiting with chained timers,
+   * keeps a burst of characters on an even rhythm.
+   */
+  private nextStart = 0;
+
+  /**
+   * A note is placed this far ahead of its start (ms). Web MIDI delivers a message with a timestamp at that
+   * time, which is exact, but a message that has been handed over cannot be taken back (Chrome has no
+   * `clear()`), so it is kept short: a break-in or a stop lets at most this and the element in hand finish.
+   */
+  private static readonly LEAD_MS = 40;
 
   /**
    * Track note keys activated by keyDown() (real-time straight-key path).
@@ -141,7 +158,7 @@ export class MidiOutputService implements OnDestroy {
   private realTimeNoteKeys = new Set<string>();
 
   /** Character playback queue */
-  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean; isFromRelay?: boolean }[] = [];
+  private charQueue: { char: string; source: 'rx' | 'tx'; wpm?: number; paddleOnly?: boolean; isFromRelay?: boolean; startAt?: number }[] = [];
   private playing = false;
   private abortPlayback = false;
 
@@ -337,12 +354,15 @@ export class MidiOutputService implements OnDestroy {
    * @param paddleOnly When true, only paddle-mode mappings fire; straight-key
    *                   mappings are skipped (they are already keyed in real-time
    *                   via the keyDown/keyUp path for local keyer inputs).
+   * @param startAt    When the character should start sounding (page clock, ms), from the
+   *                   encoder's timeline; the notes are then placed at exact times from it.
+   *                   Without it the character follows the one before it.
    */
-  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false): void {
+  forwardDecodedChar(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false, startAt?: number): void {
     if (!this.isActive()) return;
     // During break-in the remote party has priority — drop outgoing chars.
     if (this.breakInActive) return;
-    this.charQueue.push({ char, source, wpm, paddleOnly, isFromRelay });
+    this.charQueue.push({ char, source, wpm, paddleOnly, isFromRelay, startAt });
     // If we're sleeping through a word gap and a real character arrives,
     // cut the sleep short so the new character plays immediately.
     if (char !== ' ' && this.spaceSleepResolve) {
@@ -361,7 +381,7 @@ export class MidiOutputService implements OnDestroy {
     try {
       while (this.charQueue.length > 0 && !this.abortPlayback) {
         const entry = this.charQueue.shift()!;
-        await this.playCharElements(entry.char, entry.source, entry.wpm, entry.paddleOnly, entry.isFromRelay);
+        await this.playCharElements(entry.char, entry.source, entry.wpm, entry.paddleOnly, entry.isFromRelay, entry.startAt);
       }
     } finally {
       this.playing = false;
@@ -375,7 +395,9 @@ export class MidiOutputService implements OnDestroy {
    * Uses the provided remote WPM if available and the override setting is off;
    * otherwise falls back to the local encoder WPM.
    */
-  private async playCharElements(char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false): Promise<void> {
+  private async playCharElements(
+    char: string, source: 'rx' | 'tx', wpm?: number, paddleOnly = false, isFromRelay = false, startAt?: number,
+  ): Promise<void> {
     const s0 = this.settings.settings();
     const effectiveWpm = (wpm && !s0.midiOutputOverrideWpm) ? wpm : s0.encoderWpm;
     const baseTimings = timingsFromWpm(effectiveWpm);
@@ -384,7 +406,14 @@ export class MidiOutputService implements OnDestroy {
     const velocity = 127;
 
     if (char === ' ') {
-      await this.interruptibleSleepMs(timings.interWord - timings.interChar);
+      // With a start time the encoder's timeline already holds the gap. Without one the gap is added to the
+      // timeline, unless a real character arrives first: then that character plays as soon as the one before
+      // it is done, as it always did.
+      if (startAt === undefined) {
+        const gapEnd = Math.max(this.nextStart, performance.now()) + (timings.interWord - timings.interChar);
+        const whole = await this.interruptibleSleepMs(gapEnd - performance.now());
+        if (whole) this.nextStart = gapEnd;
+      }
       return;
     }
 
@@ -401,52 +430,52 @@ export class MidiOutputService implements OnDestroy {
       && (isFromRelay || !m.relaySuppressOtherInputs)
     );
 
+    // The character starts at the time it was given, or after the one before it; never in the past
+    const now = performance.now();
+    let begin = Math.max(startAt ?? this.nextStart, now + 2);
+    let offset = 0;
+
     for (let i = 0; i < morse.length; i++) {
       if (this.abortPlayback) return;
 
       const element = morse[i];
       const duration = element === '.' ? timings.dit : timings.dah;
 
-      // Fire notes for every enabled mapping
-      const fired: { note: number; channel: number; output: MIDIOutput }[] = [];
+      // Wake a little before the element is due and place its note-on and note-off at exact times
+      let at = begin + offset;
+      await this.sleepUntil(at - MidiOutputService.LEAD_MS);
+      if (this.abortPlayback) return;
+      // The page stalled for longer than the lead: carry on from now, keeping the length of the element
+      const late = performance.now() + 1 - at;
+      if (late > 0) {
+        begin += late;
+        at += late;
+      }
+
       for (const mapping of enabledMappings) {
         const output = this.getOutputForDevice(mapping.deviceId);
         if (!output) continue;
 
-        if (mapping.mode === 'straightKey') {
-          // Straight key fires on every element
-          if (mapping.value >= 0) {
-            this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
-            fired.push({ note: mapping.value, channel: mapping.channel, output });
-          }
-        } else {
-          // Paddle mode: dit note for '.', dah note for '-'
-          if (element === '.' && mapping.value >= 0) {
-            this.sendNoteOn(mapping.value, velocity, mapping.channel, output);
-            fired.push({ note: mapping.value, channel: mapping.channel, output });
-          }
-          if (element === '-' && mapping.dahValue >= 0) {
-            this.sendNoteOn(mapping.dahValue, velocity, mapping.channel, output);
-            fired.push({ note: mapping.dahValue, channel: mapping.channel, output });
-          }
-        }
+        // Straight key fires on every element; a paddle mapping has a dit note and a dah note
+        let note = -1;
+        if (mapping.mode === 'straightKey') note = mapping.value;
+        else if (element === '.') note = mapping.value;
+        else note = mapping.dahValue;
+        if (note < 0) continue;
+        const seq = this.sendNoteOn(note, velocity, mapping.channel, output, at);
+        this.sendNoteOff(note, mapping.channel, output, at + duration, seq);
       }
 
-      await this.sleepMs(duration);
-
-      // Release all notes fired for this element
-      for (const { note, channel, output } of fired) {
-        this.sendNoteOff(note, channel, output);
-      }
-
-      // Intra-character gap
-      if (i < morse.length - 1) {
-        await this.sleepMs(timings.intraChar);
-      }
+      offset += duration + (i < morse.length - 1 ? timings.intraChar : 0);
     }
 
-    // Inter-character gap
-    await this.sleepMs(timings.interChar);
+    // The next character that has no start time of its own follows this one's letter gap
+    this.nextStart = begin + offset + timings.interChar;
+    if (startAt === undefined) await this.sleepUntil(begin + offset - MidiOutputService.LEAD_MS);
+  }
+
+  private sleepUntil(atMs: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, Math.max(0, atMs - performance.now())));
   }
 
   private sleepMs(ms: number): Promise<void> {
@@ -456,16 +485,17 @@ export class MidiOutputService implements OnDestroy {
   /**
    * Sleep that can be resolved early by setting and calling spaceSleepResolve.
    * Used for the word-gap pause so incoming characters cut it short.
+   * Resolves true when the whole time passed, false when it was cut short.
    */
-  private interruptibleSleepMs(ms: number): Promise<void> {
-    return new Promise<void>(resolve => {
+  private interruptibleSleepMs(ms: number): Promise<boolean> {
+    return new Promise<boolean>(resolve => {
       const timer = setTimeout(() => {
         this.spaceSleepResolve = null;
-        resolve();
-      }, ms);
+        resolve(true);
+      }, Math.max(0, ms));
       this.spaceSleepResolve = () => {
         clearTimeout(timer);
-        resolve();
+        resolve(false);
       };
     });
   }
@@ -536,26 +566,50 @@ export class MidiOutputService implements OnDestroy {
 
   // ---- Internal MIDI message methods ----
 
-  private sendNoteOn(note: number, velocity: number, channel: number, output: MIDIOutput): void {
-    if (note < 0 || note > 127) return;
+  /** Send a note-on, now or (with `at`, the page clock in ms) at an exact time; returns its number for the matching note-off. */
+  private sendNoteOn(note: number, velocity: number, channel: number, output: MIDIOutput, at?: number): number {
+    if (note < 0 || note > 127) return 0;
     // MIDI note-on: 0x90 + channel (0-based)
     const status = 0x90 | ((channel - 1) & 0x0f);
-    output.send([status, note, velocity & 0x7f]);
-    this.activeNotes.set(`${note}:${channel}`, { note, channel, output });
+    if (at === undefined) output.send([status, note, velocity & 0x7f]);
+    else output.send([status, note, velocity & 0x7f], at);
+    const seq = ++this.noteSeq;
+    this.activeNotes.set(`${note}:${channel}`, { note, channel, output, seq });
     // Cancel any pending holdoff — we are actively sending again
     if (this.isSendingHoldoff) {
       clearTimeout(this.isSendingHoldoff);
       this.isSendingHoldoff = null;
     }
     this.isSending.set(true);
+    return seq;
   }
 
-  private sendNoteOff(note: number, channel: number, output: MIDIOutput): void {
+  /**
+   * Send a note-off, now or (with `at`) at an exact time. A note-off placed ahead of time passes `seq`, the
+   * number of its note-on, and the note counts as held until that time; a later note-on of the same note
+   * (placed before this one fired) keeps it held.
+   */
+  private sendNoteOff(note: number, channel: number, output: MIDIOutput, at?: number, seq?: number): void {
     if (note < 0 || note > 127) return;
     // MIDI note-off: 0x80 + channel (0-based)
     const status = 0x80 | ((channel - 1) & 0x0f);
+    if (at !== undefined && at > performance.now() + 1) {
+      output.send([status, note, 0], at);
+      setTimeout(() => this.noteReleased(note, channel, seq), at - performance.now());
+      return;
+    }
     output.send([status, note, 0]);
-    this.activeNotes.delete(`${note}:${channel}`);
+    this.noteReleased(note, channel);
+  }
+
+  /** A note-off has taken effect: the note is no longer held, and the sending flag follows after its holdoff. */
+  private noteReleased(note: number, channel: number, seq?: number): void {
+    const key = `${note}:${channel}`;
+    if (seq !== undefined && this.activeNotes.get(key)?.seq !== seq) {
+      // A later note-on holds the note, or everything was released meanwhile
+      if (this.activeNotes.has(key)) return;
+    }
+    this.activeNotes.delete(key);
     if (this.activeNotes.size === 0) {
       // Don't clear isSending immediately — start a holdoff timer so
       // the physical bus has time to settle before MIDI input is unmuted.

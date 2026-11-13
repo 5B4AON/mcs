@@ -5,7 +5,7 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
-import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
+import { MORSE_TABLE, timingsFromWpm, adjustGapTimings, pauseQuarters } from '../morse-table';
 import { AudioOutputService } from './audio-output.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { VibrationOutputService } from './vibration-output.service';
@@ -25,6 +25,55 @@ export interface PlayingPattern {
   /** Optional colour override from the input */
   color?: string;
 }
+
+/**
+ * Everything the encoder plays (typed text, practice, replays, relayed playback) is placed on the audio
+ * clock: the next tokens are scheduled this far ahead of the one that is sounding, so a busy page cannot
+ * stretch a gap, and the first token of a run starts after a short headroom.
+ */
+const TIMELINE_LEAD_S = 0.2;
+const TIMELINE_START_S = 0.02;
+/**
+ * The outputs that time themselves are handed a token this long before it sounds, with its exact start
+ * time (MIDI places its notes from it), and the sent index moves then too.
+ */
+const TIMELINE_FORWARD_S = 0.03;
+/** A gap shorter than this needs no snap-to-silence event after the tone before it (see `scheduleToneAt`) */
+const SNAP_GAP_MS = 35;
+
+/** A token placed on the audio clock, waiting for its turn to start sounding. */
+interface TimelineToken {
+  token: string;
+  idx: number;
+  endIdx: number;
+  /** Audio-clock time at which it starts */
+  at: number;
+  /** Tones of its elements: start offset from `at` and length, in ms */
+  elements: { offset: number; dur: number }[];
+  /** Dots and dashes of the character, for the progress shown while it plays */
+  morse: string;
+  source: 'rx' | 'tx';
+  /** The character is handed to WinKeyer, MIDI and the relay when it starts (not for local-only playback) */
+  external: boolean;
+  /** Who the typed character is shown for in Lens; null in practice and replays */
+  lens: { source: 'rx' | 'tx'; name?: string; color?: string } | null;
+}
+
+/** A received (relay) character placed on the audio clock. */
+interface RxToken {
+  char: string;
+  at: number;
+  elements: { offset: number; dur: number }[];
+  morse: string;
+  source: 'rx' | 'tx';
+  name?: string;
+  color?: string;
+  /** Output is suppressed (loop detection): Lens still shows the character */
+  suppressed: boolean;
+}
+
+/** A streamed text drops what it has sent from the front of the buffer once this much has been sent */
+const STREAM_COMPACT_AT = 600;
 
 /**
  * Morse Encoder Service — converts typed text to perfectly timed morse output.
@@ -51,6 +100,9 @@ export class MorseEncoderService {
 
   /** Index into buffer: characters up to this index have been sent */
   readonly sentIndex = signal(0);
+
+  /** Characters dropped from the front of the buffer so far by a streamed text (see `appendText`) */
+  readonly trimmed = signal(0);
 
   /** Whether TX is active */
   readonly isSending = signal(false);
@@ -101,6 +153,14 @@ export class MorseEncoderService {
   /** A replay that has not finished: playing, or paused and waiting for the TX button. */
   readonly replayPending = computed(() => this.replayMode() && this.replayIndex() < this.replayText.length);
 
+  /** Timers of the things shown or felt while a local token plays (sprite, Lens, symbols, vibration); they never carry the timing */
+  private timelineTimers = new Set<ReturnType<typeof setTimeout>>();
+  private timelineActive = false;
+  private timelineKeyDown = false;
+
+  /** The buffer is fed with `appendText`, so what has been sent is dropped from its front as it goes */
+  private streaming = false;
+
   /** Currently sending (internal lock) */
   private sending = false;
   private abortController: AbortController | null = null;
@@ -126,6 +186,7 @@ export class MorseEncoderService {
 
   /** Enqueue text for sending */
   enqueue(text: string): void {
+    this.streaming = false;
     const previous = this.buffer();
     const next = previous + text.toUpperCase();
     this.resetForwardedIfTokenChanged(previous, next);
@@ -142,6 +203,8 @@ export class MorseEncoderService {
 
   /** Set entire buffer (e.g. from textarea) */
   setBuffer(text: string): void {
+    this.streaming = false;
+    this.trimmed.set(0);
     const upper = text.toUpperCase();
     const oldSent = this.sentIndex();
     const oldBuf = this.buffer();
@@ -190,6 +253,7 @@ export class MorseEncoderService {
     this.isSending.set(false);
     this.abortController?.abort();
     this.cancelWordGapTimer();
+    if (this.timelineActive) this.cancelTimeline();
   }
 
   /** Toggle TX */
@@ -201,10 +265,36 @@ export class MorseEncoderService {
     }
   }
 
+  /**
+   * Add text to the end of the buffer without replacing it and without starting to send (a long text
+   * is fed in pieces: e-book playback). Text that has been sent is dropped from the front as it
+   * goes, so the buffer stays small; `trimmed` counts what was dropped, which keeps
+   * `trimmed() + sentIndex()` the number of characters sent since the text started.
+   */
+  appendText(text: string): void {
+    if (!this.streaming) {
+      this.streaming = true;
+      this.trimmed.set(0);
+    }
+    this.buffer.update(b => b + text.toUpperCase());
+  }
+
+  /** Drop what a streamed text has sent from the front of the buffer. */
+  private compactStream(): number {
+    const sent = this.sentIndex();
+    if (!this.streaming || sent < STREAM_COMPACT_AT) return 0;
+    this.buffer.update(b => b.slice(sent));
+    this.sentIndex.set(0);
+    this.trimmed.update(t => t + sent);
+    return sent;
+  }
+
   /** Clear the send buffer */
   clearBuffer(): void {
     this.stopTx();
     this.resetReplay();
+    this.streaming = false;
+    this.trimmed.set(0);
     this.buffer.set('');
     this.sentIndex.set(0);
     this.forwardedIndex = -1;
@@ -213,6 +303,8 @@ export class MorseEncoderService {
 
   /** Submit text in 'enter' mode */
   submitText(text: string): void {
+    this.streaming = false;
+    this.trimmed.set(0);
     this.buffer.set(text.toUpperCase());
     this.sentIndex.set(0);
     this.forwardedIndex = -1;
@@ -299,53 +391,7 @@ export class MorseEncoderService {
     const replay = this.replayMode();
 
     try {
-      while (this.isSending() && (replay
-        ? this.replayIndex() < this.replayText.length
-        : this.sentIndex() < this.buffer().length)) {
-        if (signal.aborted) break;
-
-        const idx = replay ? this.replayIndex() : this.sentIndex();
-        const { token, endIdx } = this.extractToken(replay ? this.replayText : this.buffer(), idx);
-
-        const es = this.settings.settings();
-        const source = es.encoderSource;
-        const isPracticeLocal = this.isLocalOnly(es);
-
-        // Skip external outputs when practice mode or a local-only replay uses local audio only. A character that was
-        // interrupted by a pause is played again in full on resume but forwarded only once,
-        // because the external outputs time and send it themselves.
-        const forwardedIndex = replay ? this.replayForwardedIndex : this.forwardedIndex;
-        if (!isPracticeLocal && forwardedIndex !== idx) {
-          if (replay) this.replayForwardedIndex = idx;
-          else this.forwardedIndex = idx;
-
-          // Forward to WinKeyer (as encoder source) — WinKeyer handles its own timing
-          this.winkeyerOutput.forwardDecodedChar(token, source);
-
-          // Forward to MIDI output (as encoder source) — plays elements at encoder WPM
-          this.midiOutput.forwardDecodedChar(token, source);
-
-          // Forward to Firebase RTDB output (as encoder source)
-          this.rtdbOutput.forwardEncoderChar(token, es.encoderWpm, es.encoderSource, es.encoderName, es.encoderColor);
-        }
-
-        if (replay) this.replayProgress.set({ index: idx, pattern: '' });
-        await this.sendCharacter(token, signal);
-
-        // A character cut short by Stop/Pause does not count as sent: it plays again in full on resume
-        if (signal.aborted) break;
-        if (replay) {
-          this.replayForwardedIndex = -1;
-          this.replayIndex.set(endIdx);
-        } else {
-          this.forwardedIndex = -1;
-          this.sentIndex.set(endIdx);
-        }
-        this.typedPattern.set(null);
-
-        // Inter-character space (3 dit units) — already included after last element
-        // If next char is space, we handle it in sendCharacter
-      }
+      await this.runTimeline(signal, replay);
     } finally {
       this.sending = false;
       this.typedPattern.set(null);
@@ -373,69 +419,214 @@ export class MorseEncoderService {
     }
   }
 
-  private async sendCharacter(char: string, signal: AbortSignal): Promise<void> {
-    const s = this.settings.settings();
-    const baseTimings = timingsFromWpm(s.encoderWpm);
+  // ---- Playback on the audio clock ----
+
+  /** The timings of the current speed and Farnsworth settings. */
+  private currentTimings(s: ReturnType<SettingsService['settings']>): ReturnType<typeof timingsFromWpm> {
     const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
-    const timings = adjustGapTimings(baseTimings, s.encoderWpm, fwSource, s);
-    const source = s.encoderSource;
+    return adjustGapTimings(timingsFromWpm(s.encoderWpm), s.encoderWpm, fwSource, s);
+  }
 
-    if (char === ' ') {
-      // Word space = 7 dit units total; 3 already elapsed as inter-char
-      await this.sleep(timings.interWord - timings.interChar, signal);
-      return;
+  /** The page-clock time (ms) of an audio-clock time; without audio the timeline already runs on the page clock. */
+  private perfOf(t: number): number {
+    return this.audioOutput.perfTimeOf(t) ?? t * 1000;
+  }
+
+  /**
+   * Play the text with the timing kept on the audio clock. Every token's start is the previous start plus
+   * the previous length, computed in audio time, so tones, gaps, letter gaps, word gaps and pauses are exact
+   * whatever the page is doing. Tokens are placed about `TIMELINE_LEAD_S` ahead of the one sounding; the
+   * timers here only wake the loop and move the sent index (the highlight) just before a token starts. The
+   * sidetone and the opto output are placed on the audio clock and the serial pulses at the page-clock
+   * times that belong to it; WinKeyer and the relay are handed each character then, and MIDI with its exact
+   * start time, from which it places its notes with Web MIDI timestamps. A pause or
+   * stop drops what is placed, and the token that was sounding is played again in full on resume.
+   */
+  private async runTimeline(signal: AbortSignal, replay: boolean): Promise<void> {
+    const text = (): string => replay ? this.replayText : this.buffer();
+    const index = (): number => replay ? this.replayIndex() : this.sentIndex();
+    // Moves the index to a token (or the end) and returns how many characters a streamed text dropped
+    const setIndex = (i: number): number => {
+      if (replay) {
+        this.replayForwardedIndex = -1;
+        this.replayIndex.set(i);
+        return 0;
+      }
+      this.forwardedIndex = -1;
+      this.sentIndex.set(i);
+      return this.compactStream();
+    };
+    const clock = (): number => this.audioOutput.clockTime() ?? performance.now() / 1000;
+    const wait = (until: number): Promise<void> => this.sleep(Math.max(0, (until - clock()) * 1000), signal);
+
+    await this.audioOutput.ready();
+    if (signal.aborted) return;
+    this.timelineActive = true;
+    const queue: TimelineToken[] = [];
+    let cursor = index();
+    // When the next token to place starts
+    let next = clock() + TIMELINE_START_S;
+    try {
+      for (;;) {
+        // Place tokens until the audio clock has enough of them ahead
+        while (cursor < text().length && next - clock() < TIMELINE_LEAD_S && !signal.aborted) {
+          const { token, endIdx } = this.extractToken(text(), cursor);
+          // The page stalled for longer than the look-ahead: carry on from now rather than in the past
+          if (next < clock()) next = clock() + 0.005;
+          const placed = this.placeToken(token, cursor, endIdx, next, replay);
+          queue.push(placed.token);
+          next += placed.lengthMs / 1000;
+          cursor = endIdx;
+        }
+        if (signal.aborted) return;
+
+        if (queue.length === 0) {
+          if (cursor < text().length) {
+            await wait(next - TIMELINE_LEAD_S);
+            if (signal.aborted) return;
+            continue;
+          }
+          // Everything has started: the last token still has to finish
+          await wait(next);
+          if (signal.aborted) return;
+          const dropped = setIndex(cursor);
+          cursor -= dropped;
+          // More text may have arrived meanwhile: the timeline goes on from here without a gap
+          if (cursor < text().length) continue;
+          return;
+        }
+
+        const head = queue.shift() as TimelineToken;
+        // Wake a little early, so the outputs that time themselves can be handed the exact start time
+        await wait(head.at - TIMELINE_FORWARD_S);
+        if (signal.aborted) return;
+        // The token that was sounding when a pause came is played again: its index has not changed
+        if (head.idx !== index()) {
+          const dropped = setIndex(head.idx);
+          if (dropped) {
+            cursor -= dropped;
+            for (const q of queue) {
+              q.idx -= dropped;
+              q.endIdx -= dropped;
+            }
+          }
+        }
+        if (head.external) this.forwardToken(head.token, index(), replay, this.perfOf(head.at));
+        await wait(head.at);
+        if (signal.aborted) return;
+        this.startToken(head, replay);
+      }
+    } finally {
+      this.timelineActive = false;
+      if (signal.aborted) this.cancelTimeline();
     }
+  }
 
-    const morse = MORSE_TABLE[char];
-    // Lens follows playback; Copy Practice has its own view
-    const lensMeta = s.encoderMode === 'practice' || this.replayMode()
+  /**
+   * Place the dits and dahs of a character at `at`: sidetone and opto on the audio clock, and, when `serial`
+   * is set, the serial pulses at the matching page-clock times. Returns each element's start offset and length.
+   */
+  private placeElements(
+    morse: string, at: number, timings: ReturnType<typeof timingsFromWpm>, source: 'rx' | 'tx', serial: boolean,
+  ): { elements: { offset: number; dur: number }[]; lengthMs: number } {
+    const elements: { offset: number; dur: number }[] = [];
+    let offset = 0;
+    for (let i = 0; i < morse.length; i++) {
+      const dur = morse[i] === '.' ? timings.dit : timings.dah;
+      const last = i === morse.length - 1;
+      const t = at + offset / 1000;
+      this.audioOutput.scheduleToneAt(t, dur, source, last || timings.intraChar > SNAP_GAP_MS);
+      if (serial) this.serialOutput.schedulePulseAt(this.perfOf(t), dur, source);
+      elements.push({ offset, dur });
+      offset += dur + (last ? 0 : timings.intraChar);
+    }
+    return { elements, lengthMs: offset + timings.interChar };
+  }
+
+  /** Put one token on the audio clock at `at` and say how long it takes (its sound, the gap after it, or a pause). */
+  private placeToken(
+    token: string, idx: number, endIdx: number, at: number, replay: boolean,
+  ): { token: TimelineToken; lengthMs: number } {
+    const s = this.settings.settings();
+    const timings = this.currentTimings(s);
+    const source = s.encoderSource;
+    const external = !this.isLocalOnly(s);
+    // Lens follows typed text; Copy Practice has its own view
+    const lens = s.encoderMode === 'practice' || replay
       ? null
       : { source, name: s.encoderName || undefined, color: s.encoderColor || undefined };
-    if (lensMeta) this.lens.show('encoder', lensMeta, '', char, morse ?? '');
-    if (!morse) return; // skip unknown chars
+    const placed: TimelineToken = { token, idx, endIdx, at, elements: [], morse: '', source, external, lens };
 
-    for (let i = 0; i < morse.length; i++) {
-      if (signal.aborted) return;
+    const quarters = pauseQuarters(token);
+    if (quarters > 0) return { token: placed, lengthMs: timings.interWord * quarters / 4 };
+    // A word gap is 7 dit units; the 3 after the last element of the letter before it are already counted
+    if (token === ' ') return { token: placed, lengthMs: timings.interWord - timings.interChar };
+    const morse = MORSE_TABLE[token];
+    if (!morse) return { token: placed, lengthMs: 0 };
 
-      const element = morse[i];
-      const duration = element === '.' ? timings.dit : timings.dah;
-      if (this.replayMode()) this.replayProgress.update(p => p && { ...p, pattern: morse.slice(0, i + 1) });
-      if (lensMeta) {
-        this.lens.show('encoder', lensMeta, morse.slice(0, i + 1), char, morse);
-        this.typedPattern.set({ pattern: morse.slice(0, i + 1), source, color: lensMeta.color });
-      }
+    placed.morse = morse;
+    const { elements, lengthMs } = this.placeElements(morse, at, timings, source, external);
+    placed.elements = elements;
+    return { token: placed, lengthMs };
+  }
 
-      // Emit element-start for sprite animation
-      this.elementEvent$.next({ down: true });
+  /** Hand a character to WinKeyer, MIDI and the relay, once: a character played again after a pause is not sent twice. */
+  private forwardToken(token: string, idx: number, replay: boolean, startAt: number): void {
+    if (pauseQuarters(token) > 0) return;
+    const forwarded = replay ? this.replayForwardedIndex : this.forwardedIndex;
+    if (forwarded === idx) return;
+    if (replay) this.replayForwardedIndex = idx;
+    else this.forwardedIndex = idx;
+    const es = this.settings.settings();
+    const source = es.encoderSource;
+    // WinKeyer handles its own timing; MIDI places its notes at exact times from the start time it is given
+    this.winkeyerOutput.forwardDecodedChar(token, source);
+    this.midiOutput.forwardDecodedChar(token, source, undefined, false, false, startAt);
+    this.rtdbOutput.forwardEncoderChar(token, es.encoderWpm, es.encoderSource, es.encoderName, es.encoderColor);
+  }
 
-      // Play tone, pulse serial, and vibrate for the element duration
-      const isPracticeLocal = this.isLocalOnly(s);
-      if (isPracticeLocal) {
-        await Promise.all([
-          this.audioOutput.scheduleTone(duration, source),
-          this.vibrationOutput.schedulePulse(duration, source),
-        ]);
-      } else {
-        await Promise.all([
-          this.audioOutput.scheduleTone(duration, source),
-          this.serialOutput.schedulePulse(duration, source),
-          this.vibrationOutput.schedulePulse(duration, source),
-        ]);
-      }
+  /** A token has started sounding: the sprite, Lens, the symbols and the vibration follow its elements. */
+  private startToken(q: TimelineToken, replay: boolean): void {
+    this.typedPattern.set(null);
+    if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
+    if (q.lens && q.token !== ' ' && pauseQuarters(q.token) === 0) this.lens.show('encoder', q.lens, '', q.token, q.morse);
+    q.elements.forEach((e, i) => {
+      this.timelineLater(e.offset, () => {
+        this.timelineKeyDown = true;
+        this.elementEvent$.next({ down: true });
+        void this.vibrationOutput.schedulePulse(e.dur, q.source);
+        const pattern = q.morse.slice(0, i + 1);
+        if (this.replayMode()) this.replayProgress.update(p => p && { ...p, pattern });
+        if (q.lens) {
+          this.lens.show('encoder', q.lens, pattern, q.token, q.morse);
+          this.typedPattern.set({ pattern, source: q.source, color: q.lens.color });
+        }
+      });
+      this.timelineLater(e.offset + e.dur, () => {
+        this.timelineKeyDown = false;
+        this.elementEvent$.next({ down: false });
+      });
+    });
+  }
 
-      // Emit element-end for sprite animation
+  private timelineLater(ms: number, fn: () => void): void {
+    const id = setTimeout(() => {
+      this.timelineTimers.delete(id);
+      fn();
+    }, ms);
+    this.timelineTimers.add(id);
+  }
+
+  /** Drop what the timeline has placed on the audio clock, its serial pulses and its pending timers. */
+  private cancelTimeline(): void {
+    for (const id of this.timelineTimers) clearTimeout(id);
+    this.timelineTimers.clear();
+    this.audioOutput.cancelScheduledTones();
+    this.serialOutput.cancelPulses();
+    if (this.timelineKeyDown) {
+      this.timelineKeyDown = false;
       this.elementEvent$.next({ down: false });
-
-      if (signal.aborted) return;
-
-      // Intra-character space (1 dit unit) — except after last element
-      if (i < morse.length - 1) {
-        await this.sleep(timings.intraChar, signal);
-      }
     }
-
-    // Inter-character space (3 dit units)
-    await this.sleep(timings.interChar, signal);
   }
 
   private sleep(ms: number, signal: AbortSignal): Promise<void> {
@@ -505,60 +696,86 @@ export class MorseEncoderService {
   private async processSidetoneQueue(): Promise<void> {
     if (this.sidetonePlaying) return;
     this.sidetonePlaying = true;
-
     try {
-      while (this.sidetoneQueue.length > 0) {
-        const entry = this.sidetoneQueue.shift()!;
-        await this.playRxChar(entry.char, entry.source, entry.wpm, entry.name, entry.color);
-      }
+      await this.runRxTimeline();
     } finally {
       this.sidetonePlaying = false;
     }
   }
 
-  private async playRxChar(char: string, source: 'rx' | 'tx', wpm?: number, name?: string, color?: string): Promise<void> {
-    const lensMeta = { source, name, color };
+  /**
+   * Play received (relay) characters on the same audio-clock timeline as typed text: each starts where the
+   * previous one ends, tones go on the audio clock and the serial pulses at the matching page-clock times.
+   * Characters keep arriving while it runs, so it places what is queued and goes on from its own end.
+   */
+  private async runRxTimeline(): Promise<void> {
+    const clock = (): number => this.audioOutput.clockTime() ?? performance.now() / 1000;
+    const wait = (until: number): Promise<void> => this.sleepMs(Math.max(0, (until - clock()) * 1000));
+    await this.audioOutput.ready();
+    const pending: RxToken[] = [];
+    let next = clock() + TIMELINE_START_S;
+    for (;;) {
+      while (this.sidetoneQueue.length > 0 && next - clock() < TIMELINE_LEAD_S) {
+        const entry = this.sidetoneQueue.shift() as SidetoneQueueEntry;
+        if (next < clock()) next = clock() + 0.005;
+        const placed = this.placeRxChar(entry, next);
+        pending.push(placed.token);
+        next += placed.lengthMs / 1000;
+      }
+      if (pending.length === 0) {
+        if (this.sidetoneQueue.length > 0) {
+          await wait(next - TIMELINE_LEAD_S);
+          continue;
+        }
+        await wait(next);
+        this.receivedPattern.set(null);
+        if (this.sidetoneQueue.length > 0) continue;
+        return;
+      }
+      const head = pending.shift() as RxToken;
+      await wait(head.at);
+      this.startRxChar(head);
+    }
+  }
+
+  /** Put a received character on the audio clock at `at`; returns how long it takes. */
+  private placeRxChar(entry: SidetoneQueueEntry, at: number): { token: RxToken; lengthMs: number } {
+    const { char, source, wpm, name, color } = entry;
+    const morse = char === ' ' ? '' : MORSE_TABLE[char] ?? '';
+    const placed: RxToken = { char, at, elements: [], morse, source, name, color, suppressed: false };
     // Skip output if loop is suppressed (Lens still shows the received character)
     if (this.loopDetection.isSuppressed) {
-      const morse = MORSE_TABLE[char];
-      if (char !== ' ' && morse) this.lens.show('rtdb', lensMeta, morse, char);
-      return;
+      placed.suppressed = true;
+      return { token: placed, lengthMs: 0 };
     }
     const charWpm = wpm ?? this.settings.settings().encoderWpm;
-    const baseTimings = timingsFromWpm(charWpm);
-    const timings = adjustGapTimings(baseTimings, charWpm, source, this.settings.settings());
+    const timings = adjustGapTimings(timingsFromWpm(charWpm), charWpm, source, this.settings.settings());
+    if (char === ' ') return { token: placed, lengthMs: timings.interWord - timings.interChar };
+    if (!morse) return { token: placed, lengthMs: 0 };
+    // Played through all outputs based on their forward settings
+    const { elements, lengthMs } = this.placeElements(morse, at, timings, source, true);
+    placed.elements = elements;
+    return { token: placed, lengthMs };
+  }
 
-    if (char === ' ') {
-      await this.sleepMs(timings.interWord - timings.interChar);
+  /** A received character has started sounding: Lens, the symbols and the vibration follow its elements. */
+  private startRxChar(q: RxToken): void {
+    const meta = { source: q.source, name: q.name, color: q.color };
+    this.receivedPattern.set(null);
+    if (q.suppressed) {
+      if (q.char !== ' ' && q.morse) this.lens.show('rtdb', meta, q.morse, q.char);
       return;
     }
-
-    const morse = MORSE_TABLE[char];
-    this.lens.show('rtdb', lensMeta, '', char, morse ?? '');
-    if (!morse) return;
-
-    for (let i = 0; i < morse.length; i++) {
-      const element = morse[i];
-      const duration = element === '.' ? timings.dit : timings.dah;
-      this.lens.show('rtdb', lensMeta, morse.slice(0, i + 1), char, morse);
-      this.receivedPattern.set({ pattern: morse.slice(0, i + 1), source, color });
-
-      // Play through all outputs based on their forward settings
-      await Promise.all([
-        this.audioOutput.scheduleTone(duration, source),
-        this.serialOutput.schedulePulse(duration, source),
-        this.vibrationOutput.schedulePulse(duration, source),
-      ]);
-
-      // Intra-character space
-      if (i < morse.length - 1) {
-        await this.sleepMs(timings.intraChar);
-      }
-    }
-
-    // Inter-character space
-    await this.sleepMs(timings.interChar);
-    this.receivedPattern.set(null);
+    if (q.char === ' ') return;
+    this.lens.show('rtdb', meta, '', q.char, q.morse);
+    q.elements.forEach((e, i) => {
+      setTimeout(() => {
+        const pattern = q.morse.slice(0, i + 1);
+        this.lens.show('rtdb', meta, pattern, q.char, q.morse);
+        this.receivedPattern.set({ pattern, source: q.source, color: q.color });
+        void this.vibrationOutput.schedulePulse(e.dur, q.source);
+      }, e.offset);
+    });
   }
 
   private sleepMs(ms: number): Promise<void> {

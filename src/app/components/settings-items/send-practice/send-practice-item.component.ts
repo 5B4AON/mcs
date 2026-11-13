@@ -14,6 +14,7 @@ import { kochLessonHint } from '../practice/practice-ui.utils';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { EbookLoadComponent } from '../ebook-load/ebook-load.component';
 
 /**
  * Settings item — Send Practice.
@@ -26,7 +27,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-send-practice-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent, EbookLoadComponent],
   templateUrl: './send-practice-item.component.html',
   styles: [':host { display: contents; }'],
 })

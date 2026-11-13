@@ -14,6 +14,9 @@ import { DisplayBufferService, DisplayLine } from '../../../services/display-buf
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
+import { EbookService } from '../../../services/ebook.service';
+import { EbookReaderComponent } from '../../ebook-reader/ebook-reader.component';
+import { ebookReaderColors } from '../../ebook-reader/ebook-colors';
 import { SendPracticeService } from '../../../services/send-practice.service';
 import { KochHelpService } from '../../../services/koch-help.service';
 import { KochHelpOverlayComponent } from '../../koch-help-overlay/koch-help-overlay.component';
@@ -42,7 +45,7 @@ import * as sendPracticeUi from '../../settings-items/send-practice/send-practic
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent],
+  imports: [FsLensViewComponent, EbookReaderComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -65,6 +68,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   @Output() inputModeChange = new EventEmitter<'key' | 'type'>();
   /** Asks the app to replay a line through the encoder, after its external-send confirmation. */
   @Output() replayRequested = new EventEmitter<string>();
+  /** The Book button was pressed: the app opens the Book dialog (page, jump, start over). */
+  @Output() bookRequested = new EventEmitter<void>();
 
   @ViewChild('conversationArea') conversationAreaRef?: ElementRef<HTMLDivElement>;
   @ViewChild('typeInput') typeInputRef?: ElementRef<HTMLInputElement>;
@@ -79,6 +84,16 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Whether text is currently being revealed (button held) */
   revealing = false;
+
+  /** The e-book's reader takes the conversation's place while Copy or Send practice has the book as its content. */
+  get ebookView(): boolean {
+    return this.ebook.active();
+  }
+
+  /** Played, current and highlight colours of the reader, readable on the chosen background. */
+  get ebookColors() {
+    return ebookReaderColors(this.settings.modalDisplay().rxBackground);
+  }
 
   /** Whether the encoder is in practice mode. */
   get isPractice(): boolean {
@@ -171,6 +186,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     private mouseKeyer: MouseKeyerService,
     public practice: PracticeService,
     public sendPractice: SendPracticeService,
+    public ebook: EbookService,
     public kochHelp: KochHelpService,
     private sanitizer: DomSanitizer,
   ) {
@@ -187,6 +203,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
    */
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
+    // A book is read as it is: the text blur setting does not apply, and there is nothing to reveal or replay
+    if (this.ebook.active()) return null;
     if (s.encoderMode === 'send-practice') return null;
     if (s.encoderMode === 'practice' && this.inputMode === 'key') return null;
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
@@ -443,7 +461,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Refocus typing when the conversation is clicked in Type mode. */
   onConversationClick(): void {
-    if (this.inputMode === 'type' && !this.celebrating) this.focusTypeInput();
+    // Reading a book needs no typing, so the on-screen keyboard must not come up
+    if (this.inputMode === 'type' && !this.celebrating && !this.ebookView) this.focusTypeInput();
   }
 
   /**

@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.16.0] - 2026-11-13
+
+### Added
+
+- **E-book practice** — Copy Practice and Send Practice have a new **E-book** content choice. Load a text (`.txt`), Markdown (`.md`), web page (`.html`) or EPUB (`.epub`) file and read it in the output area, on the main screen and in full screen, while you listen to it (Copy) or key it (Send). The text keeps its letter case, paragraphs, headings and lists; played characters turn another colour and grow slightly in place without the text moving, the current character is highlighted, and the view scrolls smoothly with your place near the middle. Anything Morse has no code for is skipped silently (accented letters are sent as the plain letter), and nothing is shown as dots and dashes. Copy plays the book from where you stopped and pauses like someone reading aloud: a little after a comma, semicolon or full stop, longer at the end of a list item, paragraph, heading or chapter, following the encoder speed and Farnsworth. In Send practice the next character is highlighted and moves on only when you key it right; spaces are never keyed. There are no rounds or scores. Click or tap a word to start from there (not while the book plays, and in Send not when the mouse keyer is one of your keys). The Text Blur setting does not apply to a book.
+- **Book dialog** — A round contents button over the reader opens a dialog with your page (about 1,500 characters, so the number is the same on every screen), a slider and number box to jump to another page, **Start over**, and for an EPUB a **Chapters** list. A jump lands at the start of a paragraph and is quick even in a very long book, because a text file is read straight from the right place instead of from the start.
+- **Load from a web address** — Type an address in the E-book card and press Load. The address is fetched by your browser straight from that site (nothing goes through our servers); many sites do not allow that, and the message then tells you to download the file and load it from your device. EPUBs from an address are downloaded whole (up to 100 MB).
+- **Resume** — The place you reach in a book is remembered for each file or address, about every two seconds while you read, in this browser only (never the book itself). Loading the same book again asks whether to Resume or start over; Resume closes Settings and takes you back to the practice you loaded it from.
+- **EPUB** — EPUB files open one chapter at a time in reading order, with chapter titles from the table of contents. Protected (DRM) EPUBs and files that are not EPUBs give a plain message.
+- **Help 3.7** — A new Help section explains E-book practice, with use cases for each format and a tip on getting free EPUB books from Project Gutenberg.
+
+### Changed
+
+- **Exact timing for everything the encoder plays** — Typed text (Send on Enter and Live), all Copy Practice, "Hear it first", replays and relayed (RTDB) playback now place dots, dashes and gaps on the audio clock ahead of time, instead of waiting with timers between elements. A dit-dit such as "I" no longer sounds like two separate dits when the page is busy. The sidetone and the opto output follow the audio clock exactly; each serial DTR/RTS edge fires from a timer aimed at its own absolute time, so a late timer can no longer push the next edges later; MIDI output places every note-on and note-off with Web MIDI timestamps, so dits, dahs and gaps reach the device at exact times (from the encoder's timeline for typed and practice text, and one after another for characters that arrive from other inputs); WinKeyer and the relay are handed each character as it starts. Pause and Resume still replay the interrupted character in full (and do not send it twice), and Stop releases a serial pin that is asserted. The first sound after typing starts about 20 ms later than before. On a break-in or Stop, MIDI notes already handed to the driver (at most the element in hand and 40 ms) still finish and release.
+- **Pill buttons** — Text pill buttons everywhere (dialogs, Settings cards, the floating Back-to-top pills in Help and the Symbols reference) now have the same height as the pills in the kebab menus, also on touch screens. Round buttons are unchanged.
+- **Markdown and text files** — HTML entities such as `&nbsp;`, `&amp;` and `&#233;` are turned into their characters instead of being read out.
+- **Privacy policy** — It now covers E-book practice: files stay on your device, a typed web address is fetched by your browser from that site, and only the place in a book is saved.
+
 ## [2.15.4] - 2026-11-13
 
 ### Added
@@ -20,7 +38,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - **Silence after a reload on a phone** — When audio restarted by itself after the app was reopened, the first tap or key press now resumes it straight away instead of waiting for the retry timer or the paused-audio notice.
-- **Crackle over typed and practice text** — Typed, Copy Practice and relayed text now play their sidetone on a separate output with a larger buffer, which should stop the random cracks heard over the Morse on some phones. Hand keying keeps its small buffer, so its latency is unchanged.
 
 ## [2.15.3] - 2026-11-12
 

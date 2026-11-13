@@ -18,8 +18,13 @@
       <option value="words" [selected]="s().practiceContentMode === 'words'">Random Words</option>
       <option value="callsigns" [selected]="s().practiceContentMode === 'callsigns'">Random Callsigns</option>
       <option value="koch" [selected]="s().practiceContentMode === 'koch'">Koch method</option>
+      <option value="ebook" [selected]="s().practiceContentMode === 'ebook'">E-book</option>
     </select>
   </label>
+
+  @if (s().practiceContentMode === 'ebook') {
+    <app-ebook-load kind="copy" />
+  }
 
   <!-- Koch method: the lesson sets the character pool -->
   @if (s().practiceContentMode === 'koch') {
@@ -34,7 +39,8 @@
     <div class="cw-hint">{{ kochLessonHint() }}</div>
   }
 
-  <!-- Group count (all modes) -->
+  <!-- Group count (all modes except e-book) -->
+  @if (s().practiceContentMode !== 'ebook') {
   <label>
     Count:
     <select (change)="onGroupCountChange($event)">
@@ -43,6 +49,7 @@
       }
     </select>
   </label>
+  }
 
   <!-- Group size (random characters and Koch method) -->
   @if (s().practiceContentMode === 'characters' || s().practiceContentMode === 'koch') {
@@ -105,8 +112,10 @@
   }
 
   @if (part === 'all' || part === 'feedback') {
-  <!-- Feedback mode (Koch method is always Type-along) -->
-  @if (s().practiceContentMode !== 'koch') {
+  <!-- Feedback mode (Koch method is always Type-along, an e-book is always listen only) -->
+  @if (s().practiceContentMode === 'ebook') {
+    <div class="cw-hint">The book plays by itself. The characters light up in the text as they sound.</div>
+  } @else if (s().practiceContentMode !== 'koch') {
   <label>
     Feedback:
     <select (change)="onFeedbackModeChange($event)">

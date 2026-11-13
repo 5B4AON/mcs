@@ -8,6 +8,9 @@ import { MorseEncoderService } from './morse-encoder.service';
 import { KochHelpService } from './koch-help.service';
 import { MorseDecoderService } from './morse-decoder.service';
 import { DisplayBufferService } from './display-buffer.service';
+import { EbookService } from './ebook.service';
+import { EbookCursor } from './ebook-cursor';
+import { EbookPosition } from './ebook-model';
 import { PracticeContentOptions, PracticeSequenceGenerator } from './practice-content';
 import { PracticeFeedback, practiceAccuracy } from './practice-scoring';
 import { alignKeying } from './send-practice-alignment';
@@ -93,12 +96,15 @@ export class SendPracticeService {
 
   /** True while Send practice is the active mode */
   readonly active = computed(() => this.settings.settings().encoderMode === 'send-practice');
+  /** True while the content is an e-book: the book is keyed along, with no rounds or scoring */
+  readonly ebookMode = computed(() => this.active() && this.settings.settings().sendPracticeContentMode === 'ebook');
   /** Check mode in effect (Koch method always checks at the end) */
   readonly checkMode = computed(() => this.settings.settings().sendPracticeCheckMode);
   /** Whether at least one picked key can currently produce keying */
   readonly inputsReady = computed(() => sendPracticeHasActiveInput(this.settings.settings()));
   /** Whether the session has more than one round */
-  readonly isMultiRound = computed(() => this.settings.settings().sendPracticeRounds > 1);
+  readonly isMultiRound = computed(() => this.settings.settings().sendPracticeRounds > 1
+    && this.settings.settings().sendPracticeContentMode !== 'ebook');
   readonly isSessionSummary = computed(() => this.sessionStage() === 'summary');
   readonly currentRound = computed(() => this.roundScores().length + 1);
   /** Whether a multi-round briefing or summary is on screen (only those stages show prompt text) */
@@ -170,6 +176,9 @@ export class SendPracticeService {
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
   private finishedAt = 0;
   private lessonJump = false;
+  /** The e-book being keyed (null when none): the character to key next, and the position last shown for it */
+  private ebookCursor: EbookCursor | null = null;
+  private ebookShown: EbookPosition | null = null;
 
   constructor(
     private settings: SettingsService,
@@ -177,6 +186,7 @@ export class SendPracticeService {
     private decoder: MorseDecoderService,
     private displayBuffers: DisplayBufferService,
     private kochHelp: KochHelpService,
+    private ebook: EbookService,
   ) {
     // Collect the keying of the picked keys while a prompt waits to be keyed
     effect(() => {
@@ -186,6 +196,25 @@ export class SendPracticeService {
         for (let i = this.lastTaggedLen; i < tagged.length; i++) this.accept(tagged[i]);
         this.lastTaggedLen = tagged.length;
       });
+    });
+
+    // The reading was moved from outside (a click on the text, the Book dialog): the next character is the one there
+    effect(() => {
+      const moved = this.ebook.position();
+      this.ebook.revision();
+      untracked(() => this.followEbook(moved));
+    });
+
+    // A click on the text would also key when the mouse is one of the keys: only the Book dialog moves the reading then
+    effect(() => {
+      const s = this.settings.settings();
+      const locked = this.ebookMode() && s.mouseKeyerEnabled && s.sendPracticeInputs.includes('mouse');
+      untracked(() => this.ebook.jumpLocked.set(locked));
+    });
+
+    // Switching the content away from the book ends the reading
+    effect(() => {
+      if (!this.ebookMode()) untracked(() => this.ebookCursor && this.abort());
     });
 
     // Leaving Send practice from anywhere (Settings, presets, the wizard) drops the round
@@ -200,6 +229,7 @@ export class SendPracticeService {
 
   /** Label of the single action button for the current state. */
   actionLabel(): string {
+    if (this.ebookMode()) return this.state() === 'keying' ? 'Stop' : this.state() === 'finished' ? 'Start again' : 'Start';
     if (!this.isMultiRound()) {
       return this.state() === 'keying' ? 'Check' : this.state() === 'finished' ? 'Next sequence' : 'Start';
     }
@@ -218,6 +248,11 @@ export class SendPracticeService {
   /** The one action: start, check, next round or next session step, by the current state. */
   advance(): void {
     if (!this.inputsReady() && this.state() === 'idle') return;
+    if (this.ebookMode()) {
+      if (this.state() === 'keying') this.abort();
+      else this.beginEbook();
+      return;
+    }
     if (!this.isMultiRound()) {
       if (this.state() === 'keying') this.checkNow();
       else this.start();
@@ -264,6 +299,10 @@ export class SendPracticeService {
   }
 
   private begin(): void {
+    if (this.settings.settings().sendPracticeContentMode === 'ebook') {
+      this.beginEbook();
+      return;
+    }
     this.stopPrompt();
     this.clearGrace();
     this.referenceText.set(this.generator.generate(this.contentOptions()));
@@ -280,7 +319,7 @@ export class SendPracticeService {
 
   /** Score what was keyed so far and end the round. */
   checkNow(): void {
-    if (this.state() === 'keying') this.finishRound();
+    if (this.state() === 'keying' && !this.ebookMode()) this.finishRound();
   }
 
   /** Play the character to key next as sound on this device only ("Hear it first"). */
@@ -296,6 +335,8 @@ export class SendPracticeService {
 
   /** Abort the round or session without a result. */
   abort(): void {
+    this.ebookCursor = null;
+    this.ebookShown = null;
     this.kochHelp.cancelPending();
     this.stopPrompt();
     this.clearGrace();
@@ -370,6 +411,11 @@ export class SendPracticeService {
     const id = sendPracticeInputId(entry.inputPath);
     if (!id || !this.settings.settings().sendPracticeInputs.includes(id)) return;
 
+    if (this.ebookMode()) {
+      this.acceptEbook(entry, id);
+      return;
+    }
+
     // Without a round on screen (the first one, or after a result), the next keyed character
     // starts one, like pressing the button; that character is only the trigger
     if (this.state() !== 'keying') {
@@ -393,6 +439,84 @@ export class SendPracticeService {
       if (entry.wpm) this.wpmSamples.push(entry.wpm);
     }
     this.evaluateProgress();
+  }
+
+  // ---- E-book ----
+
+  /** Start keying the book from the reading position (the start again when it has been keyed to the end). */
+  private beginEbook(): void {
+    if (!this.ebook.loaded()) return;
+    if (this.ebook.atEnd) {
+      void this.ebook.startOver().then(() => {
+        if (!this.ebook.atEnd) this.beginEbook();
+      });
+      return;
+    }
+    const window = this.ebook.text;
+    if (!window) return;
+    this.stopPrompt();
+    this.clearGrace();
+    this.referenceText.set('');
+    this.feedback.set([]);
+    this.keyedText.set('');
+    this.lockedInput = null;
+    this.displayBuffers.clearAll();
+    this.decoder.clearOutput();
+    this.ebookCursor = new EbookCursor(window, this.ebook.position());
+    this.state.set('keying');
+    this.showEbook();
+  }
+
+  /** A character arrived from a picked key. */
+  private acceptEbook(entry: ReturnType<MorseDecoderService['taggedOutput']>[number], id: string): void {
+    // Without the book being keyed, the next keyed character starts it, like pressing the button
+    if (this.state() !== 'keying') {
+      if (entry.char === ' ' || !this.active() || Date.now() - this.finishedAt <= NEXT_KEY_GUARD_MS) return;
+      this.beginEbook();
+      if (this.state() !== 'keying') return;
+    }
+    if (this.lockedInput && this.lockedInput !== id) return;
+    // Word gaps and the error prosign carry nothing here: only the right character moves the reading on
+    if (entry.char === ' ' || entry.char === ERASE_PROSIGN) return;
+    this.lockedInput = id;
+    const cursor = this.ebookCursor;
+    const expected = cursor?.current;
+    if (!cursor || !expected) return;
+    if (entry.char.length === 1 && entry.char.toUpperCase() === expected.char) {
+      cursor.advance();
+      this.showEbook();
+    }
+  }
+
+  /** Show the character to key next in the reader, or finish at the end of the book. */
+  private showEbook(): void {
+    const cursor = this.ebookCursor;
+    if (!cursor) return;
+    this.ebookShown = cursor.position;
+    this.ebook.reportPosition(cursor.position);
+    if (cursor.ended) {
+      this.ebookCursor = null;
+      this.finishedAt = Date.now();
+      this.state.set('finished');
+    } else if (cursor.pending) {
+      // The next block is still being read
+      void cursor.window.ensure(cursor.blockIndex).then(() => {
+        if (this.ebookCursor !== cursor) return;
+        cursor.settle();
+        this.showEbook();
+      });
+    }
+  }
+
+  /** The reading was moved from outside while keying: the character to key next is the one there. */
+  private followEbook(moved: EbookPosition): void {
+    const cursor = this.ebookCursor;
+    const window = this.ebook.text;
+    if (!cursor || !window) return;
+    const shown = this.ebookShown;
+    if (cursor.window === window && shown && shown.block === moved.block && shown.at === moved.at) return;
+    this.ebookCursor = new EbookCursor(window, moved);
+    this.showEbook();
   }
 
   /**

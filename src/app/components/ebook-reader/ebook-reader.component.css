@@ -1,0 +1,137 @@
+/*
+ * Not encapsulated: the text is drawn from the script, so its elements carry no component attribute.
+ * Fills the box it sits in; the box decides the font, colour and size.
+ */
+app-ebook-reader {
+  position: absolute;
+  inset: 0;
+  display: block;
+  --eb-played: #1d5fa6;
+  --eb-current: #111;
+  --eb-current-bg: rgba(255, 190, 0, .65);
+}
+
+.eb-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 100, 60, .45) transparent;
+  padding: 0 1.2rem;
+  white-space: normal;
+  word-break: normal;
+  letter-spacing: inherit;
+  line-height: 1.5;
+  outline-offset: -2px;
+}
+.eb-scroll.eb-hidden {
+  display: none;
+}
+.eb-scroll.eb-jump {
+  cursor: pointer;
+}
+
+/* Half the box above and below, so the first and last lines can reach the middle (set from the script) */
+.eb-content {
+  padding-block: var(--eb-pad, 0px);
+}
+
+.eb-block {
+  margin: 0 0 .85em;
+  white-space: pre-line;
+}
+.eb-h {
+  font-size: 1.15em;
+  font-weight: 700;
+  margin: .9em 0 .55em;
+}
+.eb-li {
+  padding-left: 1.2em;
+  margin-bottom: .35em;
+  position: relative;
+}
+.eb-li::before {
+  content: '\2022';
+  position: absolute;
+  left: .3em;
+}
+.eb-quote {
+  padding-left: .9em;
+  border-left: 3px solid rgba(100, 75, 50, .45);
+  font-style: italic;
+}
+
+/* A line breaks only between words; a very long word (a web address) may break anywhere */
+.eb-w {
+  white-space: nowrap;
+}
+.eb-w.eb-long {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+/*
+ * A played character is a box of its own that is scaled by a transform, which does not move anything
+ * else, so the text never reflows while it is played.
+ */
+.eb-c {
+  display: inline-block;
+  transform: scale(1.12);
+  transform-origin: 50% 70%;
+  color: var(--eb-played);
+  transition: color .15s ease, transform .15s ease, background-color .15s ease;
+}
+.eb-c.eb-cur {
+  transform: scale(1.4);
+  color: var(--eb-current);
+  background-color: var(--eb-current-bg);
+  border-radius: 2px;
+}
+
+.eb-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 1rem 1.5rem;
+  font-size: .95em;
+  opacity: .75;
+}
+
+.eb-status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * In the full-screen view the text takes the view's size, line height and row gap (the font size is
+ * fitted by the view), and the bottom reserve stays free for the touch keys and the round buttons.
+ */
+.fs-conversation.ebook-on app-ebook-reader {
+  bottom: var(--fs-reserve, 60px);
+}
+.fs-conversation.ebook-on .eb-scroll {
+  padding: 0 .75rem;
+  line-height: var(--fs-lh, 1.5);
+  scrollbar-color: currentColor transparent;
+}
+.fs-conversation.ebook-on .eb-block {
+  margin-bottom: max(var(--fs-gap, 0px), .6em);
+}
+.fs-conversation.ebook-on .eb-quote {
+  border-left-color: currentColor;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eb-c {
+    transition: none;
+  }
+}

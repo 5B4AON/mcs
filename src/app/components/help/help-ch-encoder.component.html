@@ -250,6 +250,12 @@
         the newest lesson's characters coming up more often. See
         <em>Koch Method</em> below.</td>
   </tr>
+  <tr>
+    <td><strong>E-book</strong></td>
+    <td>A book, article or your own notes that you load from a file or a web
+        address. It is played from where you stopped, with the text on screen.
+        See <a href="#" class="help-link" data-section="s3-7">&sect;&nbsp;3.7</a>.</td>
+  </tr>
 </table>
 
 <div class="trivia-card">
@@ -570,7 +576,9 @@
     <td>The same choices as Copy Practice (random characters, words,
         callsigns, Koch method). Send Practice keeps its own settings and its
         own Koch lesson, so the two practices progress independently. Choosing
-        Koch method sets 5 groups of 5 characters (Copy Practice uses 10 groups).</td>
+        Koch method sets 5 groups of 5 characters (Copy Practice uses 10 groups).
+        <em>E-book</em> keys a loaded book instead, with no rounds or scoring; see
+        <a href="#" class="help-link" data-section="s3-7">&sect;&nbsp;3.7</a>.</td>
   </tr>
   <tr>
     <td><strong>Check</strong></td>
@@ -648,5 +656,143 @@
     1. Choose <em>Send practice</em> in the Mode dropdown, press Start, and key
     the character you see with the space bar (straight key) or the paddle keys.
     Score above 90&nbsp;% and the result offers lesson 2.
+  </p>
+</div>
+
+<!-- 3.7 E-book -->
+<h2 id="s3-7">3.7 &nbsp;E-book Practice</h2>
+
+<p>
+  Practise on real, flowing English. Load a book, an article or your own notes
+  and read it in the output area while you <strong>listen</strong> to it
+  (Copy practice) or <strong>key</strong> it yourself (Send practice). Choose
+  <strong>E-book</strong> as the <em>Content</em> of <strong>Copy
+  Practice</strong> or <strong>Send Practice</strong> in Settings &rarr; Other,
+  load the book there, and pick the practice in the Mode dropdown. The book
+  fills the whole output area on the main screen and in the full-screen view
+  (the Key/Type toggle stays as the practice sets it, and the text blur setting
+  does not apply to a book).
+</p>
+
+<h3>What to Load</h3>
+<table>
+  <tr><th>Format</th><th>Good for</th></tr>
+  <tr>
+    <td><strong>Text</strong> (<code>.txt</code>)</td>
+    <td>A novel or story saved as plain text; notes or an article pasted into
+        a text editor; your own practice script; a net or QSO script; a club
+        newsletter.</td>
+  </tr>
+  <tr>
+    <td><strong>Markdown</strong> (<code>.md</code>)</td>
+    <td>Your own lessons and notes written with headings and lists; README or
+        documentation files; text exported from a notes app.</td>
+  </tr>
+  <tr>
+    <td><strong>Web page</strong> (<code>.html</code>, <code>.htm</code>)</td>
+    <td>A news or blog article saved with &ldquo;Save page as&rdquo;; an offline
+        copy of a web page; a book chapter saved from the web.</td>
+  </tr>
+  <tr>
+    <td><strong>EPUB</strong> (<code>.epub</code>)</td>
+    <td>A whole book with chapters. <a href="https://www.gutenberg.org/" target="_blank" rel="noopener">Project Gutenberg</a>
+        offers tens of thousands of free books whose copyright has expired,
+        many of them as EPUB: open a book&rsquo;s page, choose <em>EPUB (no
+        images)</em> or <em>EPUB (with images)</em> under &ldquo;Download this
+        ebook&rdquo;, save the file and load it here. The version without
+        images is smaller and plays the same. English classics such as
+        <em>Pride and Prejudice</em>, <em>Alice in Wonderland</em> and the
+        <em>Sherlock Holmes</em> stories are a good start.</td>
+  </tr>
+  <tr>
+    <td><strong>Web address</strong></td>
+    <td>A text, Markdown, web page or EPUB file on a server that lets a browser
+        fetch it, for example a raw file on GitHub. Most large sites,
+        <strong>including Project Gutenberg, do not allow this</strong>: for
+        those, download the file and load it from your device.</td>
+  </tr>
+</table>
+
+<p>
+  Only English text can be played: letters, digits and the punctuation Morse
+  code has. Anything else (symbols, emoji, pictures, other alphabets) is skipped
+  silently and the reading goes on with the next character that can be sent;
+  accented letters are sent as the plain letter. Use only books and texts you
+  are free to read, such as public-domain works and your own files.
+</p>
+
+<h3>The Reading View</h3>
+<p>
+  The text keeps its letter case, paragraphs, headings and lists. Characters
+  already played or keyed turn another colour and become a little larger, in
+  place, and the character being sent (or waiting for you to key it) is
+  highlighted. No dots and dashes are shown. The text scrolls smoothly so that
+  the current place stays near the middle. When nothing is playing, click or tap
+  a word to start from there. (In Send practice, if the mouse keyer is one of
+  your keys, a click would key, so only the Book button below moves the reading.)
+</p>
+
+<h3>Copy Practice with a Book</h3>
+<p>
+  Press <strong>Start</strong> and the book is sent as Morse from where you left
+  off, with the encoder speed and Farnsworth settings. Like someone reading
+  aloud, it pauses a little after a comma or colon, a semicolon and a full stop
+  (also <code>?</code> and <code>!</code>), and longer at the end of a list item,
+  a paragraph, a heading and a chapter. The pauses are counted in word gaps, so
+  they follow the speed you chose. Playback is timed on the audio clock, so dots,
+  dashes and gaps stay even whatever else the page is doing, and Pause and Resume
+  continue from the character that was interrupted.
+</p>
+
+<h3>Send Practice with a Book</h3>
+<p>
+  The next character to key is highlighted. Key it and the highlight moves on;
+  a wrong character leaves it where it is until you key the right one. Spaces
+  and line breaks are never keyed. The first key you use starts the reading (that
+  character counts if it is the right one), and <strong>Stop</strong> ends it
+  while keeping your place. There are no rounds or scores. The same safety rule
+  applies as for any Send practice: with <em>This device only</em> nothing is
+  sent to the serial, MIDI, WinKeyer or RTDB outputs.
+</p>
+
+<h3>The Book Button</h3>
+<p>
+  The round contents button on the reading view opens the <strong>Book</strong>
+  dialog. It shows the page you are on (a page is about 1,500 characters, so the
+  numbers are the same on every screen; for text, Markdown and EPUB files the
+  total is an estimate and is shown as &ldquo;about&rdquo;), a slider and a box
+  to jump to another page, and <strong>Start over</strong>. A jump lands at the
+  start of a paragraph and is quick even in a very long book. For an EPUB with a
+  table of contents the dialog also lists the <strong>Chapters</strong>. Opening
+  the dialog pauses a Copy practice that is playing.
+</p>
+
+<h3>Resuming</h3>
+<p>
+  The place where you stopped is remembered for each file or web address, in
+  this browser only, and updated every couple of seconds while you read. When
+  you load the same book again you are asked whether to <strong>Resume</strong>
+  or start over; choosing Resume closes Settings and takes you back to the
+  practice you loaded the book from. Only the place is stored, never the book.
+</p>
+
+<h3>Privacy</h3>
+<p>
+  A book you choose from your device stays on your device and is read piece by
+  piece as you go. A web address you type is fetched by your browser directly
+  from that site; nothing goes through our servers, and the book is not stored
+  or sent anywhere, and it is not included in presets, exports or saved
+  settings.
+</p>
+
+<div class="example-box">
+  <div class="example-title">Example &mdash; Listen to a Classic</div>
+  <p>
+    Download <em>Alice in Wonderland</em> as an EPUB (no images) from Project
+    Gutenberg. In Settings &rarr; Other &rarr; Copy Practice, set Content to
+    <em>E-book</em>, press <em>Choose file</em> and pick the EPUB, then choose
+    <em>Copy practice</em> in the Mode dropdown and press Start. Watch the text
+    light up as you copy it by ear; use the Book button to continue another day
+    where you stopped.
   </p>
 </div>

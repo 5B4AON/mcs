@@ -15,7 +15,7 @@ const PROFILES_KEY = 'morseProfiles';
  * The "What's new in vX.X.X" dialog: a dismissable note with the text from `version.ts`.
  *
  * `showOnce()` opens it after the app was updated to a new version and never again for the
- * same version; `show()` opens it on request (Settings → Other → App Updates).
+ * same version; `show()` opens it on request (Settings → Other → Application Updates).
  */
 @Injectable({ providedIn: 'root' })
 export class WhatsNewService {

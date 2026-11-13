@@ -18,8 +18,13 @@
       <option value="words" [selected]="s().sendPracticeContentMode === 'words'">Random Words</option>
       <option value="callsigns" [selected]="s().sendPracticeContentMode === 'callsigns'">Random Callsigns</option>
       <option value="koch" [selected]="s().sendPracticeContentMode === 'koch'">Koch method</option>
+      <option value="ebook" [selected]="s().sendPracticeContentMode === 'ebook'">E-book</option>
     </select>
   </label>
+
+  @if (s().sendPracticeContentMode === 'ebook') {
+    <app-ebook-load kind="send" />
+  }
 
   <!-- Koch method: the lesson sets the character pool -->
   @if (s().sendPracticeContentMode === 'koch') {
@@ -34,6 +39,7 @@
     <div class="cw-hint">{{ kochLessonHint() }}</div>
   }
 
+  @if (s().sendPracticeContentMode !== 'ebook') {
   <label>
     Count:
     <select (change)="onGroupCountChange($event)">
@@ -42,6 +48,7 @@
       }
     </select>
   </label>
+  }
 
   @if (s().sendPracticeContentMode === 'characters' || s().sendPracticeContentMode === 'koch') {
     <label>
@@ -87,6 +94,13 @@
   }
 
   @if (part === 'all' || part === 'checking') {
+  @if (s().sendPracticeContentMode === 'ebook') {
+    <div class="cw-hint">
+      The next character is highlighted in the book. Key it and the highlight moves on; a wrong key leaves it where it is.
+      There is no scoring or rounds. Click a word to start from there, or use the Book button to jump to a page.
+      While the mouse is one of your keys, a click would key, so only the Book button jumps.
+    </div>
+  } @else {
   <!-- Checking -->
   <label>
     Check:
@@ -120,8 +134,9 @@
   </label>
   <div class="cw-hint">More than one round gives a score for each round and an average.</div>
   }
+  }
 
-  @if (part === 'all' || part === 'hint') {
+  @if ((part === 'all' || part === 'hint') && s().sendPracticeContentMode !== 'ebook') {
   <label>
     Pattern hint:
     <select (change)="onHintChange($event)">

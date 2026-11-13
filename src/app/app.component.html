@@ -209,7 +209,8 @@
     <div class="decoded-parchment" [class.night]="celebrating">
       <div class="decoded-text" #decoderBox
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
-           [class.blur-revealing]="mainRevealing">@if (sendPracticeActive) {@if (sendPractice.sessionStage() === 'briefing') {<section class="practice-session-summary" aria-live="polite"><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>@for (line of sendPracticeUi.sendPracticeSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Key what you see.</div></section>} @else if (sendPractice.isSessionSummary()) {<section class="practice-session-summary" aria-live="polite"><strong>Send practice results</strong>@for (score of sendPractice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%@if (sendPractice.roundSpeeds()[$index]) { · ≈ {{ sendPractice.roundSpeeds()[$index] }} WPM}</div>}<div><strong>Average — {{ sendPractice.averageRoundScore() }}%</strong>@if (sendPractice.averageSpeed()) { · ≈ {{ sendPractice.averageSpeed() }} WPM}</div><app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" /></section>} @else if (sendPractice.feedback().length > 0) {<span class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
+           [class.blur-revealing]="mainRevealing"
+           [class.ebook-on]="ebookActive">@if (ebookActive) {<app-ebook-reader />} @else if (sendPracticeActive) {@if (sendPractice.sessionStage() === 'briefing') {<section class="practice-session-summary" aria-live="polite"><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>@for (line of sendPracticeUi.sendPracticeSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Key what you see.</div></section>} @else if (sendPractice.isSessionSummary()) {<section class="practice-session-summary" aria-live="polite"><strong>Send practice results</strong>@for (score of sendPractice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%@if (sendPractice.roundSpeeds()[$index]) { · ≈ {{ sendPractice.roundSpeeds()[$index] }} WPM}</div>}<div><strong>Average — {{ sendPractice.averageRoundScore() }}%</strong>@if (sendPractice.averageSpeed()) { · ≈ {{ sendPractice.averageSpeed() }} WPM}</div><app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" /></section>} @else if (sendPractice.feedback().length > 0) {<span class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ sendPractice.accuracy() }}%</div>@if (sendPractice.keyedWpm()) {<div class="fb-accuracy">You keyed ≈ {{ sendPractice.keyedWpm() }} WPM</div>}@if (!sendPractice.isMultiRound()) {<app-practice-next-lesson kind="send" [accuracy]="sendPractice.accuracy()" />}} @else if (sendPractice.state() === 'keying') {<span class="fb-results">@for (mark of sendPractice.keyedMarks(); track $index) {<span
@@ -219,11 +220,26 @@
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
              [class.rx-line]="line.type === 'rx'"
-             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}</div>
+             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}@if (!ebookActive) {<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}}</div>
       @if (celebrating) {
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }
       <app-koch-help-overlay />
+      @if (ebookActive && ebook.loaded()) {
+        <button class="blur-reveal-btn-main" [disabled]="ebook.loading()"
+                (mousedown)="$event.preventDefault()" (click)="openBook()"
+                title="Contents: go to a page or start over" aria-label="Book contents: go to a page or start over">
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <line x1="9" y1="6" x2="21" y2="6"/>
+            <line x1="9" y1="12" x2="21" y2="12"/>
+            <line x1="9" y1="18" x2="21" y2="18"/>
+            <circle cx="4.5" cy="6" r="1" fill="currentColor"/>
+            <circle cx="4.5" cy="12" r="1" fill="currentColor"/>
+            <circle cx="4.5" cy="18" r="1" fill="currentColor"/>
+          </svg>
+        </button>
+      }
       @if (kochHelpShown) {
         <button class="blur-reveal-btn-main blur-help-btn-main" [class.playing]="kochHelp.playing()"
                 [class.help-alone]="!mainBlurMode && !sendPracticeActive"
@@ -244,7 +260,7 @@
           }
         </button>
       }
-      @if (mainBlurMode || sendPracticeActive) {
+      @if ((mainBlurMode || sendPracticeActive) && !ebookActive) {
         <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"
                 [disabled]="!mainReplayAvailable"
                 (mousedown)="$event.preventDefault()"
@@ -316,13 +332,13 @@
     }
 
     <div class="encoder-input-row">
-      @if (sendPracticeActive) {
+      @if (sendPracticeActive && !ebookActive) {
         <app-send-prompt />
       } @else if (cwScopeShown) {
         <app-cw-scope />
       }
       <textarea #encoderInput rows="2"
-                [style.display]="sendPracticeActive || cwScopeShown ? 'none' : null"
+                [style.display]="sendPracticeActive || ebookActive || cwScopeShown ? 'none' : null"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (practice.feedbackMode() === 'typealong'
@@ -386,11 +402,14 @@
       @if (sendPracticeActive) {
         <!-- Send practice control: start, check, next -->
         <button class="tx-icon-btn" [class.tx-ready]="sendPractice.state() !== 'keying'"
-                [class.practice-results]="sendPractice.state() === 'keying'"
+                [class.practice-results]="sendPractice.state() === 'keying' && !ebookActive"
+                [class.practice-pause]="sendPractice.state() === 'keying' && ebookActive"
                 [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
                 (click)="sendPracticeAdvance()"
                 [title]="sendPractice.actionLabel()" [attr.aria-label]="sendPractice.actionLabel()">
-          @if (sendPractice.state() === 'keying') {
+          @if (sendPractice.state() === 'keying' && ebookActive) {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+          } @else if (sendPractice.state() === 'keying') {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
           } @else {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
@@ -486,7 +505,8 @@
                         (settingsRequested)="openSettings()"
                         (wizardRequested)="openGoals()"
                         (presetsRequested)="openGoalPresets()"
-                        (replayRequested)="requestReplay($event)"></app-fullscreen-modal>
+                        (replayRequested)="requestReplay($event)"
+                        (bookRequested)="openBook()"></app-fullscreen-modal>
 }
 
 <!-- ========== SETTINGS MODAL ========== -->
@@ -523,6 +543,10 @@
 @if (showSymbolsRef) {
   <app-symbols-ref [focusReturnFallback]="symbolsRefFocusFallback"
                    (closed)="closeSymbolsRef()"></app-symbols-ref>
+}
+
+@if (showBook) {
+  <app-book-dialog (closed)="showBook = false"></app-book-dialog>
 }
 
 <!-- ========== HELP MODAL ========== -->

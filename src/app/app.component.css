@@ -509,6 +509,13 @@
   z-index: 1;
 }
 
+/* The e-book reader scrolls the text itself and fills the box: no padding, no ruled lines, no box scrolling */
+.decoded-text.ebook-on {
+  overflow: hidden;
+  padding: 0;
+  background: none;
+}
+
 /*
  * Night mode for the Koch fireworks: the parchment darkens by 85 % in 3 s (a black layer between
  * the paper and the text, which is z-index 1, so the torn edge clip still shapes it) and stays

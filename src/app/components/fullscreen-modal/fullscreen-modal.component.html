@@ -38,7 +38,8 @@
                              [inputMode]="inputMode"
                              [lensMode]="lensMode"
                              (inputModeChange)="setInputMode($event)"
-                             (replayRequested)="replayRequested.emit($event)"></app-fs-conversation-view>
+                             (replayRequested)="replayRequested.emit($event)"
+                             (bookRequested)="bookRequested.emit()"></app-fs-conversation-view>
       </div>
 
     </div>
