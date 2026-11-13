@@ -185,6 +185,24 @@ export class AudioOutputService {
     return { gain: this.sidetoneGain, ctx: (this.separateDevices ? this.sidetoneCtx : this.sharedCtx)! };
   }
 
+  /**
+   * Audio-clock time at which a tone requested now should start. With the large 'playback' buffer,
+   * `currentTime` only advances once per buffer, so a tone started at it is rounded to a buffer
+   * boundary and dots and dashes get uneven gaps. The output timestamp pairs the audio clock with
+   * the page clock, which gives a smooth time; the lead covers what is already rendered ahead.
+   * Falls back to `currentTime` when the browser reports no timestamp.
+   */
+  private toneStartTime(ctx: AudioContext): number {
+    const now = ctx.currentTime;
+    if (ctx !== this.textCtx) return now;
+    let ts: AudioTimestamp | null = null;
+    try { ts = ctx.getOutputTimestamp(); } catch { }
+    if (!ts?.contextTime || !ts.performanceTime) return now;
+    const lead = (ctx.baseLatency || 0) + (ctx.outputLatency || 0) + 0.01;
+    const smooth = ts.contextTime + (performance.now() - ts.performanceTime) / 1000 + lead;
+    return Math.max(now, smooth);
+  }
+
   // ---------- Shared device (stereo merge) ----------
   private async startShared(
     deviceId: string,
@@ -383,7 +401,7 @@ export class AudioOutputService {
       if (dur < 0.02) return;
       const text = this.textSidetone();
       if (s.sidetoneEnabled && text && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
-        const now = text.ctx.currentTime;
+        const now = this.toneStartTime(text.ctx);
         text.gain.gain.cancelScheduledValues(now);
         text.gain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(text.gain.gain, now + dur, ramp);
@@ -419,7 +437,7 @@ export class AudioOutputService {
       const text = this.textSidetone();
       if (s.sidetoneEnabled && text && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
         const ramp = 0.003;
-        const now = text.ctx.currentTime;
+        const now = this.toneStartTime(text.ctx);
         text.gain.gain.cancelScheduledValues(now);
         text.gain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(text.gain.gain, now + dur, ramp);
