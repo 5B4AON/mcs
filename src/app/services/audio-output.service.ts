@@ -342,6 +342,24 @@ export class AudioOutputService {
     return this.masterCtx()?.currentTime ?? null;
   }
 
+  /**
+   * The page-clock time (ms, the `performance.now()` scale) that audio-clock time `t` belongs to, or null when
+   * audio is not running. It comes from the output timestamp, so it is smooth (`currentTime` moves in steps of
+   * a whole buffer), and it is the time the audio is rendered rather than heard, so keying that follows it
+   * (a serial pin) is not delayed by the output latency.
+   */
+  perfTimeOf(t: number): number | null {
+    const ctx = this.masterCtx();
+    if (!ctx) return null;
+    let stamp: AudioTimestamp | null = null;
+    try { stamp = ctx.getOutputTimestamp(); } catch { }
+    if (stamp?.contextTime !== undefined && stamp.performanceTime !== undefined && stamp.performanceTime > 0) {
+      const latencyMs = ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000;
+      return stamp.performanceTime + (t - stamp.contextTime) * 1000 - latencyMs;
+    }
+    return performance.now() + (t - ctx.currentTime) * 1000;
+  }
+
   /** Make sure the contexts are running (the browser may have paused them), so a timeline starts on a running clock. */
   async ready(): Promise<void> {
     if (!this.started) return;

@@ -323,6 +323,90 @@ export class SerialKeyOutputService {
     }
   }
 
+  // ---- Pulses placed ahead of time (the encoder's timeline) ----
+
+  /** Timers of pulses that have been placed and not yet fired, so a stop can drop them */
+  private pulseTimers = new Set<ReturnType<typeof setTimeout>>();
+  /** The mappings a placed pulse has asserted, until it ends */
+  private pulseTargets: { mapping: SerialOutputMapping; ps: PortState; ks: MappingKeyState }[] | null = null;
+
+  /**
+   * Place a pulse at an absolute time: the pins are asserted at `startMs` and released `durationMs` later
+   * (page clock, the `performance.now()` scale). Each edge has its own timer aimed at its own time, so
+   * a late timer cannot push the following edges later, unlike `schedulePulse`, which waits for its own
+   * assert before counting the duration.
+   */
+  schedulePulseAt(startMs: number, durationMs: number, source: 'rx' | 'tx' = 'tx'): void {
+    if (!this.settings.settings().serialEnabled) return;
+    this.pulseTimer(startMs, () => this.pulseOn(source));
+    this.pulseTimer(startMs + durationMs, () => this.pulseOff());
+  }
+
+  /** Drop every placed pulse that has not fired and release the pins if one is asserted. */
+  cancelPulses(): void {
+    for (const id of this.pulseTimers) clearTimeout(id);
+    this.pulseTimers.clear();
+    this.pulseOff();
+  }
+
+  private pulseTimer(atMs: number, fn: () => void): void {
+    const id = setTimeout(() => {
+      this.pulseTimers.delete(id);
+      fn();
+    }, Math.max(0, atMs - performance.now()));
+    this.pulseTimers.add(id);
+  }
+
+  private pulseOn(source: 'rx' | 'tx'): void {
+    this.pulseOff();
+    const s = this.settings.settings();
+    if (!s.serialEnabled) return;
+    const targets: { mapping: SerialOutputMapping; ps: PortState; ks: MappingKeyState }[] = [];
+    for (let i = 0; i < s.serialOutputMappings.length; i++) {
+      const m = s.serialOutputMappings[i];
+      if (!m.enabled || m.portIndex < 0) continue;
+      if (m.forward !== 'both' && m.forward !== source) continue;
+      const ps = this.openPorts().get(m.portIndex);
+      if (!ps) continue;
+      let ks = this.keyStates.get(i);
+      if (!ks) {
+        ks = { keyIsDown: false, holdoffTimer: null };
+        this.keyStates.set(i, ks);
+      }
+      if (ks.holdoffTimer) {
+        clearTimeout(ks.holdoffTimer);
+        ks.holdoffTimer = null;
+      }
+      targets.push({ mapping: m, ps, ks });
+    }
+    if (targets.length === 0) return;
+    this.isSending.set(true);
+    for (const t of targets) {
+      const sig: SerialOutputSignals = t.mapping.pin === 'dtr'
+        ? { dataTerminalReady: t.mapping.invert }
+        : { requestToSend: t.mapping.invert };
+      t.ps.port.setSignals(sig).catch(() => {});
+    }
+    this.pulseTargets = targets;
+  }
+
+  private pulseOff(): void {
+    const targets = this.pulseTargets;
+    if (!targets) return;
+    this.pulseTargets = null;
+    for (const t of targets) {
+      const sig: SerialOutputSignals = t.mapping.pin === 'dtr'
+        ? { dataTerminalReady: !t.mapping.invert }
+        : { requestToSend: !t.mapping.invert };
+      t.ps.port.setSignals(sig).catch(() => {});
+      if (t.ks.holdoffTimer) clearTimeout(t.ks.holdoffTimer);
+      t.ks.holdoffTimer = setTimeout(() => {
+        t.ks.holdoffTimer = null;
+        if (!t.ks.keyIsDown) this.updateSendingState();
+      }, SerialKeyOutputService.SENDING_HOLDOFF_MS);
+    }
+  }
+
   /** Test: toggle the pin on a specific mapping for 1 second */
   async test(mappingIndex: number): Promise<void> {
     const s = this.settings.settings();
