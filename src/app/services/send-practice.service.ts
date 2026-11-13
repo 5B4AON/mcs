@@ -229,7 +229,6 @@ export class SendPracticeService {
 
   /** Label of the single action button for the current state. */
   actionLabel(): string {
-    if (this.ebookMode()) return this.state() === 'keying' ? 'Stop' : this.state() === 'finished' ? 'Start again' : 'Start';
     if (!this.isMultiRound()) {
       return this.state() === 'keying' ? 'Check' : this.state() === 'finished' ? 'Next sequence' : 'Start';
     }
@@ -249,8 +248,7 @@ export class SendPracticeService {
   advance(): void {
     if (!this.inputsReady() && this.state() === 'idle') return;
     if (this.ebookMode()) {
-      if (this.state() === 'keying') this.abort();
-      else this.beginEbook();
+      this.beginEbook();
       return;
     }
     if (!this.isMultiRound()) {
@@ -475,10 +473,9 @@ export class SendPracticeService {
       this.beginEbook();
       if (this.state() !== 'keying') return;
     }
-    if (this.lockedInput && this.lockedInput !== id) return;
-    // Word gaps and the error prosign carry nothing here: only the right character moves the reading on
+    // Word gaps and the error prosign carry nothing here: only the right character moves the reading on,
+    // so any of the picked keys may be used (there is nothing for two keys to interleave)
     if (entry.char === ' ' || entry.char === ERASE_PROSIGN) return;
-    this.lockedInput = id;
     const cursor = this.ebookCursor;
     const expected = cursor?.current;
     if (!cursor || !expected) return;

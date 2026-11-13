@@ -41,7 +41,8 @@ export class ClearService {
   readonly outputHasContent = computed(() =>
     this.displayBuffers.mainOutput.hasText() || this.displayBuffers.fullscreenConversation.hasText()
     || (this.settings.settings().encoderMode === 'practice' && this.practice.promptShowing())
-    || (this.settings.settings().encoderMode === 'send-practice'
+    // A book keeps its place and has no text to clear
+    || (this.settings.settings().encoderMode === 'send-practice' && this.settings.settings().sendPracticeContentMode !== 'ebook'
       && (this.sendPractice.state() !== 'idle' || this.sendPractice.promptShowing())));
 
   /** True when the Clear button has anything to offer. */
