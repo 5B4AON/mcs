@@ -155,7 +155,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
     private viewport: ViewportService,
     private modalBack: ModalBackService,
     public clear: ClearService,
-    private ebook: EbookService,
+    public ebook: EbookService,
   ) {}
 
   /** Close the menu when a press lands outside it, even on controls that stop the click (touch keyers) */
@@ -238,7 +238,6 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Why the toggle is locked, for its tooltip and accessible name. */
   get inputLockedReason(): string {
-    if (this.ebook.active()) return 'The e-book is read in its own view, so Key and Type do not apply';
     return this.settings.settings().encoderMode === 'send-practice'
       ? 'Send practice is keyed, so the view stays in Key mode'
       : 'Copy practice is typed, so the view stays in Type mode';

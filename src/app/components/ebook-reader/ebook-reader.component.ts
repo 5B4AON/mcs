@@ -80,6 +80,13 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       this.ebook.position();
       untracked(() => this.sync());
     });
+    // A key pressed in Send practice brings the expected letter back to the middle, even when it did not move
+    effect(() => {
+      this.ebook.recenter();
+      untracked(() => {
+        if (this.focusEl) this.follow(this.focusEl);
+      });
+    });
   }
 
   ngOnInit(): void {

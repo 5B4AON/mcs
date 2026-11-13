@@ -11,6 +11,7 @@ import { DisplayBufferService } from './display-buffer.service';
 import { PracticeService } from './practice.service';
 import { SendPracticeService } from './send-practice.service';
 import { LensService } from './lens.service';
+import { EbookService } from './ebook.service';
 
 /**
  * Clear Service — the single place where the input area, the output area or
@@ -32,18 +33,19 @@ export class ClearService {
 
   /** True when there is typed or pending text that "Input area" would remove. */
   readonly inputHasContent = computed(() => {
+    // A book keeps its place and has nothing to clear (the Clear button is not shown for it)
+    if (this.ebook.active()) return false;
     if (this.mainInputHasText() || this.encoder.replayPending()) return true;
     if (this.settings.settings().encoderMode === 'practice') return this.practice.userInput() !== '';
     return this.encoder.buffer().length > this.encoder.sentIndex();
   });
 
   /** True when either output area shows text, or a practice briefing/summary/round is showing. */
-  readonly outputHasContent = computed(() =>
+  readonly outputHasContent = computed(() => !this.ebook.active() && (
     this.displayBuffers.mainOutput.hasText() || this.displayBuffers.fullscreenConversation.hasText()
     || (this.settings.settings().encoderMode === 'practice' && this.practice.promptShowing())
-    // A book keeps its place and has no text to clear
-    || (this.settings.settings().encoderMode === 'send-practice' && this.settings.settings().sendPracticeContentMode !== 'ebook'
-      && (this.sendPractice.state() !== 'idle' || this.sendPractice.promptShowing())));
+    || (this.settings.settings().encoderMode === 'send-practice'
+      && (this.sendPractice.state() !== 'idle' || this.sendPractice.promptShowing()))));
 
   /** True when the Clear button has anything to offer. */
   readonly canClear = computed(() => this.inputHasContent() || this.outputHasContent());
@@ -79,6 +81,7 @@ export class ClearService {
     private practice: PracticeService,
     private sendPractice: SendPracticeService,
     private lens: LensService,
+    private ebook: EbookService,
   ) {
     // Changing what is practised starts clean: nothing from the previous exercise stays on screen
     let previous = this.practiceSignature();

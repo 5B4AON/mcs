@@ -62,6 +62,8 @@ export class EbookService {
   readonly playing = signal(false);
   /** True while a click on the text cannot move the reading (Send practice with the mouse as a key: the click would key) */
   readonly jumpLocked = signal(false);
+  /** Counts the times the reader is asked to bring the reading position back to the middle (a key pressed in Send practice) */
+  readonly recenter = signal(0);
   /** The reader ignores clicks while this is true */
   readonly busy = computed(() => this.playing() || this.jumpLocked());
   readonly loaded = computed(() => this.info() !== null);
@@ -384,6 +386,11 @@ export class EbookService {
       block++;
       at = 0;
     }
+  }
+
+  /** Ask the reader to scroll the reading position back to the middle, wherever the text has been scrolled to. */
+  requestRecenter(): void {
+    this.recenter.update(n => n + 1);
   }
 
   /** Move the reading (snapped to a playable character) and read more of the book if the window runs short. */

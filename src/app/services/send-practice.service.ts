@@ -473,6 +473,8 @@ export class SendPracticeService {
       this.beginEbook();
       if (this.state() !== 'keying') return;
     }
+    // Whatever was keyed, bring the expected letter back to the middle if the text has been scrolled away
+    this.ebook.requestRecenter();
     // Word gaps and the error prosign carry nothing here: only the right character moves the reading on,
     // so any of the picked keys may be used (there is nothing for two keys to interleave)
     if (entry.char === ' ' || entry.char === ERASE_PROSIGN) return;
