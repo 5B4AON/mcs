@@ -108,6 +108,8 @@ export class PracticeService {
   }
 
   private begin(): void {
+    // An e-book is played from the book (not yet wired up)
+    if (this.settings.settings().practiceContentMode === 'ebook') return;
     const text = this.generateSequence();
     this.referenceText.set(text);
     this.feedback.set([]);

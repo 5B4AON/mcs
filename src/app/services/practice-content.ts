@@ -8,7 +8,7 @@ import { KOCH_NEWEST_WEIGHT, kochNewChars, kochPool } from '../data/koch-lessons
 import { MORSE_TABLE } from '../morse-table';
 
 /** Content kinds shared by Copy Practice and Send Practice. */
-export type PracticeContentKind = 'characters' | 'words' | 'callsigns' | 'koch';
+export type PracticeContentKind = 'characters' | 'words' | 'callsigns' | 'koch' | 'ebook';
 
 /** The settings a practice mode hands to the generator (each mode maps its own keys to these). */
 export interface PracticeContentOptions {
@@ -51,6 +51,8 @@ export class PracticeSequenceGenerator {
       case 'words': return this.generateWords(options);
       case 'callsigns': return this.generateCallsigns(options);
       case 'koch': return this.generateKoch(options);
+      // An e-book is read from the book, not generated
+      case 'ebook': return '';
     }
   }
 

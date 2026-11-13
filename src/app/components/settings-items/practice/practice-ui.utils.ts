@@ -22,6 +22,8 @@ export function practiceContentDescription(settings: AppSettings): string {
       return `${count} word${count === 1 ? '' : 's'}`;
     case 'callsigns':
       return `${count} callsign${count === 1 ? '' : 's'}`;
+    case 'ebook':
+      return 'your e-book';
   }
 }
 
@@ -35,6 +37,7 @@ export function practiceSessionDescription(settings: AppSettings): string {
 
 /** The session briefing as separate lines: rounds and groups, then the group size. */
 export function practiceSessionLines(settings: AppSettings): string[] {
+  if (settings.practiceContentMode === 'ebook') return ['Your e-book.'];
   const rounds = settings.practiceRounds > 1 ? `${settings.practiceRounds} rounds of ` : '';
   const count = settings.practiceGroupCount;
   if (settings.practiceContentMode === 'characters' || settings.practiceContentMode === 'koch') {

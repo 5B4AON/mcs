@@ -8,7 +8,7 @@ import { ItemDescriptor, labelledReview, partDescriptor } from '../item-descript
 import type { AppSettings } from '../../../services/settings.service';
 
 /** Copy practice content mode */
-export const PRACTICE_CONTENT_MODES = ['characters', 'words', 'callsigns', 'koch'] as const;
+export const PRACTICE_CONTENT_MODES = ['characters', 'words', 'callsigns', 'koch', 'ebook'] as const;
 export type PracticeContentMode = typeof PRACTICE_CONTENT_MODES[number];
 
 /** Copy practice feedback mode */
@@ -27,7 +27,7 @@ export type PracticePipeline = typeof PRACTICE_PIPELINES[number];
 export interface PracticeSettings {
   /** Master toggle — shows 'Practice' in encoder mode dropdown when enabled */
   practiceEnabled: boolean;
-  /** Content mode: random characters, words, callsigns, or Koch method lessons */
+  /** Content mode: random characters, words, callsigns, Koch method lessons, or a loaded e-book */
   practiceContentMode: PracticeContentMode;
   /** Number of groups/words/callsigns per round (1–10) */
   practiceGroupCount: number;
@@ -75,10 +75,14 @@ export const PRACTICE_DEFAULTS: PracticeSettings = {
   practiceColor: '',
 };
 
-/** Koch method is always Type-along; the stored feedback choice is kept for the other content types. */
+/**
+ * Koch method is always Type-along and an e-book is always listen only (the text is read along on screen);
+ * the stored feedback choice is kept for the other content types.
+ */
 export function effectivePracticeFeedbackMode(
   settings: Pick<PracticeSettings, 'practiceContentMode' | 'practiceFeedbackMode'>,
 ): PracticeFeedbackMode {
+  if (settings.practiceContentMode === 'ebook') return 'listen';
   return settings.practiceContentMode === 'koch' ? 'typealong' : settings.practiceFeedbackMode;
 }
 

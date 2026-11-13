@@ -98,7 +98,8 @@ export class SendPracticeService {
   /** Whether at least one picked key can currently produce keying */
   readonly inputsReady = computed(() => sendPracticeHasActiveInput(this.settings.settings()));
   /** Whether the session has more than one round */
-  readonly isMultiRound = computed(() => this.settings.settings().sendPracticeRounds > 1);
+  readonly isMultiRound = computed(() => this.settings.settings().sendPracticeRounds > 1
+    && this.settings.settings().sendPracticeContentMode !== 'ebook');
   readonly isSessionSummary = computed(() => this.sessionStage() === 'summary');
   readonly currentRound = computed(() => this.roundScores().length + 1);
   /** Whether a multi-round briefing or summary is on screen (only those stages show prompt text) */
@@ -264,6 +265,8 @@ export class SendPracticeService {
   }
 
   private begin(): void {
+    // An e-book follows the book (not yet wired up)
+    if (this.settings.settings().sendPracticeContentMode === 'ebook') return;
     this.stopPrompt();
     this.clearGrace();
     this.referenceText.set(this.generator.generate(this.contentOptions()));

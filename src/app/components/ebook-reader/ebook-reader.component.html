@@ -1,0 +1,15 @@
+@if (!ebook.loaded()) {
+  <div class="eb-empty" role="status">
+    @if (ebook.loading()) {
+      Opening the book...
+    } @else {
+      No e-book is loaded.<br>
+      Choose a file in Settings, under Copy Practice or Send Practice.
+    }
+  </div>
+}
+<div #scroll class="eb-scroll" [class.eb-hidden]="!ebook.loaded()" [class.eb-jump]="!ebook.busy()"
+     tabindex="0" role="region" aria-label="E-book text" (click)="onClick($event)">
+  <div #content class="eb-content"></div>
+</div>
+<div class="eb-status" role="status" aria-live="polite">{{ status() }}</div>

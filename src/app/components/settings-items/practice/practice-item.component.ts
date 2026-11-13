@@ -14,6 +14,7 @@ import { DecoderSource } from '../../../services/settings-common';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { EbookLoadComponent } from '../ebook-load/ebook-load.component';
 
 /**
  * Settings item — Copy Practice.
@@ -25,7 +26,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 @Component({
   selector: 'app-practice-item',
   standalone: true,
-  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent],
+  imports: [FormsModule, ItemShellComponent, HelpLinkButtonComponent, EbookLoadComponent],
   templateUrl: './practice-item.component.html',
   styles: [':host { display: contents; }'],
 })

@@ -29,6 +29,7 @@ import { InstallHintService } from './services/install-hint.service';
 import { ClearService } from './services/clear.service';
 import { PracticeService } from './services/practice.service';
 import { SendPracticeService } from './services/send-practice.service';
+import { EbookReaderComponent } from './components/ebook-reader/ebook-reader.component';
 import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
@@ -76,7 +77,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -1510,6 +1511,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
     return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+  }
+
+  /** An e-book is the content of the practice mode that is on: its reader takes the output area and the typing box's place. */
+  get ebookActive(): boolean {
+    const s = this.settings.settings();
+    return (s.encoderMode === 'practice' && s.practiceContentMode === 'ebook')
+      || (s.encoderMode === 'send-practice' && s.sendPracticeContentMode === 'ebook');
   }
 
   get sendPracticeActive(): boolean {
