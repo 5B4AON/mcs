@@ -72,3 +72,17 @@ export function forgetResume(id: string): void {
     write(store);
   }
 }
+
+/** True when at least one place in a book is remembered. */
+export function hasResumeEntries(): boolean {
+  return Object.keys(read()).length > 0;
+}
+
+/** Delete every remembered place (the whole key, so no file name or address stays). */
+export function clearResumeEntries(): void {
+  try {
+    localStorage.removeItem(EBOOK_RESUME_KEY);
+  } catch {
+    // Storage may be blocked: nothing is stored then
+  }
+}

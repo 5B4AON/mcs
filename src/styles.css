@@ -341,6 +341,39 @@ input[type="color"].color-pill::-moz-color-swatch {
   margin-top: .5rem;
 }
 
+/* New-version notice: one row (message, Update now, round close); the pill wraps under the message only on a very narrow screen. The extra class beats the component-level `button` rule. */
+.update-banner .midi-reconnect-text {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .4rem .75rem;
+}
+.update-banner .update-msg {
+  flex: 1 1 6rem;
+  color: #dbe9fa;
+}
+.update-banner .midi-reconnect-text .pill-btn {
+  margin-top: 0;
+}
+.update-banner .update-dismiss {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  padding: 0;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #8cf;
+  background: #282c34;
+  border: 1px solid #556;
+  cursor: pointer;
+  transition: background .15s;
+}
+.update-banner .update-dismiss:hover { background: #3a4050; }
+.update-banner .update-dismiss:active { background: #5577aa; color: #fff; transform: scale(.92); }
+
 /* Install pill inside the Try Morse hint line, with the Help link beside it. Sized like the neighbouring Try Morse pills (.kebab-help-btn). The extra selectors beat the component-level `button` rule (square border, grey hover) and the 40/44px pill minimum. */
 .try-morse-note .pill-btn.pill-note {
   margin-right: .6rem;

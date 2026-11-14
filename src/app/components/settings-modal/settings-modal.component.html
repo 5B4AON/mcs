@@ -110,8 +110,10 @@
 @if (showResetConfirm) {
   <app-confirm-dialog
     title="Reset Settings"
-    message="Reset all settings to their default values?
-This cannot be undone."
+    [message]="resetHasEbookData ? 'Reset all settings to their default values?' : 'Reset all settings to their default values?\nThis cannot be undone.'"
+    [checkboxLabel]="resetHasEbookData ? 'Also clear stored e-book data' : ''"
+    [(checkboxChecked)]="resetClearEbook"
+    [messageAfter]="resetHasEbookData ? 'This cannot be undone.' : ''"
     confirmLabel="Reset"
     cancelLabel="Cancel"
     [danger]="true"

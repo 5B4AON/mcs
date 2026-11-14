@@ -1685,7 +1685,7 @@ select { max-width: 300px; }
    ============================================================ */
 @media (pointer: coarse) {
   /* Larger touch targets */
-  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main) {
+  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main):not(.update-dismiss) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }

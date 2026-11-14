@@ -9,8 +9,8 @@ import { EbookFormat, EbookOpener, ebookFormat, ebookOpener } from './ebook-pars
 import { EbookChapter, epubOpener } from './ebook-epub';
 import { zipBytesOf } from './ebook-zip';
 import { EbookLoadError, UrlBook, blobSource, openUrlSource, urlFormat, urlToBlob } from './ebook-sources';
-import { forgetResume, loadResume, resumeIdForFile, resumeIdForText, resumeIdForUrl, saveResume } from './ebook-resume';
-import { LastBook, forgetLastBook, loadLastBook, loadLastFile, rememberFile, rememberUrl } from './ebook-last';
+import { clearResumeEntries, forgetResume, hasResumeEntries, loadResume, resumeIdForFile, resumeIdForText, resumeIdForUrl, saveResume } from './ebook-resume';
+import { LastBook, clearLastBookStorage, forgetLastBook, hasLastBook, loadLastBook, loadLastFile, rememberFile, rememberUrl } from './ebook-last';
 import { ConfirmService } from './confirm.service';
 import { playableChars, playableIndexAt } from './ebook-playable';
 import { EbookWindow } from './ebook-window';
@@ -454,6 +454,21 @@ export class EbookService {
     } finally {
       if (id === this.loadId) this.loading.set(false);
     }
+  }
+
+  /** True when a book is open or anything about one (address, kept file, remembered places) is stored on this device. */
+  hasStoredData(): boolean {
+    return this.loaded() || this.loading() || hasLastBook() || hasResumeEntries();
+  }
+
+  /**
+   * Forget the open book and delete everything stored about any book: the remembered address or file copy,
+   * its IndexedDB database and every remembered place. Used by the Settings reset.
+   */
+  clearAllData(): void {
+    this.remove();
+    clearResumeEntries();
+    clearLastBookStorage();
   }
 
   /** Forget the book. */

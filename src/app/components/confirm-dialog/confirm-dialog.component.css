@@ -56,6 +56,21 @@
   white-space: pre-line;
 }
 
+.confirm-check {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  margin: .6rem 0;
+  font-size: .92rem;
+  color: #dde;
+  cursor: pointer;
+}
+.confirm-check input {
+  margin: 0;
+  flex: none;
+  accent-color: #4a90d9;
+}
+
 /* Actions row (buttons are shared .pill-btn pills; .cancel-btn/.ok-btn are Escape-key hooks only) */
 .confirm-actions {
   display: flex;

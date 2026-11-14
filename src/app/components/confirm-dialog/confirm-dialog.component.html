@@ -11,6 +11,15 @@
     <!-- Body -->
     <div class="confirm-body">
       <p>{{ message }}</p>
+      @if (checkboxLabel) {
+        <label class="confirm-check">
+          <input type="checkbox" [checked]="checkboxChecked" (change)="onCheckboxChange($event)">
+          <span>{{ checkboxLabel }}</span>
+        </label>
+      }
+      @if (messageAfter) {
+        <p>{{ messageAfter }}</p>
+      }
     </div>
 
     <!-- Actions -->

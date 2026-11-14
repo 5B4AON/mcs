@@ -3,24 +3,24 @@
  */
 
 import { DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { APP_VERSION } from '../../../../version';
 import { UpdateService } from '../../../../services/update.service';
-import { WhatsNewService } from '../../../../services/whats-new.service';
+import { WhatsNewModalComponent } from '../../../whats-new-modal/whats-new-modal.component';
 import { ItemShellComponent } from '../../../settings-items/item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../../../settings-items/help-link-button/help-link-button.component';
 
 /**
  * Settings card — Application Updates.
  *
- * Shows the installed version with a **What's new** pill (the "What's new" dialog) and a **Check for updates** button, which becomes
+ * Shows the installed version with a **What's new** pill (opens the list of the last significant versions) and a **Check for updates** button, which becomes
  * **Update now** once a new version has been downloaded. This is the way to get a fresh
  * deploy quickly in an installed app, where there is no browser reload button.
  */
 @Component({
   selector: 'app-updates-card',
   standalone: true,
-  imports: [ItemShellComponent, HelpLinkButtonComponent, DatePipe],
+  imports: [ItemShellComponent, HelpLinkButtonComponent, WhatsNewModalComponent, DatePipe],
   templateUrl: './updates-card.component.html',
   styles: [`
     :host { display: contents; }
@@ -35,6 +35,7 @@ import { HelpLinkButtonComponent } from '../../../settings-items/help-link-butto
 })
 export class UpdatesCardComponent {
   readonly updates = inject(UpdateService);
-  readonly whatsNew = inject(WhatsNewService);
+  /** The "What's new" list (last significant versions) is open */
+  readonly whatsNewOpen = signal(false);
   readonly version = APP_VERSION;
 }

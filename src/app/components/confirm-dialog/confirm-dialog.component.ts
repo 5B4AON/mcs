@@ -54,6 +54,17 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   /** Whether to show only the confirm action */
   @Input() singleAction = false;
 
+  /** Label of an optional checkbox shown between the message and `messageAfter` (none when empty) */
+  @Input() checkboxLabel = '';
+
+  /** State of the optional checkbox; two-way bindable */
+  @Input() checkboxChecked = true;
+
+  /** Text shown after the checkbox */
+  @Input() messageAfter = '';
+
+  @Output() checkboxCheckedChange = new EventEmitter<boolean>();
+
   /** Emits true when confirmed, false when cancelled */
   @Output() confirmed = new EventEmitter<boolean>();
 
@@ -68,6 +79,11 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   /** Keep keyboard focus in the confirmation dialog. */
   onDialogKeydown(event: KeyboardEvent): void {
     if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
+  }
+
+  onCheckboxChange(event: Event): void {
+    this.checkboxChecked = (event.target as HTMLInputElement).checked;
+    this.checkboxCheckedChange.emit(this.checkboxChecked);
   }
 
   confirm(): void {

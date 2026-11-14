@@ -12,6 +12,8 @@ export const EBOOK_LAST_KEY = 'mcsEbookLast';
 const DB_NAME = 'mcsEbook';
 const STORE = 'books';
 const FILE_KEY = 'last';
+/** Bumped whenever the kept book is forgotten, so a file copy still being written is discarded instead of coming back */
+let forgetEpoch = 0;
 /** A larger file is not kept: the learner chooses it again */
 export const MAX_KEPT_FILE_BYTES = 100 * 1024 * 1024;
 
@@ -74,8 +76,13 @@ export async function rememberFile(file: File): Promise<void> {
     forgetLastBook();
     return;
   }
+  const epoch = forgetEpoch;
   try {
     await withStore('readwrite', s => s.put(file, FILE_KEY));
+    if (epoch !== forgetEpoch) {
+      void withStore('readwrite', s => s.delete(FILE_KEY)).catch(() => undefined);
+      return;
+    }
     setLast({ kind: 'file', name: file.name, type: file.type, size: file.size });
   } catch {
     forgetLastBook();
@@ -94,6 +101,23 @@ export async function loadLastFile(book: Extract<LastBook, { kind: 'file' }>): P
 
 /** Nothing is reopened at start-up any more, and a kept file is deleted. */
 export function forgetLastBook(): void {
+  forgetEpoch++;
   setLast(null);
   void withStore('readwrite', s => s.delete(FILE_KEY)).catch(() => undefined);
+}
+
+/** True when a remembered book (address or kept file) is stored on this device. */
+export function hasLastBook(): boolean {
+  return loadLastBook() !== null;
+}
+
+/** Delete the remembered book and the whole IndexedDB database it lived in, leaving nothing behind. */
+export function clearLastBookStorage(): void {
+  forgetEpoch++;
+  setLast(null);
+  try {
+    indexedDB.deleteDatabase(DB_NAME);
+  } catch {
+    // IndexedDB may be blocked: there is then nothing stored either
+  }
 }

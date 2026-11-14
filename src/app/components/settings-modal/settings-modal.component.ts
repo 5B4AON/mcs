@@ -18,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 import { AppSettings, SettingsSaveResult, SettingsService } from '../../services/settings.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ClearService } from '../../services/clear.service';
+import { EbookService } from '../../services/ebook.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
 import { LiveSettingsScope } from '../settings-items/live-settings-scope';
@@ -140,6 +141,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Whether the reset confirmation dialog is visible */
   showResetConfirm = false;
+  /** Whether the reset dialog offers to clear stored e-book data, and the checkbox state (ticked by default) */
+  resetHasEbookData = false;
+  resetClearEbook = true;
 
   /** Whether the Revert confirmation is showing */
   showRevertConfirm = false;
@@ -216,6 +220,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     private devices: AudioDeviceService,
     private rtdbService: FirebaseRtdbService,
     private clear: ClearService,
+    private ebook: EbookService,
     private midiInput: MidiInputService,
     private midiOutput: MidiOutputService,
     private serialInput: SerialKeyInputService,
@@ -406,6 +411,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Show the reset-confirmation dialog */
   confirmReset(): void {
+    this.resetHasEbookData = this.ebook.hasStoredData();
+    this.resetClearEbook = true;
     this.showResetConfirm = true;
   }
 
@@ -415,6 +422,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     if (confirmed) {
       // Clear first: it also ends a running practice session, which depends on the mode being reset
       this.clear.clearAll();
+      if (this.resetHasEbookData && this.resetClearEbook) this.ebook.clearAllData();
       this.settings.resetToDefaults();
       this.defaultsReset.emit();
 

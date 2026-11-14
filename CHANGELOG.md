@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.1] - 2026-11-14
+
+### Added
+
+- **What's new list** — The **What's new** button in Settings → Other → Application Updates now opens a Presets-style popup with the last 10 versions that changed something a user can notice, newest first, each with its version, date and a short note (`VERSION_HISTORY` in `version.ts`; the installed version is always first). The dialog shown once after an update is unchanged.
+- **Clear e-book data on reset** — When a book is open or anything about one is stored on this device, the Reset Settings dialog shows a ticked **Also clear stored e-book data** box before "This cannot be undone." Reset then also closes the open book and deletes the remembered address or kept file copy (and its IndexedDB database) and every remembered reading place.
+
+### Changed
+
+- **Privacy policy and Help** — They mention the reset option and the new What's new list.
+
 ## [2.17.0] - 2026-11-14
 
 ### Added
