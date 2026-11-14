@@ -28,6 +28,9 @@ export class ClearService {
   /** Whether the main-screen encoder textarea has text; kept up to date by `AppComponent`. */
   readonly mainInputHasText = signal(false);
 
+  /** Text typed in the full-screen Type mode while a send runs; it is queued behind the send when Enter is pressed. */
+  readonly fullscreenDraft = signal('');
+
   /** Emits when the main-screen encoder textarea must be emptied. */
   readonly inputCleared$ = new Subject<void>();
 
@@ -35,7 +38,7 @@ export class ClearService {
   readonly inputHasContent = computed(() => {
     // A book keeps its place and has nothing to clear (the Clear button is not shown for it)
     if (this.ebook.active()) return false;
-    if (this.mainInputHasText() || this.encoder.replayPending()) return true;
+    if (this.mainInputHasText() || this.fullscreenDraft() !== '' || this.encoder.replayPending()) return true;
     if (this.settings.settings().encoderMode === 'practice') return this.practice.userInput() !== '';
     return this.encoder.buffer().length > this.encoder.sentIndex();
   });
@@ -110,6 +113,7 @@ export class ClearService {
   clearInput(): void {
     if (this.settings.settings().encoderMode === 'practice') this.practice.abort();
     else this.encoder.clearBuffer();
+    this.fullscreenDraft.set('');
     this.mainInputHasText.set(false);
     this.inputCleared$.next();
   }

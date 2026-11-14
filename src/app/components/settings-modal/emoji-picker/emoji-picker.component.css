@@ -63,17 +63,6 @@
 
 .search-input {
   width: 100%;
-  padding: 0.5rem;
-  background: #1a1a28;
-  border: 1px solid #3a3a4e;
-  border-radius: 4px;
-  color: #fff;
-  font-size: 0.9rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #ffcc00;
 }
 
 .emoji-picker-categories {

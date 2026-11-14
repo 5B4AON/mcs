@@ -123,15 +123,6 @@
   margin: .6rem 0;
   font-size: .9rem;
 }
-.wizard-field input,
-.wizard-field select {
-  padding: .45rem .6rem;
-  font: inherit;
-  color: #eef;
-  background: #232a45;
-  border: 1px solid #3f4d78;
-  border-radius: 6px;
-}
 .wizard-option-number {
   margin: .2rem 0 .6rem 1.75rem;
 }
@@ -344,10 +335,7 @@
   .wizard-pill {
     min-height: 44px;
   }
-  .wizard-field input,
-  .wizard-field select {
-    min-height: 44px;
-  }
+
 }
 
 @media (max-width: 480px) {

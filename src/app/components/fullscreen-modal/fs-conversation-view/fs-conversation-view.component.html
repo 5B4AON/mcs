@@ -7,7 +7,7 @@
 <div class="fs-conversation" [class.vk-open]="viewportKeyboardOpen" [class.lens-on]="lensView"
      [class.key-mode]="inputMode === 'key'" [class.celebrate]="celebrating" [class.ebook-on]="ebookView"
      [style.color]="ebookView ? settings.modalDisplay().rxForeground : null"
-     [style.--eb-played]="ebookView ? ebookColors.played : null"
+     [style.--eb-played]="ebookView ? settings.modalDisplay().txForeground : null"
      [style.--eb-current]="ebookView ? ebookColors.current : null"
      [style.--eb-current-bg]="ebookView ? ebookColors.currentBackground : null"
      [style.--lens-side]="lensSideInset"
@@ -193,6 +193,16 @@
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
         <circle cx="12" cy="12" r="3"/>
+      </svg>
+    </button>
+  }
+  @if (ebookView && ebook.info()?.href) {
+    <button class="fs-float-btn fs-float-ghost" [disabled]="ebook.loading()" (mousedown)="$event.preventDefault()" (click)="reloadBook()"
+            title="Reload the book from its web address" aria-label="Reload the book from its web address">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <polyline points="23 4 23 10 17 10"/>
+        <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/>
       </svg>
     </button>
   }

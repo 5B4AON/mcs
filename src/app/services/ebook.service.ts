@@ -26,6 +26,8 @@ export interface EbookInfo {
   bytes: number;
   /** The host of a web address, '' for a file */
   origin: string;
+  /** The full web address, '' for a file */
+  href: string;
 }
 
 /** What loading a book came to: it failed, it loaded from the start, or it loaded and the learner chose to resume where they stopped. */
@@ -157,7 +159,7 @@ export class EbookService {
     }
     return this.install(
       format === 'epub' ? epubOpener(zipBytesOf(file)) : ebookOpener(blobSource(file), format),
-      { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '' },
+      { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '', href: '' },
       resumeIdForFile(file.name, file.size),
       () => void rememberFile(file),
     );
@@ -196,11 +198,22 @@ export class EbookService {
     }
     return this.install(
       opener,
-      { name: book.name, format: FORMAT_LABEL[format], bytes: book.source.size() ?? 0, origin: book.host },
+      { name: book.name, format: FORMAT_LABEL[format], bytes: book.source.size() ?? 0, origin: book.host, href: book.href },
       resumeIdForUrl(book.href),
       () => rememberUrl(book.href),
       auto,
     );
+  }
+
+  /**
+   * Fetch the loaded web address again (the page may have changed) and go on where the reading stopped,
+   * without asking. A failed fetch leaves the book that is loaded as it is. Does nothing for a file.
+   */
+  async reload(): Promise<EbookLoadResult> {
+    const href = this.info()?.href;
+    if (!href || this.loading()) return 'failed';
+    this.flushSave();
+    return this.loadUrl(href, true);
   }
 
   /** Reopen the book that was loaded last, at the place where it stopped, without asking. Does nothing when there is none. */
@@ -217,7 +230,7 @@ export class EbookService {
     if (!format) return 'failed';
     return this.install(
       format === 'epub' ? epubOpener(zipBytesOf(file)) : ebookOpener(blobSource(file), format),
-      { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '' },
+      { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '', href: '' },
       resumeIdForFile(file.name, file.size),
       null,
       true,

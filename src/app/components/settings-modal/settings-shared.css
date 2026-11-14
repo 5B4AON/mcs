@@ -344,18 +344,160 @@
 }
 
 /* ===== Form Controls ===== */
+/* Text boxes everywhere in Settings, its popups and the wizard are rounded like the selects:
+   the same height, border, colours and 20px radius */
+.settings-card-body input:where(:not([type]), [type="text"], [type="password"], [type="number"], [type="url"], [type="search"]),
+.wizard-field input:where(:not([type]), [type="text"], [type="password"], [type="number"], [type="url"], [type="search"]),
+input.md-input,
+input.md-raw-input,
+input.md-poll-input,
+input.emoji-edit-input,
+input.emoji-meaning-input,
+input.emoji-match-input,
+input.emoji-emoji-input,
+input.midi-raw-input,
+input.preset-name-input,
+input.search-input {
+  box-sizing: border-box;
+  min-height: 0;
+  padding: .45rem 1rem;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #fff;
+  background: #282c34;
+  border: 1px solid #556;
+  border-radius: 20px;
+}
+.settings-card-body input[type="number"],
+.wizard-field input[type="number"],
+input.md-raw-input,
+input.md-poll-input,
+input.midi-raw-input,
+input.emoji-emoji-input {
+  padding-inline: .6rem;
+}
+.settings-card-body input::placeholder,
+.wizard-field input::placeholder,
+input.md-input::placeholder,
+input.emoji-edit-input::placeholder,
+input.preset-name-input::placeholder,
+input.search-input::placeholder {
+  color: #889;
+  font-weight: 400;
+}
+.settings-card-body input:where([type="text"], [type="password"], [type="number"], [type="url"], [type="search"], :not([type])):focus,
+.wizard-field input:focus,
+input.md-input:focus,
+input.md-raw-input:focus,
+input.md-poll-input:focus,
+input.emoji-edit-input:focus,
+input.emoji-meaning-input:focus,
+input.emoji-match-input:focus,
+input.emoji-emoji-input:focus,
+input.midi-raw-input:focus,
+input.preset-name-input:focus,
+input.search-input:focus {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+  border-color: #556;
+}
+.settings-card-body input:where([type="text"], [type="password"], [type="number"], [type="url"], [type="search"], :not([type])):disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+/* Drop-down selects everywhere in Settings, its popups and the wizard share the look of the main
+   screen's Mode select: a pill (same height as the text pills) with a blue chevron */
 .settings-card-body select,
-.settings-card-body input[type="number"] {
+.md-select,
+.md-note-select,
+.md-octave-select,
+.wizard-field select,
+.prosign-action-select,
+.midi-note-select,
+.midi-octave-select {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  min-height: 0;
+  padding: .45rem 2rem .45rem 1rem;
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  color: #fff;
+  background-color: #282c34;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6' fill='none' stroke='%238cf' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='1,1 5,5 9,1'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right .85rem center;
+  background-size: .6rem;
+  border: 1px solid #556;
+  border-radius: 20px;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+.settings-card-body select:hover:not(:disabled),
+.md-select:hover:not(:disabled),
+.md-note-select:hover,
+.md-octave-select:hover,
+.wizard-field select:hover:not(:disabled),
+.prosign-action-select:hover:not(:disabled),
+.midi-note-select:hover,
+.midi-octave-select:hover {
+  background-color: #3a4050;
+}
+.settings-card-body select:focus-visible,
+.md-select:focus-visible,
+.md-note-select:focus-visible,
+.md-octave-select:focus-visible,
+.wizard-field select:focus-visible,
+.prosign-action-select:focus-visible,
+.midi-note-select:focus-visible,
+.midi-octave-select:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+}
+.settings-card-body select:disabled,
+.md-select:disabled,
+.wizard-field select:disabled,
+.prosign-action-select:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+.settings-card-body select option,
+.md-select option,
+.md-note-select option,
+.md-octave-select option,
+.wizard-field select option,
+.prosign-action-select option,
+.midi-note-select option,
+.midi-octave-select option {
   background: #222;
   color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: .2rem .4rem;
-  font-size: .85rem;
+}
+.settings-card-body select optgroup,
+.md-select optgroup,
+.wizard-field select optgroup {
+  background: #222;
+  color: #8cf;
+  font-style: normal;
+  font-weight: 700;
+}
+.settings-card-body select:where(:not(.koch-lesson-select)) option:checked {
+  background: #3a4858;
+  color: #fff;
 }
 .settings-card-body select {
   max-width: 260px;
   flex: 1;
+}
+/* The note and octave pickers are narrow */
+select.md-note-select,
+select.md-octave-select,
+select.midi-note-select,
+select.midi-octave-select {
+  flex: none;
+  padding: .45rem 1.4rem .45rem .7rem;
+  background-position: right .5rem center;
 }
 .settings-card-body input[type="range"] {
   flex: 1;
@@ -545,12 +687,6 @@
 .signal-mode-toggle input[type="number"] {
   width: 60px;
   height: auto;
-  padding: .15rem .3rem;
-  font-size: .75rem;
-  background: #1a1a2e;
-  color: #cde;
-  border: 1px solid #333;
-  border-radius: 3px;
   text-align: center;
 }
 
@@ -707,15 +843,6 @@
   align-items: center;
   gap: 0.6rem;
 }
-.card-color-picker {
-  width: 36px;
-  height: 30px;
-  padding: 0;
-  border: 1px solid #444;
-  border-radius: 4px;
-  cursor: pointer;
-  background: transparent;
-}
 /* Round "clear colour" button: the circular icon look of the Settings header buttons,
    sized to sit beside the colour picker. The second selector beats the shared card button rule. */
 .card-color-clear,
@@ -724,8 +851,8 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 1px solid #556;
   border-radius: 50%;
@@ -757,10 +884,6 @@
 .card-color-clear:focus-visible {
   outline: 2px solid #8cf;
   outline-offset: 2px;
-}
-.card-color-preview {
-  font-size: 0.85rem;
-  font-weight: 600;
 }
 
 /* ---- Mandatory field indicators ---- */
@@ -799,6 +922,12 @@
   select.koch-lesson-select,
   select.koch-lesson-select::picker(select) {
     appearance: base-select;
+  }
+  select.koch-lesson-select {
+    background-image: none;
+  }
+  select.koch-lesson-select::picker-icon {
+    color: #8cf;
   }
   select.koch-lesson-select::picker(select) {
     max-height: min(50vh, 22rem);
@@ -860,9 +989,7 @@ select { max-width: 300px; }
   .keyer-hint {
     font-size: 0.72rem;
   }
-  .settings-card-body select,
   .settings-card-body input[type="number"] {
-    font-size: 0.8rem;
     max-width: 100%;
   }
 }
@@ -899,11 +1026,6 @@ select { max-width: 300px; }
   .settings-card-body input[type="checkbox"] {
     width: 20px;
     height: 20px;
-  }
-  .settings-card-body select,
-  .settings-card-body input[type="number"] {
-    min-height: 36px;
-    font-size: 0.88rem;
   }
   .key-capture {
     min-height: 40px;

@@ -19,31 +19,13 @@
   color: #ccc;
 }
 .midi-note-select {
-  width: 60px;
-  padding: 0.25rem 0.3rem;
-  background: #222;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  width: 64px;
 }
 .midi-octave-select {
-  width: 52px;
-  padding: 0.25rem 0.3rem;
-  background: #222;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 4px;
-  font-size: 0.85rem;
+  width: 60px;
 }
 .midi-raw-input {
   width: 65px;
-  padding: 0.25rem 0.3rem;
-  background: #222;
-  color: #eee;
-  border: 1px solid #555;
-  border-radius: 4px;
-  font-size: 0.85rem;
 }
 .midi-mode-toggle {
   background: transparent;

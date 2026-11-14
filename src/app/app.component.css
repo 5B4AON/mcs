@@ -1117,6 +1117,11 @@
 .clear-menu.open {
   display: flex;
 }
+/* The header's Clear menu opens downwards */
+.clear-menu.clear-menu-down {
+  bottom: auto;
+  top: calc(100% + 8px);
+}
 .clear-menu-btn {
   display: inline-block;
   border: none;

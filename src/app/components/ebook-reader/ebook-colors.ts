@@ -2,9 +2,8 @@
  * Morse Code Studio
  */
 
-/** The three colours the reader needs on top of the text colour: played text, the current character and its highlight. */
+/** The colours the reader needs on top of the text colour: the current character and its highlight (played text takes the full screen's TX colour). */
 export interface EbookReaderColors {
-  played: string;
   current: string;
   currentBackground: string;
 }
@@ -18,9 +17,9 @@ export function isLightColor(hex: string): boolean {
   return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 > 0.55;
 }
 
-/** Colours that stay readable on the given background: a light blue on dark, a deep blue on light. */
+/** Colours that stay readable on the given background. */
 export function ebookReaderColors(background: string): EbookReaderColors {
   return isLightColor(background)
-    ? { played: '#1d5fa6', current: '#111', currentBackground: 'rgba(255, 190, 0, .65)' }
-    : { played: '#6db3ff', current: '#000', currentBackground: 'rgba(255, 205, 60, .9)' };
+    ? { current: '#111', currentBackground: 'rgba(255, 190, 0, .65)' }
+    : { current: '#000', currentBackground: 'rgba(255, 205, 60, .9)' };
 }

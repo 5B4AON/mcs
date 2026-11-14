@@ -50,21 +50,18 @@
            placeholder="e.g. callsign (optional)"
            maxlength="20">
   </label>
-  <div class="keyer-hint">Optional. A new name starts a new line.</div>
 
-  <label>Color:
+  <label>Colour:
     <div class="card-color-row">
-      <input type="color" class="card-color-picker"
+      <input type="color" class="color-pill"
              [ngModel]="s().encoderColor || '#ffffff'"
              (ngModelChange)="scope.update({ encoderColor: $event })">
       @if (s().encoderColor) {
         <button type="button" class="card-color-clear"
-                (click)="scope.update({ encoderColor: '' })" title="Clear color">&#10005;</button>
+                (click)="scope.update({ encoderColor: '' })" title="Clear colour">&#10005;</button>
       }
-      <span class="card-color-preview" [style.color]="s().encoderColor || 'inherit'">Sample</span>
     </div>
   </label>
-  <div class="keyer-hint">Optional. Colours this input's text.</div>
   }
 </app-item-shell>
 }

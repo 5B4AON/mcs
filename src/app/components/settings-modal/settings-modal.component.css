@@ -683,16 +683,6 @@
   background: rgba(100, 150, 200, .08);
 }
 
-.preset-name-input {
-  min-height: 40px;
-  padding: .45rem .6rem;
-  color: #eef;
-  background: #11111c;
-  border: 1px solid #667;
-  border-radius: 5px;
-  font: inherit;
-}
-
 .preset-name-form small,
 .preset-item-date {
   color: #aab;

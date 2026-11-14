@@ -25,9 +25,6 @@ export class IdentityFieldComponent {
   /** Current colour as `#rrggbb`, or empty for none */
   @Input() color = '';
 
-  /** Text for the name hint line; empty hides it */
-  @Input() hint = 'Optional. A new name starts a new line.';
-
   /** Placeholder of the name box */
   @Input() placeholder = 'e.g. callsign (optional)';
 

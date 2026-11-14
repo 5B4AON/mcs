@@ -120,9 +120,9 @@ const COMMON_DEFAULTS: CommonSettings = {
   fullscreenFontSize: 24,
   fullscreenFontBold: false,
   fullscreenLineSpacing: 0.1,
-  fullscreenRxForeground: '#00ff88',
+  fullscreenRxForeground: '#40e0d0',
   fullscreenRxBackground: '#0e1218',
-  fullscreenTxForeground: '#ffcc00',
+  fullscreenTxForeground: '#ffd700',
   fullscreenTxBackground: '#0d0d18',
   fullscreenBufferForeground: '#666666',
   fullscreenSendingForeground: '#ffff00',
@@ -359,6 +359,29 @@ export class SettingsService {
   /** Update in-memory settings (does NOT persist — use save() for that) */
   update(patch: Partial<AppSettings>): void {
     this.settings.set({ ...this.settings(), ...patch });
+    this.refreshDirty();
+  }
+
+  /**
+   * Update settings and store just those keys in the saved profile of this device, for changes made
+   * on the main screen that should stick at once (the Mode select). Other unsaved edits stay unsaved.
+   * Without a saved profile (a new device) the change stays in memory like any other.
+   */
+  updateAndPersist(patch: Partial<AppSettings>): void {
+    this.update(patch);
+    const fp = this.currentFingerprint();
+    if (!fp || !this.savedBaseline) return;
+    try {
+      const raw = localStorage.getItem(PROFILES_KEY);
+      const profiles: Record<string, StoredProfile> = raw ? JSON.parse(raw) : {};
+      const profile = profiles[fp];
+      if (!profile) return;
+      profile.settings = { ...profile.settings, ...patch };
+      localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+    } catch {
+      return;
+    }
+    this.savedBaseline = { ...this.savedBaseline, ...patch };
     this.refreshDirty();
   }
 

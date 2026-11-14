@@ -70,6 +70,11 @@ export class ViewportService implements OnDestroy {
   /** True when the visual viewport is much shorter than the layout viewport (on-screen keyboard likely open) */
   readonly keyboardOpen = computed(() => this.height() < this.layoutHeight() * KEYBOARD_RATIO);
 
+  /** Height a popup menu can count on: the full height even while the keyboard is still up, because opening a menu closes it */
+  menuHeight(): number {
+    return this.keyboardOpen() ? this.layoutHeight() : this.height();
+  }
+
   private readonly layoutHeight = signal(0);
   private probe: HTMLElement | null = null;
   private frame = 0;

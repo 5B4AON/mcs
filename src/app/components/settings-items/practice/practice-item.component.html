@@ -201,18 +201,18 @@
     <input type="text" maxlength="20"
            [value]="s().practiceName"
            (input)="onNameChange($event)"
-           placeholder="Optional display name">
+           placeholder="e.g. callsign (optional)">
   </label>
   <label>
-    Color:
-    <span class="color-input-group">
-      <input type="color"
+    Colour:
+    <div class="card-color-row">
+      <input type="color" class="color-pill"
              [value]="s().practiceColor || '#ffffff'"
              (input)="onColorChange($event)">
       @if (s().practiceColor) {
-        <button type="button" class="card-color-clear" (click)="clearColor()" title="Use default color" aria-label="Use default color">&#10005;</button>
+        <button type="button" class="card-color-clear" (click)="clearColor()" title="Use default colour" aria-label="Use default colour">&#10005;</button>
       }
-    </span>
+    </div>
   </label>
   }
 </app-item-shell>

@@ -20,20 +20,17 @@ import { FormsModule } from '@angular/forms';
       <input [id]="idPrefix + 'Name'" type="text" class="md-input" maxlength="20"
              [ngModel]="name" (ngModelChange)="nameChange.emit($event)"
              placeholder="e.g. callsign (optional)">
-      <span class="md-hint">Optional. A new name starts a new line.</span>
     </div>
 
     <div class="md-field">
-      <label class="md-label">Color</label>
+      <label class="md-label">Colour</label>
       <div class="md-color-row">
-        <input type="color" class="md-color-picker"
+        <input type="color" class="color-pill"
                [ngModel]="color || '#ffffff'" (ngModelChange)="colorChange.emit($event)">
         @if (color) {
-          <button type="button" class="md-color-clear" (click)="colorChange.emit('')" title="Clear color">✕</button>
+          <button type="button" class="md-color-clear" (click)="colorChange.emit('')" title="Clear colour">✕</button>
         }
-        <span class="md-color-preview" [style.color]="color || 'inherit'">Sample</span>
       </div>
-      <span class="md-hint">{{ colorHint }}</span>
     </div>
   `,
   styles: [':host { display: contents; }'],
@@ -45,7 +42,6 @@ export class MappingIdentityFieldsComponent {
   @Input() name = '';
   @Input() color = '';
 
-  @Input() colorHint = 'Optional. Colours this input\'s text.';
 
   @Output() nameChange = new EventEmitter<string>();
   @Output() colorChange = new EventEmitter<string>();

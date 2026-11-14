@@ -202,7 +202,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   private updateKebabMaxHeight(): void {
     const trigger = document.querySelector<HTMLElement>('.fs-kebab-wrapper > .kebab-btn');
     if (!trigger) return;
-    const viewportHeight = this.viewport.height();
+    const viewportHeight = this.viewport.menuHeight();
     // 4px gap under the button plus 8px of breathing room at the bottom
     this.fsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 12));
   }

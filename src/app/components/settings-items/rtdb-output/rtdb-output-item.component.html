@@ -96,23 +96,22 @@
     </label>
     <div class="cw-hint">Off: an input's own name is used first. This name fills in when it has none.</div>
 
-    <label>Color:
+    <label>Colour:
       <div class="card-color-row">
-        <input type="color" class="card-color-picker"
+        <input type="color" class="color-pill"
                [ngModel]="s().rtdbOutputColor || '#ffffff'"
                (ngModelChange)="scope.update({ rtdbOutputColor: $event })">
         @if (s().rtdbOutputColor) {
           <button type="button" class="card-color-clear"
-                  (click)="scope.update({ rtdbOutputColor: '' })" title="Clear color">&#10005;</button>
+                  (click)="scope.update({ rtdbOutputColor: '' })" title="Clear colour">&#10005;</button>
         }
-        <span class="card-color-preview" [style.color]="s().rtdbOutputColor || 'inherit'">Sample</span>
       </div>
     </label>
 
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputOverrideColor"
              (change)="onBoolChange('rtdbOutputOverrideColor', $event)">
-      Always use this color (override input-specific colors)
+      Always use this colour (override input-specific colours)
     </label>
     <div class="cw-hint">Off: an input's own colour is used first. This colour fills in when it has none.</div>
     }

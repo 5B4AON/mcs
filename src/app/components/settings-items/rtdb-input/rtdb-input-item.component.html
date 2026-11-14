@@ -95,24 +95,21 @@
     <label>Override Name:
       <input type="text" [value]="s().rtdbInputName"
              (input)="onOverrideNameChange($event)"
-             placeholder="empty = keep sender's name"
+             placeholder="e.g. callsign (optional)"
              maxlength="20">
     </label>
-    <div class="cw-hint">Replaces the sender's name. Leave empty to keep it.</div>
 
-    <label>Override Color:
+    <label>Override Colour:
       <div class="card-color-row">
-        <input type="color" class="card-color-picker"
+        <input type="color" class="color-pill"
                [ngModel]="s().rtdbInputColor || '#ffffff'"
                (ngModelChange)="scope.update({ rtdbInputColor: $event })">
         @if (s().rtdbInputColor) {
           <button type="button" class="card-color-clear"
-                  (click)="scope.update({ rtdbInputColor: '' })" title="Clear color">&#10005;</button>
+                  (click)="scope.update({ rtdbInputColor: '' })" title="Clear colour">&#10005;</button>
         }
-        <span class="card-color-preview" [style.color]="s().rtdbInputColor || 'inherit'">Sample</span>
       </div>
     </label>
-    <div class="cw-hint">Replaces the sender's colour. Leave empty to keep it.</div>
     }
 
     @if ((part === 'all' || part === 'connect') && rtdbService.lastError()) {

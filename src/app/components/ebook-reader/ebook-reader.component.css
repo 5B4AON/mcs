@@ -1,14 +1,12 @@
 /*
  * Not encapsulated: the text is drawn from the script, so its elements carry no component attribute.
- * Fills the box it sits in; the box decides the font, colour and size.
+ * Fills the box it sits in; the box decides the font, colour and size, and may set --eb-played,
+ * --eb-current and --eb-current-bg (the host must not declare them, or it would hide the box's values).
  */
 app-ebook-reader {
   position: absolute;
   inset: 0;
   display: block;
-  --eb-played: #1d5fa6;
-  --eb-current: #111;
-  --eb-current-bg: rgba(255, 190, 0, .65);
 }
 
 .eb-scroll {
@@ -79,13 +77,13 @@ app-ebook-reader {
   display: inline-block;
   transform: scale(1.12);
   transform-origin: 50% 70%;
-  color: var(--eb-played);
+  color: var(--eb-played, #1d5fa6);
   transition: color .15s ease, transform .15s ease, background-color .15s ease;
 }
 .eb-c.eb-cur {
   transform: scale(1.4);
-  color: var(--eb-current);
-  background-color: var(--eb-current-bg);
+  color: var(--eb-current, #111);
+  background-color: var(--eb-current-bg, rgba(255, 190, 0, .65));
   border-radius: 2px;
 }
 

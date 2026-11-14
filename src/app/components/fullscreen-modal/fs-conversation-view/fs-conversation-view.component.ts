@@ -14,6 +14,7 @@ import { DisplayBufferService, DisplayLine } from '../../../services/display-buf
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
+import { ClearService } from '../../../services/clear.service';
 import { EbookService } from '../../../services/ebook.service';
 import { EbookReaderComponent } from '../../ebook-reader/ebook-reader.component';
 import { ebookReaderColors } from '../../ebook-reader/ebook-colors';
@@ -90,9 +91,15 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return this.ebook.active();
   }
 
-  /** Played, current and highlight colours of the reader, readable on the chosen background. */
+  /** Current-character and highlight colours of the reader, readable on the chosen background (played text uses the TX colour, unplayed the RX colour). */
   get ebookColors() {
     return ebookReaderColors(this.settings.modalDisplay().rxBackground);
+  }
+
+  /** Fetch the book's web address again and go on at the same place; Copy practice is paused first. */
+  reloadBook(): void {
+    if (this.practice.state() === 'playing') this.practice.pause();
+    void this.ebook.reload();
   }
 
   /** Whether the encoder is in practice mode. */
@@ -158,8 +165,13 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Pending encoder characters shown inline with the conversation. */
   readonly encoderPendingChars = computed(() => {
     const buffer = this.encoder.buffer();
-    if (this.settings.settings().encoderMode === 'practice') return [];
-    return buffer.slice(this.encoder.sentIndex()).split('');
+    const mode = this.settings.settings().encoderMode;
+    if (mode === 'practice') return [];
+    const pending = buffer.slice(this.encoder.sentIndex());
+    const draft = mode === 'enter' ? this.clear.fullscreenDraft() : '';
+    if (!draft) return pending.split('');
+    // The draft is shown where it will be queued: behind the unsent text, separated by a space
+    return (pending && !/\s$/.test(pending) ? pending + ' ' + draft : pending + draft).split('');
   });
 
   /**
@@ -188,6 +200,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     public sendPractice: SendPracticeService,
     public ebook: EbookService,
     public kochHelp: KochHelpService,
+    private clear: ClearService,
     private sanitizer: DomSanitizer,
   ) {
     // The reveal button is disabled without text, so a hold cannot end by itself when the text goes
@@ -427,6 +440,18 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
       } else if (inputEvent.data) {
         this.practice.userInput.set(this.practice.userInput() + inputEvent.data.toUpperCase());
       }
+    } else if (!isPractice && this.typesIntoDraft) {
+      // While a send runs, new text is a new message: it is queued behind the send when Enter is pressed
+      if (inputEvent.inputType.startsWith('delete')) {
+        this.clear.fullscreenDraft.set(this.clear.fullscreenDraft().slice(0, -1));
+      } else if (inputEvent.data) {
+        let draft = this.clear.fullscreenDraft();
+        for (const char of inputEvent.data) {
+          if (/\s/.test(char) && (draft === '' || /\s$/.test(draft))) continue;
+          draft += char.toUpperCase();
+        }
+        this.clear.fullscreenDraft.set(draft);
+      }
     } else if (!isPractice) {
       if (inputEvent.inputType.startsWith('delete')) {
         const buffer = this.encoder.buffer();
@@ -450,7 +475,31 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     if (event.key !== 'Enter') return;
     event.preventDefault();
     if (this.settings.settings().encoderMode === 'practice') this.practiceAction();
-    else if (this.settings.settings().encoderMode === 'enter') this.encoder.toggleTx();
+    else if (this.settings.settings().encoderMode === 'enter') this.enterInTypeMode();
+  }
+
+  /** Typed characters wait in the draft while a send runs (or while one is already waiting), as the main screen's box does. */
+  private get typesIntoDraft(): boolean {
+    if (this.settings.settings().encoderMode !== 'enter' || this.encoder.replayMode()) return false;
+    return this.encoder.isSending() || this.clear.fullscreenDraft() !== '';
+  }
+
+  /** Enter in Send on Enter: queue the draft behind the unsent text with a space, or start the new text; with no draft it starts or pauses the send. */
+  private enterInTypeMode(): void {
+    const draft = this.clear.fullscreenDraft().trim();
+    this.clear.fullscreenDraft.set('');
+    if (!draft) {
+      this.encoder.toggleTx();
+      return;
+    }
+    if (this.encoder.replayPending()) this.encoder.stopReplay();
+    const buffer = this.encoder.buffer();
+    if (buffer.length > this.encoder.sentIndex()) {
+      this.encoder.enqueue(buffer && !/\s$/.test(buffer) ? ' ' + draft : draft);
+      if (!this.encoder.isSending()) this.encoder.startTx();
+    } else {
+      this.encoder.submitText(draft);
+    }
   }
 
   /** Return typing focus after an action button has taken it. */

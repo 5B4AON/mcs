@@ -1526,6 +1526,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.showBook = true;
   }
 
+  /** Fetch the book's web address again and go on at the same place; Copy practice is paused first. */
+  reloadBook(): void {
+    if (this.practice.state() === 'playing') this.practice.pause();
+    void this.ebook.reload();
+  }
+
   /** An e-book is the content of the practice mode that is on: its reader takes the output area and the typing box's place. */
   get ebookActive(): boolean {
     return this.ebook.active();
@@ -1704,7 +1710,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private updateKebabMaxHeight(): void {
     const trigger = document.querySelector<HTMLElement>('.kebab-wrapper > .kebab-btn');
     if (!trigger) return;
-    const viewportHeight = this.viewport.height();
+    const viewportHeight = this.viewport.menuHeight();
     // 8px gap under the button plus 8px of breathing room at the bottom
     this.controlsKebabMaxHeight = Math.max(120, Math.floor(viewportHeight - trigger.getBoundingClientRect().bottom - 16));
   }
@@ -1936,7 +1942,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (key === 'encoderMode' && this.settings.settings().encoderMode === 'practice' && value !== 'practice') {
       this.practice.reset();
     }
-    this.settings.update({ [key]: value } as Partial<AppSettings>);
+    const patch = { [key]: value } as Partial<AppSettings>;
+    // The Mode select on the main screen is saved at once, without a visit to Settings
+    if (key === 'encoderMode') this.settings.updateAndPersist(patch);
+    else this.settings.update(patch);
   }
 
   // ---- Device config / profiles ----

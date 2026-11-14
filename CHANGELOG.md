@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.16.1] - 2026-11-14
+
+### Added
+
+- **Reload an e-book** — When a book was loaded from a web address, a round reload button above the contents button (main screen and full screen) fetches the address again and carries on at the same place without asking. A failed fetch leaves the loaded book as it is, and a playing Copy practice is paused first.
+- **Queue typed text in full screen** — In full-screen Type with Send on Enter, text typed while a message is sending now waits as a new message and is added to the end of the queue, after a space, when you press Enter, as on the main screen. Live mode is unchanged.
+- **Loaded book in Settings** — The E-book card shows the loaded book above the address box, with a round red × button to remove it, and the address box keeps showing the loaded address.
+
+### Changed
+
+- **Clear and Start Audio buttons** — Clear now sits in the main header beside the menu button, and Start Audio moved to the bottom right of the typing area. Clear stays visible, dimmed, while an e-book is read (also in full screen). While audio runs, the button shows a crossed-out speaker instead of a stop square. Text waiting in the full-screen Type draft counts as content for Clear.
+- **Mode select** — Changing the Mode on the main screen is saved to this device's profile at once, without a visit to Settings.
+- **E-book colours** — The reader now follows the full-screen colours: text still to come uses the RX colour and played text the TX colour (before, the reader ignored the colours it was given). The default full-screen RX and TX colours are now turquoise (`#40e0d0`) and gold (`#ffd700`).
+- **Settings look** — Drop-down selects and text and number boxes in Settings cards, the mapping and emoji popups, the preset name box and the Setup Wizard are rounded pills with the same height and colours as the main screen's Mode select. Colour pickers are round glossy spheres in the chosen colour, the "Sample" word is gone, "Color" is spelled "Colour", and the hint lines under Name and Colour are removed. Every empty name box says "e.g. callsign (optional)".
+- **Kebab menus** — They measure their height from the full viewport, so they are not cut short when opened while a phone keyboard is up.
+- **Help** — Updated for the new button positions, the e-book reload button and typing in full screen.
+
 ## [2.16.0] - 2026-11-13
 
 ### Added

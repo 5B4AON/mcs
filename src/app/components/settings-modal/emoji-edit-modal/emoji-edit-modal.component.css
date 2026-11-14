@@ -103,19 +103,7 @@
 }
 
 .emoji-edit-input {
-  background: #222;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 4px;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.9rem;
   width: 100%;
-  box-sizing: border-box;
-}
-
-.emoji-edit-input:focus {
-  outline: none;
-  border-color: #ffcc00;
 }
 
 .emoji-edit-input.mono {

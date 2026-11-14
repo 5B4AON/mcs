@@ -34,18 +34,8 @@
   flex-shrink: 0;
 }
 .prosign-action-select {
-  background: #222;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.85rem;
   flex: 1;
   max-width: 180px;
-}
-.prosign-action-select:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
 }
 
 /* ===== Emojis ===== */
@@ -111,33 +101,16 @@
   max-width: 12rem;
 }
 .emoji-meaning-input {
-  background: #222;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.8rem;
   width: 8rem;
 }
 .emoji-row-spacer {
   flex: 1;
 }
 .emoji-match-input {
-  background: #222;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0.2rem 0.4rem;
-  font-size: 0.85rem;
   font-family: monospace;
   width: 6rem;
 }
 .emoji-emoji-input {
-  background: #222;
-  color: #ddd;
-  border: 1px solid #555;
-  border-radius: 3px;
-  padding: 0.2rem 0.4rem;
   font-size: 1.1rem;
   width: 3rem;
   text-align: center;
