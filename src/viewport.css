@@ -150,11 +150,11 @@ html.ios-layout :is(.help-close-btn, .ref-close-btn) {
   top: calc(14px + var(--safe-top) + var(--vv-top));
   right: calc(18px + var(--safe-right));
 }
-html.ios-layout .help-search-btn {
+html.ios-layout :is(.help-search-btn, .ref-search-btn) {
   top: calc(14px + var(--safe-top) + var(--vv-top));
   right: calc(68px + var(--safe-right));
 }
-html.ios-layout .help-search-bar {
+html.ios-layout :is(.help-search-bar, .ref-search-bar) {
   top: calc(64px + var(--safe-top) + var(--vv-top));
   right: calc(18px + var(--safe-right));
 }

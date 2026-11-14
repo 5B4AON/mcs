@@ -21,6 +21,7 @@ import {
   OnDestroy,
 } from '@angular/core';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
+import { DocumentSearch } from '../document-search';
 
 @Component({
   selector: 'app-symbols-ref',
@@ -49,6 +50,19 @@ export class SymbolsRefComponent implements AfterViewInit, OnDestroy {
   /** Whether the floating back-to-top button is visible. */
   showBackToTop = false;
 
+  /** Whether the floating search bar is open. */
+  searchOpen = false;
+
+  /** Search state: query, hits and highlights (shared with Help). */
+  readonly search = new DocumentSearch(
+    () => this.scrollContainer.nativeElement,
+    () => this.searchBar?.nativeElement,
+  );
+
+  @ViewChild('searchInput') searchInput?: ElementRef<HTMLInputElement>;
+  @ViewChild('searchBar') searchBar?: ElementRef<HTMLElement>;
+  @ViewChild('searchButton') searchButton?: ElementRef<HTMLButtonElement>;
+
   private scrollListener: (() => void) | null = null;
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
@@ -65,6 +79,7 @@ export class SymbolsRefComponent implements AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.search.clearHighlights();
     if (this.scrollListener && this.scrollContainer) {
       this.scrollContainer.nativeElement.removeEventListener('scroll', this.scrollListener);
     }
@@ -74,9 +89,53 @@ export class SymbolsRefComponent implements AfterViewInit, OnDestroy {
     );
   }
 
-  /** Keep keyboard focus inside the Symbols Reference dialog. */
+  /**
+   * Keep keyboard focus inside the Symbols Reference dialog. Escape closes the search bar first
+   * (before the app-level handler sees it) and Ctrl/Cmd+F opens it instead of the browser's find bar.
+   */
   onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key === 'Escape' && this.searchOpen) {
+      event.preventDefault();
+      this.closeSearch();
+      return;
+    }
+    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'f') {
+      event.preventDefault();
+      this.openSearch();
+      return;
+    }
     trapDialogTabKey(event, this.host.nativeElement);
+  }
+
+  /** Show the search bar (or focus it when already open) with the old query selected. */
+  openSearch(): void {
+    this.searchOpen = true;
+    setTimeout(() => {
+      const input = this.searchInput?.nativeElement;
+      input?.focus({ preventScroll: true });
+      input?.select();
+    });
+    if (this.search.query) this.search.run();
+  }
+
+  /** Hide the search bar, remove the highlights and give focus back to the search button. */
+  closeSearch(): void {
+    this.searchOpen = false;
+    this.search.reset();
+    setTimeout(() => this.searchButton?.nativeElement.focus());
+  }
+
+  /** Search field edited: look again. */
+  onSearchInput(value: string): void {
+    this.search.query = value;
+    this.search.run();
+  }
+
+  /** Enter goes to the next hit, Shift+Enter to the previous one. */
+  onSearchKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Enter') return;
+    event.preventDefault();
+    this.search.step(event.shiftKey ? -1 : 1);
   }
 
   /** Scroll to a given anchor ID within the document. */

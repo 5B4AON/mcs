@@ -85,6 +85,18 @@ export class PresetService {
     return { ok: true };
   }
 
+  /** Delete every saved preset (and any unreadable store), leaving live settings and device profiles alone. */
+  deleteAll(): void {
+    try {
+      localStorage.removeItem(PRESETS_STORAGE_KEY);
+    } catch {
+      // Storage may be blocked: nothing is stored then
+    }
+    this.presets.set([]);
+    this.loadError.set('');
+    this.damagedRawStore.set(null);
+  }
+
   checkName(name: string, ignoreId?: string): PresetNameValidation {
     return validatePresetName(name, this.presets(), ignoreId);
   }

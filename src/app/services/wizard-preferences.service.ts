@@ -32,6 +32,16 @@ export class WizardPreferencesService {
     }
   }
 
+  /** Forget every remembered answer, in memory and in storage. */
+  forget(): void {
+    this.values = {};
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Storage may be blocked: nothing is stored then
+    }
+  }
+
   private load(): Record<string, unknown> {
     try {
       const parsed: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');

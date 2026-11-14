@@ -545,6 +545,21 @@ export class SettingsService {
     this.isDirty.set(true);
   }
 
+  /**
+   * Delete every saved per-device profile (device labels and RTDB channel secrets included).
+   * The device then looks new: nothing is saved until the user presses Save.
+   */
+  deleteSavedProfiles(): void {
+    try {
+      localStorage.removeItem(PROFILES_KEY);
+    } catch {
+      // Storage may be blocked: nothing is stored then
+    }
+    this.savedBaseline = null;
+    this.needsValidation.set(true);
+    this.isDirty.set(true);
+  }
+
   getDefaults(): AppSettings {
     return { ...DEFAULT_SETTINGS };
   }

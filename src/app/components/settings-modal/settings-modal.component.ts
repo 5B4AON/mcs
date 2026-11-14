@@ -19,10 +19,13 @@ import { AppSettings, SettingsSaveResult, SettingsService } from '../../services
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ClearService } from '../../services/clear.service';
 import { EbookService } from '../../services/ebook.service';
+import { WizardLevelService } from '../../services/wizard-level.service';
+import { WizardPreferencesService } from '../../services/wizard-preferences.service';
+import { WhatsNewService } from '../../services/whats-new.service';
 import { FirebaseRtdbService } from '../../services/firebase-rtdb.service';
 import { SETTINGS_SCOPE } from '../settings-items/settings-scope';
 import { LiveSettingsScope } from '../settings-items/live-settings-scope';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { ConfirmCheckbox, ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 import { MidiInputService } from '../../services/midi-input.service';
 import { MidiOutputService } from '../../services/midi-output.service';
 import { SerialKeyInputService } from '../../services/serial-key-input.service';
@@ -106,8 +109,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Emitted when the user closes the settings modal */
   @Output() closed = new EventEmitter<void>();
 
-  /** Emitted after a confirmed reset to defaults */
-  @Output() defaultsReset = new EventEmitter<void>();
+  /** Emitted after a confirmed reset to defaults; true when the saved data was deleted from this device too */
+  @Output() defaultsReset = new EventEmitter<boolean>();
 
   /** Emitted after settings are saved */
   @Output() saved = new EventEmitter<void>();
@@ -141,9 +144,12 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
 
   /** Whether the reset confirmation dialog is visible */
   showResetConfirm = false;
-  /** Whether the reset dialog offers to clear stored e-book data, and the checkbox state (ticked by default) */
+  /** Whether the reset dialog offers to clear stored e-book data */
   resetHasEbookData = false;
-  resetClearEbook = true;
+  /** The reset dialog's extra checkboxes (e-book data ticked by default, saved data not) */
+  resetEbookBox: ConfirmCheckbox = { label: 'Also clear stored e-book data (the remembered book, reading places, and the names and addresses of books you opened)', checked: true };
+  resetSavedBox: ConfirmCheckbox = { label: 'Also delete saved device profiles, presets and remembered choices from this device (including relay channel secrets)', checked: false };
+  resetBoxes: ConfirmCheckbox[] = [this.resetSavedBox];
 
   /** Whether the Revert confirmation is showing */
   showRevertConfirm = false;
@@ -221,6 +227,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     private rtdbService: FirebaseRtdbService,
     private clear: ClearService,
     private ebook: EbookService,
+    private wizardLevel: WizardLevelService,
+    private wizardPreferences: WizardPreferencesService,
+    private whatsNew: WhatsNewService,
     private midiInput: MidiInputService,
     private midiOutput: MidiOutputService,
     private serialInput: SerialKeyInputService,
@@ -412,7 +421,9 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   /** Show the reset-confirmation dialog */
   confirmReset(): void {
     this.resetHasEbookData = this.ebook.hasStoredData();
-    this.resetClearEbook = true;
+    this.resetEbookBox.checked = true;
+    this.resetSavedBox.checked = false;
+    this.resetBoxes = this.resetHasEbookData ? [this.resetEbookBox, this.resetSavedBox] : [this.resetSavedBox];
     this.showResetConfirm = true;
   }
 
@@ -420,11 +431,19 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   onResetConfirmed(confirmed: boolean): void {
     this.showResetConfirm = false;
     if (confirmed) {
+      const deleteSaved = this.resetSavedBox.checked;
       // Clear first: it also ends a running practice session, which depends on the mode being reset
       this.clear.clearAll();
-      if (this.resetHasEbookData && this.resetClearEbook) this.ebook.clearAllData();
+      if (this.resetHasEbookData && this.resetEbookBox.checked) this.ebook.clearAllData();
+      if (deleteSaved) {
+        this.settings.deleteSavedProfiles();
+        this.presets.deleteAll();
+        this.wizardLevel.forget();
+        this.wizardPreferences.forget();
+        this.whatsNew.forget();
+      }
       this.settings.resetToDefaults();
-      this.defaultsReset.emit();
+      this.defaultsReset.emit(deleteSaved);
 
       // Stop any active RTDB connections since defaults have both disabled
       this.rtdbService.stopInput();

@@ -11,10 +11,10 @@
     <!-- Body -->
     <div class="confirm-body">
       <p>{{ message }}</p>
-      @if (checkboxLabel) {
+      @for (box of checkboxes; track box.label) {
         <label class="confirm-check">
-          <input type="checkbox" [checked]="checkboxChecked" (change)="onCheckboxChange($event)">
-          <span>{{ checkboxLabel }}</span>
+          <input type="checkbox" [checked]="box.checked" (change)="onCheckboxChange(box, $event)">
+          <span>{{ box.label }}</span>
         </label>
       }
       @if (messageAfter) {

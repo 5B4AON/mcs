@@ -38,6 +38,15 @@ export class WhatsNewService {
     void this.show();
   }
 
+  /** Forget which version's note was shown (a device with no saved profile then just records the version again). */
+  forget(): void {
+    try {
+      localStorage.removeItem(SEEN_KEY);
+    } catch {
+      // Storage may be blocked: nothing is stored then
+    }
+  }
+
   /** Open the dialog for the installed version. */
   show(): Promise<boolean> {
     return this.confirm.ask({

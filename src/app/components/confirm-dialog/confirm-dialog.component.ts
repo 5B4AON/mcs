@@ -15,6 +15,12 @@ import {
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { BackdropClickDirective } from '../backdrop-click.directive';
 
+/** One optional checkbox of the confirmation dialog */
+export interface ConfirmCheckbox {
+  label: string;
+  checked: boolean;
+}
+
 /**
  * A reusable confirmation dialog component.
  *
@@ -54,16 +60,14 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
   /** Whether to show only the confirm action */
   @Input() singleAction = false;
 
-  /** Label of an optional checkbox shown between the message and `messageAfter` (none when empty) */
-  @Input() checkboxLabel = '';
+  /**
+   * Optional checkboxes shown between the message and `messageAfter`. The dialog writes each box's
+   * state back into its `checked` field, so the parent reads the answers from these objects.
+   */
+  @Input() checkboxes: ConfirmCheckbox[] = [];
 
-  /** State of the optional checkbox; two-way bindable */
-  @Input() checkboxChecked = true;
-
-  /** Text shown after the checkbox */
+  /** Text shown after the checkboxes */
   @Input() messageAfter = '';
-
-  @Output() checkboxCheckedChange = new EventEmitter<boolean>();
 
   /** Emits true when confirmed, false when cancelled */
   @Output() confirmed = new EventEmitter<boolean>();
@@ -81,9 +85,8 @@ export class ConfirmDialogComponent implements AfterViewInit, OnDestroy {
     if (this.dialog) trapDialogTabKey(event, this.dialog.nativeElement);
   }
 
-  onCheckboxChange(event: Event): void {
-    this.checkboxChecked = (event.target as HTMLInputElement).checked;
-    this.checkboxCheckedChange.emit(this.checkboxChecked);
+  onCheckboxChange(box: ConfirmCheckbox, event: Event): void {
+    box.checked = (event.target as HTMLInputElement).checked;
   }
 
   confirm(): void {

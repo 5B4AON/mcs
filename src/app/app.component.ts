@@ -916,9 +916,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.clearMenuOpen = false;
   }
 
-  /** Activate the close action in the topmost open dialog on Escape. */
+  /** F1 opens Help (instead of the browser's own help); Escape activates the close action in the topmost dialog. */
   @HostListener('document:keydown', ['$event'])
   onDocumentKeydown(event: KeyboardEvent): void {
+    if (event.key === 'F1' && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
+      this.onHelpShortcut(event);
+      return;
+    }
     if (event.key !== 'Escape' || event.defaultPrevented) return;
 
     const dialogs = Array.from(
@@ -1888,6 +1892,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.midiReconnectError = '';
   }
 
+  /**
+   * Open Help from F1, on top of whatever is open (the main screen, full screen, Settings…).
+   * A key that is mapped to F1 for keying keeps that job, so F1 never pops Help up mid-transmission.
+   */
+  private onHelpShortcut(event: KeyboardEvent): void {
+    const s = this.settings.settings();
+    const usedForKeying = s.keyboardKeyerEnabled && s.keyboardInputMappings.some(m =>
+      m.enabled && (m.keyCode === 'F1' || (m.mode === 'paddle' && m.dahKeyCode === 'F1')));
+    if (usedForKeying || event.defaultPrevented) return;
+    event.preventDefault();
+    if (!event.repeat && !this.showHelp) this.openHelp();
+  }
+
   /** Open help modal */
   openHelp(initialSection: string | null = null): void {
     this.helpFocusFallback = this.findMenuTriggerFallback('.kebab-items, .fs-kebab-items', '.kebab-btn')
@@ -2042,9 +2059,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     );
   }
 
-  onSettingsDefaultsReset(): void {
+  onSettingsDefaultsReset(savedDataDeleted = false): void {
     this.defaultsResetInSettings = true;
     this.defaultsResetSaved = false;
+    if (savedDataDeleted) {
+      // The other small flags kept in this browser: the dismissed Try Morse hint and the audio autostart
+      try { localStorage.removeItem('mcsTryMorseGuideDismissed'); } catch { }
+      this.clearRememberedAudioRunning();
+    }
   }
 
   onSettingsSaved(): void {

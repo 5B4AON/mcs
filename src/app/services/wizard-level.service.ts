@@ -29,6 +29,16 @@ export class WizardLevelService {
     }
   }
 
+  /** Forget the remembered level: back to Novice, nothing stored. */
+  forget(): void {
+    this.level.set('novice');
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Storage may be blocked: nothing is stored then
+    }
+  }
+
   private load(): WizardLevel {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);

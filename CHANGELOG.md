@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.2] - 2026-11-14
+
+### Added
+
+- **Search in the Symbols Reference** — A lens button left of the close button (or Ctrl/Cmd+F) opens the same floating search bar as Help: every match is highlighted, the bar shows which one you are on, and the arrow buttons or Enter / Shift+Enter move between matches. Escape closes the bar first. Dot-dash patterns can be searched too.
+- **F1 opens Help** — F1 opens Help from the main screen, full screen, Settings and the other dialogs, instead of the browser's own help page. A key mapped to F1 in the keyboard keyer keeps keying and does not open Help.
+- **Delete saved data on reset** — A new box in the Reset Settings dialog, not ticked by default: **Also delete saved device profiles, presets and remembered choices from this device (including relay channel secrets)**. It deletes every saved device profile, all saved presets, the remembered wizard level and Teach answers, the "What's new" and Try Morse hint memory, and the audio autostart flag. Together with the e-book box, nothing the user did stays in this browser except the app itself. The device then looks new until Save is pressed.
+
+### Changed
+
+- **Shared search code** — Help and the Symbols Reference now use one search implementation (`components/document-search.ts`). Help's search behaves as before.
+- **Symbols Reference close button** — It now follows the visual viewport like Help's, so it stays level with the search bar while a phone keyboard is open.
+- **Help** — The introduction mentions F1 and the Symbols Reference search.
+- **Reset Settings dialog** — The e-book box now reads "Also clear stored e-book data (the remembered book, reading places, and the names and addresses of books you opened)". The dialog can show several checkboxes (`ConfirmDialogComponent` takes a `checkboxes` list).
+
 ## [2.17.1] - 2026-11-14
 
 ### Added

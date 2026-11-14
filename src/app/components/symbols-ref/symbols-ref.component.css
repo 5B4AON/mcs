@@ -180,10 +180,11 @@
   font-size: 14px;
 }
 
-/* ---- Close button ---- */
-.ref-close-btn {
+/* ---- Close and search buttons ---- */
+.ref-close-btn,
+.ref-search-btn {
   position: fixed;
-  top: 14px;
+  top: calc(14px + var(--vv-top));
   right: 18px;
   z-index: 10100;
   width: 40px;
@@ -200,13 +201,129 @@
   transition: background 0.15s;
   padding: 0;
 }
-.ref-close-btn:hover {
+.ref-search-btn {
+  right: 68px;
+}
+.ref-close-btn:hover,
+.ref-search-btn:hover {
   background: #3a4050;
 }
-.ref-close-btn:active {
+.ref-close-btn:active,
+.ref-search-btn:active {
   background: #5577aa;
   color: #fff;
   transform: scale(0.88);
+}
+/* Desktop browsers draw a scrollbar (about 15px) at the right edge: keep the floating buttons clear of it */
+@media (pointer: fine) {
+  .ref-close-btn { right: 36px; }
+  .ref-search-btn { right: 86px; }
+  .ref-search-bar { right: 36px; }
+}
+
+/* ---- Floating search bar ---- */
+.ref-search-bar {
+  position: fixed;
+  /* --vv-top follows the visual viewport, so the bar stays in view when a phone keyboard pans the page */
+  top: calc(64px + var(--vv-top));
+  right: 18px;
+  z-index: 10200;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 420px;
+  max-width: calc(100vw - 36px);
+  padding: 8px 10px 8px 14px;
+  background: rgba(30, 34, 40, .94);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  border: 1px solid #556;
+  border-radius: 32px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, .55);
+}
+.ref-search-input {
+  flex: 1 1 0;
+  min-width: 0;
+  height: 40px;
+  box-sizing: border-box;
+  padding: 0 12px;
+  background: #12161a;
+  color: #fff;
+  border: 1px solid #556;
+  border-radius: 20px;
+  font: inherit;
+  font-size: 15px;
+}
+.ref-search-input:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
+}
+.ref-search-count {
+  flex: none;
+  min-width: 3.2em;
+  text-align: right;
+  color: #a8d8ff;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+.ref-search-divider {
+  flex: none;
+  align-self: stretch;
+  width: 1px;
+  margin: 4px 0;
+  background: #556;
+}
+.ref-search-step {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+.ref-search-step:hover:not(:disabled) {
+  background: #3a4050;
+}
+.ref-search-step:active:not(:disabled) {
+  background: #5577aa;
+  color: #fff;
+  transform: scale(0.88);
+}
+.ref-search-step:disabled {
+  opacity: .4;
+  cursor: default;
+}
+/* Narrow screens: the field takes the whole first row; count and buttons sit on a second row */
+@media (max-width: 600px) {
+  .ref-search-bar {
+    flex-wrap: wrap;
+    border-radius: 28px;
+    padding: 8px 10px;
+  }
+  .ref-search-input {
+    flex: 1 0 100%;
+  }
+  .ref-search-count {
+    flex: 1 1 0;
+    min-width: 0;
+    padding-left: 6px;
+    text-align: left;
+  }
+  .ref-search-divider {
+    display: none;
+  }
+}
+@media (pointer: coarse) {
+  /* 16 px stops iOS zooming the page when the field gets focus */
+  .ref-search-input { font-size: 16px; }
 }
 
 /* ---- Floating back-to-top button ---- */
