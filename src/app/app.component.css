@@ -46,13 +46,15 @@
 
 /* ===== Controls bar (removed — level meters now in decoder panel) ===== */
 
+/* Audio toggle: shows the state, not the action. Stopped = crossed-out speaker in the neutral round-button look;
+   running = speaker with waves and a calm green ring (red stays reserved for real problems) */
 .audio-toggle-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  border: 1px solid #2a6;
-  background: #1a2a1e;
-  color: #4d8;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #889;
   cursor: pointer;
   transition: background .15s, color .15s, border-color .15s, box-shadow .15s;
   flex-shrink: 0;
@@ -62,27 +64,26 @@
   padding: 0;
 }
 .audio-toggle-btn:hover {
-  background: #253a2a;
-  box-shadow: 0 0 8px rgba(42, 170, 102, 0.4);
+  background: #3a4050;
+  color: #aab;
 }
 .audio-toggle-btn:active {
-  background: #3a5a40;
-  box-shadow: 0 0 14px rgba(42, 170, 102, 0.7);
+  background: #5577aa;
+  color: #fff;
   transform: scale(0.88);
 }
 .audio-toggle-btn.audio-running {
-  border-color: #c44;
-  background: #2a1a1a;
-  color: #f66;
+  border-color: #3fae6a;
+  color: #4d8;
+  box-shadow: 0 0 0 2px rgba(63, 174, 106, 0.28);
 }
 .audio-toggle-btn.audio-running:hover {
-  background: #3a2222;
-  box-shadow: 0 0 8px rgba(204, 68, 68, 0.4);
+  background: #2a3a36;
+  color: #6fe3a0;
 }
 .audio-toggle-btn.audio-running:active {
-  background: #5a3030;
-  box-shadow: 0 0 14px rgba(204, 68, 68, 0.7);
-  transform: scale(0.88);
+  background: #335a48;
+  color: #fff;
 }
 .audio-toggle-btn:disabled { opacity: .7; cursor: wait; }
 .audio-toggle-btn svg { display: block; }
