@@ -92,7 +92,7 @@
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputOverrideName"
              (change)="onBoolChange('rtdbOutputOverrideName', $event)">
-      Always use this name (override input-specific names)
+      Override input-specific names
     </label>
     <div class="cw-hint">Off: an input's own name is used first. This name fills in when it has none.</div>
 
@@ -111,7 +111,7 @@
     <label class="checkbox-label">
       <input type="checkbox" [checked]="s().rtdbOutputOverrideColor"
              (change)="onBoolChange('rtdbOutputOverrideColor', $event)">
-      Always use this colour (override input-specific colours)
+      Override input-specific colours
     </label>
     <div class="cw-hint">Off: an input's own colour is used first. This colour fills in when it has none.</div>
     }

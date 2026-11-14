@@ -428,20 +428,18 @@
         </span>
       </label>
       @if (sendPracticeActive) {
-        <!-- Send practice control: start, check, next. A book has none: the first correct key starts it -->
-        @if (!ebookActive) {
-          <button class="tx-icon-btn" [class.tx-ready]="sendPractice.state() !== 'keying'"
-                  [class.practice-results]="sendPractice.state() === 'keying'"
-                  [disabled]="sendPractice.state() === 'idle' && !sendPractice.inputsReady()"
-                  (click)="sendPracticeAdvance()"
-                  [title]="sendPractice.actionLabel()" [attr.aria-label]="sendPractice.actionLabel()">
-            @if (sendPractice.state() === 'keying') {
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-            } @else {
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
-            }
-          </button>
-        }
+        <!-- Send practice control: start, check, next. A book has none (kept disabled): the first correct key starts it -->
+        <button class="tx-icon-btn" [class.tx-ready]="!ebookActive && sendPractice.state() !== 'keying'"
+                [class.practice-results]="!ebookActive && sendPractice.state() === 'keying'"
+                [disabled]="ebookActive || (sendPractice.state() === 'idle' && !sendPractice.inputsReady())"
+                (click)="sendPracticeAdvance()"
+                [title]="sendPractice.actionLabel()" [attr.aria-label]="sendPractice.actionLabel()">
+          @if (sendPractice.state() === 'keying') {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          } @else {
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>
+          }
+        </button>
       } @else if (settings.settings().encoderMode === 'practice') {
         <!-- Practice control: single button like TX -->
         @if (practice.state() === 'idle') {
