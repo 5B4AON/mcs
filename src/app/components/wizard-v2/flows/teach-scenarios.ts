@@ -171,6 +171,12 @@ export const SCENARIOS: ScenarioInfo[] = [
     lens: false, keys: 'none', blur: false, rewards: 'optional', typing: 'enter', exclude: ['learners', 'operators'],
   },
   {
+    id: 'intro-key-name', intent: 'introduce', value: 'keyName', minLevel: 'novice', family: 'practice-send',
+    label: 'Key your own name',
+    hint: 'You type each name. The screen shows its letters with their dots and dashes, and {one} keys it one letter at a time. Great for children who want to send their own name.',
+    lens: false, keys: 'one', blur: false, rewards: 'none', typing: 'none', exclude: ['learners', 'operators'],
+  },
+  {
     id: 'send-one', intent: 'send', value: 'one', minLevel: 'novice', family: 'keyed',
     label: 'One person keys, everyone watches',
     hint: 'Someone presses a key. The screen turns their dots and dashes into letters as they go.',
@@ -609,17 +615,19 @@ function keyLine(ctx: ConditionContext): string[] {
 
 // ---- Practice content ----
 
-export type PracticeWhat = 'koch' | 'letters' | 'words' | 'callsigns';
+export type PracticeWhat = 'koch' | 'letters' | 'words' | 'callsigns' | 'text';
 
 const PRACTICE_WHAT_TEXT: Record<PracticeWhat, { label: string; hint: string }> = {
   koch: { label: 'Letters in lessons', hint: 'Start with a few letters and add more, one lesson at a time. The tried-and-true way to teach Morse.' },
   letters: { label: 'Random letters', hint: 'Letters in no particular order.' },
   words: { label: 'Short words', hint: 'Real words, which are easier to remember.' },
   callsigns: { label: 'Call signs', hint: 'Letters and numbers in the pattern of amateur radio call signs, as heard on the air.' },
+  text: { label: 'Your own text, such as names', hint: 'You type or paste the text, for example everyone\'s names. It plays or is keyed straight through, with no score.' },
 };
 
 /** What the exercise contains: the teacher's choice, or the one that suits the audience. */
 export function practiceWhatOf(ctx: ConditionContext): PracticeWhat {
+  if (scenarioOf(ctx)?.id === 'intro-key-name') return 'text';
   const chosen = text(ctx.answers, 'practiceWhat', 'auto');
   if (chosen in PRACTICE_WHAT_TEXT) return chosen as PracticeWhat;
   const audience = audienceOf(ctx);
@@ -641,6 +649,7 @@ export function practiceWhatOptions(ctx: ConditionContext): { value: string; lab
     ...(audience === 'operators' ? [] : ['koch' as const]),
     'letters', 'words',
     ...(experienced ? ['callsigns' as const] : []),
+    'text' as const,
   ];
   const recommended = practiceWhatOf({ ...ctx, answers: { ...ctx.answers, practiceWhat: 'auto' } });
   return kinds.map(kind => ({ value: kind, ...PRACTICE_WHAT_TEXT[kind], ...(kind === recommended ? { alias: 'auto' } : {}) }));
@@ -658,6 +667,7 @@ export const KOCH_OPTIONS = Array.from({ length: 40 }, (_, i) => ({
 function practiceContent(ctx: ConditionContext): string {
   const what = practiceWhatOf(ctx);
   if (what === 'koch') return `letters from lesson ${answerAt(ctx, 'intermediate', 'kochLesson', '1')} and the lessons before it`;
+  if (what === 'text') return 'the text you entered';
   return what === 'words' ? 'short words' : what === 'callsigns' ? 'call signs' : 'random letters';
 }
 
@@ -718,6 +728,14 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
         before: ['Ask each person to say their name aloud, or write the names where you can see them.'],
         during: ['Type one name at a time and press Enter, so that person hears the whole name.', 'Compare how long different names sound.'],
       };
+    case 'intro-key-name':
+      return {
+        before: [`Write down each name you want ${people} to key, then type it in the text box when the guide asks.`,
+          `Make sure ${one} can reach the key.`],
+        during: ['The screen shows the name with the dots and dashes of the next letter. Key it one letter at a time; the highlight moves on when the letter is right.',
+          'To see the name without the help, switch Assist off with the round button above the contents button.',
+          'To change the name, open Settings → Other → Send Practice and press Custom text.'],
+      };
     case 'copy-secret':
       return {
         before: ['Prepare a short secret message of a few words.'],
@@ -756,7 +774,9 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
       };
     case 'check-copy': {
       const how = checkingOf(ctx);
-      const checking = practiceWhatOf(ctx) === 'koch' || how === 'typealong'
+      const checking = practiceWhatOf(ctx) === 'text'
+        ? `${capital(people)} listen and follow the text on the screen as it plays; nothing is checked.`
+        : practiceWhatOf(ctx) === 'koch' || how === 'typealong'
         ? `${capital(people)} type what they hear; the app marks it at the end.`
         : how === 'blur' ? `${capital(people)} write on paper; hold the reveal button to show the answer.`
         : `${capital(people)} just listen; nothing is checked.`;
@@ -766,6 +786,13 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
       };
     }
     case 'check-send':
+      if (practiceWhatOf(ctx) === 'text') {
+        return {
+          before: [`The text is ${practiceContent(ctx)}.`, `Make sure ${one} can reach the key.`],
+          during: ['The text is shown on the full screen. The next letter is highlighted and each correct letter moves it on. There is no score.',
+            'Assist, the round button above the contents button, shows the next letters with their dots and dashes.'],
+        };
+      }
       return {
         before: [`The prompts are ${practiceContent(ctx)}.`, `Make sure ${one} can reach the key.`],
         during: ['The text on the screen is keyed by one person at a time. The app marks each character.',

@@ -38,7 +38,7 @@ export class PracticeItemComponent {
   @Input() forceLocalPipeline = false;
 
   /** A wizard step can show one part of the card; Settings shows all of it. */
-  @Input() part: 'all' | 'content' | 'feedback' | 'pipeline' | 'identity' = 'all';
+  @Input() part: 'all' | 'content' | 'book' | 'feedback' | 'pipeline' | 'identity' = 'all';
   /** Classroom copy practice always receives decoded Morse. */
   @Input() forceReceivedMorse = false;
 

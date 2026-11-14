@@ -33,6 +33,10 @@ const inScenario: Condition = ctx => !!scenarioOf(ctx);
 const keys = (count: 'one' | 'two' | 'many'): Condition => ctx => scenarioOf(ctx)?.keys === count;
 const koch: Condition = practiceIs('koch');
 const practiceFamilies = inFamily('practice-copy', 'practice-send');
+/** The exercise is the teacher's own text (a book): it plays or is keyed straight through, with no rounds, scoring or marking */
+const ownText: Condition = all(practiceFamilies, practiceIs('text'));
+/** Send practice with the teacher's own text: the text can be shown with the dots and dashes of the next letter (Assist) */
+const sendText: Condition = all(isScenario('check-send', 'intro-key-name'), practiceIs('text'));
 
 // ---- Level step (the goal's own wording) ----
 
@@ -281,8 +285,39 @@ const PRACTICE_STEPS: WizardStep[] = [
     title: 'What should people work on?',
     intro: 'Choose what the exercise contains. Everyone gets the same exercise, and everything stays on this computer.',
     helpSection: 's3-5',
-    when: practiceFamilies,
+    when: all(practiceFamilies, not(isScenario('intro-key-name'))),
     questions: [{ id: 'practiceWhat', label: 'Content', kind: 'single', default: 'auto', optionsFrom: practiceWhatOptions }],
+  },
+  {
+    id: 'textBookSend',
+    title: 'Which text?',
+    intro: 'Type or paste the text to key, for example each person\'s name, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Other > Send Practice.',
+    helpSection: 's3-7',
+    when: sendText,
+    items: [{ item: 'send-practice-book' }],
+  },
+  {
+    id: 'textBookCopy',
+    title: 'Which text?',
+    intro: 'Type or paste the text to play, for example a short story or everyone\'s names, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Other > Copy Practice.',
+    helpSection: 's3-7',
+    when: all(isScenario('check-copy'), practiceIs('text')),
+    items: [{ item: 'practice-book' }],
+  },
+  {
+    id: 'textAssist',
+    level: 'intermediate',
+    title: 'Show how to key it?',
+    intro: 'Assist shows the next letters above the text with the dots and dashes of the next one, so beginners can see how to key it. Novice setups always switch it on. You can switch it on or off at any time with the round button over the text.',
+    helpSection: 's3-7',
+    when: sendText,
+    questions: [{
+      id: 'textAssist', label: 'Assist', kind: 'single', default: 'yes',
+      options: [
+        { value: 'yes', label: 'Yes, show the next letters and their dots and dashes' },
+        { value: 'no', label: 'No, just the text' },
+      ],
+    }],
   },
   {
     id: 'kochLesson',
@@ -299,7 +334,7 @@ const PRACTICE_STEPS: WizardStep[] = [
     title: 'How are answers checked?',
     intro: 'Choose how people show what they heard.',
     helpSection: 's3-5',
-    when: all(isScenario('check-copy'), not(koch)),
+    when: all(isScenario('check-copy'), not(koch), not(ownText)),
     questions: [{
       id: 'practiceChecking', label: 'Checking', kind: 'single', default: 'auto',
       optionsFrom: ctx => {
@@ -318,7 +353,7 @@ const PRACTICE_STEPS: WizardStep[] = [
     title: 'When are keyed letters marked?',
     intro: 'Choose when the person keying finds out what they got right.',
     helpSection: 's3-6',
-    when: isScenario('check-send'),
+    when: all(isScenario('check-send'), not(ownText)),
     questions: [{
       id: 'sendChecking', label: 'Marking', kind: 'single', default: 'live',
       options: [
@@ -334,7 +369,7 @@ const PRACTICE_STEPS: WizardStep[] = [
     title: 'How long is a round?',
     intro: 'A round is one set of items to copy or key.',
     helpSection: 's3-5',
-    when: practiceFamilies,
+    when: all(practiceFamilies, not(ownText)),
     questions: [{
       id: 'roundLength', label: 'Round length', kind: 'single', default: 'recommended',
       // Shortest to longest, each size once (the limits of 1 and 10 items can make two choices equal)
@@ -356,7 +391,7 @@ const PRACTICE_STEPS: WizardStep[] = [
     title: 'How many rounds?',
     intro: 'Several rounds give each person a score for every round and an average.',
     helpSection: 's3-5',
-    when: practiceFamilies,
+    when: all(practiceFamilies, not(ownText)),
     questions: [{ id: 'rounds', label: 'Rounds in a session', kind: 'number', default: 1, min: 1, max: 5 }],
   },
 ];
@@ -719,10 +754,10 @@ function roundGroups(ctx: ConditionContext): number {
   return Math.min(10, Math.max(1, Math.round(AUDIENCES[audienceOf(ctx)].groups * (groupFactor[length] ?? 1))));
 }
 
-const PRACTICE_LABEL = { koch: 'letters in lessons', words: 'short words', callsigns: 'call signs', characters: 'random letters' };
-const practiceMode = (ctx: ConditionContext): 'koch' | 'words' | 'callsigns' | 'characters' => {
+const PRACTICE_LABEL = { koch: 'letters in lessons', words: 'short words', callsigns: 'call signs', characters: 'random letters', ebook: 'your own text' };
+const practiceMode = (ctx: ConditionContext): 'koch' | 'words' | 'callsigns' | 'characters' | 'ebook' => {
   const what = practiceWhatOf(ctx);
-  return what === 'letters' ? 'characters' : what;
+  return what === 'letters' ? 'characters' : what === 'text' ? 'ebook' : what;
 };
 const grouped: Condition = ctx => ['koch', 'letters'].includes(practiceWhatOf(ctx));
 const kochLesson = (ctx: ConditionContext): number => Number(answerAt(ctx, 'intermediate', 'kochLesson', '1')) || 1;
@@ -792,6 +827,7 @@ const FORCED: ForcedSetting[] = [
   { key: 'sendPracticeWordLengths', value: ctx => AUDIENCES[audienceOf(ctx)].wordLengths, label: 'Word lengths that suit the audience', when: all(inFamily('practice-send'), practiceIs('words')) },
   { key: 'sendPracticeCheckMode', value: ctx => answerAt(ctx, 'intermediate', 'sendChecking', 'live'), label: 'When keyed letters are marked', when: inFamily('practice-send') },
   { key: 'sendPracticeRounds', value: roundCount, label: ctx => `${roundCount(ctx)} rounds in a session`, when: all(inFamily('practice-send'), ctx => ctx.level === 'expert') },
+  { key: 'sendPracticeEbookAssist', value: ctx => answerAt(ctx, 'intermediate', 'textAssist', 'yes') === 'yes', label: ctx => answerAt(ctx, 'intermediate', 'textAssist', 'yes') === 'yes' ? 'Show the next letters above the text, with their dots and dashes' : 'Show just the text', when: sendText },
   { key: 'sendPracticeInputs', value: ctx => sendPracticeIds(ctx.settings, chosenKeys(ctx)), label: 'Count only the chosen key', when: inFamily('practice-send') },
 
   // Students' room: what you type has to count as sent, and sent text has to be what the room receives

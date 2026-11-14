@@ -30,9 +30,9 @@ app-ebook-reader {
   cursor: pointer;
 }
 
-/* Half the box above and below, so the first and last lines can reach the middle (set from the script) */
+/* One empty row above the first line, and half the box below so the last lines can reach the middle (set from the script); the text only scrolls once the upper half is full */
 .eb-content {
-  padding-block: var(--eb-pad, 0px);
+  padding-block: 1.4em var(--eb-pad, 0px);
 }
 
 .eb-block {

@@ -348,6 +348,11 @@
   color: #ff1744;
   text-shadow: 0 0 6px rgba(255, 23, 68, 0.6), 0 0 12px rgba(255, 23, 68, 0.3), 0 1px 3px rgba(0, 0, 0, 0.4);
 }
+/* What you key in Send practice keeps your TX colour when it is right; only a slip is marked */
+.fs-line .fb-correct {
+  color: inherit;
+  text-shadow: none;
+}
 .fb-missed {
   color: #777;
   text-shadow: 0 0 6px rgba(119, 119, 119, 0.4), 0 0 12px rgba(119, 119, 119, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);

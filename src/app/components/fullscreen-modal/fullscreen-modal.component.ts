@@ -14,6 +14,7 @@ import { LensService } from '../../services/lens.service';
 import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
 import { EbookService } from '../../services/ebook.service';
+import { SendPracticeService } from '../../services/send-practice.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
@@ -91,7 +92,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
 
   /** Send practice in Key mode pins its prompt box above the output area. */
   get sendPromptShown(): boolean {
-    return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice' && !this.ebook.active();
+    return this.inputMode === 'key' && this.settings.settings().encoderMode === 'send-practice'
+      && (!this.ebook.active() || this.sendPractice.ebookAssist());
   }
 
   /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
@@ -118,6 +120,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private devices: AudioDeviceService,
     public viewport: ViewportService,
     private ebook: EbookService,
+    private sendPractice: SendPracticeService,
   ) {
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {

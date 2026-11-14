@@ -22,6 +22,13 @@ type Store = Record<string, EbookResumeEntry>;
 export const resumeIdForFile = (name: string, size: number): string => `file:${name}:${size}`;
 export const resumeIdForUrl = (href: string): string => `url:${href}`;
 
+/** Typed or pasted text is told apart by its content (FNV-1a hash and length), as it has no file name or address. */
+export function resumeIdForText(text: string): string {
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < text.length; i++) hash = Math.imul(hash ^ text.charCodeAt(i), 0x01000193) >>> 0;
+  return `text:${hash.toString(16)}:${text.length}`;
+}
+
 function read(): Store {
   try {
     const parsed: unknown = JSON.parse(localStorage.getItem(EBOOK_RESUME_KEY) ?? '{}');

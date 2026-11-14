@@ -23,7 +23,11 @@
   </label>
 
   @if (s().sendPracticeContentMode === 'ebook') {
-    <app-ebook-load kind="send" />
+    @if (part === 'all') {
+      <app-ebook-load kind="send" />
+    } @else {
+      <div class="cw-hint">You choose the book on the next page.</div>
+    }
   }
 
   <!-- Koch method: the lesson sets the character pool -->
@@ -91,6 +95,10 @@
     }
   }
 
+  }
+
+  @if (part === 'book') {
+  <app-ebook-load kind="send" [anywhere]="true" />
   }
 
   @if (part === 'all' || part === 'checking') {

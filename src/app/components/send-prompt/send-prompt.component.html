@@ -1,5 +1,18 @@
 <div class="send-prompt" aria-live="polite">
-  @if (sendPractice.state() === 'idle' || sendPractice.promptShowing()) {
+  @if (sendPractice.ebookMode()) {
+    @if (sendPractice.ebookPromptMarks().length) {
+      <div class="send-prompt-text" aria-label="Text to key" [appPromptTicker]="ebookTickerKey"><div class="ticker-track">@for (m of sendPractice.ebookPromptMarks(); track $index) {<span
+        [class.pm-current]="m.state === 'current'"
+        [class.pm-correct]="m.state === 'correct'">{{ m.char }}</span>}</div></div>
+      <div class="send-prompt-pattern" [attr.aria-label]="'Pattern of the next character'">
+        @for (el of sendPractice.ebookHintPattern().split(''); track $index) {
+          <span [class.hint-dot]="el === '.'" [class.hint-dash]="el === '-'"></span>
+        }
+      </div>
+    } @else {
+      <span class="send-prompt-note">{{ ebook.loaded() ? 'The end of the book.' : 'No book is loaded. Choose one in Settings → Other → Send Practice.' }}</span>
+    }
+  } @else if (sendPractice.state() === 'idle' || sendPractice.promptShowing()) {
     <span class="send-prompt-note">{{ note }}</span>
   } @else {
     <div class="send-prompt-text" aria-label="Text to key"

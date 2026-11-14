@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.0] - 2026-11-14
+
+### Added
+
+- **Custom text for e-book practice** — A **Custom text** button beside **Choose file** opens an editor (sized like Presets) to type or paste your own text, for example a net script or a name. It is kept on this device like a chosen file, reopens by itself, remembers your place and can be edited again.
+- **E-book steps in the Practice receiving and sending guides** — With E-book as the content, the scoring, rounds, checking and pattern hint pages give way to a **Which book or text?** page (choose a file, Custom text or a web address, loaded at once) and Apply opens the full screen. The Send guide also asks **Show how to key it?** (on by default for Novice).
+- **Assist for e-book Send practice** — A round button above the contents button shows the next characters of the book in a bar above the text, with the dots and dashes of the next one. Click a word to choose where to start, then switch Assist on or off as you like. The choice is saved at once with the device profile.
+- **Key your own name in the Teach wizard** — A new scenario under "Show first-timers what Morse is" has each person key a name you type, one letter at a time, with Assist on. "Your own text, such as names" is also an exercise choice in "Check what people can do".
+- **Touch keyer in the keying guides** — On a touch screen, "Practice sending Morse" switches the fullscreen touch keyer on and counts it as a Send practice key: as a straight key for Novice, and Intermediate and Expert are asked whether it is a straight key or a paddle. "Key and see the text" offers the touch keyer ticked.
+
+### Changed
+
+- **Full-screen Send practice colours** — Characters you key correctly keep your TX colour; only a mistake turns red.
+- **E-book reader start** — The text starts one row below the top and only scrolls once the expected character passes the middle.
+- **Practice wording** — The "no playable text" message no longer says "in this file".
+
 ## [2.16.1] - 2026-11-14
 
 ### Added

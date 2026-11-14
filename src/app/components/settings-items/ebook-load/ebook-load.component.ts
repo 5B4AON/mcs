@@ -3,25 +3,28 @@
  */
 
 import { Component, Input, computed, inject, signal } from '@angular/core';
-import { EbookInfo, EbookService } from '../../../services/ebook.service';
+import { EbookInfo, EbookLoadResult, EbookService } from '../../../services/ebook.service';
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
+import { EbookTextModalComponent } from './ebook-text-modal.component';
 
 /**
- * The "load a book" controls shared by the Copy Practice and Send Practice cards: choose a file,
- * or remove it, with the loaded book shown above them. There is one book for both modes. Loading reads a file on this device
+ * The "load a book" controls shared by the Copy Practice and Send Practice cards: choose a file, type or
+ * paste a custom text, or remove it, with the loaded book shown above them. There is one book for both modes. Loading reads a file on this device
  * and is only offered in Settings (a wizard draft has no running app to load into).
  */
 @Component({
   selector: 'app-ebook-load',
   standalone: true,
-  imports: [HelpLinkButtonComponent],
+  imports: [HelpLinkButtonComponent, EbookTextModalComponent],
   template: `
-    @if (scope.isLive) {
+    @if (scope.isLive || anywhere) {
       <div class="cw-hint">
-        Read a book, article or your own notes. Text (.txt), Markdown (.md), web page (.html) and EPUB (.epub) files work, in English.
-        <app-help-link-button section="s3-7" label="Help: E-book practice" />
-        A file stays on this device and is read as you go, and the last book opens again by itself where you stopped; a web address is fetched by your browser straight from that site, and many sites do not allow that.
+        Read a book, article or your own notes, in English: a text (.txt), Markdown (.md), web page (.html) or EPUB (.epub) file, your own text with Custom text, or a web address (many sites do not allow this).
+        Files stay on this device, and the last book reopens where you stopped.
+        @if (scope.isLive) {
+          <app-help-link-button section="s3-7" label="Help: E-book practice" />
+        }
       </div>
       <input #fileInput type="file" hidden accept=".txt,.text,.md,.markdown,.html,.htm,.xhtml,.epub,text/plain,text/markdown,text/html,application/epub+zip"
              (change)="onFileChosen($event)">
@@ -45,6 +48,7 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
       }
       <div class="eb-load-row">
         <button type="button" class="pill-btn" [disabled]="ebook.loading()" (click)="fileInput.click()">Choose file</button>
+        <button type="button" class="pill-btn" [disabled]="ebook.loading()" (click)="openText()">Custom text</button>
       </div>
       <div class="eb-load-row eb-url-row">
         <input type="text" inputmode="url" autocomplete="off" autocapitalize="off" spellcheck="false"
@@ -54,6 +58,10 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
                (input)="typed.set($any($event.target).value)" (keydown.enter)="onLoadUrl()">
         <button type="button" class="pill-btn" [disabled]="ebook.loading() || !addressShown().trim() || addressIsLoaded()" (click)="onLoadUrl()">Load</button>
       </div>
+      @if (textOpen()) {
+        <app-ebook-text-modal [initialText]="ebook.customText() ?? ''" [error]="textError()" [busy]="ebook.loading()"
+                              (saved)="onTextSaved($event)" (cancelled)="closeText()" />
+      }
     } @else {
       <div class="cw-hint">
         Choose the book in Settings, under Copy Practice or Send Practice, after the guide is applied.
@@ -84,8 +92,19 @@ export class EbookLoadComponent {
   /** Which practice card the controls are in: Resume then takes the learner back to that practice */
   @Input({ required: true }) kind!: 'copy' | 'send';
 
+  /**
+   * A wizard step may load the book too. The book is not a setting, so it is loaded at once (like Settings does)
+   * and is not part of the guide's Apply or Revert; the Resume question then only keeps the place, because
+   * the guide's own Apply decides what the main screen does.
+   */
+  @Input() anywhere = false;
+
   readonly scope = inject(SETTINGS_SCOPE);
   readonly ebook = inject(EbookService);
+
+  /** The Custom text editor is open, and why its last attempt failed */
+  readonly textOpen = signal(false);
+  readonly textError = signal('');
 
   /** The web address typed so far, null while the box just shows the loaded address */
   readonly typed = signal<string | null>(null);
@@ -107,7 +126,34 @@ export class EbookLoadComponent {
     if (!text || this.addressIsLoaded()) return;
     const result = await this.ebook.loadUrl(text);
     if (result !== 'failed') this.typed.set(null);
-    if (result === 'resumed') this.ebook.resumed$.next(this.kind);
+    this.announceResumed(result);
+  }
+
+  /** Open the Custom text editor (it shows the current custom text when that is the loaded book). */
+  openText(): void {
+    this.textError.set('');
+    this.textOpen.set(true);
+  }
+
+  /** Close the editor without using the text; a failed attempt's message goes with it. */
+  closeText(): void {
+    if (this.textError()) this.ebook.error.set('');
+    this.textOpen.set(false);
+  }
+
+  /** Use the typed or pasted text as the book. The editor stays open, with the reason, when it cannot be used. */
+  async onTextSaved(text: string): Promise<void> {
+    if (text === this.ebook.customText()) {
+      this.textOpen.set(false);
+      return;
+    }
+    const result = await this.ebook.loadText(text);
+    if (result === 'failed') {
+      this.textError.set(this.ebook.error());
+      return;
+    }
+    this.textOpen.set(false);
+    this.announceResumed(result);
   }
 
   /** Open the chosen file; the field is emptied so the same file can be chosen again. */
@@ -115,6 +161,11 @@ export class EbookLoadComponent {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     input.value = '';
-    if (file && await this.ebook.loadFile(file) === 'resumed') this.ebook.resumed$.next(this.kind);
+    if (file) this.announceResumed(await this.ebook.loadFile(file));
+  }
+
+  /** After Resume in live Settings the app goes back to the practice; a wizard step leaves that to the guide's Apply. */
+  private announceResumed(result: EbookLoadResult): void {
+    if (result === 'resumed' && this.scope.isLive) this.ebook.resumed$.next(this.kind);
   }
 }

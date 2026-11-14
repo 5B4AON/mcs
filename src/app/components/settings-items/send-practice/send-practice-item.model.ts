@@ -61,6 +61,8 @@ export interface SendPracticeSettings {
   sendPracticeInputs: string[];
   /** Pattern hint under the prompt */
   sendPracticeHint: SendPracticeHint;
+  /** E-book Send practice: show the next characters of the book above the text with the dots and dashes of the next one (the round Assist button over the book, saved at once, or a guide) */
+  sendPracticeEbookAssist: boolean;
 }
 
 export const SEND_PRACTICE_DEFAULTS: SendPracticeSettings = {
@@ -79,6 +81,7 @@ export const SEND_PRACTICE_DEFAULTS: SendPracticeSettings = {
   // The default keyboard mappings (a straight key and the paddle at index 1), the mouse and touch/sprite keys
   sendPracticeInputs: ['keyboard-straight', 'keyboard:1', 'mouse', 'touch'],
   sendPracticeHint: 'current',
+  sendPracticeEbookAssist: false,
 };
 
 /** How the check mode and pipeline read in a review; everything else reads like other items. */
@@ -160,6 +163,9 @@ export const SEND_PRACTICE_KEYS_DESCRIPTOR = partDescriptor('send-practice-keys'
 
 /** Content, Koch lesson, count, group size and pool or word lengths on their own wizard step. */
 export const SEND_PRACTICE_CONTENT_DESCRIPTOR = partDescriptor('send-practice-content', CONTENT_KEYS, REVIEW_LABELS, contentProblems, reviewText);
+
+/** The e-book choice (load, custom text, remove) on its own wizard step; it edits no setting, the book is loaded at once. */
+export const SEND_PRACTICE_BOOK_DESCRIPTOR = partDescriptor('send-practice-book', [], REVIEW_LABELS);
 
 /** Check mode and rounds on their own wizard step. */
 export const SEND_PRACTICE_CHECKING_DESCRIPTOR = partDescriptor('send-practice-checking', CHECKING_KEYS, REVIEW_LABELS, () => [], reviewText);

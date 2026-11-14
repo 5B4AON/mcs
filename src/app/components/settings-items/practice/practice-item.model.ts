@@ -137,6 +137,9 @@ export const PRACTICE_DESCRIPTOR: ItemDescriptor = {
 /** Content, Koch lesson, count, group size and pool or word lengths on their own wizard step. */
 export const PRACTICE_CONTENT_DESCRIPTOR = partDescriptor('practice-content', CONTENT_KEYS, REVIEW_LABELS, contentProblems);
 
+/** The e-book choice (load, custom text, remove) on its own wizard step; it edits no setting, the book is loaded at once. */
+export const PRACTICE_BOOK_DESCRIPTOR = partDescriptor('practice-book', [], REVIEW_LABELS);
+
 /** Feedback mode and rounds on their own wizard step. */
 export const PRACTICE_FEEDBACK_DESCRIPTOR = partDescriptor('practice-feedback', FEEDBACK_KEYS, REVIEW_LABELS);
 

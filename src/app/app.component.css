@@ -633,6 +633,12 @@
 .blur-replay-btn-main {
   bottom: 62px;
 }
+.blur-replay-btn-main.above-assist {
+  bottom: 114px;
+}
+.blur-assist-btn-main {
+  bottom: 62px;
+}
 /* Lesson help sits directly above the replay button (another 44 px + 8 px), or alone in the corner when there is none */
 .blur-help-btn-main {
   bottom: 114px;

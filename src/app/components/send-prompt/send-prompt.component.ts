@@ -5,6 +5,7 @@
 import { Component } from '@angular/core';
 import { SendPracticeService } from '../../services/send-practice.service';
 import { SettingsService } from '../../services/settings.service';
+import { EbookService } from '../../services/ebook.service';
 import { PromptTickerDirective } from '../prompt-ticker.directive';
 
 /**
@@ -28,7 +29,14 @@ export class SendPromptComponent {
   constructor(
     public sendPractice: SendPracticeService,
     public settings: SettingsService,
+    public ebook: EbookService,
   ) {}
+
+  /** Changes whenever the book's reading position moves, so the ticker slides to the next character */
+  get ebookTickerKey(): string {
+    const pos = this.ebook.position();
+    return `${pos.block}:${pos.at}:${this.ebook.revision()}`;
+  }
 
   /** What the box says while there is no prompt to key */
   get note(): string {

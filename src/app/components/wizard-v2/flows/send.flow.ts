@@ -7,6 +7,7 @@ import { Condition, ForcedSetting, WizardFlow } from '../engine/flow-types';
 import { AppSettings } from '../../../services/settings.service';
 import { leavePracticeForced, leavePracticeStep, screenForced, screenStep, soundStep, speedStep } from './shared-steps';
 import { MIDI_SUPPORTED, NOT_AVAILABLE_HINT } from './device-support';
+import { isTouchDevice } from '../../../services/settings-common';
 import { keySources, sidetoneProblems } from './direction-checks';
 
 /** The local keyers this goal can switch on, with the setting that enables each. */
@@ -81,7 +82,11 @@ export const SEND_FLOW: WizardFlow = {
         label: 'Local keyers',
         kind: 'multi',
         default: [],
-        defaultFrom: (s: AppSettings) => METHODS.filter(m => s[m.key] && !methodUnavailable(m.id)).map(m => m.id),
+        defaultFrom: (s: AppSettings) => [
+          ...METHODS.filter(m => s[m.key] && !methodUnavailable(m.id)).map(m => m.id),
+          // On a touch screen the touch keyer (as a straight key by default) is offered ticked
+          ...(isTouchDevice() && !s.touchKeyerEnabled ? ['touch'] : []),
+        ],
         // The MIDI keyer needs hardware, so a Novice is not offered it
         optionsFrom: ctx => METHODS.filter(m => m.id !== 'midi' || ctx.level !== 'novice').map(m => methodUnavailable(m.id)
           ? { value: m.id, label: m.label, hint: NOT_AVAILABLE_HINT, disabled: true }

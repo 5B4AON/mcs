@@ -20,11 +20,11 @@ import { EncoderItemComponent } from './encoder/encoder-item.component';
 import { ENCODER_DESCRIPTOR, ENCODER_IDENTITY_DESCRIPTOR, ENCODER_MODE_DESCRIPTOR, ENCODER_SOURCE_DESCRIPTOR } from './encoder/encoder-item.model';
 import { PracticeItemComponent } from './practice/practice-item.component';
 import {
-  PRACTICE_CONTENT_DESCRIPTOR, PRACTICE_DESCRIPTOR, PRACTICE_FEEDBACK_DESCRIPTOR, PRACTICE_IDENTITY_DESCRIPTOR, PRACTICE_PIPELINE_DESCRIPTOR,
+  PRACTICE_BOOK_DESCRIPTOR, PRACTICE_CONTENT_DESCRIPTOR, PRACTICE_DESCRIPTOR, PRACTICE_FEEDBACK_DESCRIPTOR, PRACTICE_IDENTITY_DESCRIPTOR, PRACTICE_PIPELINE_DESCRIPTOR,
 } from './practice/practice-item.model';
 import { SendPracticeItemComponent } from './send-practice/send-practice-item.component';
 import {
-  SEND_PRACTICE_CHECKING_DESCRIPTOR, SEND_PRACTICE_CONTENT_DESCRIPTOR, SEND_PRACTICE_DESCRIPTOR, SEND_PRACTICE_HINT_DESCRIPTOR,
+  SEND_PRACTICE_BOOK_DESCRIPTOR, SEND_PRACTICE_CHECKING_DESCRIPTOR, SEND_PRACTICE_CONTENT_DESCRIPTOR, SEND_PRACTICE_DESCRIPTOR, SEND_PRACTICE_HINT_DESCRIPTOR,
   SEND_PRACTICE_KEYS_DESCRIPTOR, SEND_PRACTICE_PIPELINE_DESCRIPTOR,
 } from './send-practice/send-practice-item.model';
 import { TextBlurItemComponent } from './text-blur/text-blur-item.component';
@@ -85,12 +85,14 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'encoder-mode': { component: EncoderItemComponent, descriptor: ENCODER_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
   'practice': { component: PracticeItemComponent, descriptor: PRACTICE_DESCRIPTOR },
   'practice-content': { component: PracticeItemComponent, descriptor: PRACTICE_CONTENT_DESCRIPTOR, inputs: { part: 'content' } },
+  'practice-book': { component: PracticeItemComponent, descriptor: PRACTICE_BOOK_DESCRIPTOR, inputs: { part: 'book' } },
   'practice-feedback': { component: PracticeItemComponent, descriptor: PRACTICE_FEEDBACK_DESCRIPTOR, inputs: { part: 'feedback' } },
   'practice-pipeline': { component: PracticeItemComponent, descriptor: PRACTICE_PIPELINE_DESCRIPTOR, inputs: { part: 'pipeline' } },
   'practice-identity': { component: PracticeItemComponent, descriptor: PRACTICE_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'send-practice': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_DESCRIPTOR },
   'send-practice-keys': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_KEYS_DESCRIPTOR, inputs: { part: 'keys' } },
   'send-practice-content': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_CONTENT_DESCRIPTOR, inputs: { part: 'content' } },
+  'send-practice-book': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_BOOK_DESCRIPTOR, inputs: { part: 'book' } },
   'send-practice-checking': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_CHECKING_DESCRIPTOR, inputs: { part: 'checking' } },
   'send-practice-pipeline': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_PIPELINE_DESCRIPTOR, inputs: { part: 'pipeline' } },
   'send-practice-hint': { component: SendPracticeItemComponent, descriptor: SEND_PRACTICE_HINT_DESCRIPTOR, inputs: { part: 'hint' } },

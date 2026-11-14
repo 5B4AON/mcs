@@ -9,7 +9,7 @@ import { EbookFormat, EbookOpener, ebookFormat, ebookOpener } from './ebook-pars
 import { EbookChapter, epubOpener } from './ebook-epub';
 import { zipBytesOf } from './ebook-zip';
 import { EbookLoadError, UrlBook, blobSource, openUrlSource, urlFormat, urlToBlob } from './ebook-sources';
-import { forgetResume, loadResume, resumeIdForFile, resumeIdForUrl, saveResume } from './ebook-resume';
+import { forgetResume, loadResume, resumeIdForFile, resumeIdForText, resumeIdForUrl, saveResume } from './ebook-resume';
 import { LastBook, forgetLastBook, loadLastBook, loadLastFile, rememberFile, rememberUrl } from './ebook-last';
 import { ConfirmService } from './confirm.service';
 import { playableChars, playableIndexAt } from './ebook-playable';
@@ -35,6 +35,12 @@ export type EbookLoadResult = 'failed' | 'loaded' | 'resumed';
 
 const FORMAT_LABEL: Record<EbookFormat, string> = { text: 'Text', markdown: 'Markdown', html: 'Web page', epub: 'EPUB' };
 const UNSUPPORTED = 'This kind of file cannot be loaded. Use a text (.txt), Markdown (.md), web page (.html) or EPUB (.epub) file.';
+
+/** Typed or pasted text is kept like a chosen file, under this name, so it reopens by itself like any other book */
+const CUSTOM_FILE_NAME = 'Custom text.txt';
+const CUSTOM_LABEL = 'Custom text';
+/** Longer text is refused (a pasted book belongs in a file); also the limit of the text box */
+export const CUSTOM_TEXT_MAX_CHARS = 500_000;
 
 /** The place in the book is written at least this often while the reading moves (and at once when the page is left) */
 const SAVE_EVERY_MS = 2000;
@@ -72,6 +78,8 @@ export class EbookService {
   /** The reader ignores clicks while this is true */
   readonly busy = computed(() => this.playing() || this.jumpLocked());
   readonly loaded = computed(() => this.info() !== null);
+  /** The text of the loaded book when it was typed or pasted (kept so the editor can show it again), otherwise null */
+  readonly customText = signal<string | null>(null);
   /** True while the practice mode that is on has the e-book as its content: the reader takes the output area (main and full screen) */
   readonly active = computed(() => {
     const s = this.settings.settings();
@@ -166,6 +174,31 @@ export class EbookService {
   }
 
   /**
+   * Use typed or pasted text as the book. It is kept on this device like a chosen file, and its place is
+   * remembered by its content (the same text again offers to resume). Like a file, a failed attempt
+   * changes nothing.
+   */
+  async loadText(text: string): Promise<EbookLoadResult> {
+    if (!text.trim()) {
+      this.error.set('Type or paste some text first.');
+      return 'failed';
+    }
+    if (text.length > CUSTOM_TEXT_MAX_CHARS) {
+      this.error.set(`The text is too long (more than ${CUSTOM_TEXT_MAX_CHARS.toLocaleString('en-US')} characters). Save it as a file and choose the file instead.`);
+      return 'failed';
+    }
+    const file = new File([text], CUSTOM_FILE_NAME, { type: 'text/plain' });
+    return this.install(
+      ebookOpener(blobSource(file), 'text'),
+      { name: CUSTOM_LABEL, format: 'typed or pasted', bytes: file.size, origin: '', href: '' },
+      resumeIdForText(text),
+      () => void rememberFile(file),
+      false,
+      text,
+    );
+  }
+
+  /**
    * Open a text file or page from a web address, fetched straight from the browser (many sites do not
    * allow that: the message then says to download the file). Only ever started by a click.
    */
@@ -228,6 +261,17 @@ export class EbookService {
     }
     const format = ebookFormat(file.name, file.type);
     if (!format) return 'failed';
+    if (file.name === CUSTOM_FILE_NAME) {
+      const text = await file.text();
+      return this.install(
+        ebookOpener(blobSource(file), 'text'),
+        { name: CUSTOM_LABEL, format: 'typed or pasted', bytes: file.size, origin: '', href: '' },
+        resumeIdForText(text),
+        null,
+        true,
+        text,
+      );
+    }
     return this.install(
       format === 'epub' ? epubOpener(zipBytesOf(file)) : ebookOpener(blobSource(file), format),
       { name: file.name, format: FORMAT_LABEL[format], bytes: file.size, origin: '', href: '' },
@@ -241,7 +285,7 @@ export class EbookService {
    * Make a book that has been opened the current one, and offer to go on where the learner stopped
    * (an `auto` reopening at start-up goes on there without asking). `remember` keeps the book as the last one.
    */
-  private async install(opener: EbookOpener, info: EbookInfo, resumeId: string, remember: (() => void) | null, auto = false): Promise<EbookLoadResult> {
+  private async install(opener: EbookOpener, info: EbookInfo, resumeId: string, remember: (() => void) | null, auto = false, custom: string | null = null): Promise<EbookLoadResult> {
     const window = await this.read(opener, 0);
     if (!window) return 'failed';
     remember?.();
@@ -257,6 +301,7 @@ export class EbookService {
     this.baseline = this.position();
     this.revision.update(n => n + 1);
     this.info.set(info);
+    this.customText.set(custom);
     this.chapters.set('chapters' in opener ? await (opener as { chapters(): Promise<EbookChapter[]> }).chapters().catch(() => []) : []);
     const resumed = auto ? await this.resumeSilently(resumeId) : await this.offerResume(resumeId, info.name);
     this.saveEnabled = true;
@@ -397,7 +442,7 @@ export class EbookService {
       if (!window.held().some(block => playableChars(block).length > 0)) {
         this.error.set(offset > 0
           ? 'There is no text to play there.'
-          : 'No text that Morse code can play was found in this file. Morse code covers English letters, digits and common punctuation.');
+          : 'No text that Morse code can play was found. Morse code covers English letters, digits and common punctuation.');
         window.dispose();
         return null;
       }
@@ -425,6 +470,7 @@ export class EbookService {
     this.totalChars.set(0);
     this.totalExact.set(false);
     this.info.set(null);
+    this.customText.set(null);
     this.chapters.set([]);
     this.error.set('');
     this.loading.set(false);

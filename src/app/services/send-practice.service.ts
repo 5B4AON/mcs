@@ -11,6 +11,7 @@ import { DisplayBufferService } from './display-buffer.service';
 import { EbookService } from './ebook.service';
 import { EbookCursor } from './ebook-cursor';
 import { EbookPosition } from './ebook-model';
+import { playableChars, playableIndexAt } from './ebook-playable';
 import { PracticeContentOptions, PracticeSequenceGenerator } from './practice-content';
 import { PracticeFeedback, practiceAccuracy } from './practice-scoring';
 import { alignKeying } from './send-practice-alignment';
@@ -54,6 +55,9 @@ export const SEND_FINISH_SURE_MS = 1000;
 
 /** Keys keyed this soon after a round ended are leftovers of that round, not "next". */
 const NEXT_KEY_GUARD_MS = 800;
+/** How many characters of the book the assist prompt shows before and after the one to key next */
+const EBOOK_PROMPT_BEHIND = 24;
+const EBOOK_PROMPT_AHEAD = 80;
 
 /**
  * Send Practice Service — shows a prompt and scores the keying of it.
@@ -168,6 +172,56 @@ export class SendPracticeService {
   readonly hintChar = computed(() => this.promptChars()[this.alignment().position] ?? '');
   /** Dots and dashes of that character */
   readonly hintPattern = computed(() => MORSE_TABLE[this.hintChar()] ?? '');
+
+  /** Assist is on: a view setting kept in the device profile (the round button over the book saves it at once, like the Mode select) */
+  readonly ebookAssistOn = computed(() => this.settings.settings().sendPracticeEbookAssist);
+  /** The book's text is shown above the reader: the next characters to key, like a prompt */
+  readonly ebookAssist = computed(() => this.ebookMode() && this.ebookAssistOn());
+
+  /** Switch Assist on or off (the round button over the book) */
+  toggleEbookAssist(): void {
+    this.settings.updateAndPersist({ sendPracticeEbookAssist: !this.ebookAssistOn() });
+  }
+
+  /**
+   * The assist prompt: the characters just keyed (`correct`, a book is keyed right by definition), the one to key next
+   * (`current`) and the text after it, taken from the part of the book the window holds.
+   */
+  readonly ebookPromptMarks = computed<SendPromptMark[]>(() => {
+    this.ebook.revision();
+    const pos = this.ebook.position();
+    const window = this.ebook.text;
+    if (!this.ebookAssist() || !window) return [];
+    const marks = (chars: { char: string }[], state: 'correct' | 'plain'): SendPromptMark[] =>
+      chars.map(c => (c.char === ' ' ? { char: ' ', state: 'space' as const } : { char: c.char, state }));
+    const behind: { char: string }[] = [];
+    const ahead: { char: string }[] = [];
+    for (let b = pos.block; b >= window.first && behind.length < EBOOK_PROMPT_BEHIND; b--) {
+      const block = window.block(b);
+      if (!block) continue;
+      const chars = playableChars(block);
+      const upTo = b === pos.block ? playableIndexAt(chars, pos.at) : chars.length;
+      if (b !== pos.block) behind.unshift({ char: ' ' });
+      behind.unshift(...chars.slice(Math.max(0, upTo - (EBOOK_PROMPT_BEHIND - behind.length)), upTo));
+    }
+    for (let b = pos.block; b < window.end && ahead.length < EBOOK_PROMPT_AHEAD; b++) {
+      const block = window.block(b);
+      if (!block) continue;
+      const chars = playableChars(block);
+      if (b !== pos.block) ahead.push({ char: ' ' });
+      ahead.push(...chars.slice(b === pos.block ? playableIndexAt(chars, pos.at) : 0));
+    }
+    while (ahead[0]?.char === ' ') ahead.shift();
+    if (!ahead.length) return marks(behind, 'correct');
+    const [next, ...rest] = ahead;
+    return [...marks(behind, 'correct'), { char: next.char, state: 'current' as const }, ...marks(rest.slice(0, EBOOK_PROMPT_AHEAD), 'plain')];
+  });
+
+  /** Dots and dashes of the character to key next in the book (empty when none) */
+  readonly ebookHintPattern = computed(() => {
+    const next = this.ebookPromptMarks().find(m => m.state === 'current');
+    return next ? MORSE_TABLE[next.char] ?? '' : '';
+  });
 
   private readonly generator = new PracticeSequenceGenerator();
   private lockedInput: string | null = null;

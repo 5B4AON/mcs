@@ -252,14 +252,14 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  /** Scroll so the box is near the middle, a line at a time and smoothly (instantly the first time or over a long way). */
+  /** Scroll so the box is near the middle, a line at a time and smoothly (instantly the first time or over a long way); never above the start of the text. */
   private follow(el: HTMLElement): void {
     const scroll = this.scrollRef.nativeElement;
     if (scroll.clientHeight === 0) return;
     this.contentRef.nativeElement.style.setProperty('--eb-pad', `${scroll.clientHeight / 2}px`);
     const box = el.getBoundingClientRect();
     const view = scroll.getBoundingClientRect();
-    const target = box.top - view.top + scroll.scrollTop + box.height / 2 - scroll.clientHeight / 2;
+    const target = Math.max(0, box.top - view.top + scroll.scrollTop + box.height / 2 - scroll.clientHeight / 2);
     const distance = Math.abs(target - scroll.scrollTop);
     this.lineHeight ||= parseFloat(getComputedStyle(scroll).lineHeight) || 20;
     const line = this.lineHeight;
