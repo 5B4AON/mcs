@@ -84,6 +84,15 @@ export class AudioInputService {
     return this.started;
   }
 
+  /** True while a loaded audio file keeps the microphone off */
+  private held = false;
+
+  /** Keep the microphone off (stopping it now) while a file plays, or let it start again. */
+  async hold(on: boolean): Promise<void> {
+    this.held = on;
+    if (on) await this.stop();
+  }
+
   /**
    * Start the audio input pipeline:
    *  1. Create an AudioContext at 48 kHz
@@ -95,6 +104,8 @@ export class AudioInputService {
    */
   async start(): Promise<void> {
     if (this.started) return;
+    // An audio file is playing on the speakers; the microphone stays off until it is unloaded
+    if (this.held) return;
 
     const s = this.settings.settings();
     if (!s.micInputEnabled) return;

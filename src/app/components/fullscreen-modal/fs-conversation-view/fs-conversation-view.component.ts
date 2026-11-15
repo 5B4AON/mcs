@@ -21,6 +21,8 @@ import { ebookReaderColors } from '../../ebook-reader/ebook-colors';
 import { SendPracticeService } from '../../../services/send-practice.service';
 import { KochHelpService } from '../../../services/koch-help.service';
 import { TranscriptSaveService } from '../../../services/transcript-save.service';
+import { AudioFileService } from '../../../services/audio-file.service';
+import { AudioFilePlayerComponent } from '../../audio-file-player/audio-file-player.component';
 import { KochHelpOverlayComponent } from '../../koch-help-overlay/koch-help-overlay.component';
 import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
@@ -47,7 +49,7 @@ import * as sendPracticeUi from '../../settings-items/send-practice/send-practic
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, EbookReaderComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent],
+  imports: [FsLensViewComponent, EbookReaderComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent, AudioFilePlayerComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -202,6 +204,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     public ebook: EbookService,
     public kochHelp: KochHelpService,
     public transcriptSave: TranscriptSaveService,
+    public audioFile: AudioFileService,
     private clear: ClearService,
     private sanitizer: DomSanitizer,
   ) {

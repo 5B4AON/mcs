@@ -49,7 +49,7 @@
 .fs-fit {
   --fs-base: clamp(14px, 6.8cqmin, max(24px, 3.424cqmin));
   --fs-reserve: 60px;
-  --fs-avail: calc(100cqh - 0.5rem - var(--fs-reserve));
+  --fs-avail: calc(100cqh - 0.5rem - var(--fs-reserve) - var(--fs-audio, 0px));
   --fs-f: max(10px, min(calc(var(--fs-base) * var(--fs-mult, 1)), calc(var(--fs-avail) / 3.25)));
   --fs-lh: max(
     calc(var(--fs-f) * 1.11),
@@ -65,6 +65,16 @@
 }
 .fs-fit.touch-on {
   --fs-reserve: 96px;
+}
+/*
+ * An audio file player along the bottom (84px bar + 12px margin = 96px, 190px above the touch keys)
+ * needs more than the usual reserve: this is the extra, with about one row of space above the bar.
+ */
+.fs-fit.audio-on {
+  --fs-audio: 70px;
+}
+.fs-fit.audio-on.touch-on {
+  --fs-audio: 128px;
 }
 /* Send practice: the prompt box above the text takes some of the height, so the text fits in what is left */
 .fs-send-prompt {

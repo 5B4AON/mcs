@@ -56,9 +56,12 @@ export interface CwStatus {
   windowMs: number;
 }
 
-/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB", "Listening for Morse…" or "Searching 400–900 Hz…" */
+/** Top of the detector's tone search (Hz); the bottom is 400 Hz. Must match SEARCH_HI in `cw-detect-processor.js`. */
+export const SEARCH_HI_HZ = 1500;
+
+/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB", "Listening for Morse…" or "Searching 400–1500 Hz…" */
 export function cwStatusText(st: CwStatus): string {
-  if (st.state === 'search') return 'Searching for a CW tone (400–900 Hz)…';
+  if (st.state === 'search') return `Searching for a CW tone (400–${SEARCH_HI_HZ} Hz)…`;
   if (st.gate === 'closed') return `Listening for Morse at ${Math.round(st.freq)} Hz…`;
   return `Locked · ${Math.round(st.freq)} Hz · ${st.wpm} WPM · ${Math.max(0, Math.round(st.snrDb))} dB`;
 }
@@ -156,6 +159,15 @@ export class CwInputService {
 
   private started = false;
 
+  /** True while a loaded audio file feeds the detector instead of the microphone */
+  readonly fileActive = signal(false);
+  private fileCtx: AudioContext | null = null;
+  /** The node the file's sound (one channel or both) is taken from, so a fresh detector can be attached */
+  private fileFeed: AudioNode | null = null;
+  private fileNode: AudioWorkletNode | null = null;
+  /** The detector has decoded a character from this file since the last reset */
+  private fileGotChar = false;
+
   /** True while the CW input context is paused (suspended, or interrupted on iOS) and has not recovered */
   readonly paused = signal(false);
 
@@ -197,6 +209,8 @@ export class CwInputService {
    */
   async start(): Promise<void> {
     if (this.started) return;
+    // An audio file feeds the detector now; the microphone comes back when it is unloaded
+    if (this.fileActive()) return;
 
     const s = this.settings.settings();
     if (!s.cwInputEnabled) return;
@@ -272,6 +286,119 @@ export class CwInputService {
     this.installKeepAlive(this.audioCtx);
 
     this.started = true;
+  }
+
+  /**
+   * Feed the detector from a loaded audio file instead of the microphone.
+   * The microphone is released first. The element's sound goes to the
+   * speakers (the system default output) and, through the channel choice, to
+   * the same unchanged detector processor, in a context of its own that needs
+   * no Start Audio. Everything the detector reports goes out on the same
+   * streams (`keyEvent$`, `decode$`, `status`, `scope`).
+   */
+  async startFile(element: HTMLMediaElement): Promise<void> {
+    if (this.fileActive()) return;
+    await this.stop();
+    let ctx: AudioContext;
+    try { ctx = new AudioContext({ sampleRate: 48000 }); } catch { ctx = new AudioContext(); }
+    try {
+      await addWorkletModule(ctx, 'cw-detect-processor.js');
+      const source = ctx.createMediaElementSource(element);
+      source.connect(ctx.destination);
+      let feed: AudioNode = source;
+      const channel = this.settings.settings().cwInputChannel;
+      if (channel !== 'both') {
+        const splitter = ctx.createChannelSplitter(2);
+        source.connect(splitter);
+        const merger = ctx.createChannelMerger(1);
+        splitter.connect(merger, channel === 'right' ? 1 : 0, 0);
+        feed = merger;
+      }
+      this.fileCtx = ctx;
+      this.fileFeed = feed;
+      this.fileGotChar = false;
+      this.attachFileDetector();
+    } catch (error) {
+      this.fileCtx = null;
+      this.fileFeed = null;
+      await ctx.close().catch(() => {});
+      throw error;
+    }
+    this.fileActive.set(true);
+  }
+
+  /** Resume the file's audio context; call it from the Play click. */
+  async resumeFile(): Promise<void> {
+    try { await this.fileCtx?.resume(); } catch { /* the next gesture tries again */ }
+  }
+
+  /**
+   * Start the detector over: after a jump in the file its tone, levels and
+   * partial character no longer match the sound. A word gap separates the text
+   * before and after the jump.
+   */
+  resetFileDetector(): void {
+    if (!this.fileActive()) return;
+    this.detachFileDetector();
+    this.releaseFileKey(this.fileGotChar);
+    this.status.set(null);
+    this.scope.clear();
+    this.attachFileDetector();
+  }
+
+  /** Unload the file: the detector and its context go away and the text decoded so far stays. */
+  async stopFile(): Promise<void> {
+    if (!this.fileActive()) return;
+    this.fileActive.set(false);
+    this.detachFileDetector();
+    this.releaseFileKey(false);
+    this.fileFeed = null;
+    const ctx = this.fileCtx;
+    this.fileCtx = null;
+    if (ctx && ctx.state !== 'closed') await ctx.close().catch(() => {});
+    this.status.set(null);
+    this.scope.clear();
+  }
+
+  private attachFileDetector(): void {
+    const ctx = this.fileCtx;
+    const feed = this.fileFeed;
+    if (!ctx || !feed) return;
+    const node = new AudioWorkletNode(ctx, 'cw-detect-processor', {
+      channelCount: 1,
+      channelCountMode: 'explicit',
+      channelInterpretation: 'speakers',
+    });
+    node.port.onmessage = (e) => {
+      if (e.data?.type === 'char') this.fileGotChar = true;
+      this.onWorkletMessage(e.data);
+    };
+    node.port.postMessage(this.workletParams());
+    feed.connect(node);
+    node.connect(ctx.destination);
+    this.fileNode = node;
+  }
+
+  private detachFileDetector(): void {
+    const node = this.fileNode;
+    this.fileNode = null;
+    if (!node) return;
+    node.port.onmessage = null;
+    try { this.fileFeed?.disconnect(node); } catch { }
+    try { node.disconnect(); } catch { }
+  }
+
+  /** Release a key left down, drop the character in progress and optionally end the word. */
+  private releaseFileKey(endWord: boolean): void {
+    if (this.keyIsDown) {
+      this.keyIsDown = false;
+      this.zone.run(() => this.keyEvent$.next({ down: false, time: performance.now() }));
+    }
+    this.zone.run(() => {
+      this.decode$.next({ type: 'pattern', pattern: '', unitMs: 0 });
+      if (endWord) this.decode$.next({ type: 'word' });
+    });
+    this.fileGotChar = false;
   }
 
   /**
@@ -381,7 +508,8 @@ export class CwInputService {
     this.keyIsDown = down;
     this.keyEvent$.next({ down, time });
     if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
-    if (!down) return;
+    // A file has no microphone to hear the sidetone, and its sidetone stays off, so there is no loop to catch
+    if (!down || this.fileActive()) return;
     this.stuckTimer = setTimeout(() => {
       this.stuckTimer = null;
       if (!this.keyIsDown || !this.settings.settings().sidetoneEnabled) return;
@@ -406,6 +534,8 @@ export class CwInputService {
 
   /** Stop the CW input pipeline and release all resources */
   async stop(): Promise<void> {
+    // The file keeps playing; the microphone is already released and stays so until it is unloaded
+    if (this.fileActive()) return;
     if (this.stuckTimer) { clearTimeout(this.stuckTimer); this.stuckTimer = null; }
     // A key-down with no later key-up would leave the sidetone held on, so release it
     if (this.keyIsDown) {

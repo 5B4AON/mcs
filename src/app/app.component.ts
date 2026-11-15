@@ -45,6 +45,8 @@ import { FireworksComponent, MAIN_LAUNCH_DELAY_MS } from './components/fireworks
 import { CollapseDirective } from './components/collapse.directive';
 import { SendPromptComponent } from './components/send-prompt/send-prompt.component';
 import { CwScopeComponent } from './components/cw-scope/cw-scope.component';
+import { AudioFilePlayerComponent } from './components/audio-file-player/audio-file-player.component';
+import { AudioFileService } from './services/audio-file.service';
 import { MorseSpeedsComponent } from './components/morse-speeds/morse-speeds.component';
 import { HelpComponent } from './components/help/help.component';
 import { SettingsModalComponent } from './components/settings-modal/settings-modal.component';
@@ -81,7 +83,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, BookDialogComponent, CwScopeComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, BookDialogComponent, CwScopeComponent, AudioFilePlayerComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -242,6 +244,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public audioInput: AudioInputService,
     public audioOutput: AudioOutputService,
     public cwInput: CwInputService,
+    public audioFile: AudioFileService,
     public decoder: MorseDecoderService,
     public encoder: MorseEncoderService,
     public keyer: KeyerService,
@@ -279,7 +282,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.displayBuffers.mainOutput.lines();
       const el = this.decoderBoxRef?.nativeElement;
       if (el) {
-        requestAnimationFrame(() => el.scrollTop = el.scrollHeight);
+        // While an audio file plays, glide so the text stays a row above the player
+        const behavior: ScrollBehavior = this.audioFile.loaded() ? 'smooth' : 'auto';
+        requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior }));
       }
     });
 
@@ -292,6 +297,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       // Send practice shows its own prompt and keyed text; on "This device only" its keying stays off the outputs
       const sendPracticeKeying = this.sendPractice.active();
       const sendPracticeLocal = this.sendPracticeGate.blocked();
+      const fileLocal = this.settings.settings().cwFilePipeline === 'local';
       if (fresh.length > 0) {
         // Forward only the newly added characters
         for (const entry of fresh) {
@@ -301,6 +307,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
           }
           if (sendPracticeLocal && !entry.fromRtdb) continue;
+          // Text decoded from an audio file stays on this device unless the full pipeline was chosen
+          if (entry.fromFile && fileLocal) continue;
 
           // Compute whether this entry is from a relay-allowed input path.
           // Used both for loop detection exclusion and for output forwarding.
@@ -590,7 +598,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // dits, dahs and gaps itself; key edges only drive the sidetone and vibration.
     const cwOpts = () => {
       const s = this.settings.settings();
-      return { name: s.cwInputName || undefined, color: s.cwInputColor || undefined, externalTiming: true };
+      return {
+        name: s.cwInputName || undefined, color: s.cwInputColor || undefined, externalTiming: true,
+        fromFile: this.cwInput.fileActive() || undefined,
+      };
     };
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
@@ -609,6 +620,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         else if (evt.type === 'char') this.decoder.externalCharacter('cwAudio', source, evt.pattern, cwOpts(), evt.wpm);
         else this.decoder.externalWord('cwAudio', source, cwOpts());
       }),
+    );
+
+    // The audio file is unloaded: the microphone inputs come back if audio is running
+    this.subs.push(
+      this.audioFile.unloaded$.subscribe(() => { void this.resumeInputsAfterFile(); }),
+    );
+
+    // The audio file asks for Settings (prosign actions that erase text): open it on that card
+    this.subs.push(
+      this.audioFile.settingsRequested$.subscribe(landing => this.openSettings(landing)),
     );
 
     // Firebase RTDB incoming characters → decoder display + sidetone only
@@ -1120,6 +1141,17 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  /** After an audio file is unloaded: the microphone inputs start again, as they do after a settings change, when audio is running. */
+  private async resumeInputsAfterFile(): Promise<void> {
+    if (!this.audioRunning) return;
+    try {
+      if (this.settings.settings().micInputEnabled) await this.audioInput.start();
+      await this.cwInput.start();
+    } catch (error) {
+      this.audioFailureMessage = this.audioStartFailureMessage(error, 'microphone input');
+    }
+  }
+
   private async stopAudio(): Promise<void> {
     this.audioStarting = true;
     this.audioState = 'stopping';
@@ -1528,10 +1560,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Send practice mode ----
 
   /** Send practice shows its prompt and keyed text; keying works as usual. */
-  /** The CW scope takes the typing box's place while the CW detector is on (not in practice modes) */
+  /** The CW scope takes the typing box's place while the CW detector is on or a file is decoded (not in practice modes) */
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
-    return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+    return (s.cwInputEnabled || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
   /** Open the Book dialog; a Copy practice that is playing is paused first. */

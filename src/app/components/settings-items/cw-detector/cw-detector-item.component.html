@@ -60,13 +60,29 @@
     </label>
 
     <div class="cw-hint">
-      Finds the tone between 400 and 900 Hz, the speed and the noise and tone levels by itself.
+      Finds the tone between 400 and 1500 Hz, the speed and the noise and tone levels by itself.
       The scope on the main screen shows what it hears.
       <app-help-link-button section="s6-1-scope" label="Help: CW scope" />
     </div>
 
     @if (scope.isLive && cwInput.status(); as st) {
       <div class="cw-auto-info">{{ statusText(st) }}</div>
+    }
+
+    @if (mode === 'card' && scope.isLive) {
+      <label>Audio file output:
+        <select (change)="onFilePipelineChange($event)">
+          <option value="local" [selected]="s().cwFilePipeline === 'local'">This device only</option>
+          <option value="full" [selected]="s().cwFilePipeline === 'full'">Full pipeline</option>
+        </select>
+      </label>
+      <div class="cw-hint">
+        @if (s().cwFilePipeline === 'local') {
+          A recorded audio file you load with the Load button on the output area is heard and decoded on screen. Nothing is sent to WinKeyer, MIDI or Firebase RTDB.
+        } @else {
+          Text decoded from a loaded audio file also goes to your switched-on WinKeyer, MIDI and Firebase RTDB outputs, as text from the microphone does.
+        }
+      </div>
     }
 
     <div class="card-section-divider"></div>

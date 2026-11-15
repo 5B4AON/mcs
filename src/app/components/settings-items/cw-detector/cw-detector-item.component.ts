@@ -9,6 +9,7 @@ import { AudioDeviceService } from '../../../services/audio-device.service';
 import { ConfirmService } from '../../../services/confirm.service';
 import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
+import { CwFilePipeline } from './cw-detector-item.model';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
@@ -100,6 +101,32 @@ export class CwDetectorItemComponent {
     if (!this.scope.isLive || !this.audioRunning) return;
     if (checked) await this.cwInput.start();
     else await this.cwInput.stop();
+  }
+
+  /**
+   * Where text decoded from an audio file goes. Choosing the full pipeline
+   * first asks: it makes a loaded file send its text to the switched-on
+   * outputs (WinKeyer, MIDI, RTDB). Cancel keeps it on this device.
+   */
+  async onFilePipelineChange(event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const value = select.value as CwFilePipeline;
+    if (value === 'full') {
+      const ok = await this.confirm.ask({
+        title: 'Send audio file text to your outputs?',
+        message: 'With the full pipeline, the text decoded from a loaded audio file is sent to the WinKeyer, MIDI and '
+          + 'Firebase RTDB outputs you have switched on, just like text from the microphone. A recording could make a '
+          + 'radio transmit. Choose the full pipeline only if that is what you want.',
+        confirmLabel: 'Use full pipeline',
+        cancelLabel: 'Keep this device only',
+        danger: true,
+      });
+      if (!ok) {
+        select.value = this.s().cwFilePipeline;
+        return;
+      }
+    }
+    this.scope.update({ cwFilePipeline: value });
   }
 
   /** The sidetone is on and plays the direction (RX or TX) the detector feeds */

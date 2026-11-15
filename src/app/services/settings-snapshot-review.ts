@@ -83,6 +83,12 @@ export function prepareSettingsImport(
     proposed, current, 'sidetoneOutputDeviceId', devices, 'Sidetone output', unresolvedTargets,
   );
 
+  // Sending text decoded from an audio file to the outputs is only ever chosen by hand
+  if (proposed.cwFilePipeline === 'full' && current.cwFilePipeline !== 'full') {
+    proposed.cwFilePipeline = current.cwFilePipeline;
+    unresolvedTargets.push('Audio file output was not set to Full pipeline: choose it in the CW Tone Detector card.');
+  }
+
   proposed.midiInputMappings = prepareMidiMappings(
     imported.midiInputMappings,
     current.midiInputMappings,

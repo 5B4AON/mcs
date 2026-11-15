@@ -4,6 +4,7 @@
 
 import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { ConfirmService } from './confirm.service';
+import { AudioFileService } from './audio-file.service';
 import { DisplayBufferService, TRANSCRIPT_MAX_CHARS } from './display-buffer.service';
 import { EbookService } from './ebook.service';
 import { SettingsService } from './settings.service';
@@ -44,7 +45,13 @@ export class TranscriptSaveService {
     private displayBuffers: DisplayBufferService,
     private ebook: EbookService,
     private confirm: ConfirmService,
+    private audioFile: AudioFileService,
   ) {
+    // Once the file's text is gone (Clear) the file name is no longer the right name for a save
+    effect(() => {
+      const hasText = this.displayBuffers.mainOutput.hasText();
+      untracked(() => { if (!hasText) this.audioFile.forgetName(); });
+    });
     effect(() => {
       const near = this.displayBuffers.mainOutput.nearCap();
       untracked(() => {
@@ -103,8 +110,17 @@ export class TranscriptSaveService {
     this.savedTimer = setTimeout(() => this.justSaved.set(false), 1800);
   }
 
-  /** `morse-YYYY-MM-DD-HHMMSS.txt` in local time */
+  /**
+   * `<audio file name>-decoded.txt` while text from an audio file is on screen,
+   * otherwise `morse-YYYY-MM-DD-HHMMSS.txt` in local time
+   */
   private fileName(now: Date): string {
+    const audio = this.audioFile.lastName()
+      .replace(/\.[^.]*$/, '')
+      .replace(/[\\/:*?"<>|\x00-\x1f]+/g, '-')
+      .trim()
+      .slice(0, 80);
+    if (audio) return `${audio}-decoded.txt`;
     const pad = (n: number) => String(n).padStart(2, '0');
     const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
     const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;

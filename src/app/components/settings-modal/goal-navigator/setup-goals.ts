@@ -82,6 +82,9 @@ export const LANDINGS: Record<string, GoalLanding> = {
   'cw-detector': {
     tab: 'inputs', cardId: 'settings-card-cw-detector-card',
   },
+  'prosign-actions': {
+    tab: 'other', cardId: 'settings-card-prosign-actions-card',
+  },
   'teach': {
     tab: 'inputs',
   },

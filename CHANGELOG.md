@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.19.0] - 2026-11-15
+
+### Added
+
+- **Decode an audio file** — A round **Load** button (a page with a sound wave) in the output corner of the main screen and of the full-screen view (above the Save button, or above Replay and Reveal while text blur is on; first in the full-screen button stack, above the touch keys) opens an audio file. The file dialog's filter is built from what the browser says it can play (`canPlayType()`: MP3, M4A/AAC, Ogg Vorbis/Opus, WebM, WAV, FLAC, AIFF); a file the browser cannot play is reported by name with the supported formats. After loading, a semi-transparent player replaces the button: a bar along the bottom of the output area, from its left edge to the round buttons, with **Play**, **Pause** and **Stop** together in the middle and a seek slider below them across the whole width (with the time played and the length), paused until Play is pressed. While a file is loaded the text scrolls smoothly and stays a row above the bar (main screen and full screen). The browser streams the file from disk through an `<audio>` element on a blob URL, so large files work and nothing is cached or saved. Its sound is heard on the system default output while the unchanged CW tone detector decodes it (`CwInputService.startFile()`), and the text appears as if it came from the microphone, in the detector's source, name and colour; the CW scope shows. The microphone detector and the mic key are off while a file is loaded; **Stop** unloads the file, keeps the text, and brings the microphone back. A jump with the slider starts the detector over. There is no sidetone or vibration for a file. Not offered in Copy Practice, Send Practice or the e-book (starting one unloads the file), and shown only while the CW Tone Detector is switched on (a loaded file keeps playing if the detector is switched off, until Stop); in Lens only an already loaded file shows its player. Help (6.1) and the privacy policy describe it.
+- **Audio file output** — New setting in the CW Tone Detector card (live Settings only, `cwFilePipeline`): *This device only* (default) keeps text decoded from a file on the screen and off WinKeyer, MIDI and Firebase RTDB; *Full pipeline* sends it to the outputs that are switched on, as for the microphone. Choosing the full pipeline asks first, and each load while it is chosen asks again and names the outputs. Importing settings or a preset never turns it on.
+- **Save names the file after the recording** — While the text of an audio file is on screen, Save proposes `<audio file name>-decoded.txt`.
+- **Warning before a recording can erase text** — If a prosign action is set to Clear Last Word, Clear Line or Clear Screen, the first Play of a loaded file asks first, naming the prosigns, because the recording could contain them and erase decoded text (from the screen and from what Save keeps). *Play anyway* goes on; *Change in Settings* (also Back) opens Settings on the Prosign Actions card instead.
+
+### Changed
+
+- **`<AR>` clears nothing by default** — The default action of the `<AR>` prosign is now New Paragraph (it was Clear Screen), for first runs and after Reset Settings; saved profiles and presets keep what they have. Help (8.7) now lists the right defaults for `<AR>` and `<BK>` (both New Paragraph), and the Teach wizard's run sheet describes each signal by its actual action.
+- **Wider tone search** — The CW tone detector, for the microphone and for recordings alike, now searches for the tone between 400 and 1500 Hz (it was 400–900 Hz), so higher CW pitches are found; a test recording keyed at 1027 Hz could not be decoded before. `SEARCH_HI` in `cw-detect-processor.js` and `SEARCH_HI_HZ` in `cw-input.service.ts` hold the top of the range; the status line, the scope, the settings card, the Setup Wizard and Help state the new range.
+- **Full-screen button stack** — The stack is right-aligned so the wider player fits above the round buttons.
+
 ## [2.18.0] - 2026-11-15
 
 ### Added
