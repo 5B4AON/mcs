@@ -29,7 +29,7 @@
       }
 
       <!-- The text size is auto-fitted to the body box; the slider value is a multiplier (24 = 1x) -->
-      <div class="fs-fit" [class.touch-on]="touchKeysShown" [class.prompt-on]="sendPromptShown" [class.scope-on]="cwScopeShown"
+      <div class="fs-fit" [class.touch-on]="touchKeysShown" [class.prompt-on]="sendPromptShown" [class.scope-on]="cwScopeShown" [class.audio-on]="audioFile.loaded()"
            [style.--fs-mult]="settings.modalDisplay().fontSize / fontSizeBase"
            [style.--fs-space]="settings.modalDisplay().lineSpacing"
            [style.fontFamily]="fontStack"

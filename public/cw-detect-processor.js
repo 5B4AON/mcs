@@ -11,7 +11,7 @@
  *
  * PIPELINE (per input sample, carrying state from window to window):
  *  1. DC blocker; the last 5 s of audio is kept in a ring buffer.
- *  2. Tone search: every ~21 ms a Hann-windowed Goertzel bank (400–900 Hz,
+ *  2. Tone search: every ~21 ms a Hann-windowed Goertzel bank (400–1500 Hz,
  *     10 Hz steps) measures each frequency. Each bin's power is averaged and
  *     compared to the median of all bins (the noise), and its on/off
  *     variation is measured so a steady carrier is not taken for CW.
@@ -79,7 +79,7 @@
  */
 
 const SEARCH_LO = 400;
-const SEARCH_HI = 900;
+const SEARCH_HI = 1500;
 const SEARCH_STEP = 10;
 const MIN_UNIT_MS = 24;   // 50 WPM
 const MAX_UNIT_MS = 200;  // 6 WPM

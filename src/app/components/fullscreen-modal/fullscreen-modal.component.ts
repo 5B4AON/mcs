@@ -15,6 +15,8 @@ import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
 import { EbookService } from '../../services/ebook.service';
 import { SendPracticeService } from '../../services/send-practice.service';
+import { CwInputService } from '../../services/cw-input.service';
+import { AudioFileService } from '../../services/audio-file.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
@@ -99,7 +101,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
-    return s.cwInputEnabled && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+    return (s.cwInputEnabled || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
   /** Font stack chosen in the fullscreen menu. */
@@ -121,6 +123,8 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     public viewport: ViewportService,
     private ebook: EbookService,
     private sendPractice: SendPracticeService,
+    private cwInput: CwInputService,
+    public audioFile: AudioFileService,
   ) {
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {

@@ -646,6 +646,31 @@
 .blur-help-btn-main.help-alone {
   bottom: 10px;
 }
+/* The audio file Load button or player sits above Save, or above Replay and Reveal while the text is blurred */
+.afp-main {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 5;
+}
+.afp-main.above-one {
+  bottom: 62px;
+}
+.afp-main.above-two {
+  bottom: 114px;
+}
+/* The player bar runs along the bottom of the output area, from the left edge to the round buttons (44px + 10px margin + 8px gap) */
+.afp-bar-main {
+  position: absolute;
+  left: 10px;
+  right: 62px;
+  bottom: 10px;
+  z-index: 5;
+}
+/* While a file is loaded the text stops a row above the player (84px bar + 10px margin) */
+.decoded-text.audio-on {
+  padding-bottom: calc(96px + 1.6em);
+}
 .blur-reveal-btn-main:disabled {
   opacity: 0.45;
   cursor: default;

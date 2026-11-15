@@ -30,7 +30,7 @@ export const DECODE_FLOW: WizardFlow = {
     {
       id: 'tone',
       title: 'Where the sound comes from',
-      intro: 'The detector finds the tone (400–900 Hz), the speed and the levels by itself. Pick the input it listens to.',
+      intro: 'The detector finds the tone (400–1500 Hz), the speed and the levels by itself. Pick the input it listens to.',
       helpSection: 's6-1',
       items: [{ item: 'cw-detector-tune' }],
     },

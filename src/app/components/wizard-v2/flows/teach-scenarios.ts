@@ -697,9 +697,17 @@ function signalLines(ctx: ConditionContext): string[] {
   }
   const actions = ctx.settings.prosignActions;
   const lines: string[] = [];
-  if (actions['<AR>']?.enabled) lines.push('Key AR (dit dah dit dah dit) to clear the screen for the next person.');
-  if (actions['<BK>']?.enabled) lines.push('Key BK to start a new paragraph.');
-  if (actions['<HH>']?.enabled) lines.push('Key HH (eight dits) to erase the last word after a mistake.');
+  // What each signal does follows its Prosign Actions setting
+  const does: Record<string, string> = {
+    newLine: 'start a new line',
+    newParagraph: 'start a new paragraph',
+    clearLastWord: 'erase the last word after a mistake',
+    clearLine: 'erase the line',
+    clearScreen: 'clear the screen for the next person',
+  };
+  if (actions['<AR>']?.enabled) lines.push(`Key AR (dit dah dit dah dit) to ${does[actions['<AR>'].action]}.`);
+  if (actions['<BK>']?.enabled) lines.push(`Key BK to ${does[actions['<BK>'].action]}.`);
+  if (actions['<HH>']?.enabled) lines.push(`Key HH (eight dits) to ${does[actions['<HH>'].action]}.`);
   return lines;
 }
 

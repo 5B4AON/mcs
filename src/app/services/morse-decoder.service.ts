@@ -24,6 +24,12 @@ export interface DecoderKeyOptions {
   fromMidi?: boolean;
   /** True when the event originated from serial input (prevents echo loops) */
   fromSerial?: boolean;
+  /**
+   * True when the audio comes from a loaded audio file: it is heard on the
+   * speakers by itself, so the sidetone and vibration stay quiet, and the
+   * text is marked so it can be kept off the outputs.
+   */
+  fromFile?: boolean;
   /** Optional display name (e.g. MIDI mapping name or RTDB callsign) */
   name?: string;
   /** Optional text colour override (CSS colour string from MIDI mapping) */
@@ -47,6 +53,8 @@ export interface TaggedEntry {
   fromRtdb?: boolean;
   fromMidi?: boolean;
   fromSerial?: boolean;
+  /** Decoded from a loaded audio file */
+  fromFile?: boolean;
   wpm?: number;
 }
 
@@ -66,6 +74,7 @@ interface DecoderPipeline {
   externalTiming: boolean;
   fromMidi: boolean;
   fromSerial: boolean;
+  fromFile: boolean;
   name: string;
   color: string;
   keyDownTime: number;
@@ -331,15 +340,17 @@ export class MorseDecoderService {
     if (!this.loopDetection.isSuppressed) {
       const isReceive = path === 'mic' || path === 'cwAudio' || pipeline.fromMidi || pipeline.fromSerial;
 
-      // Sidetone / audio: all pipelines (monitoring)
-      pipeline.activatedOutputs.add('audio');
-      this.audioOutputRefCount++;
-      this.audioOutput.keyDown(source);
+      // Sidetone / audio: all pipelines (monitoring), except a file that is heard by itself
+      if (!pipeline.fromFile) {
+        pipeline.activatedOutputs.add('audio');
+        this.audioOutputRefCount++;
+        this.audioOutput.keyDown(source);
 
-      // Vibration: all pipelines (haptic monitoring)
-      pipeline.activatedOutputs.add('vibration');
-      this.vibrationOutputRefCount++;
-      this.vibrationOutput.keyDown(source);
+        // Vibration: all pipelines (haptic monitoring)
+        pipeline.activatedOutputs.add('vibration');
+        this.vibrationOutputRefCount++;
+        this.vibrationOutput.keyDown(source);
+      }
 
       // Serial output: local keyer pipelines only.
       // Receive pipelines must not key the radio — the received signal
@@ -541,6 +552,7 @@ export class MorseDecoderService {
         externalTiming: opts?.externalTiming ?? false,
         fromMidi: opts?.fromMidi ?? false,
         fromSerial: opts?.fromSerial ?? false,
+        fromFile: opts?.fromFile ?? false,
         name: opts?.name ?? '',
         color: opts?.color ?? '',
         keyDownTime: 0,
@@ -559,6 +571,7 @@ export class MorseDecoderService {
       pipeline.externalTiming = opts?.externalTiming ?? false;
       pipeline.fromMidi = opts?.fromMidi ?? false;
       pipeline.fromSerial = opts?.fromSerial ?? false;
+      pipeline.fromFile = opts?.fromFile ?? false;
       pipeline.name = opts?.name ?? '';
       pipeline.color = opts?.color ?? '';
     }
@@ -687,10 +700,11 @@ export class MorseDecoderService {
     const wpm = this.pipelineWpm(pipeline);
     const fromMidi = pipeline.fromMidi || undefined;
     const fromSerial = pipeline.fromSerial || undefined;
+    const fromFile = pipeline.fromFile || undefined;
     const name = pipeline.name || undefined;
     const color = pipeline.color || undefined;
     this.pushTagged({
-      type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial, name, color,
+      type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial, fromFile, name, color,
     });
     this.lens.complete(`decoder:${path}`, char);
     pipeline.pattern = '';
@@ -731,10 +745,11 @@ export class MorseDecoderService {
       const wpm = this.pipelineWpm(pipeline);
       const fromMidi = pipeline.fromMidi || undefined;
       const fromSerial = pipeline.fromSerial || undefined;
+      const fromFile = pipeline.fromFile || undefined;
       const name = pipeline.name || undefined;
       const color = pipeline.color || undefined;
       this.pushTagged({
-        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial, name, color,
+        type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial, fromFile, name, color,
       });
     }
   }

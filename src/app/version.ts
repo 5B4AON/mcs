@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.18.0';
+export const APP_VERSION = '2.19.0';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-15';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-15';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'A new Save button saves the on-screen text of a normal session to a file. It is not available in the practice modes.';
+export const WHATS_NEW = 'Load an audio recording and decode it with the CW tone detector while you listen to it.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {
@@ -30,6 +30,7 @@ export const VERSION_HISTORY_MAX = 20;
  * the oldest entry drops off the end. Keep each text to about 150 characters (the average length of the list; 160 at most). The owner approves every entry; draft them from CHANGELOG.md.
  */
 const EARLIER_VERSION_NOTES: VersionNote[] = [
+  { version: '2.18.0', date: '2026-11-15', text: 'A Save button keeps all the text on screen, not just the newest 5000 characters, in a file you choose. It is not offered in the practice modes.' },
   { version: '2.17.0', date: '2026-11-14', text: 'Custom text for e-book practice, and an Assist bar that shows the next characters of the book while you key it in Send practice.' },
   { version: '2.16.0', date: '2026-11-13', text: 'E-book practice: load a text, Markdown, web page or EPUB file or a web address, then listen to it or key it, with your place remembered.' },
   { version: '2.15.0', date: '2026-11-10', text: 'A rebuilt CW tone detector for a phone or microphone next to a radio. It finds the tone and the speed by itself and shows a live scope of what it hears.' },

@@ -26,7 +26,7 @@ export interface ProsignActionsSettings {
 export const PROSIGN_ACTIONS_DEFAULTS: ProsignActionsSettings = {
   prosignActionsEnabled: true,
   prosignActions: {
-    '<AR>': { enabled: true, action: 'clearScreen' },
+    '<AR>': { enabled: true, action: 'newParagraph' },
     '<BK>': { enabled: true, action: 'newParagraph' },
     '<BT>': { enabled: true, action: 'newLine' },
     '<HH>': { enabled: true, action: 'clearLastWord' },

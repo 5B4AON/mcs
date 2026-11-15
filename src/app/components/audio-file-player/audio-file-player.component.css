@@ -1,0 +1,98 @@
+:host {
+  display: block;
+  /* Parchment look (main screen); the full-screen variant overrides these below */
+  --afp-bg: rgba(160, 140, 110, 0.3);
+  --afp-panel: rgba(160, 140, 110, 0.22);
+  --afp-border: rgba(120, 100, 70, 0.35);
+  --afp-color: rgba(60, 45, 30, 0.7);
+  --afp-color-hover: rgba(50, 35, 20, 0.9);
+  --afp-bg-hover: rgba(170, 150, 120, 0.45);
+  --afp-accent: rgba(60, 45, 30, 0.75);
+}
+:host(.fs) {
+  --afp-bg: rgba(60, 60, 80, 0.3);
+  --afp-panel: rgba(60, 60, 80, 0.3);
+  --afp-border: rgba(255, 255, 255, 0.15);
+  --afp-color: rgba(255, 255, 255, 0.65);
+  --afp-color-hover: rgba(255, 255, 255, 0.85);
+  --afp-bg-hover: rgba(80, 80, 110, 0.4);
+  --afp-accent: rgba(140, 200, 255, 0.85);
+}
+
+.afp-btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--afp-bg);
+  border: 1px solid var(--afp-border);
+  color: var(--afp-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  min-height: unset;
+  transition: background 0.15s, color 0.15s;
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+}
+.afp-btn:hover:not(:disabled) {
+  background: var(--afp-bg-hover);
+  color: var(--afp-color-hover);
+}
+.afp-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.afp-btn svg {
+  display: block;
+  pointer-events: none;
+}
+
+/*
+ * The player: a bar along the bottom of the output area, from its left edge up to the round
+ * buttons. The three buttons sit together in the middle, the slider fills the width below them.
+ * Its height is fixed (6 + 44 + 4 + 22 + 6 + the border = 84px): the text above it keeps
+ * clear of that height (see .decoded-text.audio-on and --fs-audio).
+ */
+.afp-bar {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: var(--afp-panel);
+  border: 1px solid var(--afp-border);
+  color: var(--afp-color);
+}
+.afp-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.afp-seek {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 22px;
+}
+.afp-slider {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  accent-color: var(--afp-accent);
+  touch-action: manipulation;
+}
+.afp-time {
+  flex: none;
+  min-width: 2.6em;
+  font-size: 0.7rem;
+  line-height: 1;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}

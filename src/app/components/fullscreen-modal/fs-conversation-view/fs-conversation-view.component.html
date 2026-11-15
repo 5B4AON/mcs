@@ -142,6 +142,9 @@
   <app-fireworks [launchDelayMs]="0" />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
+  @if (audioFile.allowed()) {
+    <app-audio-file-player part="load" variant="fs" [hideLoad]="lensView" />
+  }
   @if (kochHelpShown) {
     <button class="fs-float-btn fs-float-ghost" [class.playing]="kochHelp.playing()"
             [disabled]="kochHelpDisabled"
@@ -300,6 +303,10 @@
     </button>
   }
 </div>
+
+@if (audioFile.allowed()) {
+  <app-audio-file-player class="fs-audio-bar" [class.fs-audio-bar-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled" part="bar" variant="fs" />
+}
 
 @if (inputMode === 'key' && settings.settings().touchKeyerEnabled) {
   <div class="touch-overlay">

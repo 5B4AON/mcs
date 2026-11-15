@@ -20,7 +20,7 @@ const SPAN_MS = 2500;
  * The highlighted band at the right edge is the analysis window the tone
  * search works on.
  *
- * Right: the spectrum of the search band (400–900 Hz) with a marker at the
+ * Right: the spectrum of the search band (400–1500 Hz) with a marker at the
  * locked tone.
  *
  * Drawing runs on animation frames outside Angular's zone.

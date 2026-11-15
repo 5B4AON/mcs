@@ -107,7 +107,7 @@
 <h3>How It Works</h3>
 <ol>
   <li><strong>Find the tone.</strong> About 50 times a second the detector
-      scans 400&ndash;900 Hz in 10 Hz steps. A tone that is clearly above the
+      scans 400&ndash;1500 Hz in 10 Hz steps. A tone that is clearly above the
       rest of the band <em>and</em> switches on and off is taken as CW; a
       steady carrier or hum is ignored. It locks within a fraction of a
       second, follows a drifting tone, and moves to a new station only when
@@ -162,7 +162,7 @@
       The picture scales itself to the signal.</li>
   <li><strong>Highlighted band</strong> at the right edge: the sliding
       window the tone search is working on.</li>
-  <li><strong>Right:</strong> the spectrum from 400 to 900 Hz, with an amber
+  <li><strong>Right:</strong> the spectrum from 400 to 1500 Hz, with an amber
       marker on the locked tone.</li>
   <li><strong>Status line:</strong> <em>Searching</em>; <em>Listening for
       Morse</em> when a tone is found but the squelch is still closed; or
@@ -190,9 +190,13 @@
       mono source. Pick <em>Left</em> or <em>Right</em> when the radio audio
       is on only one channel of a stereo input. Changing the device or the
       channel while the detector runs restarts it.</li>
+  <li><strong>Audio file output</strong> — Where text decoded from a loaded
+      audio file goes: <em>This device only</em> (the default) or
+      <em>Full pipeline</em> (see <em>Decoding a recorded audio file</em>
+      below). Shown in Settings only.</li>
 </ul>
 <p>
-  There is nothing to tune: the detector finds the tone (400–900 Hz), the
+  There is nothing to tune: the detector finds the tone (400–1500 Hz), the
   speed, the gain and the key-down / key-up levels by itself, and ignores
   short noise spikes. The levels it chose are drawn as lines on the scope.
 </p>
@@ -210,6 +214,55 @@
   on the page; until then the status line says <em>Audio input is waiting
   for a click</em> with a <strong>Resume audio</strong> button.
 </p>
+<h3 id="s6-1-file">Decoding a recorded audio file</h3>
+<p>
+  The same detector can decode a recording. Press the <strong>Load</strong>
+  button (a page with a sound wave) in the corner of the output area, on the
+  main screen or in full screen, and choose an audio file. The file dialog
+  lists the formats your browser can play (typically MP3, M4A/AAC, Ogg
+  Vorbis/Opus, WAV and FLAC; the browser decides). A file the browser cannot
+  play is reported by name, with the supported formats.
+</p>
+<ul>
+  <li>The Load button is replaced by a player along the bottom of the output
+      area, from its left edge to the round buttons: <strong>Play</strong>,
+      <strong>Pause</strong> and <strong>Stop</strong> together in the middle,
+      and below them a slider across the whole width, with the time played and
+      the length of the file, to move back and forward. Nothing plays until you
+      press Play. While a file is loaded the text scrolls smoothly and stays a
+      row above the player.</li>
+  <li>You hear the file on the speakers (the system default output) while the
+      text appears on screen, exactly as if it came from the microphone. It
+      plays at normal speed, so a one-hour file takes an hour. The detector
+      adjusts to the level by itself. There is no sidetone for a file.</li>
+  <li>The microphone is not used while a file is loaded. <strong>Stop</strong>
+      unloads the file and listens to the microphone again; the decoded text
+      stays on the screen.</li>
+  <li>After you move the slider the detector starts over, so it needs a few
+      seconds to find the tone again.</li>
+  <li>The file is streamed from your disk by the browser; the app does not
+      copy, cache or save it, so large files work. It never leaves your
+      device.</li>
+  <li>Load is offered while the CW Tone Detector is switched on, and not in
+      Copy Practice, Send Practice or the e-book. In
+      Lens only a file that is already loaded shows its player.</li>
+  <li>Use the <strong>Save</strong> button to keep the decoded text; its file
+      name starts with the name of the audio file.</li>
+  <li>If a prosign action is set to erase text (Clear Last Word, Clear Line or
+      Clear Screen, see section 8.7), the app warns before the first Play of a
+      file, because a recording that contains that prosign would erase decoded
+      text. Choose <em>Play anyway</em> or <em>Change in Settings</em>, which
+      opens the Prosign Actions card.</li>
+</ul>
+<p>
+  <strong>Audio file output</strong> in the CW Tone Detector card decides where
+  the text from a file goes. <em>This device only</em> (the default) keeps it on
+  the screen: nothing is sent to WinKeyer, MIDI or Firebase RTDB.
+  <em>Full pipeline</em> sends it to the outputs you have switched on, as for
+  the microphone; the app asks before you choose it and again each time you load
+  a file while it is chosen. Importing settings or a preset never turns it on.
+</p>
+
 <h3>Name &amp; Colour</h3>
 <p>
   The CW Tone Detector has optional <strong>Name</strong> and
