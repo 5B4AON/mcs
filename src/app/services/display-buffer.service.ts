@@ -8,16 +8,6 @@ import { ProsignAction } from '../components/settings-items/prosign-actions/pros
 import { PUNCTUATION_TO_PROSIGN } from '../morse-table';
 
 /**
- * A single tagged entry in a display buffer line.
- */
-export interface DisplayEntry {
-  type: 'rx' | 'tx';
-  char: string;
-  name?: string;
-  color?: string;
-}
-
-/**
  * A conversation line — contiguous run of the same type.
  */
 export interface DisplayLine {
@@ -34,26 +24,54 @@ export interface DisplayLine {
 const DEFAULT_CAPACITY = 5000;
 
 /**
+ * Most characters a buffer keeps in total (the saved transcript): 48 hours at
+ * 25 WPM, counting 6 characters per word (5 letters and the word gap). That is
+ * about 0.43 MB of text, well under 10 MB. Past it the oldest text is dropped.
+ */
+export const TRANSCRIPT_MAX_CHARS = 25 * 6 * 60 * 48;
+
+/** Share of the transcript cap at which the user is warned */
+const TRANSCRIPT_WARN_SHARE = 0.9;
+
+/** A stretch of text from one source: the same type, name and colour */
+interface TextRun {
+  type: 'rx' | 'tx';
+  text: string;
+  name?: string;
+  color?: string;
+}
+
+/** Cut `count` UTF-16 units off the start of `s`, never leaving half of a surrogate pair */
+function cutStart(s: string, count: number): string {
+  const code = s.charCodeAt(count);
+  return s.slice(code >= 0xdc00 && code <= 0xdfff ? count + 1 : count);
+}
+
+/**
  * An independent FIFO display buffer.
  *
- * Stores individual character entries and collapses them into
- * conversation lines (contiguous runs of the same type) for display.
- * When the total character count exceeds the capacity, the oldest
- * entries are dropped and the lines are recomputed.
+ * Keeps all text as runs (contiguous text of the same type, name and
+ * colour), so appending is cheap and nothing is lost until the transcript cap.
+ * The screen only needs the newest `capacity` characters: `lines` and `text`
+ * are built from those, while `transcript()` returns everything for saving.
  */
 export class DisplayBuffer {
-  /** Flat list of all character entries (FIFO source of truth) */
-  private entries: DisplayEntry[] = [];
-  /** Collapsed conversation lines (rebuilt from entries on mutation) */
+  /** All text, oldest first (source of truth) */
+  private runs: TextRun[] = [];
+  /** Characters (UTF-16 units) in all runs */
+  private total = 0;
+  /** Collapsed conversation lines of the newest `capacity` characters (rebuilt on mutation) */
   readonly lines = signal<DisplayLine[]>([]);
-  /** Flat text for simple display (e.g. main output panel) */
+  /** Flat text of the newest `capacity` characters for simple display (e.g. main output panel) */
   readonly text = signal('');
+  /** True from 90 % of the transcript cap until the buffer is cleared: text will soon be lost */
+  readonly nearCap = signal(false);
 
   /** True when there is any visible text on screen. */
   hasText(): boolean {
     return this.text().trim().length > 0;
   }
-  /** Maximum number of character entries to keep */
+  /** Number of newest characters shown on screen */
   private capacity: number;
   /**
    * When true, a newline is inserted in the flat text whenever the
@@ -61,25 +79,87 @@ export class DisplayBuffer {
    * layout in the main output panel.
    */
   private conversationNewlines: boolean;
+  /** Most characters kept in total */
+  private maxChars: number;
 
-  constructor(capacity = DEFAULT_CAPACITY, conversationNewlines = false) {
+  constructor(capacity = DEFAULT_CAPACITY, conversationNewlines = false, maxChars = TRANSCRIPT_MAX_CHARS) {
     this.capacity = capacity;
     this.conversationNewlines = conversationNewlines;
+    this.maxChars = maxChars;
   }
 
   /** Append one or more characters. */
   push(type: 'rx' | 'tx', text: string, name?: string, color?: string): void {
-    for (const char of text) {
-      this.entries.push({ type, char, name, color });
-    }
+    this.append(type, text, name, color);
     this.trim();
     this.rebuild();
   }
 
   /** Clear all content. */
   clear(): void {
-    this.entries = [];
+    this.runs = [];
+    this.total = 0;
+    this.nearCap.set(false);
     this.rebuild();
+  }
+
+  /**
+   * The whole text for saving, in the layout of the main output: a new line
+   * whenever the source or the name changes, and `[Name] ` at the start of a
+   * named line (as the full-screen view shows it). Colours are not part of it.
+   */
+  transcript(): string {
+    let out = '';
+    let prev: TextRun | null = null;
+    for (const run of this.runs) {
+      let text = run.text;
+      if (!prev || run.type !== prev.type || run.name !== prev.name) {
+        const leading = /^\n*/.exec(text)![0];
+        if (out && !out.endsWith('\n') && !leading) out += '\n';
+        out += leading;
+        if (run.name) out += `[${run.name}] `;
+        text = text.slice(leading.length);
+      }
+      out += text;
+      prev = run;
+    }
+    return out && !out.endsWith('\n') ? out + '\n' : out;
+  }
+
+  /** Add text to the end, joining the last run when it has the same source. */
+  private append(type: 'rx' | 'tx', text: string, name?: string, color?: string): void {
+    if (!text) return;
+    const last = this.runs.at(-1);
+    if (last && last.type === type && last.name === name && last.color === color) {
+      last.text += text;
+    } else {
+      this.runs.push({ type, text, name, color });
+    }
+    this.total += text.length;
+  }
+
+  /** Remove `count` characters from the end. */
+  private removeTail(count: number): void {
+    while (count > 0 && this.runs.length) {
+      const last = this.runs[this.runs.length - 1];
+      if (last.text.length <= count) {
+        this.runs.pop();
+        count -= last.text.length;
+        this.total -= last.text.length;
+      } else {
+        last.text = last.text.slice(0, last.text.length - count);
+        this.total -= count;
+        count = 0;
+      }
+    }
+  }
+
+  /** The characters from the end backwards, for the prosign actions that erase text. */
+  private *tailChars(): Generator<string> {
+    for (let r = this.runs.length - 1; r >= 0; r--) {
+      const text = this.runs[r].text;
+      for (let c = text.length - 1; c >= 0; c--) yield text[c];
+    }
   }
 
   /**
@@ -90,68 +170,58 @@ export class DisplayBuffer {
    *  - newLine / newParagraph: label appears at end of the current line
    *  - clearLastWord / clearLine / clearScreen: label is not shown
    *
-   * Actions modify existing entries before rebuilding:
+   * Actions modify the text before rebuilding:
    *  - newLine:        appends a newline character
    *  - newParagraph:   appends two newline characters
-   *  - clearLastWord:  removes entries back to the last space/newline boundary
-   *  - clearLine:      removes entries back to the last newline (or start)
-   *  - clearScreen:    clears all entries
+   *  - clearLastWord:  removes text back to the last space/newline boundary
+   *  - clearLine:      removes text back to the last newline (or start)
+   *  - clearScreen:    clears everything
    */
   applyProsignAction(action: ProsignAction, type: 'rx' | 'tx', name?: string, prosignLabel?: string, color?: string): void {
     switch (action) {
       case 'newLine':
-        if (prosignLabel) {
-          for (const ch of prosignLabel) {
-            this.entries.push({ type, char: ch, name, color });
-          }
-        }
-        this.entries.push({ type, char: '\n', name, color });
+        this.append(type, (prosignLabel ?? '') + '\n', name, color);
         break;
       case 'newParagraph':
-        if (prosignLabel) {
-          for (const ch of prosignLabel) {
-            this.entries.push({ type, char: ch, name, color });
-          }
-        }
-        this.entries.push({ type, char: '\n', name, color });
-        this.entries.push({ type, char: '\n', name, color });
+        this.append(type, (prosignLabel ?? '') + '\n\n', name, color);
         break;
       case 'clearLastWord': {
-        // Remove entries back to the most recent space or newline (including trailing space)
-        let i = this.entries.length - 1;
-        // Skip trailing spaces
-        while (i >= 0 && this.entries[i].char === ' ') {
-          i--;
+        // Remove text back to the most recent space or newline (including trailing space)
+        let count = 0;
+        let inWord = false;
+        for (const ch of this.tailChars()) {
+          if (!inWord) {
+            if (ch === ' ') { count++; continue; }
+            inWord = true;
+          }
+          if (ch === ' ' || ch === '\n') break;
+          count++;
         }
-        // Skip word characters back to space/newline boundary
-        while (i >= 0 && this.entries[i].char !== ' ' && this.entries[i].char !== '\n') {
-          i--;
-        }
-        // Keep the boundary character (space/newline) if found, remove everything after
-        this.entries.splice(i + 1);
+        this.removeTail(count);
         break;
       }
       case 'clearLine': {
-        // Remove entries back to the most recent newline (or start of buffer)
-        let i = this.entries.length - 1;
-        while (i >= 0 && this.entries[i].char !== '\n') {
-          i--;
+        // Remove text back to the most recent newline (or start of buffer), keeping the newline
+        let count = 0;
+        for (const ch of this.tailChars()) {
+          if (ch === '\n') break;
+          count++;
         }
-        // Keep the newline itself (if found), remove everything after it
-        this.entries.splice(i + 1);
+        this.removeTail(count);
         break;
       }
       case 'clearScreen':
-        this.entries = [];
+        this.runs = [];
+        this.total = 0;
         break;
     }
     this.trim();
     this.rebuild();
   }
 
-  /** Get the current entry count (for watermark tracking). */
+  /** Get the current character count (for watermark tracking). */
   get length(): number {
-    return this.entries.length;
+    return this.total;
   }
 
   /**
@@ -166,36 +236,51 @@ export class DisplayBuffer {
     return text ? { type: last.type, text } : null;
   }
 
-  /** Trim oldest entries if over capacity. */
+  /** Drop the oldest text past the transcript cap and flag when it is close. */
   private trim(): void {
-    if (this.entries.length > this.capacity) {
-      this.entries = this.entries.slice(this.entries.length - this.capacity);
+    let excess = this.total - this.maxChars;
+    while (excess > 0 && this.runs.length) {
+      const first = this.runs[0];
+      if (first.text.length <= excess) {
+        this.runs.shift();
+        excess -= first.text.length;
+        this.total -= first.text.length;
+      } else {
+        const before = first.text.length;
+        first.text = cutStart(first.text, excess);
+        this.total -= before - first.text.length;
+        excess = 0;
+      }
     }
+    this.nearCap.set(this.total >= this.maxChars * TRANSCRIPT_WARN_SHARE);
   }
 
-  /** Rebuild the lines and text signals from the entries array. */
+  /** Rebuild the lines and text signals from the newest `capacity` characters. */
   private rebuild(): void {
+    // Find the first run that holds screen text; the oldest of them may be cut
+    let first = this.runs.length;
+    let remaining = this.capacity;
+    while (first > 0 && remaining > 0) {
+      first--;
+      remaining -= this.runs[first].text.length;
+    }
+
     const lines: DisplayLine[] = [];
     let flat = '';
-    let lastType: 'rx' | 'tx' | null = null;
-    let lastName: string | undefined = undefined;
-
-    for (const entry of this.entries) {
+    let prev: TextRun | null = null;
+    for (let i = first; i < this.runs.length; i++) {
+      const run = this.runs[i];
+      const text = i === first && remaining < 0 ? cutStart(run.text, -remaining) : run.text;
+      if (!text) continue;
       // Insert newline when source type or name changes (conversation-style)
-      if (this.conversationNewlines && lastType !== null
-          && (entry.type !== lastType || entry.name !== lastName)
-          && entry.char !== '\n' && !flat.endsWith('\n')) {
+      if (this.conversationNewlines && prev !== null
+          && (run.type !== prev.type || run.name !== prev.name)
+          && text[0] !== '\n' && !flat.endsWith('\n')) {
         flat += '\n';
       }
-      lastType = entry.type;
-      lastName = entry.name;
-      flat += entry.char;
-      const last = lines.length > 0 ? lines[lines.length - 1] : null;
-      if (last && last.type === entry.type && last.name === entry.name && last.color === entry.color) {
-        last.text += entry.char;
-      } else {
-        lines.push({ type: entry.type, text: entry.char, name: entry.name, color: entry.color });
-      }
+      prev = run;
+      flat += text;
+      lines.push({ type: run.type, text, name: run.name, color: run.color });
     }
 
     this.lines.set(lines);

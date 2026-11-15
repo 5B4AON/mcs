@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.18.0] - 2026-11-15
+
+### Added
+
+- **Save the on-screen text to a file** — A round floppy-disk **Save** button sits in the output corner of the main screen and in the full-screen view (above the touch keys when they are shown). It saves everything since the last Clear, not only the newest 5000 characters the screen shows: the same text as on screen, with a new line when the source (RX/TX) or the name changes and `[Name]` before named lines (colours are not saved). In Chrome, Edge and Opera on a computer a save dialog lets you pick the name and folder (default `morse-YYYY-MM-DD-HHMMSS.txt`); other browsers download the file. Save is not offered in Copy Practice, Send Practice, the e-book, Lens or while text blur is on, and is disabled when there is no text. Help (2.5) and the README describe it.
+- **Warning before text is lost** — The app keeps up to 432,000 characters (48 hours at 25 WPM, 6 characters per word). At 90 % a dialog says that the oldest text will start to be lost and offers to save it; it appears once and re-arms after Clear.
+
+### Changed
+
+- **Display buffers keep all their text** — Each buffer stores its text as runs of one source instead of one object per character, and builds the screen from the newest 5000 characters, so the screen looks and scrolls as before. Prosign erase actions now work on the full text.
+- **Decoder history is bounded** — `taggedOutput` keeps only the newest 1000 entries (consumers read new entries through `taggedSince()` and a running count), and the never-read `decodedText` signal was removed. Nothing visible changes.
+
 ## [2.17.4] - 2026-11-15
 
 ### Changed

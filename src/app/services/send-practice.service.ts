@@ -6,7 +6,7 @@ import { Injectable, computed, effect, signal, untracked } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { MorseEncoderService } from './morse-encoder.service';
 import { KochHelpService } from './koch-help.service';
-import { MorseDecoderService } from './morse-decoder.service';
+import { MorseDecoderService, TaggedEntry } from './morse-decoder.service';
 import { DisplayBufferService } from './display-buffer.service';
 import { EbookService } from './ebook.service';
 import { EbookCursor } from './ebook-cursor';
@@ -226,7 +226,7 @@ export class SendPracticeService {
   private readonly generator = new PracticeSequenceGenerator();
   private lockedInput: string | null = null;
   private wpmSamples: number[] = [];
-  private lastTaggedLen = 0;
+  private lastTaggedTotal = 0;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
   private finishedAt = 0;
   private lessonJump = false;
@@ -244,11 +244,11 @@ export class SendPracticeService {
   ) {
     // Collect the keying of the picked keys while a prompt waits to be keyed
     effect(() => {
-      const tagged = this.decoder.taggedOutput();
+      this.decoder.taggedOutput();
       untracked(() => {
-        if (tagged.length < this.lastTaggedLen) this.lastTaggedLen = tagged.length;
-        for (let i = this.lastTaggedLen; i < tagged.length; i++) this.accept(tagged[i]);
-        this.lastTaggedLen = tagged.length;
+        const fresh = this.decoder.taggedSince(this.lastTaggedTotal);
+        this.lastTaggedTotal = this.decoder.taggedTotal;
+        for (const entry of fresh) this.accept(entry);
       });
     });
 
@@ -458,7 +458,7 @@ export class SendPracticeService {
   }
 
   /** Take one decoded entry into the round if it comes from a picked key. */
-  private accept(entry: ReturnType<MorseDecoderService['taggedOutput']>[number]): void {
+  private accept(entry: TaggedEntry): void {
     if (entry.fromRtdb) return;
     const id = sendPracticeInputId(entry.inputPath);
     if (!id || !this.settings.settings().sendPracticeInputs.includes(id)) return;
@@ -520,7 +520,7 @@ export class SendPracticeService {
   }
 
   /** A character arrived from a picked key. */
-  private acceptEbook(entry: ReturnType<MorseDecoderService['taggedOutput']>[number], id: string): void {
+  private acceptEbook(entry: TaggedEntry, id: string): void {
     // Without the book being keyed, the next keyed character starts it, like pressing the button
     if (this.state() !== 'keying') {
       if (entry.char === ' ' || !this.active() || Date.now() - this.finishedAt <= NEXT_KEY_GUARD_MS) return;

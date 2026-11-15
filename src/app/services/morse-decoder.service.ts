@@ -37,6 +37,19 @@ export interface DecoderKeyOptions {
   externalTiming?: boolean;
 }
 
+/** One decoded character or space with its source and metadata */
+export interface TaggedEntry {
+  type: 'rx' | 'tx';
+  char: string;
+  inputPath?: InputPath;
+  name?: string;
+  color?: string;
+  fromRtdb?: boolean;
+  fromMidi?: boolean;
+  fromSerial?: boolean;
+  wpm?: number;
+}
+
 /**
  * Per-input decoder pipeline state.
  *
@@ -110,16 +123,13 @@ interface DecoderPipeline {
  *  - A rolling median of dit-unit estimates converges to the sender's speed
  *
  * Output:
- *  - decodedText signal: flat string of all decoded characters
- *  - taggedOutput signal: array of {type, char, inputPath} for colour coding
+ *  - taggedOutput signal: the newest decoded entries {type, char, inputPath} (older ones rotate out);
+ *    read new ones with taggedSince() and the running count taggedTotal
  *  - rxCurrentPattern / txCurrentPattern: per-source in-progress patterns
  *  - rxEstimatedWpm / txEstimatedWpm: current speed estimates
  */
 @Injectable({ providedIn: 'root' })
 export class MorseDecoderService {
-  /** Decoded text output */
-  readonly decodedText = signal('');
-
   /**
    * Per-source aggregate in-progress patterns.
    * All RX-source pipelines' patterns concatenated, and same for TX.
@@ -136,20 +146,39 @@ export class MorseDecoderService {
 
   /**
    * Tagged output — each decoded character/space is paired with its source,
-   * input path, and metadata. Used for conversation display and output
-   * forwarding (RTDB, MIDI, WinKeyer).
+   * input path, and metadata. Used for output forwarding (RTDB, MIDI,
+   * WinKeyer) and Send practice. Only the newest TAGGED_KEEP entries are
+   * kept: consumers only need the entries they have not seen yet, and the
+   * display buffers hold the text. `taggedTotal` counts every entry since
+   * the last clear, so a consumer can tell which ones are new.
    */
-  readonly taggedOutput = signal<{
-    type: 'rx' | 'tx';
-    char: string;
-    inputPath?: InputPath;
-    name?: string;
-    color?: string;
-    fromRtdb?: boolean;
-    fromMidi?: boolean;
-    fromSerial?: boolean;
-    wpm?: number;
-  }[]>([]);
+  readonly taggedOutput = signal<TaggedEntry[]>([]);
+
+  /** Entries added since the last clear (not just those still kept) */
+  taggedTotal = 0;
+
+  private readonly TAGGED_KEEP = 1000;
+
+  /** Add one tagged entry; the oldest ones rotate out. */
+  pushTagged(entry: TaggedEntry): void {
+    this.taggedTotal++;
+    this.taggedOutput.update(arr => (
+      arr.length >= this.TAGGED_KEEP ? [...arr.slice(arr.length - this.TAGGED_KEEP + 1), entry] : [...arr, entry]
+    ));
+  }
+
+  /**
+   * The entries added after the first `seen` ones (a consumer's last
+   * `taggedTotal`). After a clear, or if it fell further behind than the
+   * kept entries, it gets everything that is still there. Reads the signal,
+   * so an effect that calls it runs again when entries arrive.
+   */
+  taggedSince(seen: number): TaggedEntry[] {
+    const kept = this.taggedOutput();
+    const firstKept = this.taggedTotal - kept.length;
+    const from = seen > this.taggedTotal ? 0 : Math.max(seen, firstKept);
+    return kept.slice(from - firstKept);
+  }
 
   // ---- RX calibration pool (shared across all RX-source pipelines) ----
   readonly rxEstimatedWpm = signal(12);
@@ -475,7 +504,7 @@ export class MorseDecoderService {
 
   /** Clear all decoded text and pipeline state */
   clearOutput(): void {
-    this.decodedText.set('');
+    this.taggedTotal = 0;
     this.taggedOutput.set([]);
     for (const p of this.pipelines.values()) {
       if (p.silenceTimer) clearTimeout(p.silenceTimer);
@@ -656,14 +685,13 @@ export class MorseDecoderService {
 
     const char = MORSE_REVERSE[pattern] || '?';
     const wpm = this.pipelineWpm(pipeline);
-    this.decodedText.update(t => t + char);
     const fromMidi = pipeline.fromMidi || undefined;
     const fromSerial = pipeline.fromSerial || undefined;
     const name = pipeline.name || undefined;
     const color = pipeline.color || undefined;
-    this.taggedOutput.update(arr => [...arr, {
+    this.pushTagged({
       type: pipeline.source, char, inputPath: path, wpm, fromMidi, fromSerial, name, color,
-    }]);
+    });
     this.lens.complete(`decoder:${path}`, char);
     pipeline.pattern = '';
     // A real character was decoded — allow a future trailing space
@@ -705,10 +733,9 @@ export class MorseDecoderService {
       const fromSerial = pipeline.fromSerial || undefined;
       const name = pipeline.name || undefined;
       const color = pipeline.color || undefined;
-      this.decodedText.update(t => t + ' ');
-      this.taggedOutput.update(arr => [...arr, {
+      this.pushTagged({
         type: pipeline.source, char: ' ', inputPath: path, wpm, fromMidi, fromSerial, name, color,
-      }]);
+      });
     }
   }
 
