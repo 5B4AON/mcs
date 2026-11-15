@@ -4,6 +4,7 @@
 
 import { Injectable, effect, signal } from '@angular/core';
 import { isContextPaused } from './audio-context-state';
+import { releasePrimedContext, takePrimedContext } from './audio-primer';
 import { SettingsService } from './settings.service';
 
 /**
@@ -66,6 +67,15 @@ export class AudioOutputService {
   readonly stalled = signal(false);
   private stalledTimer: ReturnType<typeof setTimeout> | null = null;
 
+  /**
+   * True once every output context is running and its clock is advancing, i.e. the device is really
+   * playing. A phone that has been idle or locked can report `running` a second or more before sound
+   * can be heard, so "Audio is running" waits for this.
+   */
+  readonly soundReady = signal(false);
+  private clockSamples = new Map<AudioContext, { t: number; wall: number }>();
+  private readyTimer: ReturnType<typeof setInterval> | null = null;
+
   // ---- Keep-alive: prevents browser from suspending idle audio contexts ----
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   /** Inaudible ultrasonic oscillators that keep each context's audio graph active */
@@ -103,6 +113,8 @@ export class AudioOutputService {
     } else {
       await this.startShared(sideDevId, s);
     }
+    // A warmed-up context nobody adopted (another output device) is no longer needed
+    await releasePrimedContext();
 
     // Start pilot tone for key detection (only when mic input is enabled)
     if (s.micInputEnabled) {
@@ -118,7 +130,9 @@ export class AudioOutputService {
     deviceId: string,
     s: ReturnType<typeof this.settings.settings>
   ): Promise<void> {
-    this.sharedCtx = new AudioContext({ sampleRate: 48000 });
+    // The default output may already be open and awake (see audio-primer.ts)
+    const primed = !deviceId || deviceId === 'default' ? takePrimedContext() : null;
+    this.sharedCtx = primed ?? new AudioContext({ sampleRate: 48000 });
     await this.trySetSinkId(this.sharedCtx, deviceId);
     const ctx = this.sharedCtx;
 
@@ -443,6 +457,7 @@ export class AudioOutputService {
 
   async stop(): Promise<void> {
     this.clearKeepAlive();
+    await releasePrimedContext();
     try { this.sidetoneOsc?.stop(); } catch { }
     try { this.optoOsc?.stop(); } catch { }
     try { this.optoSource?.stop(); } catch { }
@@ -607,9 +622,55 @@ export class AudioOutputService {
     }
   }
 
+  /** Starts polling (100 ms) until every context is running with an advancing clock; then sets `soundReady`. */
+  private watchReady(): void {
+    if (this.readyTimer) return;
+    const check = () => {
+      const ok = this.clockAdvancing();
+      if (ok !== this.soundReady()) this.soundReady.set(ok);
+      if (ok && this.readyTimer) {
+        clearInterval(this.readyTimer);
+        this.readyTimer = null;
+      }
+    };
+    this.readyTimer = setInterval(check, 100);
+    check();
+  }
+
+  /** Each running context must have moved its clock by 0.2 s (over at least 160 ms) since first seen running. */
+  private clockAdvancing(): boolean {
+    const now = performance.now();
+    let any = false;
+    let all = true;
+    for (const ctx of this.allContexts()) {
+      if (!ctx) continue;
+      any = true;
+      if (ctx.state !== 'running') {
+        this.clockSamples.delete(ctx);
+        all = false;
+        continue;
+      }
+      const sample = this.clockSamples.get(ctx);
+      if (!sample) {
+        this.clockSamples.set(ctx, { t: ctx.currentTime, wall: now });
+        all = false;
+      } else if (ctx.currentTime - sample.t < 0.2 || now - sample.wall < 160) {
+        all = false;
+      }
+    }
+    return any && all;
+  }
+
   private updatePaused(): void {
     const paused = this.allContexts().some(ctx => isContextPaused(ctx));
     this.paused.set(paused);
+    if (paused) {
+      for (const ctx of this.allContexts()) {
+        if (ctx && isContextPaused(ctx)) this.clockSamples.delete(ctx);
+      }
+      if (this.soundReady()) this.soundReady.set(false);
+      this.watchReady();
+    }
     if (!paused) {
       if (this.stalledTimer) {
         clearTimeout(this.stalledTimer);
@@ -716,11 +777,18 @@ export class AudioOutputService {
     };
     document.addEventListener('visibilitychange', this.visibilityHandler);
     this.updatePaused();
+    this.watchReady();
   }
 
   private clearKeepAlive(): void {
     this.paused.set(false);
     this.stalled.set(false);
+    this.soundReady.set(false);
+    this.clockSamples.clear();
+    if (this.readyTimer) {
+      clearInterval(this.readyTimer);
+      this.readyTimer = null;
+    }
     if (this.stalledTimer) {
       clearTimeout(this.stalledTimer);
       this.stalledTimer = null;

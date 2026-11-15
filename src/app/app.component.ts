@@ -4,6 +4,7 @@ import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
 import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
+import { AUDIO_RUNNING_KEY } from './services/audio-primer';
 import { CwInputService } from './services/cw-input.service';
 import { MorseDecoderService } from './services/morse-decoder.service';
 import { MorseEncoderService, PlayingPattern } from './services/morse-encoder.service';
@@ -1000,6 +1001,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return inputPaused || (isTouchDevice() && this.audioOutput.stalled());
   }
 
+  /**
+   * Audio is on and not paused, but the device is not playing yet: a phone that was idle or locked
+   * reports `running` a moment before sound can be heard. Shows the amber wake-up status instead of
+   * "Audio is running".
+   */
+  get audioWarming(): boolean {
+    return this.audioRunning && this.audioState === 'running' && !this.audioNeedsTap && !this.audioOutput.soundReady();
+  }
+
   /** Words for the paused-audio notice: the input and the output wait for different things. */
   get audioNeedsTapMessage(): string {
     if (this.viewport.iosLayout) return 'Audio is paused.';
@@ -1160,18 +1170,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private isAudioMarkedRunning(): boolean {
     try {
-      return localStorage.getItem('morseAudioRunning') === '1';
+      return localStorage.getItem(AUDIO_RUNNING_KEY) === '1';
     } catch {
       return false;
     }
   }
 
   private rememberAudioRunning(): void {
-    try { localStorage.setItem('morseAudioRunning', '1'); } catch { }
+    try { localStorage.setItem(AUDIO_RUNNING_KEY, '1'); } catch { }
   }
 
   private clearRememberedAudioRunning(): void {
-    try { localStorage.removeItem('morseAudioRunning'); } catch { }
+    try { localStorage.removeItem(AUDIO_RUNNING_KEY); } catch { }
   }
 
   private audioStartFailureMessage(error: unknown, stage: string): string {

@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.3] - 2026-11-15
+
+### Added
+
+- **"Waiting for sound wake up..." status** — A phone that has been idle or locked can report audio as running a second or more before sound can be heard. The status line now stays amber with "Waiting for sound wake up..." and turns green "Audio is running." only once every output's clock is really advancing (0.2 s), so the message means you can key and hear it. It also shows again when you return to the app after the phone was locked.
+
+### Changed
+
+- **Earlier audio start-up** — When audio was running last time (and not on iPhone), the app opens an output on the default sound output as the very first thing, before the app itself loads (`audio-primer.ts`), so the phone starts waking its audio hardware while the app loads. The output service reuses that output when the default device is used and closes it otherwise. Sidetone and key output still follow their settings.
+- **Help** — The Troubleshooting entry for a phone that says audio is running but is silent describes the new status.
+
 ## [2.17.2] - 2026-11-14
 
 ### Added

@@ -1,15 +1,15 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.17.2';
+export const APP_VERSION = '2.17.3';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
-export const APP_RELEASE_DATE = '2026-11-14';
+export const APP_RELEASE_DATE = '2026-11-15';
 
 /**
  * A very short note (a phrase or one brief sentence; up to three short sentences when several very important changes ship together) about the main user-visible changes in APP_VERSION, shown once
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Search in the Symbols Reference, F1 opens Help, and Reset can now delete all saved data.';
+export const WHATS_NEW = 'Clearer audio start-up on phones: the status says when sound is really ready.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {

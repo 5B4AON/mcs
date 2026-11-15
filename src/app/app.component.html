@@ -158,13 +158,13 @@
     <div class="panel-title-row">
       <svg class="panel-icon" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="18" width="20" height="3.5" rx="1"/><line x1="13" y1="18" x2="13" y2="13.5"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><line x1="6" y1="13.5" x2="6" y2="9"/><path d="M2.5 8.5a3.5 2 0 0 1 7 0z" fill="currentColor"/><line x1="19" y1="13.5" x2="19" y2="18"/></svg>
       <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
-           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap"
-           [class.audio-status-running]="audioState === 'running' && !audioNeedsTap"
+           [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap || audioWarming"
+           [class.audio-status-running]="audioState === 'running' && !audioNeedsTap && !audioWarming"
            [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
         @if (audioState === 'stopped' && !audioNeedsTap) {
           <span>Audio is stopped. Press <svg class="audio-inline-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="the muted speaker button"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><line x1="3" y1="3" x2="21" y2="21"/></svg> below to begin.</span>
         } @else {
-          <span>{{ audioNeedsTap ? audioNeedsTapMessage : audioStatusMessage }}</span>
+          <span>{{ audioNeedsTap ? audioNeedsTapMessage : audioWarming ? 'Waiting for sound wake up...' : audioStatusMessage }}</span>
         }
         @if (audioNeedsTap) {
           <button class="audio-retry-stop-btn" (click)="resumeAudio()">{{ viewport.iosLayout ? 'Tap to resume audio' : 'Resume audio' }}</button>
