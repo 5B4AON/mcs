@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.17.4] - 2026-11-15
+
+### Changed
+
+- **Resume is pointed out after a replay** — In Copy Practice, when you pause and replay what has been played, the practice stops at the paused place and waits. The play button (main screen and full screen) now turns bright green and pulses until you press it (or press Enter), so it is clear that it has to be pressed to go on. With reduced motion it stays highlighted without pulsing. Help (Copy Practice controls) mentions it.
+
+### Fixed
+
+- **Typing while paused in full screen** — In Copy Practice with Type-along or Koch, the full-screen view ignored typed characters while the practice was paused; the main screen's box accepted them. The full-screen view now accepts them too.
+
 ## [2.17.3] - 2026-11-15
 
 ### Added

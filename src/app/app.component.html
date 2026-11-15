@@ -465,7 +465,7 @@
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>
           </button>
         } @else if (practice.state() === 'paused') {
-          <button #practiceActionButton class="tx-icon-btn tx-ready" (click)="practiceResume()"
+          <button #practiceActionButton class="tx-icon-btn tx-ready" [class.resume-attention]="practice.awaitingResume()" (click)="practiceResume()"
                   [title]="encoder.replayPending() ? 'Resume replay' : 'Resume'"
                   [attr.aria-label]="encoder.replayPending() ? 'Resume replay' : 'Resume'">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor" stroke="none"><polygon points="7 3 21 12 7 21 7 3"/></svg>

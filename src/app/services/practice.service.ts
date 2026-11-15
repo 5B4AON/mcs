@@ -98,6 +98,12 @@ export class PracticeService {
   private readonly generator = new PracticeSequenceGenerator();
   private replayReturnState: 'paused' | 'finished' | null = null;
 
+  /**
+   * True when a replay has ended and the practice is back at the paused place: it then waits
+   * for Resume (button or Enter), which the play buttons point out by pulsing.
+   */
+  readonly awaitingResume = signal(false);
+
   /** The e-book being played (null for the other content), and where each character of the encoder's buffer sits in the book */
   private ebookFeed: EbookFeed | null = null;
   private ebookPositions: EbookPosition[] = [];
@@ -216,6 +222,7 @@ export class PracticeService {
     const text = this.replayableText();
     if (!text || !this.encoder.startReplay(text)) return;
     this.replayReturnState = state;
+    this.awaitingResume.set(false);
     this.state.set('playing');
   }
 
@@ -223,6 +230,7 @@ export class PracticeService {
   stopReplay(): void {
     this.encoder.stopReplay();
     if (this.replayReturnState !== null) {
+      this.awaitingResume.set(this.replayReturnState === 'paused');
       this.state.set(this.replayReturnState);
       this.replayReturnState = null;
     }
@@ -244,6 +252,7 @@ export class PracticeService {
   /** Resume playback from where we left off */
   resume(): void {
     if (this.state() === 'paused') {
+      this.awaitingResume.set(false);
       // The reading was moved while paused (a click, the Book dialog): play on from there
       if (this.ebookFeed) {
         const here = this.ebookPositions[this.encoder.sentIndex()];
@@ -267,6 +276,7 @@ export class PracticeService {
     this.encoder.stopTx();
     this.encoder.clearBuffer();
     this.replayReturnState = null;
+    this.awaitingResume.set(false);
     this.state.set('idle');
     this.feedback.set([]);
     this.userInput.set('');
@@ -349,6 +359,7 @@ export class PracticeService {
     this.displayBuffers.clearAll();
     this.encoder.clearBuffer();
     this.replayReturnState = null;
+    this.awaitingResume.set(false);
 
     this.state.set('playing');
 
@@ -387,6 +398,7 @@ export class PracticeService {
     if (this.encoder.replayPending()) {
       this.state.set('paused');
     } else if (this.replayReturnState !== null) {
+      this.awaitingResume.set(this.replayReturnState === 'paused');
       this.state.set(this.replayReturnState);
       this.replayReturnState = null;
     } else {
@@ -410,6 +422,7 @@ export class PracticeService {
     this.endEbook();
     this.encoder.clearBuffer();
     this.replayReturnState = null;
+    this.awaitingResume.set(false);
     this.referenceText.set('');
     this.feedback.set([]);
     this.userInput.set('');

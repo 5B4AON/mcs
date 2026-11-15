@@ -434,7 +434,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     const input = event.target as HTMLInputElement;
     const isPractice = this.settings.settings().encoderMode === 'practice';
     const typeAlong = isPractice && this.practice.feedbackMode() === 'typealong';
-    if (typeAlong && (this.practice.state() === 'playing' || this.practice.state() === 'finished')) {
+    if (typeAlong && ['playing', 'paused', 'finished'].includes(this.practice.state())) {
       if (inputEvent.inputType.startsWith('delete')) {
         this.practice.userInput.set(this.practice.userInput().slice(0, -1));
       } else if (inputEvent.data) {

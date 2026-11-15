@@ -262,7 +262,7 @@
     </button>
     }
   } @else if (practiceView) {
-    <button class="fs-float-btn fs-float-play" (click)="practiceAction()"
+    <button class="fs-float-btn fs-float-play" [class.resume-attention]="practice.awaitingResume()" (click)="practiceAction()"
             [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)"
             [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : practiceUi.practiceActionLabel(practice.state(), settings.settings(), practice.feedback().length > 0)">
       @if (ebookView && practice.state() === 'playing') {
