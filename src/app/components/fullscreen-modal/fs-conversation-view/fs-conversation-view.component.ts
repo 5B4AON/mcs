@@ -20,6 +20,7 @@ import { EbookReaderComponent } from '../../ebook-reader/ebook-reader.component'
 import { ebookReaderColors } from '../../ebook-reader/ebook-colors';
 import { SendPracticeService } from '../../../services/send-practice.service';
 import { KochHelpService } from '../../../services/koch-help.service';
+import { TranscriptSaveService } from '../../../services/transcript-save.service';
 import { KochHelpOverlayComponent } from '../../koch-help-overlay/koch-help-overlay.component';
 import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
@@ -200,6 +201,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     public sendPractice: SendPracticeService,
     public ebook: EbookService,
     public kochHelp: KochHelpService,
+    public transcriptSave: TranscriptSaveService,
     private clear: ClearService,
     private sanitizer: DomSanitizer,
   ) {

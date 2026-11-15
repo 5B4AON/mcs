@@ -33,6 +33,7 @@ import { SendPracticeService } from './services/send-practice.service';
 import { EbookReaderComponent } from './components/ebook-reader/ebook-reader.component';
 import { BookDialogComponent } from './components/book-dialog/book-dialog.component';
 import { EbookService } from './services/ebook.service';
+import { TranscriptSaveService } from './services/transcript-save.service';
 import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
@@ -208,8 +209,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Tracks how many modal history entries are currently pushed */
   private modalHistoryDepth = 0;
 
-  /** Last known length of taggedOutput — used to detect new decoded chars */
-  private lastTaggedLen = 0;
+  /** Decoder `taggedTotal` as last seen by the forwarding effect — used to detect new decoded chars */
+  private lastTaggedTotal = 0;
 
   /** Last known encoder sentIndex — used to detect newly sent chars */
   private lastSentIdx = 0;
@@ -253,6 +254,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public winkeyerOutput: WinkeyerOutputService,
     public rtdbService: FirebaseRtdbService,
     public displayBuffers: DisplayBufferService,
+    public transcriptSave: TranscriptSaveService,
     public loopDetection: LoopDetectionService,
     public wakeLock: WakeLockService,
     public autoFullscreen: AutoFullscreenService,
@@ -285,14 +287,14 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // Also push every entry (including RTDB-sourced) into the display buffers.
     // Loop detection: record output chars and check for feedback loops.
     effect(() => {
-      const tagged = this.decoder.taggedOutput();
+      const fresh = this.decoder.taggedSince(this.lastTaggedTotal);
+      this.lastTaggedTotal = this.decoder.taggedTotal;
       // Send practice shows its own prompt and keyed text; on "This device only" its keying stays off the outputs
       const sendPracticeKeying = this.sendPractice.active();
       const sendPracticeLocal = this.sendPracticeGate.blocked();
-      if (tagged.length > this.lastTaggedLen) {
+      if (fresh.length > 0) {
         // Forward only the newly added characters
-        for (let i = this.lastTaggedLen; i < tagged.length; i++) {
-          const entry = tagged[i];
+        for (const entry of fresh) {
           // Push to independent display buffers for all entries
           const displayName = this.getDisplayName(entry.type, entry.name);
           if (!sendPracticeKeying || entry.fromRtdb) {
@@ -388,7 +390,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           }
         }
       }
-      this.lastTaggedLen = tagged.length;
     });
 
     // Watch for encoder sentIndex advancing — push newly sent chars to display buffers
@@ -619,8 +620,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         const s = this.settings.settings();
         const effectiveName = s.rtdbInputName.trim() || name;
         const effectiveColor = s.rtdbInputColor.trim() || color;
-        this.decoder.taggedOutput.update(arr => [...arr, { type: source, char, name: effectiveName, color: effectiveColor, fromRtdb: true, wpm }]);
-        this.decoder.decodedText.update(t => t + char);
+        this.decoder.pushTagged({ type: source, char, name: effectiveName, color: effectiveColor, fromRtdb: true, wpm });
         // Play through all outputs whose forward mode matches the source
         // Use remote WPM unless the user has chosen to override with local encoder WPM
         const playbackWpm = this.settings.settings().rtdbInputOverrideWpm
