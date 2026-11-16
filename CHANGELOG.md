@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.20.1] - 2026-11-16
+
+### Added
+
+- **Keep the screen on for the CW detector (phones and tablets)** — Switching the CW Tone Detector on in Settings, or choosing it in the Decode guide, now asks whether to keep the screen on (a phone usually pauses the page and stops listening when the screen locks). It is asked only on a device whose main pointer is touch and cannot hover, when the browser supports the Wake Lock API and Keep screen on is off. In the Decode guide it is a new step after the sound source whose Apply turns Keep screen on on. Never shown on a desktop (`isMobileDevice()` in `settings-common.ts`).
+
+### Changed
+
+- **The CW detector leaves practice modes** — Switching the CW Tone Detector on in live Settings while Copy or Send practice is on returns the main screen to Send on Enter, because the scope does not show in a practice mode. The Decode guide already asked about this.
+- **Microphone on the audio button** — While the CW Tone Detector is on, the main audio button and the "Audio is stopped. Press … below to begin." hint show a microphone (crossed out while stopped) instead of a speaker.
+- **Larger spinner on the audio button** — The spinner shown while audio starts is centred and fills more of the round button.
+
+### Fixed
+
+- **First letter lost or misread by the CW detector** — When the tone lock was still settling, the first long mark of the first letter could be missed (a recording starting with CQ read as "ER"). The replay at the opening now ignores a stray blip before the station, takes marks the live pass missed, and judges the opening at the speed its own marks fit instead of a wrong start speed; the replay's marks become the speed history.
+- **Fast Morse from a slow start speed** — With RX start speed 12 WPM nothing was decoded at 40 WPM, because tones under 0.4 of the guessed dit were dropped before the speed could be learned. While no station is being decoded, any clean tone longer than about 19 ms now counts.
+- **Long runs of dits closed the gate** — Text such as "THIS IS" (14 dits after the T) was treated as noise from the 10th dit and the gate closed in the middle of a letter. The limit is now 24 dits in a row.
+
 ## [2.20.0] - 2026-11-16
 
 ### Added

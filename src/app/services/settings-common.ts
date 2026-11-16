@@ -20,6 +20,14 @@ export function isTouchDevice(): boolean {
     || matchMedia('(any-pointer: coarse)').matches;
 }
 
+/**
+ * Detect a phone or tablet: the main pointer is touch and cannot hover. A
+ * touch-screen laptop or desktop (mouse or trackpad as main pointer) is not.
+ */
+export function isMobileDevice(): boolean {
+  return matchMedia('(pointer: coarse)').matches && matchMedia('(hover: none)').matches;
+}
+
 /** Decoder source assignment — determines which calibration pool an input feeds */
 export const DECODER_SOURCES = ['rx', 'tx'] as const;
 export type DecoderSource = typeof DECODER_SOURCES[number];

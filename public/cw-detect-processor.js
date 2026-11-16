@@ -106,6 +106,7 @@ const SQ_WEAK_OPEN = 0.5; // a stretch this much weaker than the last station he
 const SQ_WEAK_M = 6;      // ...needs this many marks to open (noise after a station ends is weak)
 const LOCK_REPLAY_MS = 600;
 const OPEN_REPLAY_MS = 5000;
+const DIT_RUN_MAX = 24;   // dits in a row (no dah) after which an open gate stops trusting the marks
 const LV_LIN = new Float64Array(LV_BINS);
 for (let b = 0; b < LV_BINS; b++) LV_LIN[b] = Math.pow(10, ((b + 0.5) / 2 - 120) / 20);
 
@@ -629,7 +630,11 @@ class CwDetector {
     // (fading is slow enough for the reference to follow it mark by mark)
     const known = this.ampRef > 0 && (this.gateOpen || this._trusted(t));
     const weak = known && qual.amp < 0.25 * this.ampRef;
-    if (!qual.ok || weak || m < 0.4 * this.unitMs) {
+    // While no station is being decoded the speed is only a guess (the start speed): a dit of a
+    // fast station is far shorter than 0.4 of a slow guess, and dropping it would keep the
+    // guess forever. Any clean tone above the fastest dit still counts then.
+    const shortest = 0.4 * (this.gateOpen ? this.unitMs : Math.min(this.unitMs, 2 * MIN_UNIT_MS));
+    if (!qual.ok || weak || m < shortest) {
       // Noise, a click, another station or a blip far shorter than a dit: as if it never happened
       this.upMs = this.prevUpMs;
       if (this.gateOpen) this._gateScore(0, 0.08, t);
@@ -664,9 +669,10 @@ class CwDetector {
       // A real station keeps its pitch and its speed; noise peaks scatter both
       const onSpeed = Math.abs(Math.log(U / this.refUnit)) < SQ_UNIT_DEV;
       const fits = onSpeed && Math.abs(qual.offHz) <= SQ_OFF_BAD && cls > 0 && (this.pendGap < 0 || this._gapClass(this.pendGap, U) > 0);
-      // Noise peaks make only dits; real text has a dah every few elements
+      // Noise peaks make only dits; real text has a dah every few elements, but runs of letters
+      // without one are common (THIS IS: T then 14 dits, SHE IS HIS even more)
       this.ditRun = cls === 3 ? 0 : this.ditRun + 1;
-      const good = fits && qual.score > 0 && this.ditRun < 10;
+      const good = fits && qual.score > 0 && this.ditRun < DIT_RUN_MAX;
       if (good) this.refUnit += 0.1 * (U - this.refUnit);
       // A mark that drags the speed away is a noise peak: drop its character rather than show a wrong one
       else if (!onSpeed) this.charBad = true;
@@ -988,12 +994,28 @@ class CwDetector {
     }
     while (first < run.length && run[first].k !== 'm') first++;
     if (first >= run.length) return null;
-    const recovered = detector._stretch(this.unitMs, first);
+    let recovered = detector._stretch(this.unitMs, first);
+    // The speed at the opening is only a guess (the start speed, or a fit from the first few
+    // marks): a start speed too far off leaves the clean replay in pieces. Judge the replay at
+    // the speed its own marks fit too, and take that one if it explains more of them.
+    const fitted = this._replayUnit(run, first);
+    if (Math.abs(Math.log(fitted / this.unitMs)) > Math.log(1.1)) {
+      const alt = detector._stretch(fitted, first);
+      if (this._opens(alt, ms) && (!this._opens(recovered, ms) || alt.M > recovered.M)) recovered = alt;
+    }
     if (!this._opens(recovered, ms) || recovered.M < st.M) return null;
-    const marks = run.slice(recovered.j0).filter((e) => e.k === 'm');
+    const U = recovered.U;
+    let marks = run.slice(recovered.j0).filter((e) => e.k === 'm');
 
-    const original = this.run.slice(st.j0).filter((e) => e.k === 'm');
-    const tolerance = Math.max(15, 0.4 * this.unitMs);
+    const tolerance = Math.max(15, 0.4 * U);
+    // A live mark that ended before the recovered stretch begins was a blip the clean replay
+    // does not see (the start filter above already dropped such marks there): it cannot veto
+    let original = this.run.slice(st.j0).filter((e) => e.k === 'm' && e.t0 + e.d >= marks[0].t0);
+    if (!original.length) return null;
+    // Marks the live pass missed (a first dah heard late, while the tone search was still
+    // settling) lie before the first live mark: the replay adds them
+    let added = 0;
+    while (marks.length > 1 && marks[0].t0 + marks[0].d < original[0].t0 - tolerance) { marks = marks.slice(1); added++; }
     let i = 0;
     let extendedFirst = false;
     for (const mark of marks) {
@@ -1001,7 +1023,7 @@ class CwDetector {
       if (!old) break;
       const same = Math.abs(mark.t0 - old.t0) <= tolerance &&
         Math.abs(mark.d - old.d) <= tolerance &&
-        this._markClass(mark.d, this.unitMs) === this._markClass(old.d, this.unitMs);
+        this._markClass(mark.d, U) === this._markClass(old.d, U);
       // Acquisition can catch just the tail of the first mark, even as a dit
       // instead of a dah. Its restored end must still agree with the live edge.
       const extended = i === 0 && mark.t0 < old.t0 - tolerance &&
@@ -1011,8 +1033,19 @@ class CwDetector {
         extendedFirst ||= extended;
       }
     }
-    return i === original.length && (recovered.M > st.M || extendedFirst)
-      ? { run: detector.run, start: recovered.j0 } : null;
+    return i === original.length && (recovered.M > st.M || added > 0 || extendedFirst)
+      ? { run: detector.run, start: recovered.j0, unit: U } : null;
+  }
+
+  /** Speed fitted (no pull towards the current guess) from the newest marks and gaps of a replayed run, from index `first` on */
+  _replayUnit(run, first) {
+    const marks = [], gaps = [];
+    for (let j = first; j < run.length; j++) {
+      if (run[j].k === 'm') marks.push(run[j].d);
+      else if (run[j].k === 'g' && marks.length) gaps.push(run[j].d);
+    }
+    while (gaps.length >= marks.length) gaps.pop();
+    return this._fitOf(marks.slice(-16), gaps.slice(-15), 0, 0);
   }
 
   /**
@@ -1022,6 +1055,13 @@ class CwDetector {
    */
   _openGate(st, ms) {
     const recovered = this._recoverOpening(st, ms);
+    if (recovered) {
+      // The replay is the clean record of the opening (the live marks include blips before the
+      // station, and the gate was held at a guessed speed): its marks and speed become the history
+      const marks = recovered.run.slice(recovered.start).filter((e) => e.k === 'm').map((e) => e.d);
+      const gaps = recovered.run.slice(recovered.start).filter((e) => e.k === 'g').map((e) => e.d).slice(0, marks.length - 1);
+      this._adoptLocal({ marks, gaps, U: recovered.unit });
+    }
     if (!this.ampRef || !this._trusted(ms)) this.ampRef = st.amp;
     this.gateOpen = true;
     this.goodEma = 1;

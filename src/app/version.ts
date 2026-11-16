@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.20.0';
+export const APP_VERSION = '2.20.1';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-16';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-16';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Type along with an e-book, blurred if you like. Replay asks what to repeat. Your place in a book is kept to the character.';
+export const WHATS_NEW = 'The CW tone detector decodes fast and recorded Morse more reliably. On a phone it offers to keep the screen on.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {
@@ -30,6 +30,7 @@ export const VERSION_HISTORY_MAX = 20;
  * the oldest entry drops off the end. Keep each text to about 150 characters (the average length of the list; 160 at most). The owner approves every entry; draft them from CHANGELOG.md.
  */
 const EARLIER_VERSION_NOTES: VersionNote[] = [
+  { version: '2.20.0', date: '2026-11-16', text: 'Type along with an e-book, blurred if you like. The Replay button asks what to repeat, and your place in a book is kept to the exact character.' },
   { version: '2.19.0', date: '2026-11-15', text: 'Load an audio recording of Morse and decode it with the CW tone detector while you listen, with a player bar on the main screen and in full screen.' },
   { version: '2.18.0', date: '2026-11-15', text: 'A Save button keeps all the text on screen, not just the newest 5000 characters, in a file you choose. It is not offered in the practice modes.' },
   { version: '2.17.0', date: '2026-11-14', text: 'Custom text for e-book practice, and an Assist bar that shows the next characters of the book while you key it in Send practice.' },

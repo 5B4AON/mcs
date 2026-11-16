@@ -4,9 +4,12 @@
 
 import { Component, Input, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { isMobileDevice } from '../../../services/settings-common';
 import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
+import { ClearService } from '../../../services/clear.service';
 import { ConfirmService } from '../../../services/confirm.service';
+import { WakeLockService } from '../../../services/wake-lock.service';
 import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { CwFilePipeline } from './cw-detector-item.model';
@@ -19,9 +22,12 @@ import { SETTINGS_SCOPE } from '../settings-scope';
  * CW audio tone detector: RX/TX, device, channel (left, right or both mixed),
  * name and colour. Tone, speed and levels are found by the detector itself.
  * Switching it on offers to mute a sidetone that would play along, and
- * switching it off offers to turn a muted sidetone back on. The
- * detector is only started, stopped or restarted in live Settings; a wizard
- * draft just holds the values.
+ * switching it off offers to turn a muted sidetone back on. Switching it on
+ * on a phone or tablet in live Settings offers to keep the screen on (the page
+ * stops listening when the screen locks) and leaves a practice mode for Send
+ * on Enter, because the scope does not show in practice modes. The detector is
+ * only started, stopped or restarted in live Settings; a wizard draft just
+ * holds the values.
  */
 @Component({
   selector: 'app-cw-detector-item',
@@ -43,6 +49,8 @@ export class CwDetectorItemComponent {
   readonly devices = inject(AudioDeviceService);
   readonly cwInput = inject(CwInputService);
   private readonly confirm = inject(ConfirmService);
+  private readonly clear = inject(ClearService);
+  private readonly wakeLock = inject(WakeLockService);
 
   /** Current values from the scope */
   readonly s = this.scope.value;
@@ -97,7 +105,28 @@ export class CwDetectorItemComponent {
       });
       if (unmute) this.scope.update({ sidetoneEnabled: true });
     }
-    this.scope.update({ cwInputEnabled: checked });
+    if (checked && this.scope.isLive && this.shouldOfferKeepScreenOn()) {
+      const keepOn = await this.confirm.ask({
+        title: 'Keep the screen on?',
+        message: 'The CW detector listens through the microphone. When the screen dims or locks, a phone or tablet '
+          + 'usually pauses the page and stops listening, so decoding would stop. Keep the screen on while the app is open? '
+          + 'You can change this in Settings → Other → Screen Settings.',
+        confirmLabel: 'Keep screen on',
+        cancelLabel: 'Not now',
+      });
+      if (keepOn) {
+        this.scope.update({ wakeLockEnabled: true });
+        void this.wakeLock.onSettingChanged(true);
+      }
+    }
+    // The scope takes the typing box's place only outside the practice modes, so leave them (live Settings only; the wizard asks)
+    const mode = this.s().encoderMode;
+    if (checked && this.scope.isLive && (mode === 'practice' || mode === 'send-practice')) {
+      this.clear.clearInput();
+      this.scope.update({ cwInputEnabled: checked, encoderMode: 'enter' });
+    } else {
+      this.scope.update({ cwInputEnabled: checked });
+    }
     if (!this.scope.isLive || !this.audioRunning) return;
     if (checked) await this.cwInput.start();
     else await this.cwInput.stop();
@@ -127,6 +156,13 @@ export class CwDetectorItemComponent {
       }
     }
     this.scope.update({ cwFilePipeline: value });
+  }
+
+  /** A phone or tablet (touch main pointer, no hover) that can hold a screen wake lock and does not yet */
+  private shouldOfferKeepScreenOn(): boolean {
+    return this.wakeLock.supported
+      && !this.s().wakeLockEnabled
+      && isMobileDevice();
   }
 
   /** The sidetone is on and plays the direction (RX or TX) the detector feeds */
