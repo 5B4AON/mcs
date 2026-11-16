@@ -15,6 +15,7 @@ import { AudioDeviceService } from '../../services/audio-device.service';
 import { ViewportService } from '../../services/viewport.service';
 import { EbookService } from '../../services/ebook.service';
 import { SendPracticeService } from '../../services/send-practice.service';
+import { PracticeService } from '../../services/practice.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { AudioFileService } from '../../services/audio-file.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
@@ -123,6 +124,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     public viewport: ViewportService,
     private ebook: EbookService,
     private sendPractice: SendPracticeService,
+    private practice: PracticeService,
     private cwInput: CwInputService,
     public audioFile: AudioFileService,
   ) {
@@ -147,7 +149,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   ngAfterViewInit(): void {
     if (this.fullscreenDialog) {
       // A book needs no typing, so the on-screen keyboard must not come up
-      focusDialog(this.fullscreenDialog.nativeElement, this.inputMode === 'type' && !this.ebook.active() ? '.fs-type-input' : '.fs-conversation');
+      focusDialog(this.fullscreenDialog.nativeElement, this.inputMode === 'type' && (!this.ebook.active() || this.practice.feedbackMode() === 'typealong') ? '.fs-type-input' : '.fs-conversation');
     }
   }
 

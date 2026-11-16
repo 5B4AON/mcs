@@ -1,0 +1,90 @@
+/*
+ * Not encapsulated, like the e-book reader: the box it sits in (the main screen's output area or the full-screen
+ * view) decides the font, size, line height and the blur classes. Every cell is two rows of one line height each:
+ * the challenge character over the typed one.
+ */
+.pc {
+  white-space: normal;
+  word-break: normal;
+}
+.pc-w {
+  display: inline-block;
+  white-space: nowrap;
+}
+.pc-c {
+  display: inline-block;
+  vertical-align: top;
+  min-width: 1ch;
+  text-align: center;
+  line-height: inherit;
+}
+.pc-r,
+.pc-t {
+  display: block;
+  line-height: inherit;
+}
+/* An empty typed row still takes a line, so the rows do not move as text is typed */
+.pc-t::before {
+  content: '\200b';
+}
+.pc-t {
+  font-weight: 400;
+  color: var(--pc-typed, #8a3a0c);
+}
+
+/* Blurred and Type-along blur the challenge (the direction the box says); the typed text never is */
+.blur-rx .pc-rx .pc-r,
+.blur-tx .pc-tx .pc-r,
+.blur-both .pc .pc-r {
+  filter: blur(.25em);
+  transition: filter 250ms ease;
+}
+.blur-revealing .pc .pc-r {
+  filter: blur(0) !important;
+}
+
+/* What was heard right, wrong and missed: after Validate, or while the eye button is held */
+.pc-validated .pc-ok .pc-r,
+.blur-revealing .pc-ok .pc-r {
+  color: #2e7d32;
+  text-shadow: 0 0 4px rgba(46, 125, 50, .5), 0 1px 2px rgba(0, 0, 0, .3);
+}
+.pc-validated .pc-bad .pc-r,
+.blur-revealing .pc-bad .pc-r {
+  color: #ff1744;
+  text-shadow: 0 0 4px rgba(255, 23, 68, .5), 0 1px 2px rgba(0, 0, 0, .3);
+}
+.pc-validated .pc-miss .pc-r,
+.blur-revealing .pc-miss .pc-r {
+  color: #777;
+  text-shadow: 0 0 4px rgba(119, 119, 119, .4), 0 1px 2px rgba(0, 0, 0, .2);
+}
+.pc-validated .pc-bad .pc-t,
+.blur-revealing .pc-bad .pc-t {
+  color: #ff1744;
+}
+
+/* On the dark full-screen view the colours are lighter */
+.fs-conversation .pc {
+  --pc-typed: rgba(255, 255, 255, .8);
+}
+.fs-conversation .pc-validated .pc-ok .pc-r,
+.fs-conversation.blur-revealing .pc-ok .pc-r {
+  color: #4caf50;
+  text-shadow: 0 0 6px rgba(76, 175, 80, .6), 0 0 12px rgba(76, 175, 80, .3), 0 1px 3px rgba(0, 0, 0, .4);
+}
+.fs-conversation .pc-validated .pc-bad .pc-r,
+.fs-conversation .pc-validated .pc-bad .pc-t,
+.fs-conversation.blur-revealing .pc-bad .pc-r,
+.fs-conversation.blur-revealing .pc-bad .pc-t {
+  text-shadow: 0 0 6px rgba(255, 23, 68, .6), 0 0 12px rgba(255, 23, 68, .3), 0 1px 3px rgba(0, 0, 0, .4);
+}
+
+/* The Koch celebration changes all the text to one colour (the night view of the main screen, the full-screen show) */
+.night .pc-r,
+.night .pc-t,
+.celebrate .pc-r,
+.celebrate .pc-t {
+  color: inherit !important;
+  text-shadow: inherit !important;
+}

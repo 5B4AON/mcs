@@ -11,8 +11,11 @@
     }
   </div>
 }
-<div #scroll class="eb-scroll" [class.eb-hidden]="!ebook.loaded()" [class.eb-jump]="!ebook.busy()"
+<div #scroll class="eb-scroll" [class.eb-hidden]="!ebook.loaded()" [class.eb-jump]="!ebook.busy() && !typedMode" [class.eb-typed]="typedMode" [class.eb-scored]="scored"
      tabindex="0" role="region" aria-label="E-book text" (click)="onClick($event)">
   <div #content class="eb-content"></div>
 </div>
+@if (scored) {
+  <div class="eb-score" role="status">Accuracy: {{ practice.accuracy() }}%</div>
+}
 <div class="eb-status" role="status" aria-live="polite">{{ status() }}</div>

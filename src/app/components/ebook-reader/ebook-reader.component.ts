@@ -6,7 +6,11 @@ import {
   Component, ElementRef, NgZone, OnDestroy, OnInit, ViewChild, ViewEncapsulation, effect, inject, signal, untracked,
 } from '@angular/core';
 import { EbookBlock } from '../../services/ebook-model';
+import { MORSE_TABLE } from '../../morse-table';
 import { EbookService } from '../../services/ebook.service';
+import { PracticeService } from '../../services/practice.service';
+import { TypedCell } from '../../services/ebook-typed';
+import { SettingsService } from '../../services/settings.service';
 
 /** One word of a block: its box, and how much of it has been played (played characters are their own boxes). */
 interface WordView {
@@ -34,6 +38,9 @@ interface BlockView {
   state: 'none' | 'partial' | 'all';
 }
 
+/** A word that is a prosign (optionally with punctuation after it) */
+const SIGN_WORD = /^<[A-Za-z]{2,3}>[.,;:!?]*$/;
+
 /** Longer words may break anywhere (a URL), the rest never break inside. */
 const LONG_WORD = 30;
 
@@ -46,7 +53,12 @@ const LONG_WORD = 30;
  * sounding, or the one to key) in a third style. The size change is a transform on a box of its own, so
  * the text never reflows as it is played; words are kept together so a line only breaks between words.
  * Unplayed text is plain text; only played characters become boxes. The view scrolls smoothly so the
- * position stays near the middle. While nothing is playing, a click or tap on the text moves the reading there.
+ * position stays near the middle. While nothing is playing, a click or tap on the text moves the reading there (not in Type-along, where jumping ahead would defeat the exercise).
+ *
+ * In Copy practice the book can be blurred (Blurred and Type-along: only the CSS classes of the box it sits
+ * in decide, and holding the eye button shows what has played, never the rest). In Type-along what is typed is
+ * drawn under the character it belongs to (`PracticeService.ebookCellsSince`), and every line is twice as high
+ * so there is room for it; the typed text is positioned, so nothing reflows as it is typed.
  */
 @Component({
   selector: 'app-ebook-reader',
@@ -58,6 +70,8 @@ const LONG_WORD = 30;
 export class EbookReaderComponent implements OnInit, OnDestroy {
   readonly ebook = inject(EbookService);
   private zone = inject(NgZone);
+  readonly practice = inject(PracticeService);
+  private settings = inject(SettingsService);
 
   @ViewChild('scroll', { static: true }) private scrollRef!: ElementRef<HTMLElement>;
   @ViewChild('content', { static: true }) private contentRef!: ElementRef<HTMLElement>;
@@ -69,6 +83,10 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
   private drawn: unknown = null;
   private resize: ResizeObserver | null = null;
   private focusEl: HTMLElement | null = null;
+  /** Typed text waiting for its character to be played (its box does not exist yet) */
+  private pendingTyped = new Map<string, TypedCell>();
+  /** How far this reader has read the practice's log of changed cells (-1: not at all, so it draws every cell) */
+  private cellsSeen = -1;
   /** The line height in pixels, measured once per size (measuring forces the page to be laid out) */
   private lineHeight = 0;
   private firstScroll = true;
@@ -80,6 +98,11 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       this.ebook.position();
       untracked(() => this.sync());
     });
+    // What is typed in Type-along is drawn under the characters it belongs to, and how it compares
+    effect(() => {
+      this.practice.ebookTypedRevision();
+      untracked(() => this.applyCells());
+    });
     // A key pressed in Send practice brings the expected letter back to the middle, even when it did not move
     effect(() => {
       this.ebook.recenter();
@@ -87,6 +110,16 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
         if (this.focusEl) this.follow(this.focusEl);
       });
     });
+  }
+
+  /** Copy practice in Type-along: lines have room for the typed text under them. */
+  get typedMode(): boolean {
+    return this.settings.settings().encoderMode === 'practice' && this.practice.feedbackMode() === 'typealong';
+  }
+
+  /** The book has been scored (Validate) and the result is on show until the book plays on. */
+  get scored(): boolean {
+    return this.typedMode && this.practice.feedback().length > 0;
   }
 
   ngOnInit(): void {
@@ -106,14 +139,18 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
 
   /** Move the reading to the clicked character, unless a driver is playing or text is being selected. */
   onClick(event: MouseEvent): void {
-    if (this.ebook.busy()) return;
+    if (this.ebook.busy() || this.typedMode) return;
     const selection = getSelection();
     if (selection && !selection.isCollapsed) return;
     const caret = caretAt(event.clientX, event.clientY);
     if (!caret || caret.node.nodeType !== Node.TEXT_NODE) return;
     const blockEl = caret.node.parentElement?.closest<HTMLElement>('.eb-block');
     if (!blockEl) return;
-    const walker = document.createTreeWalker(blockEl, NodeFilter.SHOW_TEXT);
+    if (caret.node.parentElement?.closest('.eb-t')) return;
+    // The typed text under a character is not part of the book
+    const walker = document.createTreeWalker(blockEl, NodeFilter.SHOW_TEXT, {
+      acceptNode: node => node.parentElement?.closest('.eb-t') ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT,
+    });
     let at = 0;
     for (let n = walker.nextNode(); n; n = walker.nextNode()) {
       if (n === caret.node) {
@@ -165,6 +202,60 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     const moved = focus !== this.focusEl;
     this.focusEl = focus ?? null;
     if (focus && moved) this.follow(focus);
+    if (this.pendingTyped.size) this.applyCells();
+  }
+
+  /** Draw the cells that changed: the typed text under each character and how it compares; a character not drawn yet gets its cell when it is. */
+  private applyCells(): void {
+    const end = this.practice.ebookCellLogEnd();
+    for (const [key, cell] of this.practice.ebookCellsSince(this.cellsSeen)) this.pendingTyped.set(key, cell);
+    this.cellsSeen = end;
+    for (const [key, cell] of this.pendingTyped) {
+      // A `p` marks text typed ahead of what has played, a `g` text under the gap after a character
+      const ahead = key.endsWith('p');
+      const base = ahead ? key.slice(0, -1) : key;
+      const gap = base.endsWith('g');
+      const box = this.charBox(gap ? base.slice(0, -1) : base);
+      if (!box) {
+        // Nothing to clear on a character that is not drawn (unless its block has scrolled out of the window for good)
+        const empty = !cell.text && !cell.result;
+        if (empty || Number(key.split(':')[0]) < (this.ebook.text?.first ?? 0)) this.pendingTyped.delete(key);
+        continue;
+      }
+      const selector = ahead ? ':scope > .eb-tp' : gap ? ':scope > .eb-tg' : ':scope > .eb-t:not(.eb-tg):not(.eb-tp)';
+      let typed = box.querySelector<HTMLElement>(selector);
+      if (cell.text && !typed) {
+        typed = document.createElement('span');
+        typed.className = ahead ? (gap ? 'eb-t eb-tp eb-tpg' : 'eb-t eb-tp') : gap ? 'eb-t eb-tg' : 'eb-t';
+        typed.setAttribute('aria-hidden', 'true');
+        box.appendChild(typed);
+      }
+      if (typed) {
+        if (!cell.text) typed.remove();
+        else typed.textContent = ahead ? cell.text : lowerUnderLowercase(cell.text, box.firstElementChild?.textContent ?? '');
+      }
+      if (!gap && !ahead) {
+        box.classList.toggle('eb-ok', cell.result === 'correct');
+        box.classList.toggle('eb-bad', cell.result === 'incorrect');
+        box.classList.toggle('eb-miss', cell.result === 'missed');
+      }
+      this.pendingTyped.delete(key);
+    }
+  }
+
+  /** The box of a played character, from its key (block and text offset); a gap's key is the character before it. */
+  private charBox(key: string): HTMLElement | undefined {
+    const [block, at] = key.split(':').map(Number);
+    const view = this.views.get(block);
+    if (!view) return undefined;
+    const words = view.words;
+    let w = words.length - 1;
+    while (w > 0 && words[w].start > at) w--;
+    const word = words[w];
+    if (!word) return undefined;
+    const k = Math.min(at - word.start, word.text.length - 1);
+    const index = Math.max(0, word.offs.findIndex(o => o >= k));
+    return word.spans[index];
   }
 
   private build(index: number, block: EbookBlock): BlockView {
@@ -181,6 +272,8 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       const text = m[2];
       const box = document.createElement('span');
       box.className = text.length > LONG_WORD ? 'eb-w eb-long' : 'eb-w';
+      // A prosign is never blurred: it is not typed or scored, so there is nothing to hide
+      if (SIGN_WORD.test(text) && MORSE_TABLE[text.slice(0, text.indexOf('>') + 1).toUpperCase()]) box.classList.add('eb-sign');
       const rest = document.createTextNode(text);
       box.appendChild(rest);
       el.appendChild(box);
@@ -238,7 +331,10 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     while (word.spans.length < want) {
       const span = document.createElement('span');
       span.className = 'eb-c';
-      span.textContent = word.chars[word.spans.length];
+      const glyph = document.createElement('span');
+      glyph.className = 'eb-ch';
+      glyph.textContent = word.chars[word.spans.length];
+      span.appendChild(glyph);
       word.el.insertBefore(span, word.rest);
       word.spans.push(span);
     }
@@ -268,6 +364,12 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     this.firstScroll = false;
     scroll.scrollTo({ top: target, behavior: instant ? 'auto' : 'smooth' });
   }
+}
+
+/** What is typed is upper case; under a lower-case letter of the book it is drawn lower case, so it matches the text. */
+function lowerUnderLowercase(typed: string, glyph: string): string {
+  const lower = glyph !== glyph.toUpperCase() && glyph === glyph.toLowerCase();
+  return lower ? typed.toLowerCase() : typed;
 }
 
 /** The text position under a point on the page (the standard call, or the older WebKit one). */

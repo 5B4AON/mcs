@@ -62,7 +62,7 @@ export class ClearService {
     return JSON.stringify([
       s.practiceContentMode, s.practiceGroupCount, s.practiceCharGroupSize, s.practiceIncludeLetters,
       s.practiceIncludeNumbers, s.practiceIncludePunctuation, s.practiceKochLesson, s.practiceWordLengths,
-      s.practiceFeedbackMode, s.practiceRounds, s.practicePipeline, s.practiceSource,
+      s.practiceFeedbackMode, s.practiceEbookFeedbackMode, s.practiceRounds, s.practicePipeline, s.practiceSource,
     ]);
   });
 

@@ -20,8 +20,13 @@ app-ebook-reader {
   white-space: normal;
   word-break: normal;
   letter-spacing: inherit;
-  line-height: 1.5;
+  --eb-lh: 1.5;
+  line-height: var(--eb-lh);
   outline-offset: -2px;
+}
+/* Type-along: every line has room for the typed text under it */
+.eb-scroll.eb-typed {
+  line-height: calc(var(--eb-lh) * 2);
 }
 .eb-scroll.eb-hidden {
   display: none;
@@ -70,21 +75,132 @@ app-ebook-reader {
 }
 
 /*
- * A played character is a box of its own that is scaled by a transform, which does not move anything
- * else, so the text never reflows while it is played.
+ * A played character is a box of its own (`.eb-c`) that holds the glyph (`.eb-ch`) and, in Type-along, the typed text.
+ * The glyph is scaled by a transform, which does not move anything else, so the text never reflows while it is played.
  */
 .eb-c {
+  position: relative;
+  display: inline-block;
+}
+.eb-ch {
   display: inline-block;
   transform: scale(1.12);
   transform-origin: 50% 70%;
   color: var(--eb-played, #1d5fa6);
   transition: color .15s ease, transform .15s ease, background-color .15s ease;
 }
-.eb-c.eb-cur {
+/* In Type-along the lines are twice as high; the glyph box (and its highlight) must stay one line high so it does not cover the typed text below it */
+.eb-typed .eb-ch {
+  line-height: 1.25;
+}
+.eb-c.eb-cur .eb-ch {
   transform: scale(1.4);
   color: var(--eb-current, #111);
   background-color: var(--eb-current-bg, rgba(255, 190, 0, .65));
   border-radius: 2px;
+}
+
+/*
+ * Typed text sits under its character: the line is twice as high, so one line height below the character
+ * is free. The character's own box is two lines high and its glyph is in the middle of it.
+ */
+.eb-t {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--eb-lh) * 2em - .5em);
+  transform: translateX(-50%);
+  line-height: 1;
+  white-space: nowrap;
+  font-weight: 400;
+  color: var(--eb-typed, #8a3a0c);
+  z-index: 2;
+  pointer-events: none;
+  user-select: none;
+}
+/* Typed under a gap between words: centred on the gap, after the character before it */
+.eb-t.eb-tg {
+  left: calc(100% + .3em);
+}
+
+/* Typed before it has played: grey, starting after the last played character and running under the text still to come */
+.eb-t.eb-tp {
+  left: 100%;
+  transform: none;
+  white-space: pre;
+  color: var(--eb-pending, #8f8f8f);
+}
+.eb-t.eb-tpg {
+  left: calc(100% + .6em);
+}
+
+/* How the typing compares: shown after Validate, or while the eye button is held */
+.eb-scored .eb-ok .eb-ch,
+.blur-revealing .eb-scroll .eb-ok .eb-ch {
+  color: #2e7d32;
+  text-shadow: 0 0 4px rgba(46, 125, 50, .5);
+}
+.eb-scored .eb-bad .eb-ch,
+.blur-revealing .eb-scroll .eb-bad .eb-ch {
+  color: #ff1744;
+  text-shadow: 0 0 4px rgba(255, 23, 68, .5);
+}
+.eb-scored .eb-miss .eb-ch,
+.blur-revealing .eb-scroll .eb-miss .eb-ch {
+  color: #777;
+  text-shadow: 0 0 4px rgba(119, 119, 119, .4);
+}
+.eb-scored .eb-bad .eb-t,
+.blur-revealing .eb-scroll .eb-bad .eb-t {
+  color: #ff1744;
+}
+.fs-conversation .eb-scored .eb-ok .eb-ch,
+.fs-conversation.blur-revealing .eb-scroll .eb-ok .eb-ch {
+  color: #4caf50;
+  text-shadow: 0 0 6px rgba(76, 175, 80, .6);
+}
+
+.eb-score {
+  position: absolute;
+  top: .4rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: .25rem .9rem;
+  border-radius: 999px;
+  background: rgba(30, 24, 18, .82);
+  color: #fff;
+  font-size: .8rem;
+  line-height: 1.3;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/*
+ * Blurred and Type-along blur the book: the glyphs are made transparent and given a wide shadow of their own colour
+ * (a text node cannot be filtered; a shadow's radius is twice a filter's, so this is stronger than the blur of the
+ * other practice text). The characters that have played are boxes, so holding the eye button can show those and
+ * leave the rest blurred. The current character keeps its highlight, and typed text is never blurred.
+ */
+.blur-rx .eb-scroll,
+.blur-tx .eb-scroll,
+.blur-both .eb-scroll {
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 .55em currentColor, 0 0 .55em currentColor, 0 0 .55em currentColor;
+}
+/* Prosigns are not typed or scored, so they are never blurred */
+.eb-scroll .eb-sign {
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+}
+.blur-revealing .eb-scroll .eb-ch {
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
+}
+.blur-rx .eb-scroll .eb-t,
+.blur-tx .eb-scroll .eb-t,
+.blur-both .eb-scroll .eb-t {
+  -webkit-text-fill-color: currentColor;
+  text-shadow: none;
 }
 
 .eb-empty {
@@ -118,8 +234,16 @@ app-ebook-reader {
 }
 .fs-conversation.ebook-on .eb-scroll {
   padding: 0 .75rem;
-  line-height: var(--fs-lh, 1.5);
+  --eb-lh: var(--fs-lh, 1.5);
+  line-height: var(--eb-lh);
   scrollbar-color: currentColor transparent;
+}
+.fs-conversation.ebook-on .eb-scroll.eb-typed {
+  line-height: calc(var(--eb-lh) * 2);
+}
+/* The full-screen line height is a length, not a multiple of the font size */
+.fs-conversation.ebook-on .eb-t {
+  top: calc(var(--eb-lh) * 2 - .5em);
 }
 .fs-conversation.ebook-on .eb-block {
   margin-bottom: max(var(--fs-gap, 0px), .6em);
@@ -129,7 +253,7 @@ app-ebook-reader {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .eb-c {
+  .eb-ch {
     transition: none;
   }
 }

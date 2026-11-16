@@ -2,12 +2,12 @@
  * Morse Code Studio
  */
 
-import { not, settingIs } from '../engine/conditions';
+import { settingIs } from '../engine/conditions';
 import { Condition, WizardFlow } from '../engine/flow-types';
 import { farnsworthStep, soundStep, speedStep } from './shared-steps';
 import { farnsworthProblems, sidetoneProblems } from './direction-checks';
 
-/** The book is the content: scoring, rounds and feedback make no sense, so those pages give way to the book's own. */
+/** The book is the content: scoring and rounds make no sense, so that page gives way to the book's own (its feedback choice is on the book page). */
 const ebook: Condition = settingIs('practiceContentMode', 'ebook');
 
 /**
@@ -50,16 +50,15 @@ export const PRACTICE_FLOW: WizardFlow = {
     {
       id: 'book',
       title: 'Which book or text?',
-      intro: 'Choose a file, type or paste your own text, or give a web address. A book has no score or rounds. It loads as soon as you choose it.',
+      intro: 'Choose a file, type or paste your own text, or give a web address. A book has no rounds. It loads as soon as you choose it. You choose how to check your copy on the next page.',
       helpSection: 's3-7',
       when: ebook,
       items: [{ item: 'practice-book' }],
     },
     {
       id: 'feedback',
-      title: 'How is it scored?',
-      when: not(ebook),
-      intro: 'Type-along: type what you hear, then check it. Blurred hides the text until you peek, and Listen only shows it as it plays. The Koch method is always Type-along. More rounds give a score for each round and an average.',
+      title: 'How do you check your copy?',
+      intro: 'Type-along: type what you hear, then check it. Blurred hides the text until you peek, and Listen only shows it as it plays. The Koch method is always Type-along. More rounds give a score for each round and an average. A book has no rounds: it starts as Listen only, and Blurred and Type-along keep the text still to come blurred (Type-along also scores your typing at the end of the book).',
       helpSection: 's3-5',
       items: [{ item: 'practice-feedback' }],
     },

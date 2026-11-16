@@ -313,7 +313,7 @@ export class EbookService {
     const saved = loadResume(id);
     const start = this.window?.held()[0]?.offset ?? 0;
     if (!saved || saved.offset <= start) return false;
-    await this.restartAt(saved.offset, saved.exact);
+    await this.restartAt(saved.offset, saved.exact, saved.inside);
     // A place that cannot be read any more leaves the book at its start
     if (this.error()) this.error.set('');
     return true;
@@ -335,7 +335,7 @@ export class EbookService {
       forgetResume(id);
       return false;
     }
-    await this.restartAt(saved.offset, saved.exact);
+    await this.restartAt(saved.offset, saved.exact, saved.inside);
     return !this.error();
   }
 
@@ -349,7 +349,7 @@ export class EbookService {
     this.saveTimer = setTimeout(() => this.flushSave(), SAVE_EVERY_MS);
   }
 
-  /** Write the place in the book now: the start of the paragraph being read, never the text. */
+  /** Write the place in the book now: the paragraph being read and how far into it, never the text. */
   private flushSave(): void {
     if (this.saveTimer) {
       clearTimeout(this.saveTimer);
@@ -368,9 +368,13 @@ export class EbookService {
     let index = pos.block;
     let block = window.block(index);
     if (!block) return;
-    // A very long paragraph was cut into several blocks: go back to where it began
-    while (block.continued && window.block(index - 1)) block = window.block(--index) as typeof block;
-    saveResume(id, block.offset ?? 0, !block.continued);
+    // A very long paragraph was cut into several blocks: go back to where it began, counting how far into it the reading is
+    let inside = pos.at;
+    while (block.continued && window.block(index - 1)) {
+      block = window.block(--index) as typeof block;
+      inside += block.text.length;
+    }
+    saveResume(id, block.offset ?? 0, !block.continued, inside);
   }
 
   /** Go back to the beginning of the book. */
@@ -392,9 +396,10 @@ export class EbookService {
   /**
    * Read the book from a block offset. Inside the part already held it only moves the position; otherwise
    * the window is read again from there. A failed jump (no text there) changes nothing. With `exact` the
-   * offset is the start of a paragraph (a remembered place), so reading begins right there.
+   * offset is the start of a paragraph (a remembered place), so reading begins right there, `inside` characters
+   * into it when the place was remembered in the middle of the paragraph.
    */
-  private async restartAt(offset: number, exact = false): Promise<void> {
+  private async restartAt(offset: number, exact = false, inside = 0): Promise<void> {
     const opener = this.opener;
     if (!opener) return;
     const held = this.window?.held() ?? [];
@@ -404,6 +409,7 @@ export class EbookService {
       const i = held.findIndex(b => (b.offset ?? 0) >= offset);
       this.setPosition({ block: this.window.first + i, at: 0 });
       this.baseline = offset === 0 ? this.position() : null;
+      if (exact && inside > 0) await this.moveInside(inside);
       return;
     }
     // Near the end there may be no paragraph left after the offset: step back a page at a time
@@ -420,6 +426,25 @@ export class EbookService {
     this.position.set(this.snap({ block: 0, at: 0 }));
     this.baseline = offset === 0 ? this.position() : null;
     this.revision.update(n => n + 1);
+    if (exact && inside > 0) await this.moveInside(inside);
+  }
+
+  /** Move the reading `inside` characters into the paragraph it is at the start of (across the pieces of a very long one). */
+  private async moveInside(inside: number): Promise<void> {
+    const window = this.window;
+    if (!window) return;
+    let block = this.position().block;
+    let rest = inside;
+    for (;;) {
+      const here = window.block(block);
+      if (!here || rest < here.text.length) break;
+      await window.ensure(block + 1);
+      if (!window.block(block + 1)?.continued) break;
+      rest -= here.text.length;
+      block++;
+    }
+    const text = window.block(block)?.text ?? '';
+    this.setPosition({ block, at: Math.min(rest, Math.max(0, text.length - 1)) });
   }
 
   /** Open a window on the book at `offset` and read the first part; null (with `error` set) when that fails or has no text to play. */

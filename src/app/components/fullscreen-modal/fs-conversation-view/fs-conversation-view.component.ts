@@ -11,6 +11,7 @@ import { AppSettings, SettingsService } from '../../../services/settings.service
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService, PlayingPattern } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
+import { ReplayUnit, replayChoiceLabel, replayChoices, replayWordLabel } from '../../../services/replay-units';
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
@@ -27,6 +28,7 @@ import { KochHelpOverlayComponent } from '../../koch-help-overlay/koch-help-over
 import { formatText, formatLine, endsWithShowEmoji, groupWords } from '../fullscreen-format.utils';
 import { FsLensViewComponent } from '../fs-lens-view/fs-lens-view.component';
 import { PracticeNextLessonComponent } from '../../practice-next-lesson/practice-next-lesson.component';
+import { PracticeCompareComponent } from '../../practice-compare/practice-compare.component';
 import { MorsePatternComponent } from '../../morse-pattern/morse-pattern.component';
 import { FireworksComponent } from '../../fireworks/fireworks.component';
 import * as practiceUi from '../../settings-items/practice/practice-ui.utils';
@@ -49,7 +51,7 @@ import * as sendPracticeUi from '../../settings-items/send-practice/send-practic
 @Component({
   selector: 'app-fs-conversation-view',
   standalone: true,
-  imports: [FsLensViewComponent, EbookReaderComponent, PracticeNextLessonComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent, AudioFilePlayerComponent],
+  imports: [FsLensViewComponent, EbookReaderComponent, PracticeNextLessonComponent, PracticeCompareComponent, FireworksComponent, MorsePatternComponent, KochHelpOverlayComponent, AudioFilePlayerComponent],
   templateUrl: './fs-conversation-view.component.html',
   styleUrls: ['./fs-conversation-view.component.css'],
 })
@@ -113,6 +115,18 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Practice briefing, feedback and typed text are shown only in Type mode so Key mode shows keyed characters. */
   get practiceView(): boolean {
     return this.isPractice && this.inputMode === 'type';
+  }
+
+  /** Type-along practice shows the challenge with what was typed under each character (a book has its own reader). */
+  get practiceCompare(): boolean {
+    return this.practiceView && this.practice.feedbackMode() === 'typealong' && !this.ebookView;
+  }
+
+  /** Colour of the practice challenge: the practice colour, else the RX or TX colour of its direction. */
+  get practiceColor(): string {
+    const s = this.settings.settings();
+    const d = this.settings.modalDisplay();
+    return s.practiceColor || (s.practiceSource === 'rx' ? d.rxForeground : d.txForeground);
   }
 
   /** Send practice shows its prompt and keyed text in Key mode only (Type mode ends it). */
@@ -221,12 +235,12 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
    */
   get blurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
-    // A book is read as it is: the text blur setting does not apply, and there is nothing to reveal or replay
-    if (this.ebook.active()) return null;
+    // A book is read as it is: the text blur setting does not apply; only the practice's own Blurred and Type-along blur it
+    if (this.ebook.active() && (s.encoderMode !== 'practice' || this.practice.feedbackMode() === 'listen')) return null;
     if (s.encoderMode === 'send-practice') return null;
     if (s.encoderMode === 'practice' && this.inputMode === 'key') return null;
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
-      if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
+      if (this.practice.feedback().length > 0) {
         return null;
       }
       return s.practiceSource;
@@ -274,8 +288,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get replayAvailable(): boolean {
     if (this.encoder.replayPending()) return true;
-    if (!this.hasText) return false;
     if (this.isPractice) return this.practice.replayableText() !== '';
+    if (!this.hasText) return false;
     return !this.encoder.isSending() && this.displayBuffers.fullscreenConversation.lastLine() !== null;
   }
 
@@ -284,23 +298,82 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return this.encoder.replayPending();
   }
 
+  /** True while the "Replay last:" question of the replay button is open. */
+  replayMenuOpen = false;
+
+  /** Name and tooltip of the replay button. */
+  get replayLabel(): string {
+    return this.replayStops ? 'Stop replay' : 'Replay the last character, ' + this.replayWordLabel.toLowerCase() + ' or line';
+  }
+
+  /** The choices the replay question offers for the text on screen (or the played part of the practice sequence). */
+  get replayChoices(): ReplayUnit[] {
+    if (this.isPractice) return replayChoices(this.practice.replayableText(), this.practice.pausedMidWord());
+    return replayChoices(this.displayBuffers.fullscreenConversation.lastLine()?.text ?? '');
+  }
+
+  /** The name of a word or group in the tooltip: Word, or Group / Callsign where the practice content has no words. */
+  get replayWordLabel(): string {
+    return replayWordLabel(this.settings.settings());
+  }
+
+  /** The text of one choice of the replay question. */
+  replayChoiceLabel(unit: ReplayUnit): string {
+    return replayChoiceLabel(unit, this.settings.settings(), this.isPractice && this.practice.pausedMidWord());
+  }
+
   /**
-   * Replay what is on screen without drawing it again. In practice the completed part of the
-   * sequence plays again; otherwise the last line is sent through the encoder's outputs, after the app's
-   * confirmation when they are external. The practice button (TX button in Type mode) pauses and
-   * resumes it, and pressing the replay button while one is playing or paused stops it.
+   * The replay button stops a replay that is playing or paused. Otherwise it asks "Replay last:"
+   * character, word (group, callsign) or line; see `onReplayChoice`. The practice button
+   * (TX button in Type mode) pauses and resumes the replay.
    */
   onReplay(): void {
     if (this.encoder.replayPending()) {
+      this.replayMenuOpen = false;
       if (this.isPractice) this.practice.stopReplay();
       else this.encoder.stopReplay();
-    } else if (this.isPractice) {
-      this.practice.replay();
+      this.requestTypeInputFocus();
+      return;
+    }
+    const choices = this.replayChoices;
+    if (choices.length === 1) {
+      this.onReplayChoice(choices[0]);
+      return;
+    }
+    this.replayMenuOpen = !this.replayMenuOpen;
+    if (this.replayMenuOpen) {
+      setTimeout(() => document.querySelector<HTMLElement>('.fs-replay-menu .pill-btn')?.focus());
     } else {
-      const line = this.displayBuffers.fullscreenConversation.lastLine();
-      if (line) this.replayRequested.emit(line.text);
+      this.requestTypeInputFocus();
+    }
+  }
+
+  /**
+   * Replay the chosen end of what is on screen without drawing it again. In practice it is the completed
+   * part of the sequence; otherwise the last line is sent through the encoder's outputs, after the app's
+   * confirmation when they are external.
+   */
+  onReplayChoice(unit: ReplayUnit): void {
+    this.replayMenuOpen = false;
+    if (this.isPractice) {
+      this.practice.replay(unit);
+    } else {
+      const part = this.displayBuffers.fullscreenConversation.lastPart(unit);
+      if (part) this.replayRequested.emit(part);
     }
     this.requestTypeInputFocus();
+  }
+
+  /** Close the question without replaying (Escape) and give focus back to the replay button. */
+  closeReplayMenu(event?: Event): void {
+    event?.preventDefault();
+    this.replayMenuOpen = false;
+    document.querySelector<HTMLElement>('.fs-replay-wrap > .fs-float-btn')?.focus();
+  }
+
+  @HostListener('document:click')
+  onDocumentClick(): void {
+    this.replayMenuOpen = false;
   }
 
   /** Start revealing blurred text (momentary hold) */
@@ -443,7 +516,13 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
       if (inputEvent.inputType.startsWith('delete')) {
         this.practice.userInput.set(this.practice.userInput().slice(0, -1));
       } else if (inputEvent.data) {
-        this.practice.userInput.set(this.practice.userInput() + inputEvent.data.toUpperCase());
+        // Only the first of several spaces typed in a row counts
+        let answer = this.practice.userInput();
+        for (const char of inputEvent.data.toUpperCase()) {
+          if (/\s/.test(char) && /\s$/.test(answer)) continue;
+          answer += char;
+        }
+        this.practice.userInput.set(answer);
       }
     } else if (!isPractice && this.typesIntoDraft) {
       // While a send runs, new text is a new message: it is queued behind the send when Enter is pressed
@@ -516,7 +595,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** Refocus typing when the conversation is clicked in Type mode. */
   onConversationClick(): void {
     // Reading a book needs no typing, so the on-screen keyboard must not come up
-    if (this.inputMode === 'type' && !this.celebrating && !this.ebookView) this.focusTypeInput();
+    if (this.inputMode === 'type' && !this.celebrating && (!this.ebookView || this.practice.feedbackMode() === 'typealong')) this.focusTypeInput();
   }
 
   /**

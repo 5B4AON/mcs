@@ -124,6 +124,13 @@ export class PracticeItemComponent {
     });
   }
 
+  /** Handle the e-book's own feedback mode change */
+  onEbookFeedbackModeChange(event: Event): void {
+    this.scope.update({
+      practiceEbookFeedbackMode: (event.target as HTMLSelectElement).value as PracticeFeedbackMode,
+    });
+  }
+
   /** Handle Type-along session round count change */
   onRoundsChange(event: Event): void {
     this.scope.update({

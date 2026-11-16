@@ -63,7 +63,8 @@ export class EbookFeed {
     const positions: EbookPosition[] = [];
     const push = (char: string, at: EbookPosition): void => {
       text += char;
-      positions.push(at);
+      // One position per character of the text, also for a prosign such as <AR>
+      for (let k = 0; k < char.length; k++) positions.push(at);
     };
 
     while (!this.ended && text.length < minChars) {

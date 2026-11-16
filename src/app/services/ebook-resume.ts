@@ -8,6 +8,8 @@ export interface EbookResumeEntry {
   offset: number;
   /** True when `offset` is the start of a paragraph, so reading can begin exactly there */
   exact: boolean;
+  /** How many characters into that paragraph the reading was (counted across the pieces of a very long paragraph); 0 for its start */
+  inside: number;
   /** When it was saved (ms since 1970), to drop the oldest first */
   at: number;
 }
@@ -36,7 +38,12 @@ function read(): Store {
     const store: Store = {};
     for (const [id, e] of Object.entries(parsed as Record<string, Partial<EbookResumeEntry>>)) {
       if (e && typeof e.offset === 'number' && Number.isFinite(e.offset) && e.offset >= 0) {
-        store[id] = { offset: e.offset, exact: e.exact === true, at: typeof e.at === 'number' ? e.at : 0 };
+        store[id] = {
+          offset: e.offset,
+          exact: e.exact === true,
+          inside: typeof e.inside === 'number' && Number.isFinite(e.inside) && e.inside > 0 ? Math.round(e.inside) : 0,
+          at: typeof e.at === 'number' ? e.at : 0,
+        };
       }
     }
     return store;
@@ -59,9 +66,9 @@ export function loadResume(id: string): EbookResumeEntry | null {
   return read()[id] ?? null;
 }
 
-export function saveResume(id: string, offset: number, exact: boolean): void {
+export function saveResume(id: string, offset: number, exact: boolean, inside = 0): void {
   const store = read();
-  store[id] = { offset: Math.max(0, Math.round(offset)), exact, at: Date.now() };
+  store[id] = { offset: Math.max(0, Math.round(offset)), exact, inside: exact ? Math.max(0, Math.round(inside)) : 0, at: Date.now() };
   write(store);
 }
 

@@ -38,6 +38,8 @@ const TIMELINE_START_S = 0.02;
  * time (MIDI places its notes from it), and the sent index moves then too.
  */
 const TIMELINE_FORWARD_S = 0.03;
+/** After the last tone of a pause: a little longer than the element's own off timer, so that has run before sending stops */
+const TIMELINE_PAUSE_MARGIN_S = 0.02;
 /** A gap shorter than this needs no snap-to-silence event after the tone before it (see `scheduleToneAt`) */
 const SNAP_GAP_MS = 35;
 
@@ -156,6 +158,10 @@ export class MorseEncoderService {
   /** Timers of the things shown or felt while a local token plays (sprite, Lens, symbols, vibration); they never carry the timing */
   private timelineTimers = new Set<ReturnType<typeof setTimeout>>();
   private timelineActive = false;
+  /** A pause was asked for: no new character is placed, the ones already placed play out whole, then sending stops */
+  private pausing = false;
+  /** Wakes the timeline from its wait for the next token to be placed (a pause must not wait out a long gap) */
+  private wakeTimeline: (() => void) | null = null;
   private timelineKeyDown = false;
 
   /** The buffer is fed with `appendText`, so what has been sent is dropped from its front as it goes */
@@ -236,6 +242,8 @@ export class MorseEncoderService {
 
   /** Start TX */
   startTx(): void {
+    // Resuming while a pause is still playing out its last character: just carry on
+    this.pausing = false;
     // Enter mode: drop spaces at the end of the message, and at its start when sending has not begun
     if (!this.replayMode() && this.settings.settings().encoderMode === 'enter') {
       const sent = this.sentIndex();
@@ -248,8 +256,24 @@ export class MorseEncoderService {
     this.processSend();
   }
 
+  /**
+   * Pause TX without cutting a character in half: the character that is sounding (and any already
+   * placed behind it) plays to its end, then sending stops with the sent index after it, so
+   * resume carries on with the next character. Use `stopTx` to stop at once.
+   */
+  pauseTx(): void {
+    if (!this.isSending()) return;
+    if (!this.timelineActive) {
+      this.stopTx();
+      return;
+    }
+    this.pausing = true;
+    this.wakeTimeline?.();
+  }
+
   /** Stop TX */
   stopTx(): void {
+    this.pausing = false;
     this.isSending.set(false);
     this.abortController?.abort();
     this.cancelWordGapTimer();
@@ -259,7 +283,9 @@ export class MorseEncoderService {
   /** Toggle TX */
   toggleTx(): void {
     if (this.isSending()) {
-      this.stopTx();
+      // A replay pauses at the end of its character; typed text stops at once
+      if (this.replayMode()) this.pauseTx();
+      else this.stopTx();
     } else {
       this.startTx();
     }
@@ -395,7 +421,12 @@ export class MorseEncoderService {
     } finally {
       this.sending = false;
       this.typedPattern.set(null);
-      if (signal.aborted) {
+      const pausedHere = this.pausing && !signal.aborted
+        && (replay ? this.replayIndex() < this.replayText.length : this.sentIndex() < this.buffer().length);
+      this.pausing = false;
+      if (pausedHere) {
+        this.isSending.set(false);
+      } else if (signal.aborted) {
         // A new send or replay may have started while the interrupted tone was finishing.
         if (this.isSending()) void this.processSend();
       } else if (replay && this.replayIndex() >= this.replayText.length) {
@@ -439,8 +470,9 @@ export class MorseEncoderService {
    * timers here only wake the loop and move the sent index (the highlight) just before a token starts. The
    * sidetone and the opto output are placed on the audio clock and the serial pulses at the page-clock
    * times that belong to it; WinKeyer and the relay are handed each character then, and MIDI with its exact
-   * start time, from which it places its notes with Web MIDI timestamps. A pause or
-   * stop drops what is placed, and the token that was sounding is played again in full on resume.
+   * start time, from which it places its notes with Web MIDI timestamps. A stop drops what is placed, and the
+   * token that was sounding is played again in full on resume; a pause (`pauseTx`) stops placing, lets the
+   * characters already placed play out whole and leaves the sent index after the last of them.
    */
   private async runTimeline(signal: AbortSignal, replay: boolean): Promise<void> {
     const text = (): string => replay ? this.replayText : this.buffer();
@@ -466,10 +498,12 @@ export class MorseEncoderService {
     let cursor = index();
     // When the next token to place starts
     let next = clock() + TIMELINE_START_S;
+    // The end of the last character that started sounding, and where the text goes on after it (for a pause)
+    let lastSound: { end: number; endIdx: number } | null = null;
     try {
       for (;;) {
         // Place tokens until the audio clock has enough of them ahead
-        while (cursor < text().length && next - clock() < TIMELINE_LEAD_S && !signal.aborted) {
+        while (cursor < text().length && next - clock() < TIMELINE_LEAD_S && !signal.aborted && !this.pausing) {
           const { token, endIdx } = this.extractToken(text(), cursor);
           // The page stalled for longer than the look-ahead: carry on from now rather than in the past
           if (next < clock()) next = clock() + 0.005;
@@ -480,9 +514,23 @@ export class MorseEncoderService {
         }
         if (signal.aborted) return;
 
+        // Paused: nothing that makes a sound is left to start, so let the last character end and stop after it
+        if (this.pausing && queue.every(q => q.elements.length === 0)) {
+          if (lastSound) {
+            await wait(lastSound.end + TIMELINE_PAUSE_MARGIN_S);
+            if (signal.aborted || !this.pausing) {
+              if (signal.aborted) return;
+              continue;
+            }
+            setIndex(lastSound.endIdx);
+          }
+          return;
+        }
+
         if (queue.length === 0) {
           if (cursor < text().length) {
-            await wait(next - TIMELINE_LEAD_S);
+            await Promise.race([wait(next - TIMELINE_LEAD_S), new Promise<void>(resolve => { this.wakeTimeline = resolve; })]);
+            this.wakeTimeline = null;
             if (signal.aborted) return;
             continue;
           }
@@ -497,6 +545,10 @@ export class MorseEncoderService {
         }
 
         const head = queue.shift() as TimelineToken;
+        if (head.elements.length) {
+          const tail = head.elements[head.elements.length - 1];
+          lastSound = { end: head.at + (tail.offset + tail.dur) / 1000, endIdx: head.endIdx };
+        }
         // Wake a little early, so the outputs that time themselves can be handed the exact start time
         await wait(head.at - TIMELINE_FORWARD_S);
         if (signal.aborted) return;

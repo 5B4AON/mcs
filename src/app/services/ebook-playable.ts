@@ -13,7 +13,7 @@ import { gapPause } from './ebook-pauses';
 export interface PlayableChar {
   /** Offset of the displayed character in `EbookBlock.text` (an expansion such as "..." shares one) */
   at: number;
-  /** Upper-case character in the Morse table, or a single space for a word gap */
+  /** Upper-case character in the Morse table, a prosign written `<AR>` (one sign, sent continuously), or a single space for a word gap */
   char: string;
   /** Extra pause after this character, in word gaps (set on gaps only; see `ebook-pauses.ts`) */
   pause: number;
@@ -27,6 +27,9 @@ const TYPOGRAPHIC: Record<string, string> = {
   '\u2026': '...',
   '\u00E6': 'AE', '\u00C6': 'AE', '\u0153': 'OE', '\u0152': 'OE', '\u00DF': 'SS', '\u00F8': 'O', '\u00D8': 'O',
 };
+
+/** A prosign written as letters between angle brackets */
+const PROSIGN_TOKEN = /^<[A-Za-z]{2,3}>/;
 
 const COMBINING_MARKS = /[\u0300-\u036F]/g;
 const WHITESPACE = /\s/;
@@ -63,6 +66,17 @@ export function playableChars(block: EbookBlock): PlayableChar[] {
   let before = '';
   let i = 0;
   while (i < text.length) {
+    // A prosign written in the text, such as <AR> or <SK>, is one sign sent continuously, not its letters one by one
+    if (text[i] === '<') {
+      const match = PROSIGN_TOKEN.exec(text.slice(i, i + 6));
+      const sign = match ? match[0].toUpperCase() : '';
+      if (sign && MORSE_TABLE[sign]) {
+        out.push({ at: i, char: sign, pause: 0 });
+        before = (before + sign.slice(-2, -1)).slice(-4);
+        i += sign.length;
+        continue;
+      }
+    }
     const cp = text.codePointAt(i) ?? 0;
     const char = String.fromCodePoint(cp);
     const width = char.length;

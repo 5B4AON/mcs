@@ -6,6 +6,10 @@
 export interface EbookReaderColors {
   current: string;
   currentBackground: string;
+  /** The learner's typed text under the book */
+  typed: string;
+  /** Text typed before it has played */
+  pending: string;
 }
 
 /** Whether a `#rgb` or `#rrggbb` colour is light (anything else counts as dark, like the full screen's default). */
@@ -20,6 +24,6 @@ export function isLightColor(hex: string): boolean {
 /** Colours that stay readable on the given background. */
 export function ebookReaderColors(background: string): EbookReaderColors {
   return isLightColor(background)
-    ? { current: '#111', currentBackground: 'rgba(255, 190, 0, .65)' }
-    : { current: '#000', currentBackground: 'rgba(255, 205, 60, .9)' };
+    ? { current: '#111', currentBackground: 'rgba(255, 190, 0, .65)', typed: '#8a3a0c', pending: '#8f8f8f' }
+    : { current: '#000', currentBackground: 'rgba(255, 205, 60, .9)', typed: '#ffd27a', pending: '#9a9a9a' };
 }

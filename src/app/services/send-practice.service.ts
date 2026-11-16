@@ -41,6 +41,12 @@ export interface SendPromptMark {
   state: 'space' | 'plain' | 'correct' | 'incorrect' | 'current';
 }
 
+/** Whether a keyed character is the sign the book asks for: the same character, or a sign with the same dots and dashes (+ for <AR>). */
+function sameSign(keyed: string, expected: string): boolean {
+  const upper = keyed.toUpperCase();
+  return upper === expected || (!!MORSE_TABLE[upper] && MORSE_TABLE[upper] === MORSE_TABLE[expected]);
+}
+
 /** The keyed-text prosign that erases the last keyed character (eight dits, "error"). */
 const ERASE_PROSIGN = '<HH>';
 
@@ -535,7 +541,7 @@ export class SendPracticeService {
     const cursor = this.ebookCursor;
     const expected = cursor?.current;
     if (!cursor || !expected) return;
-    if (entry.char.length === 1 && entry.char.toUpperCase() === expected.char) {
+    if (sameSign(entry.char, expected.char)) {
       cursor.advance();
       this.showEbook();
     }

@@ -275,6 +275,38 @@ button.fs-float-btn.resume-attention {
 .pill-btn svg {
   flex-shrink: 0;
 }
+/* "Replay last:" popup of the round replay button (main screen and full screen): a title over a column of pills */
+.replay-menu {
+  position: absolute;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+  padding: .55rem .6rem;
+  background: #1a1a2a;
+  border: 1px solid #444;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0,0,0,.55);
+  white-space: nowrap;
+}
+.replay-menu-title {
+  font-size: .78rem;
+  font-weight: 600;
+  letter-spacing: .3px;
+  color: #dde4ec;
+}
+.replay-menu-row {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: .4rem;
+}
+.replay-menu .pill-btn {
+  min-width: 7rem;
+  /* the Clear menu's buttons use the browser default; an inherited line height (full screen sets a larger one) makes the pills taller */
+  line-height: normal;
+}
 /* Colour selector: a 32 px round button (the size of the help "?" button) that is a glossy sphere in the chosen colour.
    The native swatch fills the whole circle with the colour; gradients over it add the highlight and darken it to black at the rim. */
 input[type="color"].color-pill {

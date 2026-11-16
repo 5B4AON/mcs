@@ -10,6 +10,17 @@ export interface PracticeFeedback {
   result: 'correct' | 'incorrect' | 'missed';
 }
 
+/** The scoring of a typed text against its reference, and where each typed character sits under the reference. */
+export interface PracticeAlignment {
+  feedback: PracticeFeedback[];
+  /**
+   * What was typed under each reference character, in step with `feedback`: the matching character, the wrong
+   * one typed in its place, or nothing for a missed one. Extra characters typed between two right ones are
+   * dropped once the typing is back in step; extras at the very end stay on the last character.
+   */
+  typedUnder: string[];
+}
+
 /**
  * Compute per-character feedback by aligning the typed or keyed text to the
  * reference text using longest common subsequence (LCS).
@@ -17,6 +28,11 @@ export interface PracticeFeedback {
  * a correct match.
  */
 export function computePracticeFeedback(reference: string, typed: string): PracticeFeedback[] {
+  return alignPractice(reference, typed).feedback;
+}
+
+/** The same alignment as `computePracticeFeedback`, with the typed characters placed under the reference ones. */
+export function alignPractice(reference: string, typed: string): PracticeAlignment {
   const ref = reference.toUpperCase();
   const usr = typed.toUpperCase();
 
@@ -53,26 +69,32 @@ export function computePracticeFeedback(reference: string, typed: string): Pract
   // Unmatched ref chars (skipped by user) are 'missed' (grey).
   // Chars where the user typed something wrong are 'incorrect' (red) —
   // detected when the user consumed input but ref wasn't matched.
-  const result: PracticeFeedback[] = [];
+  const feedback: PracticeFeedback[] = [];
+  const typedUnder: string[] = [];
   let userIdx = 0;
   for (let ri = 0; ri < m; ri++) {
     if (matched.has(ri)) {
-      result.push({ ref: ref[ri], result: 'correct' });
-      // Advance userIdx to the matching user char
+      feedback.push({ ref: ref[ri], result: 'correct' });
+      // Advance userIdx to the matching user char (extra characters before it are dropped)
       while (userIdx < n && usr[userIdx] !== ref[ri]) userIdx++;
+      typedUnder.push(usr[userIdx] ?? '');
       userIdx++;
     } else {
       // Check if user typed an incorrect char at this position
       // (user has remaining input that didn't match)
       if (userIdx < n && !isUpcomingMatch(usr, userIdx, ref, ri, matched)) {
-        result.push({ ref: ref[ri], result: 'incorrect' });
+        feedback.push({ ref: ref[ri], result: 'incorrect' });
+        typedUnder.push(usr[userIdx]);
         userIdx++;
       } else {
-        result.push({ ref: ref[ri], result: 'missed' });
+        feedback.push({ ref: ref[ri], result: 'missed' });
+        typedUnder.push('');
       }
     }
   }
-  return result;
+  // Whatever was typed after the last reference character stays on it
+  if (m > 0 && userIdx < n) typedUnder[m - 1] += usr.slice(userIdx);
+  return { feedback, typedUnder };
 }
 
 /** Accuracy percentage (correct / total reference chars, ignoring spaces) */
@@ -96,4 +118,11 @@ function isUpcomingMatch(usr: string, userIdx: number, ref: string, refIdx: numb
     if (matched.has(ri)) break; // next match is a different char
   }
   return false;
+}
+
+/** What is drawn for the typed text under a reference character: a typed space is only worth showing where no gap was meant. */
+export function typedDisplay(typed: string, refChar: string): string {
+  let out = '';
+  for (const c of typed) out += c === ' ' ? (refChar === ' ' ? '' : '\u00B7') : c;
+  return out;
 }

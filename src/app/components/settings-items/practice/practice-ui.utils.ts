@@ -56,16 +56,19 @@ export function practiceHeading(settings: AppSettings, fallback: string): string
 }
 
 /**
- * Return the learner instruction for the selected feedback style.
+ * The one-line hint under the practice output: what is played, then what to do with it, for example
+ * "Your e-book: copy on paper or in your head while the text stays visible."
  */
-export function practiceFeedbackDescription(settings: AppSettings): string {
+export function practiceHint(settings: AppSettings): string {
+  const content = practiceSessionDescription(settings);
+  const subject = content.charAt(0).toUpperCase() + content.slice(1);
   switch (effectivePracticeFeedbackMode(settings)) {
     case 'listen':
-      return 'Listen: copy on paper or in your head while the text stays visible.';
+      return `${subject}: copy on paper or in your head while the text stays visible.`;
     case 'blur':
-      return 'Blurred: copy on paper or in your head, then hold Reveal to check.';
+      return `${subject}: copy on paper or in your head, then hold Reveal to check.`;
     case 'typealong':
-      return 'Type-along: type what you hear.';
+      return `${subject}: type what you hear.`;
   }
 }
 
@@ -114,9 +117,9 @@ export function practiceActionLabel(state: PracticeState, settings: AppSettings,
   if (state === 'idle') return 'Start';
   if (state === 'playing') return 'Pause';
   if (state === 'paused') return 'Resume';
-  return effectivePracticeFeedbackMode(settings) === 'typealong' && !hasFeedback
-    ? 'Validate'
-    : 'Next sequence';
+  // A book is read again after its check
+  const next = settings.practiceContentMode === 'ebook' ? 'Start' : 'Next sequence';
+  return effectivePracticeFeedbackMode(settings) === 'typealong' && !hasFeedback ? 'Validate' : next;
 }
 
 /**

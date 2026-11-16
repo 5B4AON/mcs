@@ -4,6 +4,27 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.20.0] - 2026-11-16
+
+### Added
+
+- **Replay asks what to repeat** — The round replay button (main screen and full screen, wherever it is offered) now opens a small **Replay last:** menu with **Character**, **Word** (**Group** for random characters and Koch, **Callsign** for callsigns) and **Line**, instead of always replaying the last line. A choice that would sound the same as a shorter one is left out, and when only Character is left the button plays it at once. In Copy practice paused in the middle of a word or group the choices are **<unit> so far** (only the unfinished one) and **Last 2 <units>** (the full one before it, then the unfinished one). A prosign counts as one character. Send practice's button is unchanged (it plays the next character).
+- **E-book Copy practice can be blurred or typed along** — A book now has its own **Feedback** choice (Settings and the Practice guide; the stored choice for other content is kept apart): **Listen only** (the default), **Blurred** and **Type-along**. The whole text stays on the page in the two colours (played and unplayed). In Blurred and Type-along it is blurred and the eye button shows only what has played, never the text to come; the replay button works as in other practice. In Type-along what you type appears under the character it belongs to, one row of typing under each row of the book, wrapping together, in the letter case of the book; the typing is placed under the next free characters and only moves when your last few characters fit another place exactly (a skipped character leaves a gap, extra characters are dropped once you are back in step), and what you type before it has played shows grey. Holding the eye button colours the played text right, wrong or missed; when the book ends the play button becomes a check button, and pressing it shows the accuracy. Clicking the text no longer jumps ahead in Type-along, and several spaces in a row count as one.
+- **Prosigns in book text** — A prosign written between angle brackets in a book or Custom text (`<AR>`, `<SK>`, `<BT>`, `<KN>`, `<AS>`, `<BK>`, `<KA>`, `<SOS>`, `<HH>`) is played as one continuous sign instead of its letters; in Send practice the prompt shows it as one item and any key with the same dots and dashes is accepted. In Copy practice it is not typed, not scored and never blurred.
+- **Typed text under the challenge in Type-along** — In ordinary Copy practice the challenge is drawn with what you typed under each character, on the main screen and in full screen, wrapping together, and it stays under the coloured result after Validate. While it plays, the eye button colours the characters heard so far.
+- **Resume exactly where you stopped** — The place in a book now includes how far into the paragraph you were, so reloading continues at that character, not at the start of the paragraph.
+
+### Changed
+
+- **No input box in Copy practice (main screen)** — The answer is typed straight into the text (Type-along) and the box's room goes to the text; the full screen and the main screen always show one answer. A click anywhere that is not a control, or the first letter typed anywhere, sends the typing to the answer.
+- **Pause finishes the sounding character** — Pausing Copy practice, or a replay, lets the character that is sounding finish, and Resume goes on with the next one (it used to cut the character and play it again).
+- **One-line Copy practice hint** — "Your e-book: copy on paper or in your head while the text stays visible." instead of two lines.
+- **Looser full-screen lines** — The base line spacing of the full screen is larger (the ×1 to ×10 buttons still step from it).
+
+### Fixed
+
+- **Typed answer out of step between screens** — Typing the answer on the main screen and in full screen could overwrite each other; both now follow one answer.
+
 ## [2.19.0] - 2026-11-15
 
 ### Added

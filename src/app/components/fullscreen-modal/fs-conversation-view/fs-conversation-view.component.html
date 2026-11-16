@@ -8,6 +8,8 @@
      [class.key-mode]="inputMode === 'key'" [class.celebrate]="celebrating" [class.ebook-on]="ebookView"
      [style.color]="ebookView ? settings.modalDisplay().rxForeground : null"
      [style.--eb-played]="ebookView ? settings.modalDisplay().txForeground : null"
+     [style.--eb-typed]="ebookView ? ebookColors.typed : null"
+     [style.--eb-pending]="ebookView ? ebookColors.pending : null"
      [style.--eb-current]="ebookView ? ebookColors.current : null"
      [style.--eb-current-bg]="ebookView ? ebookColors.currentBackground : null"
      [style.--lens-side]="lensSideInset"
@@ -75,14 +77,20 @@
       <div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div>
       <app-practice-next-lesson [accuracy]="practice.averageRoundScore()" />
     </section>
-  } @else if (practiceView && practice.feedback().length > 0) {
-    <div class="fb-results">@for (fb of practice.feedback(); track $index) {<span
-      [class.fb-correct]="fb.result === 'correct'"
-      [class.fb-incorrect]="fb.result === 'incorrect'"
-      [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</div>
-    <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
-    @if (!practice.isMultiRoundTypeAlong()) {
-      <app-practice-next-lesson [accuracy]="practice.accuracy()" />
+  } @else if (practiceCompare) {
+    <app-practice-compare [source]="settings.settings().practiceSource" [color]="practiceColor" [typedColor]="ebookColors.typed" />
+    @if (practice.feedback().length > 0) {
+      <div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>
+      @if (!practice.isMultiRoundTypeAlong()) {
+        <app-practice-next-lesson [accuracy]="practice.accuracy()" />
+      }
+    } @else {
+      @if (decoder.rxCurrentPattern()) {
+        <span class="cursor" [style.color]="settings.modalDisplay().rxForeground"><app-morse-pattern [pattern]="decoder.rxCurrentPattern()" /></span>
+      }
+      @if (decoder.txCurrentPattern()) {
+        <span class="cursor" [style.color]="settings.modalDisplay().txForeground"><app-morse-pattern [pattern]="decoder.txCurrentPattern()" /></span>
+      }
     }
   } @else {
     @for (line of conversationLines; track $index) {
@@ -127,9 +135,6 @@
         <span class="cursor"></span>
       }
     }
-    @if (practiceView && practice.feedbackMode() === 'typealong' && practice.userInput()) {
-      <div class="fs-typed-text">{{ practice.userInput() }}</div>
-    }
   }
 </div>
 
@@ -165,33 +170,48 @@
     </button>
   }
   @if (blurMode) {
-    <button class="fs-float-btn fs-float-ghost" [class.playing]="replayStops"
-            [disabled]="!replayAvailable"
-            (mousedown)="$event.preventDefault()"
-            (click)="onReplay()"
-            [title]="replayStops ? 'Stop replay' : 'Replay the last line'"
-            [attr.aria-label]="replayStops ? 'Stop replay' : 'Replay the last line'">
-      @if (replayStops) {
-        <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
-      } @else {
-        <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
-             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <g transform="translate(0.25 0.9)">
-            <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
-            <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
-            <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
-          </g>
-        </svg>
+    <div class="fs-replay-wrap">
+      <button class="fs-float-btn fs-float-ghost" [class.playing]="replayStops"
+              [disabled]="!replayAvailable"
+              (mousedown)="$event.preventDefault()"
+              (click)="$event.stopPropagation(); onReplay()"
+              [title]="replayLabel"
+              [attr.aria-label]="replayLabel"
+              [attr.aria-expanded]="replayStops ? null : replayMenuOpen">
+        @if (replayStops) {
+          <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
+        } @else {
+          <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
+               stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <g transform="translate(0.25 0.9)">
+              <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
+              <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
+              <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
+            </g>
+          </svg>
+        }
+      </button>
+      @if (replayMenuOpen && replayAvailable && !replayStops) {
+        <div class="replay-menu fs-replay-menu popup-anim open" role="group" aria-label="Replay last"
+             (click)="$event.stopPropagation()" (keydown.escape)="closeReplayMenu($event)">
+          <div class="replay-menu-title">Replay last:</div>
+          <div class="replay-menu-row">
+            @for (unit of replayChoices; track unit) {
+              <button class="pill-btn" type="button" (click)="onReplayChoice(unit)">{{ replayChoiceLabel(unit) }}</button>
+            }
+          </div>
+        </div>
       }
-    </button>
-    <button class="fs-float-btn fs-float-ghost" [class.revealing]="revealing" [disabled]="!hasText"
+    </div>
+    <button class="fs-float-btn fs-float-ghost" [class.revealing]="revealing" [disabled]="ebookView ? !ebook.loaded() : !hasText"
             (mousedown)="onRevealStart($event)"
             (mouseup)="onRevealEnd()"
             (mouseleave)="onRevealEnd()"
             (touchstart)="onRevealStart($event)"
             (touchend)="onRevealEnd()"
             (touchcancel)="onRevealEnd()"
-            title="Hold to reveal text" aria-label="Hold to reveal text">
+            [title]="ebookView ? 'Hold to see what has played so far' : 'Hold to reveal text'"
+            [attr.aria-label]="ebookView ? 'Hold to see what has played so far' : 'Hold to reveal text'">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>

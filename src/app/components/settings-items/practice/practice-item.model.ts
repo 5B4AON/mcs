@@ -45,6 +45,8 @@ export interface PracticeSettings {
   practiceWordLengths: number[];
   /** Feedback mode: listen-only, blurred reveal, or type-along */
   practiceFeedbackMode: PracticeFeedbackMode;
+  /** The same choice for an e-book, kept apart so a book starts as Listen only whatever the other content uses */
+  practiceEbookFeedbackMode: PracticeFeedbackMode;
   /** Number of Type-along rounds in a transient practice session (1–5) */
   practiceRounds: number;
   /** Pipeline: local audio only or full (serial, MIDI, RTDB, etc.) */
@@ -68,6 +70,7 @@ export const PRACTICE_DEFAULTS: PracticeSettings = {
   practiceKochLesson: 1,
   practiceWordLengths: [3, 4, 5],
   practiceFeedbackMode: 'typealong',
+  practiceEbookFeedbackMode: 'listen',
   practiceRounds: 1,
   practicePipeline: 'local',
   practiceSource: 'rx',
@@ -76,13 +79,13 @@ export const PRACTICE_DEFAULTS: PracticeSettings = {
 };
 
 /**
- * Koch method is always Type-along and an e-book is always listen only (the text is read along on screen);
+ * Koch method is always Type-along; an e-book has its own choice (Listen only until the learner picks another);
  * the stored feedback choice is kept for the other content types.
  */
 export function effectivePracticeFeedbackMode(
-  settings: Pick<PracticeSettings, 'practiceContentMode' | 'practiceFeedbackMode'>,
+  settings: Pick<PracticeSettings, 'practiceContentMode' | 'practiceFeedbackMode' | 'practiceEbookFeedbackMode'>,
 ): PracticeFeedbackMode {
-  if (settings.practiceContentMode === 'ebook') return 'listen';
+  if (settings.practiceContentMode === 'ebook') return settings.practiceEbookFeedbackMode;
   return settings.practiceContentMode === 'koch' ? 'typealong' : settings.practiceFeedbackMode;
 }
 
@@ -90,6 +93,7 @@ export const PRACTICE_FIELD_RULES: SettingsFieldRules = {
   enums: {
     practiceContentMode: PRACTICE_CONTENT_MODES,
     practiceFeedbackMode: PRACTICE_FEEDBACK_MODES,
+    practiceEbookFeedbackMode: PRACTICE_FEEDBACK_MODES,
     practicePipeline: PRACTICE_PIPELINES,
     practiceSource: DECODER_SOURCES,
   },
@@ -109,6 +113,7 @@ const REVIEW_LABELS: Partial<Record<keyof AppSettings, string>> = {
   practiceKochLesson: 'Koch lesson',
   practiceWordLengths: 'Practice word lengths',
   practiceFeedbackMode: 'Practice feedback',
+  practiceEbookFeedbackMode: 'E-book feedback',
   practiceRounds: 'Practice rounds',
   practicePipeline: 'Practice output',
   practiceSource: 'Practice direction',
@@ -117,7 +122,7 @@ const REVIEW_LABELS: Partial<Record<keyof AppSettings, string>> = {
 };
 
 const CONTENT_KEYS = ['practiceContentMode', 'practiceGroupCount', 'practiceCharGroupSize', 'practiceIncludeLetters', 'practiceIncludeNumbers', 'practiceIncludePunctuation', 'practiceKochLesson', 'practiceWordLengths'] as const;
-const FEEDBACK_KEYS = ['practiceFeedbackMode', 'practiceRounds'] as const;
+const FEEDBACK_KEYS = ['practiceFeedbackMode', 'practiceEbookFeedbackMode', 'practiceRounds'] as const;
 const IDENTITY_KEYS = ['practiceSource', 'practiceName', 'practiceColor'] as const;
 
 function contentProblems(s: AppSettings): string[] {

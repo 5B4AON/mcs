@@ -221,6 +221,10 @@
   <li>Depending on the feedback mode, the decoded text appears fully
       visible (Listen Only), blurred (Blurred and Type-Along), or blurred
       while you type what you hear in real time (Type-Along).</li>
+  <li>Copy practice has no input box on the main screen. In Type-Along you
+      just type (click the text first if the keys do not register): your
+      answer appears under the text, as in the full screen, and the two screens
+      always show the same answer. The room of the box goes to the text.</li>
   <li>In Type-Along mode, after the sequence finishes you press the
       validate button. The app compares your typed input to the reference
       using a Longest Common Subsequence (LCS) alignment and highlights
@@ -490,7 +494,10 @@
   <span style="color:#4caf50">green</span> for correct,
   <span style="color:#f44336">red</span> for incorrect, and
   <span style="color:#888">grey</span> for missed &mdash; followed by an
-  accuracy percentage.
+  accuracy percentage. What you typed stays under the text, character by
+  character (a missed character leaves a gap, a wrong one is shown in red under
+  the character it was meant for), so you can compare the two; both wrap
+  together, one row of the text over one row of your typing.
 </p>
 
 <div class="example-box">
@@ -682,7 +689,8 @@
   load the book there, and pick the practice in the Mode dropdown. The book
   fills the whole output area on the main screen and in the full-screen view
   (the Key/Type toggle stays as the practice sets it, and the text blur setting
-  does not apply to a book).
+  does not apply to a book; Copy practice has its own Feedback choice for a book,
+  see below).
 </p>
 
 <h3>What to Load</h3>
@@ -737,7 +745,12 @@
   Only English text can be played: letters, digits and the punctuation Morse
   code has. Anything else (symbols, emoji, pictures, other alphabets) is skipped
   silently and the reading goes on with the next character that can be sent;
-  accented letters are sent as the plain letter. Use only books and texts you
+  accented letters are sent as the plain letter. A prosign written between
+  angle brackets, such as <code>&lt;AR&gt;</code>, <code>&lt;SK&gt;</code>,
+  <code>&lt;BT&gt;</code> or <code>&lt;KN&gt;</code>, is sent as that one
+  continuous sign, not as its letters; in Send practice key the sign itself. In
+  Copy practice a prosign is not typed, not scored and never blurred.
+  Use only books and texts you
   are free to read, such as public-domain works and your own files.
 </p>
 
@@ -760,9 +773,40 @@
   (also <code>?</code> and <code>!</code>), and longer at the end of a list item,
   a paragraph, a heading and a chapter. The pauses are counted in word gaps, so
   they follow the speed you chose. Playback is timed on the audio clock, so dots,
-  dashes and gaps stay even whatever else the page is doing, and Pause and Resume
-  continue from the character that was interrupted.
+  dashes and gaps stay even whatever else the page is doing. Pause lets the
+  character that is sounding finish, and Resume goes on with the next one.
 </p>
+<p>
+  A book has its own <strong>Feedback</strong> choice in Copy Practice (Settings
+  &rarr; Other), and it starts as <strong>Listen only</strong>. The whole text is
+  always on the page, the characters that have played in one colour and the rest
+  in another, so you can see how much is still to come.
+</p>
+<ul>
+  <li><strong>Listen only</strong> &mdash; read along as the characters light up.</li>
+  <li><strong>Blurred</strong> &mdash; the whole text is blurred. Hold the eye
+      button to see what has played so far; the text still to come stays
+      blurred. The round replay button asks what to hear again (character,
+      group or word, line), as in other practice.</li>
+  <li><strong>Type-Along</strong> &mdash; blurred like the above, and what you
+      type appears under the character it belongs to, one row of your typing
+      under each row of the book, wrapping together. Your characters stay
+      together under the next free places: a wrong one stays where you typed
+      it, and the typing only moves to another place when your last few
+      characters fit it exactly (a skipped character leaves its place empty;
+      extra ones are dropped once you are back in step). Characters typed
+      before they have played wait for the book to catch up. Hold the eye
+      button to see the played text coloured as
+      <span style="color:#4caf50">correct</span>,
+      <span style="color:#f44336">wrong</span> or
+      <span style="color:#888">missed</span>. When the book ends the
+      play button becomes a check button, so you can finish typing; press it
+      (or Enter) to see the accuracy, and the played text keeps its colours
+      until you start again. Several spaces typed in a row count as one. Clicking the
+      text does not move the reading in this mode, so you cannot jump ahead
+      (the Book button still can). <strong>Enter</strong>
+      pauses and resumes the book.</li>
+</ul>
 
 <h3>Send Practice with a Book</h3>
 <p>
@@ -810,14 +854,17 @@
 <p>
   In the <strong>Practice receiving Morse</strong> and <strong>Practice sending
   Morse</strong> guides, choosing <em>E-book</em> replaces the scoring pages with
-  <strong>Which book or text?</strong>. The book loads at once, so Revert and
+  <strong>Which book or text?</strong> (rounds do not apply to a book;
+  its Feedback choice is on the next page). The book loads at once, so Revert and
   closing the guide do not unload it, and Apply opens the full screen.
 </p>
 
 <h3>Resuming</h3>
 <p>
   The place where you stopped is remembered for each file, web address or custom text, in
-  this browser only, and updated every couple of seconds while you read. When
+  this browser only, and updated every couple of seconds while you read. It is
+  the paragraph and the character within it, so reading goes on exactly where
+  you stopped, not at the start of the page. When
   you load the same book again you are asked whether to <strong>Resume</strong>
   or start over; choosing Resume closes Settings and takes you back to the
   practice you loaded the book from. When you start the app, or switch to E-book

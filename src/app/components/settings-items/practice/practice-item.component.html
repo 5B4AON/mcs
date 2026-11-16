@@ -120,9 +120,24 @@
   }
 
   @if (part === 'all' || part === 'feedback') {
-  <!-- Feedback mode (Koch method is always Type-along, an e-book is always listen only) -->
+  <!-- Feedback mode (Koch method is always Type-along; an e-book has its own choice, Listen only to begin with) -->
   @if (s().practiceContentMode === 'ebook') {
-    <div class="cw-hint">The book plays by itself. The characters light up in the text as they sound.</div>
+  <label>
+    Feedback:
+    <select (change)="onEbookFeedbackModeChange($event)">
+      <option value="listen" [selected]="s().practiceEbookFeedbackMode === 'listen'">Listen only</option>
+      <option value="blur" [selected]="s().practiceEbookFeedbackMode === 'blur'">Blurred (reveal button)</option>
+      <option value="typealong" [selected]="s().practiceEbookFeedbackMode === 'typealong'">Type-along</option>
+    </select>
+  </label>
+  <div class="cw-hint">
+    The book plays by itself and the characters light up in the text as they sound.
+    @if (s().practiceEbookFeedbackMode === 'blur') {
+      The text is blurred: hold the eye button to see what has played so far.
+    } @else if (s().practiceEbookFeedbackMode === 'typealong') {
+      The text is blurred and what you type appears under each character it belongs to. Hold the eye button to see what has played so far.
+    }
+  </div>
   } @else if (s().practiceContentMode !== 'koch') {
   <label>
     Feedback:
@@ -145,7 +160,7 @@
     <div class="cw-hint">Koch practice is Type-along: type what you hear, then check it.</div>
   }
 
-  @if (feedbackMode === 'typealong') {
+  @if (feedbackMode === 'typealong' && s().practiceContentMode !== 'ebook') {
     <label>
       Rounds:
       <select (change)="onRoundsChange($event)">

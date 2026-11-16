@@ -510,6 +510,11 @@
   z-index: 1;
 }
 
+/* Copy practice has no input box under the text: its room goes to the text */
+.decoded-text.roomy {
+  height: calc(12em + 3.6rem);
+}
+
 /* The e-book reader scrolls the text itself and fills the box: no padding, no ruled lines, no box scrolling */
 .decoded-text.ebook-on {
   overflow: hidden;
@@ -635,6 +640,17 @@
 }
 .blur-replay-btn-main.above-assist {
   bottom: 114px;
+}
+/* The "Replay last:" question opens to the left of the replay button */
+.replay-menu-main {
+  right: 62px;
+  bottom: 10px;
+  max-width: calc(100% - 72px);
+}
+/* With a book in Blurred or Type-along the reload button sits beside the contents button, so the column of round buttons stays short */
+.blur-replay-btn-main.beside-column {
+  right: 62px;
+  bottom: 10px;
 }
 .blur-assist-btn-main {
   bottom: 62px;
@@ -912,6 +928,25 @@
   box-shadow: inset 3px 3px 8px rgba(0,0,0,.65), inset -2px -2px 5px rgba(255,255,255,.05);
   border-radius: 4px;
   resize: vertical;
+}
+/* Copy practice: no box to see; the answer is typed into the text. The row takes no room and the box only catches the typing. */
+.encoder-input-row.input-hidden {
+  position: relative;
+  margin-top: 0;
+  height: 0;
+}
+.encoder-input-row textarea.catch-typing {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+  resize: none;
 }
 .encoder-input-row textarea:focus {
   border-color: #68a;

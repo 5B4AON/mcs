@@ -18,6 +18,7 @@ import { MidiOutputService } from './services/midi-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
+import { ReplayUnit, replayChoiceLabel, replayChoices, replayWordLabel } from './services/replay-units';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { WhatsNewService } from './services/whats-new.service';
@@ -37,6 +38,7 @@ import { TranscriptSaveService } from './services/transcript-save.service';
 import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
+import { PracticeCompareComponent } from './components/practice-compare/practice-compare.component';
 import { MorsePatternComponent } from './components/morse-pattern/morse-pattern.component';
 import { KochHelpOverlayComponent } from './components/koch-help-overlay/koch-help-overlay.component';
 import { KochHelpService } from './services/koch-help.service';
@@ -83,7 +85,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  */
 @Component({
   selector: 'app-root',
-  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, BookDialogComponent, CwScopeComponent, AudioFilePlayerComponent, PracticeNextLessonComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
+  imports: [FormsModule, CollapseDirective, MorsePatternComponent, KochHelpOverlayComponent, SendPromptComponent, EbookReaderComponent, BookDialogComponent, CwScopeComponent, AudioFilePlayerComponent, PracticeNextLessonComponent, PracticeCompareComponent, FireworksComponent, MorseSpeedsComponent, ConfirmDialogComponent, HelpComponent, SettingsModalComponent, FullscreenModalComponent, SymbolsRefComponent, SetupWizardV2Component, GoalNavigatorModalComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.css'
 })
@@ -524,10 +526,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // (handles clear from fullscreen toolbar or abort resetting the input)
     effect(() => {
       const input = this.practice.userInput();
-      if (input === '' && this.encoderInputRef
-          && this.settings.settings().encoderMode === 'practice') {
-        this.encoderInputRef.nativeElement.value = '';
-        this.encoderInputHasText = false;
+      const box = this.encoderInputRef?.nativeElement;
+      // The answer is also typed in the full screen: the hidden box follows it
+      if (box && this.settings.settings().encoderMode === 'practice' && box.value !== input) {
+        box.value = input;
+        this.encoderInputHasText = input.trim().length > 0;
       }
     });
   }
@@ -932,10 +935,37 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     host.style.setProperty('--host-h', window.innerHeight + 'px');
   }
 
-  @HostListener('document:click')
-  onDocumentClick(): void {
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
     this.controlsKebabOpen = false;
     this.clearMenuOpen = false;
+    this.replayMenuOpen = false;
+    this.focusPracticeInputAfterClick(event);
+  }
+
+  /**
+   * In Type-along a click anywhere on the main screen that is not on a control (a button, a menu, a select, a field, a link,
+   * a dialog) or on text being selected sends the typing back to the answer, so the guide box and the empty places count too.
+   */
+  private focusPracticeInputAfterClick(event: MouseEvent): void {
+    if (this.activeModal || !this.copyPractice || this.practice.feedbackMode() !== 'typealong') return;
+    const target = event.target as HTMLElement | null;
+    if (!target?.closest || target.closest('button, a, input, select, textarea, label, summary, [role="dialog"], [role="alertdialog"], [role="menu"], .kebab-items, .clear-menu, .replay-menu')) return;
+    if (!getSelection()?.isCollapsed) return;
+    this.focusPracticeInput();
+  }
+
+  /** A letter typed anywhere on the main screen in Type-along goes to the answer, without clicking first. */
+  private catchPracticeTyping(event: KeyboardEvent): void {
+    if (event.defaultPrevented || event.key.length !== 1 || event.ctrlKey || event.altKey || event.metaKey) return;
+    if (this.activeModal || !this.copyPractice || this.practice.feedbackMode() !== 'typealong') return;
+    const box = this.encoderInputRef?.nativeElement;
+    const target = event.target as HTMLElement | null;
+    if (!box || target === box || target?.closest('input, textarea, select, [contenteditable="true"]')) return;
+    if (target?.closest('button') && event.key === ' ') return;
+    const open = Array.from(document.querySelectorAll<HTMLElement>('[role="dialog"], [role="alertdialog"]'))
+      .some(dialog => !dialog.hidden && dialog.getClientRects().length > 0);
+    if (!open) box.focus({ preventScroll: true });
   }
 
   /** F1 opens Help (instead of the browser's own help); Escape activates the close action in the topmost dialog. */
@@ -945,6 +975,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.onHelpShortcut(event);
       return;
     }
+    this.catchPracticeTyping(event);
     if (event.key !== 'Escape' || event.defaultPrevented) return;
 
     const dialogs = Array.from(
@@ -1336,7 +1367,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   onEncoderInput(textarea: HTMLTextAreaElement): void {
     let pos = textarea.selectionStart;
     let value = textarea.value.toUpperCase();
-    if (this.settings.settings().encoderMode !== 'practice') {
+    if (this.settings.settings().encoderMode === 'practice') {
+      // Only the first of several spaces typed in a row counts
+      const single = (text: string) => text.replace(/[ \t]{2,}/g, ' ');
+      pos = single(value.slice(0, pos)).length;
+      value = single(value);
+    } else {
       // Spaces are ignored at the start and repeated spaces collapse to one as you type
       // (a trailing space is allowed while typing and trimmed when sending)
       const clean = (text: string) => text.replace(/^\s+/, '').replace(/[ \t]{2,}/g, ' ');
@@ -1505,7 +1541,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   toggleEncoderTx(textarea: HTMLTextAreaElement): void {
     if (this.encoder.isSending()) {
-      this.encoder.stopTx();
+      // A replay pauses at the end of its character; typed text stops at once
+      if (this.encoder.replayMode()) this.encoder.pauseTx();
+      else this.encoder.stopTx();
     } else if (this.encoder.replayPending()) {
       this.encoder.startTx();
     } else {
@@ -1543,6 +1581,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   practiceStartOrNext(textarea: HTMLTextAreaElement): void {
     if (this.practice.feedbackMode() === 'typealong') {
       this.practice.advanceTypeAlongSession();
+      this.focusPracticeInput();
       return;
     }
     if (this.practice.state() === 'finished') {
@@ -1555,6 +1594,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Pause practice playback */
   practicePause(): void {
     this.practice.pause();
+    this.focusPracticeInput();
   }
 
   // ---- Send practice mode ----
@@ -1601,6 +1641,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Resume practice playback */
   practiceResume(): void {
     this.practice.resume();
+    this.focusPracticeInput();
   }
 
   /** The first shell waits for the end of the text colour change */
@@ -1634,13 +1675,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   get mainBlurMode(): 'rx' | 'tx' | 'both' | null {
     const s = this.settings.settings();
-    // A book is read as it is: the text blur setting does not apply
-    if (this.ebook.active()) return null;
+    // A book is read as it is: the text blur setting does not apply; only the practice's own Blurred and Type-along blur it
+    if (this.ebook.active() && (s.encoderMode !== 'practice' || this.practice.feedbackMode() === 'listen')) return null;
     if (s.encoderMode === 'send-practice') return null;
     // Practice mode blur/typealong: blur the practice source direction
     if (s.encoderMode === 'practice' && (this.practice.feedbackMode() === 'blur' || this.practice.feedbackMode() === 'typealong')) {
-      // If practice finished and feedback computed, unblur to show highlights
-      if (this.practice.state() === 'finished' && this.practice.feedback().length > 0) {
+      // Once the score is on show (a finished round, or a book scored so far) unblur to show the highlights
+      if (this.practice.feedback().length > 0) {
         return null;
       }
       return s.practiceSource;
@@ -1695,10 +1736,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   get mainReplayAvailable(): boolean {
     if (this.encoder.replayPending()) return true;
     if (this.sendPracticeActive) return this.sendPractice.state() === 'keying' && this.sendPractice.hintChar() !== '';
-    if (!this.displayBuffers.mainOutput.hasText()) return false;
     if (this.settings.settings().encoderMode === 'practice') {
       return this.practice.replayableText() !== '';
     }
+    if (!this.displayBuffers.mainOutput.hasText()) return false;
     return !this.encoder.isSending()
       && (!this.encoderInputHasText || this.encoder.buffer().length > this.encoder.sentIndex())
       && this.displayBuffers.mainOutput.lastLine() !== null;
@@ -1709,30 +1750,110 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.encoder.replayPending();
   }
 
+  /** Copy practice has no input box on the main screen: the answer is typed straight into the text (see `focusPracticeInput`). */
+  get copyPractice(): boolean {
+    return this.settings.settings().encoderMode === 'practice';
+  }
+
   /**
-   * Replay what is on the main screen without drawing it again. In practice mode the
-   * completed part of the sequence plays again; otherwise the last line goes through the encoder's
-   * outputs, after the usual confirmation when it would key or relay externally. In both
-   * cases the send button (practice button in practice) pauses and resumes it, and pressing
-   * the replay button while one is playing or paused stops it.
+   * Send the typing to the hidden box that catches it in Type-along, so the answer can be typed without a visible
+   * input: after a click on the text or a practice button, and for the first letter typed anywhere on the page.
+   */
+  focusPracticeInput(): void {
+    if (!this.copyPractice || this.practice.feedbackMode() !== 'typealong') return;
+    const box = this.encoderInputRef?.nativeElement;
+    if (box && document.activeElement !== box) box.focus({ preventScroll: true });
+  }
+
+  /** Type-along practice shows the challenge with what was typed under each character (a book has its own reader). */
+  get practiceCompare(): boolean {
+    return this.settings.settings().encoderMode === 'practice' && this.practice.feedbackMode() === 'typealong' && !this.ebookActive;
+  }
+
+  /** True while the "Replay last:" question of the replay button is open. */
+  replayMenuOpen = false;
+
+  /** The replay button asks what to replay, except in Send practice (it plays one character) and while it stops a replay. */
+  get mainReplayAsks(): boolean {
+    return !this.sendPracticeActive && !this.mainReplayStops;
+  }
+
+  /** Name and tooltip of the replay button. */
+  get mainReplayLabel(): string {
+    if (this.sendPracticeActive) return this.mainReplayStops ? 'Stop the sound' : 'Hear the next character';
+    return this.mainReplayStops ? 'Stop replay' : 'Replay the last character, ' + this.mainReplayWordLabel.toLowerCase() + ' or line';
+  }
+
+  /** The choices the replay question offers for the text on screen (or the played part of the practice sequence). */
+  get mainReplayChoices(): ReplayUnit[] {
+    if (this.settings.settings().encoderMode === 'practice') {
+      return replayChoices(this.practice.replayableText(), this.practice.pausedMidWord());
+    }
+    return replayChoices(this.displayBuffers.mainOutput.lastLine()?.text ?? '');
+  }
+
+  /** The name of a word or group in the tooltip: Word, or Group / Callsign where the practice content has no words. */
+  get mainReplayWordLabel(): string {
+    return replayWordLabel(this.settings.settings());
+  }
+
+  /** Whether the practice sequence is paused in the middle of a word, group or callsign. */
+  get mainReplayMidWord(): boolean {
+    return this.settings.settings().encoderMode === 'practice' && this.practice.pausedMidWord();
+  }
+
+  /** The text of one choice of the replay question. */
+  mainReplayChoiceLabel(unit: ReplayUnit): string {
+    return replayChoiceLabel(unit, this.settings.settings(), this.mainReplayMidWord);
+  }
+
+  /**
+   * The replay button. In Send practice it plays the next character. While a replay plays or is
+   * paused it stops it. Otherwise it asks "Replay last:" character, word (group, callsign) or
+   * line; the answer replays that end of the completed practice sequence, or of the last
+   * line, which goes through the encoder's outputs after the usual confirmation when it would
+   * key or relay externally. The send button (practice button in practice) pauses and resumes it.
    */
   onMainReplay(): void {
     if (this.sendPracticeActive) {
       this.sendPracticePromptAudio();
       return;
     }
-    const practiceMode = this.settings.settings().encoderMode === 'practice';
     if (this.encoder.replayPending()) {
-      if (practiceMode) this.practice.stopReplay();
+      this.replayMenuOpen = false;
+      if (this.settings.settings().encoderMode === 'practice') this.practice.stopReplay();
       else this.encoder.stopReplay();
       return;
     }
-    if (practiceMode) {
-      this.practice.replay();
+    const choices = this.mainReplayChoices;
+    if (choices.length === 1) {
+      this.onMainReplayChoice(choices[0]);
       return;
     }
-    const line = this.displayBuffers.mainOutput.lastLine();
-    if (line) this.requestReplay(line.text);
+    this.replayMenuOpen = !this.replayMenuOpen;
+    if (this.replayMenuOpen) {
+      this.controlsKebabOpen = false;
+      this.clearMenuOpen = false;
+      setTimeout(() => document.querySelector<HTMLElement>('.replay-menu-main .pill-btn')?.focus());
+    }
+  }
+
+  /** Replay the chosen end of the completed sequence (practice) or of the last line. */
+  onMainReplayChoice(unit: ReplayUnit): void {
+    this.replayMenuOpen = false;
+    if (this.settings.settings().encoderMode === 'practice') {
+      this.practice.replay(unit);
+      return;
+    }
+    const part = this.displayBuffers.mainOutput.lastPart(unit);
+    if (part) this.requestReplay(part);
+  }
+
+  /** Close the question without replaying (Escape) and give focus back to the replay button. */
+  closeReplayMenu(event?: Event): void {
+    event?.preventDefault();
+    this.replayMenuOpen = false;
+    document.querySelector<HTMLElement>('.blur-replay-btn-main')?.focus();
   }
 
   /** Send a line again through the encoder, after the usual confirmation when it would key or relay externally. Also used by the full-screen view. */
@@ -1749,6 +1870,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   toggleControlsKebab(): void {
     this.controlsKebabOpen = !this.controlsKebabOpen;
     this.clearMenuOpen = false;
+    this.replayMenuOpen = false;
     if (this.controlsKebabOpen) this.updateKebabMaxHeight();
   }
 
@@ -2000,11 +2122,19 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // When switching away from practice mode, reset practice state
     if (key === 'encoderMode' && this.settings.settings().encoderMode === 'practice' && value !== 'practice') {
       this.practice.reset();
+      // What was typed as an answer must not turn up in the Send on Enter box
+      if (this.encoderInputRef) this.encoderInputRef.nativeElement.value = '';
+      this.encoderInputHasText = false;
     }
     const patch = { [key]: value } as Partial<AppSettings>;
     // The Mode select on the main screen is saved at once, without a visit to Settings
-    if (key === 'encoderMode') this.settings.updateAndPersist(patch);
-    else this.settings.update(patch);
+    if (key === 'encoderMode') {
+      this.settings.updateAndPersist(patch);
+      // Letters typed while the Mode select still has the focus would change the mode: the answer takes the typing
+      if (value === 'practice') window.requestAnimationFrame(() => this.focusPracticeInput());
+    } else {
+      this.settings.update(patch);
+    }
   }
 
   // ---- Device config / profiles ----

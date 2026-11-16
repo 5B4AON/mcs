@@ -272,6 +272,14 @@
   gap: 8px;
   z-index: 25;
 }
+.fs-replay-wrap {
+  position: relative;
+}
+/* The "Replay last:" question opens to the left of the replay button (44px + 8px gap) */
+.fs-replay-menu {
+  right: 52px;
+  bottom: 0;
+}
 .fs-btn-stack-above-touch {
   bottom: 106px;
 }

@@ -6,6 +6,7 @@ import { Injectable, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { ProsignAction } from '../components/settings-items/prosign-actions/prosign-actions-item.model';
 import { PUNCTUATION_TO_PROSIGN } from '../morse-table';
+import { ReplayUnit, lastReplayPart } from './replay-units';
 
 /**
  * A conversation line — contiguous run of the same type.
@@ -234,6 +235,12 @@ export class DisplayBuffer {
     if (!last) return null;
     const text = last.text.split('\n').filter(part => part.trim()).at(-1);
     return text ? { type: last.type, text } : null;
+  }
+
+  /** The end of the most recent line for replaying part of it (see `lastReplayPart`). */
+  lastPart(unit: ReplayUnit): string | null {
+    const line = this.lastLine();
+    return line ? lastReplayPart(line.text, unit) : null;
   }
 
   /** Drop the oldest text past the transcript cap and flag when it is close. */

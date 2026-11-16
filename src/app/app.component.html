@@ -212,8 +212,8 @@
       </div>
     }
 
-    <div class="decoded-parchment" [class.night]="celebrating">
-      <div class="decoded-text" #decoderBox
+    <div class="decoded-parchment" [class.night]="celebrating" (click)="focusPracticeInput()">
+      <div class="decoded-text" #decoderBox [class.roomy]="copyPractice"
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
            [class.blur-revealing]="mainRevealing"
            [class.audio-on]="audioFile.loaded()"
@@ -222,10 +222,7 @@
              [class.fb-incorrect]="fb.result === 'incorrect'"
              [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ sendPractice.accuracy() }}%</div>@if (sendPractice.keyedWpm()) {<div class="fb-accuracy">You keyed ≈ {{ sendPractice.keyedWpm() }} WPM</div>}@if (!sendPractice.isMultiRound()) {<app-practice-next-lesson kind="send" [accuracy]="sendPractice.accuracy()" />}} @else if (sendPractice.state() === 'keying') {<span class="fb-results">@for (mark of sendPractice.keyedMarks(); track $index) {<span
              [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
-             [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</span>}} @else if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>@for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Type what you hear,</div><div>hit Enter to validate.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practice.feedback().length > 0 && settings.settings().encoderMode === 'practice') {<span class="fb-results">@for (fb of practice.feedback(); track $index) {<span
-             [class.fb-correct]="fb.result === 'correct'"
-             [class.fb-incorrect]="fb.result === 'incorrect'"
-             [class.fb-missed]="fb.result === 'missed'">{{ fb.ref === ' ' ? '\u00a0' : fb.ref }}</span>}</span><div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
+             [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</span>}} @else if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>@for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Type what you hear,</div><div>hit Enter to validate.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practiceCompare) {<app-practice-compare [source]="settings.settings().practiceSource" />@if (practice.feedback().length > 0) {<div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
              [class.rx-line]="line.type === 'rx'"
              [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}@if (!ebookActive) {<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}}</div>
       @if (celebrating) {
@@ -233,7 +230,7 @@
       }
       <app-koch-help-overlay />
       @if (ebookActive && ebook.info()?.href) {
-        <button class="blur-reveal-btn-main blur-replay-btn-main" [class.above-assist]="sendPracticeActive" [disabled]="ebook.loading()"
+        <button class="blur-reveal-btn-main blur-replay-btn-main" [class.above-assist]="sendPracticeActive" [class.beside-column]="!!mainBlurMode" [disabled]="ebook.loading()"
                 (mousedown)="$event.preventDefault()" (click)="reloadBook()"
                 title="Reload the book from its web address" aria-label="Reload the book from its web address">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
@@ -312,13 +309,14 @@
           }
         </button>
       }
-      @if ((mainBlurMode || sendPracticeActive) && !ebookActive) {
-        <button class="blur-reveal-btn-main blur-replay-btn-main" [class.playing]="mainReplayStops"
+      @if (mainBlurMode || (sendPracticeActive && !ebookActive)) {
+        <button class="blur-reveal-btn-main blur-replay-btn-main" [class.above-assist]="ebookActive" [class.playing]="mainReplayStops"
                 [disabled]="!mainReplayAvailable"
                 (mousedown)="$event.preventDefault()"
-                (click)="onMainReplay()"
-                [title]="mainReplayStops ? (sendPracticeActive ? 'Stop the sound' : 'Stop replay') : (sendPracticeActive ? 'Hear the next character' : 'Replay the last line')"
-                [attr.aria-label]="mainReplayStops ? (sendPracticeActive ? 'Stop the sound' : 'Stop replay') : (sendPracticeActive ? 'Hear the next character' : 'Replay the last line')">
+                (click)="$event.stopPropagation(); onMainReplay()"
+                [title]="mainReplayLabel"
+                [attr.aria-label]="mainReplayLabel"
+                [attr.aria-expanded]="mainReplayAsks ? replayMenuOpen : null">
           @if (mainReplayStops) {
             <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
           } @else {
@@ -332,16 +330,28 @@
             </svg>
           }
         </button>
+        @if (replayMenuOpen && mainReplayAvailable && mainReplayAsks) {
+          <div class="replay-menu replay-menu-main popup-anim open" role="group" aria-label="Replay last"
+               (click)="$event.stopPropagation()" (keydown.escape)="closeReplayMenu($event)">
+            <div class="replay-menu-title">Replay last:</div>
+            <div class="replay-menu-row">
+              @for (unit of mainReplayChoices; track unit) {
+                <button class="pill-btn" type="button" (click)="onMainReplayChoice(unit)">{{ mainReplayChoiceLabel(unit) }}</button>
+              }
+            </div>
+          </div>
+        }
         @if (mainBlurMode) {
-        <button class="blur-reveal-btn-main" [class.revealing]="mainRevealing"
-                [disabled]="!displayBuffers.mainOutput.hasText()"
+        <button class="blur-reveal-btn-main" [class.blur-replay-btn-main]="ebookActive" [class.revealing]="mainRevealing"
+                [disabled]="ebookActive ? !ebook.loaded() : !displayBuffers.mainOutput.hasText()"
                 (mousedown)="onMainRevealStart($event)"
                 (mouseup)="onMainRevealEnd()"
                 (mouseleave)="onMainRevealEnd()"
                 (touchstart)="onMainRevealStart($event)"
                 (touchend)="onMainRevealEnd()"
                 (touchcancel)="onMainRevealEnd()"
-                title="Hold to reveal text" aria-label="Hold to reveal text">
+                [title]="ebookActive ? 'Hold to see what has played so far' : 'Hold to reveal text'"
+                [attr.aria-label]="ebookActive ? 'Hold to see what has played so far' : 'Hold to reveal text'">
           <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
                stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
@@ -383,14 +393,15 @@
       </section>
     }
 
-    <div class="encoder-input-row">
+    <div class="encoder-input-row" [class.input-hidden]="copyPractice">
       @if (sendPracticeActive && (!ebookActive || sendPractice.ebookAssist())) {
         <app-send-prompt />
       } @else if (cwScopeShown) {
         <app-cw-scope />
       }
-      <textarea #encoderInput rows="2"
-                [style.display]="sendPracticeActive || ebookActive || cwScopeShown ? 'none' : null"
+      <!-- Copy practice has no visible box: the answer appears under the challenge text, as in the full screen; this one only catches the typing -->
+      <textarea #encoderInput rows="2" [class.catch-typing]="copyPractice"
+                [style.display]="sendPracticeActive || (copyPractice && practice.feedbackMode() !== 'typealong') || cwScopeShown ? 'none' : null"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (practice.feedbackMode() === 'typealong'
@@ -398,7 +409,9 @@
                       ? 'Press Enter to view the session briefing...'
                       : practice.isMultiRoundTypeAlong() && practice.sessionStage() === 'briefing'
                         ? 'Press Enter to start round 1...'
-                        : 'Type what you hear, then press Enter to continue...')
+                        : ebookActive
+                          ? 'Type what you hear; Enter pauses and resumes the book...'
+                          : 'Type what you hear, then press Enter to continue...')
                     : 'Practice answer entry is unavailable for this feedback mode.')
                   : 'Type text to encode...'"
                 [disabled]="settings.settings().encoderMode === 'practice' && practice.feedbackMode() !== 'typealong'"
@@ -421,8 +434,7 @@
     @if (settings.settings().encoderMode === 'practice') {
       <section class="practice-guide" aria-live="polite">
         <div><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice') }}</strong></div>
-        <div>{{ practiceUi.practiceSessionDescription(settings.settings()) }}.</div>
-        <div>{{ practiceUi.practiceFeedbackDescription(settings.settings()) }}</div>
+        <div>{{ practiceUi.practiceHint(settings.settings()) }}</div>
         @if (practiceUi.practiceExternalRouteNotice(settings.settings()); as routeNotice) {
           <div>{{ routeNotice }}</div>
         }

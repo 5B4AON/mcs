@@ -40,8 +40,8 @@
  * high) so the 184px maximum looks as it always did there; bigger monitors grow
  * it in proportion (3.424cqmin = 24px / 701px). Carries the inheritable text styles.
  *
- * Rows: the row spacing slider (--fs-space, em) sets the line height (1.15 + space) and the gap
- * between rows (space). When the text is large, three rows must stay visible above the bottom
+ * Rows: the row spacing slider (--fs-space, em) sets the line height (1.45 + space) and the gap
+ * between rows (0.3 + space; 1.15 is the natural line height). When the text is large, three rows must stay visible above the bottom
  * reserve (the touch keys in Key mode), so first the spacing shrinks (never below 1.07em between
  * rows, so lines never touch) and then the font size itself is limited. All values are lengths:
  *   avail = body height - top padding - reserve; three rows (3 line heights + 2 gaps) must fit in it.
@@ -53,7 +53,7 @@
   --fs-f: max(10px, min(calc(var(--fs-base) * var(--fs-mult, 1)), calc(var(--fs-avail) / 3.25)));
   --fs-lh: max(
     calc(var(--fs-f) * 1.11),
-    min(calc(var(--fs-f) * (1.15 + var(--fs-space, 0.1))), calc((var(--fs-avail) + var(--fs-f) * 2.3) / 5))
+    min(calc(var(--fs-f) * (1.45 + var(--fs-space, 0.1))), calc((var(--fs-avail) + var(--fs-f) * 2.3) / 5))
   );
   --fs-gap: calc(var(--fs-lh) - var(--fs-f) * 1.15);
   flex: 1;
