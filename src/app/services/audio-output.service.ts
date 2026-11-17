@@ -263,12 +263,17 @@ export class AudioOutputService {
     gain.setValueAtTime(0, at + ramp * 10);
   }
 
+  /** A key is held down (keyDown without its keyUp yet): the sidetone is meant to be on */
+  private keyHeld = false;
+
   /** Key down */
   keyDown(source: 'rx' | 'tx' = 'tx'): void {
     if (!this.started) return;
     const s = this.settings.settings();
     const ramp = 0.005;
-    this.whenRunning(() => this.applyKeyDown(s, ramp, source));
+    this.keyHeld = true;
+    // A key-down that waited for a resume must not turn the tone on after the key-up that followed it
+    this.whenRunning(() => { if (this.keyHeld) this.applyKeyDown(s, ramp, source); });
   }
 
   private applyKeyDown(
@@ -294,7 +299,18 @@ export class AudioOutputService {
   keyUp(): void {
     if (!this.started) return;
     const ramp = 0.005;
+    this.keyHeld = false;
     this.whenRunning(() => this.applyKeyUp(ramp));
+  }
+
+  /**
+   * Make sure nothing is left sounding after a timeline of placed tones has ended, unless a key is held.
+   * A key-down in the middle of a placed tone drops the tone's scheduled release (`cancelScheduledValues`), and a
+   * gain that has no release left stays on for good, so the end of a replay releases it explicitly.
+   */
+  releaseIfIdle(): void {
+    if (!this.started || this.keyHeld) return;
+    this.applyKeyUp(0.005);
   }
 
   private applyKeyUp(ramp: number): void {

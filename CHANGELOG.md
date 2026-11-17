@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.20.2] - 2026-11-17
+
+### Added
+
+- **Assist button in every Send practice mode** — The round Assist button, until now offered only with an e-book, also shows in Send practice with other content (main screen and full screen). There it switches the pattern hint (the dots and dashes of the character to key) on or off for the session; the Settings option keeps its saved value until you save. The button keeps its look and shows the state with a blue symbol and rim and a firmer background while on.
+- **Prosign actions in the e-book reader** — In Copy practice (Blurred and Type-along) and in Send practice, a prosign written in the book (`<AR>`, `<BT>`, ...) follows its Prosign Actions entry: a New Line or New Paragraph action starts one in the text (the erase actions are ignored, a book cannot be erased).
+- **Loop and feedback warning in full screen** — The warning banner (feedback loop, or the CW detector or mic key hearing the sidetone) is now also shown across the top of the full-screen view, with its Dismiss button; before it was hidden behind it.
+- **Hear it first with an e-book** — Send practice with a book now has the round "Hear the next character" button too (main screen and full screen); it plays the character you have to key next at your keyer speed, before or while you key, without starting the book.
+- **Sidetone offered when entering practice** — Switching to Copy or Send practice with the sidetone off asks whether to turn it on (not asked when a saved profile loads into practice).
+
+### Changed
+
+- **Send practice hints use your keyer speed** — "Hear it first" and the Koch lesson help in Send practice play at the keyer WPM, plain (no Farnsworth), so they match what you key.
+- **The CW detector stays off in practice** — Being in Copy or Send practice switches the CW Tone Detector off and saves that (also after a reload that lands in practice), and it cannot start there, so it never listens to the practice's own sidetone.
+- **Decoded text stops at the bottom** — With the CW detector or an audio file, the last decoded row now stops just above the bottom (the touch keys, the audio player bar, or the end of the view) instead of well above it in full screen.
+- **E-book text fills the full screen** — In full screen the book no longer leaves empty space at the bottom (Copy practice, or Send practice with Assist); it stops only above the touch keys.
+- **Prosigns blurred in books** — In Blurred and Type-along a prosign written in the book is blurred like the rest of the text; it used to stay readable.
+- **Send practice buttons on the main screen** — Hear it first sits in the corner (there is no reveal button below it), with Assist and the Koch help above it.
+
+### Fixed
+
+- **Two stop buttons during the Koch help** — While the lesson help plays, only the help button becomes a stop button; replay and Hear it first are disabled instead of also turning into stop buttons (main screen and full screen).
+- **Console error in full screen** — The Koch help overlay no longer causes an ExpressionChangedAfterItHasBeenChecked error when the full screen opens.
+- **Sidetone stuck on** — A replay now releases the sidetone when it ends, a key-down that waited for the audio to resume can no longer turn the tone on after its key-up, and the mic key and CW detector ignore the app's own lesson help sound.
+
 ## [2.20.1] - 2026-11-16
 
 ### Added

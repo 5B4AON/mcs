@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, effect, inject } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, effect, inject, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { SettingsService, AppSettings } from './services/settings.service';
@@ -37,6 +37,7 @@ import { EbookService } from './services/ebook.service';
 import { TranscriptSaveService } from './services/transcript-save.service';
 import { SendPracticeGateService } from './services/send-practice-gate.service';
 import { ConfirmDialogComponent } from './components/confirm-dialog/confirm-dialog.component';
+import { ConfirmService } from './services/confirm.service';
 import { PracticeNextLessonComponent } from './components/practice-next-lesson/practice-next-lesson.component';
 import { PracticeCompareComponent } from './components/practice-compare/practice-compare.component';
 import { MorsePatternComponent } from './components/morse-pattern/morse-pattern.component';
@@ -208,6 +209,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly modalBack = inject(ModalBackService);
   readonly updates = inject(UpdateService);
   private readonly whatsNew = inject(WhatsNewService);
+  private readonly confirmService = inject(ConfirmService);
   private readonly ngZone = inject(NgZone);
 
   /** Tracks how many modal history entries are currently pushed */
@@ -277,6 +279,26 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       this.viewport.height();
       this.correctHostHeight();
+    });
+
+    // Copy and Send practice never use the CW tone detector and it would hear the practice's own sidetone, so
+    // being in one switches it off and keeps it off in the saved profile (also after a reload that lands in practice)
+    effect(() => {
+      const s = this.settings.settings();
+      const practice = s.encoderMode === 'practice' || s.encoderMode === 'send-practice';
+      // A device profile that loads and lands in practice is not the user switching to it: no question then
+      const fingerprint = this.settings.currentFingerprint();
+      const switched = this.wasPractice === false && practice && fingerprint === this.practiceFingerprint;
+      this.wasPractice = practice;
+      this.practiceFingerprint = fingerprint;
+      if (!practice) return;
+      untracked(() => {
+        if (s.cwInputEnabled) {
+          this.settings.updateAndPersist({ cwInputEnabled: false });
+          void this.cwInput.stop();
+        }
+        if (switched && !s.sidetoneEnabled) void this.offerSidetoneForPractice();
+      });
     });
 
     // Auto-scroll the main decoder box when new text arrives
@@ -576,6 +598,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.audioInput.keyEvent$.subscribe(evt => {
         this.micKeyDown = evt.down;
+        // The lesson help is played through the sidetone: a mic that hears it must not key the sidetone again
+        if (this.ignoreOwnSoundEdge('mic', evt.down)) return;
         const s = this.settings.settings();
         const source = s.micInputSource;
         const opts = { name: s.micInputName || undefined, color: s.micInputColor || undefined };
@@ -609,6 +633,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
         this.cwKeyDown = evt.down;
+        if (this.ignoreOwnSoundEdge('cw', evt.down)) return;
         const source = this.settings.settings().cwInputSource;
         if (evt.down) {
           this.decoder.onKeyDown('cwAudio', source, cwOpts());
@@ -891,6 +916,44 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Whether main-screen practice is active, so straight-key style inputs are off. */
   get mainPracticeActive(): boolean {
     return this.settings.settings().encoderMode === 'practice';
+  }
+
+  /** Whether the previous look at the Mode was a practice mode (null before the first), and the device profile it was under */
+  private wasPractice: boolean | null = null;
+  private practiceFingerprint = '';
+
+  /** Switching to a practice mode with the sidetone off: practice is played through the sidetone, so offer to turn it on. */
+  private async offerSidetoneForPractice(): Promise<void> {
+    const on = await this.confirmService.ask({
+      title: 'Turn the sidetone on?',
+      message: 'Practice plays its Morse through the sidetone, and the sidetone is off, so you would hear nothing. '
+        + 'Turn it on? You can change it later in Settings → Outputs → Sidetone.',
+      confirmLabel: 'Turn sidetone on',
+      cancelLabel: 'Keep it off',
+    });
+    if (on && !this.settings.settings().sidetoneEnabled) this.settings.updateAndPersist({ sidetoneEnabled: true });
+  }
+
+  /** The inputs whose key-down was ignored because they were hearing the app's own sound (their key-up is ignored too) */
+  private ignoredOwnSoundDown = { mic: false, cw: false };
+
+  /**
+   * True when a mic or CW detector key edge should not reach the decoder because what the input hears is the app's
+   * own sidetone, which would key the sidetone again and latch it on: while the Koch lesson help plays, and for the
+   * CW detector in Copy and Send practice (it listens to the air, the practice never uses it, and the keying or
+   * playback of the practice sounds the sidetone). A key-down ignored this way also drops its key-up, so the decoder
+   * never sees a lone key-up, and an edge that began before carries on to its own key-up.
+   */
+  private ignoreOwnSoundEdge(input: 'mic' | 'cw', down: boolean): boolean {
+    if (down) {
+      const mode = this.settings.settings().encoderMode;
+      this.ignoredOwnSoundDown[input] = this.kochHelp.playing()
+        || (input === 'cw' && (mode === 'practice' || mode === 'send-practice'));
+      return this.ignoredOwnSoundDown[input];
+    }
+    const ignored = this.ignoredOwnSoundDown[input];
+    this.ignoredOwnSoundDown[input] = false;
+    return ignored;
   }
 
   /** Disable keyboard and mouse keying on the main screen during practice; restore otherwise. */
@@ -1734,8 +1797,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get mainReplayAvailable(): boolean {
+    // The lesson help is a replay too, but the help button owns it
+    if (this.kochHelp.playing()) return false;
     if (this.encoder.replayPending()) return true;
-    if (this.sendPracticeActive) return this.sendPractice.state() === 'keying' && this.sendPractice.hintChar() !== '';
+    if (this.sendPracticeActive) return this.sendPractice.canPlayPrompt();
     if (this.settings.settings().encoderMode === 'practice') {
       return this.practice.replayableText() !== '';
     }
@@ -1747,7 +1812,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** True while a replay is playing or paused; the button then stops it. */
   get mainReplayStops(): boolean {
-    return this.encoder.replayPending();
+    return this.encoder.replayPending() && !this.kochHelp.playing();
   }
 
   /** Copy practice has no input box on the main screen: the answer is typed straight into the text (see `focusPracticeInput`). */

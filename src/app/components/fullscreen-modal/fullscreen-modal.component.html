@@ -21,6 +21,16 @@
     <div class="fs-body"
          [style.background]="settings.modalDisplay().rxBackground">
 
+      <!-- The main screen's loop / feedback warning is hidden behind this view, so it is shown here too -->
+      @if (loopDetection.loopDetected()) {
+        <div class="fs-loop-warning" role="alert">
+          <span class="fs-loop-warning-icon" aria-hidden="true">&#x26A0;</span>
+          <span class="fs-loop-warning-text">{{ loopDetection.loopMessage() }}</span>
+          <button type="button" class="fs-loop-warning-dismiss" (click)="loopDetection.clearLoop()"
+                  title="Dismiss and re-enable outputs" aria-label="Dismiss and re-enable outputs">&times;</button>
+        </div>
+      }
+
       <!-- Send practice: the same prompt box as the main screen, always visible above the output -->
       @if (sendPromptShown) {
         <app-send-prompt class="fs-send-prompt" />

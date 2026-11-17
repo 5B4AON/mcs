@@ -78,6 +78,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   @Output() bookRequested = new EventEmitter<void>();
 
   @ViewChild('conversationArea') conversationAreaRef?: ElementRef<HTMLDivElement>;
+  @ViewChild('kochOverlay', { read: ElementRef }) kochOverlayRef?: ElementRef<HTMLElement>;
   @ViewChild('typeInput') typeInputRef?: ElementRef<HTMLInputElement>;
 
   /** Last known scrollHeight — used to detect content changes for auto-scroll */
@@ -274,9 +275,14 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     return this.kochHelp.kind() === 'copy' && this.practice.state() === 'playing';
   }
 
-  /** Where the conversation starts inside the full-screen body, so the help overlay leaves the Send prompt above it uncovered. */
-  get overlayTop(): number {
-    return this.conversationAreaRef?.nativeElement.offsetTop ?? 0;
+  /**
+   * The help overlay starts where the conversation does, so it leaves the Send prompt above it uncovered. The offset is
+   * layout, which is only known after the view is drawn, so it is set on the element here rather than bound in the template.
+   */
+  private placeKochOverlay(): void {
+    const overlay = this.kochOverlayRef?.nativeElement;
+    const top = this.conversationAreaRef?.nativeElement.offsetTop;
+    if (overlay && top !== undefined) overlay.style.top = `${top}px`;
   }
 
   /** Play the lesson's new characters, or stop them. */
@@ -287,6 +293,8 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get replayAvailable(): boolean {
+    // The lesson help is a replay too, but the help button owns it
+    if (this.kochHelp.playing()) return false;
     if (this.encoder.replayPending()) return true;
     if (this.isPractice) return this.practice.replayableText() !== '';
     if (!this.hasText) return false;
@@ -295,7 +303,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
 
   /** True while a replay is playing or paused; the button then stops it. */
   get replayStops(): boolean {
-    return this.encoder.replayPending();
+    return this.encoder.replayPending() && !this.kochHelp.playing();
   }
 
   /** True while the "Replay last:" question of the replay button is open. */
@@ -414,6 +422,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   }
 
   ngAfterViewChecked(): void {
+    this.placeKochOverlay();
     this.updateMouseKeyerAttachment();
     const celebrating = this.celebrating;
     // Close the on-screen keyboard once, so the fireworks get the whole screen

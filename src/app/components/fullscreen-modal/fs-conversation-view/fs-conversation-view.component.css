@@ -16,7 +16,7 @@
   word-wrap: break-word;
   overflow-wrap: break-word;
   padding: .5rem;
-  padding-bottom: calc(var(--fs-reserve, 60px) + var(--fs-audio, 0px));
+  padding-bottom: var(--fs-pad, calc(var(--fs-reserve, 60px) + var(--fs-audio, 0px)));
   scroll-behavior: smooth;
   text-shadow: 0 0 6px currentColor, 0 1px 3px rgba(0, 0, 0, 0.4);
 }
@@ -152,7 +152,7 @@
 @media (max-width: 480px) {
   .fs-conversation {
     padding: 0.3rem;
-    padding-bottom: calc(var(--fs-reserve, 48px) + var(--fs-audio, 0px));
+    padding-bottom: var(--fs-pad, calc(var(--fs-reserve, 48px) + var(--fs-audio, 0px)));
   }
 }
 
@@ -421,6 +421,13 @@
 }
 .fs-float-btn.fs-float-ghost:hover:not(:disabled) {
   background: rgba(80, 80, 110, 0.4);
+}
+/* Assist is a toggle: like the contents button while off, with a blue symbol and rim and a firmer background while on */
+.fs-float-btn.fs-float-ghost.assist-on,
+.fs-float-btn.fs-float-ghost.assist-on:hover:not(:disabled) {
+  background: rgba(40, 44, 62, 0.88);
+  border-color: #3d8fe8;
+  color: #3d8fe8;
 }
 .fs-float-btn.fs-float-ghost.revealing,
 .fs-float-btn.fs-float-ghost.playing {

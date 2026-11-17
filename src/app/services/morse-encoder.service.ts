@@ -142,6 +142,8 @@ export class MorseEncoderService {
 
   /** The current replay stays on this device (set by startReplay, reset with replayMode). */
   private replayLocalOnly = false;
+  /** A speed of its own for the current replay (Send practice plays at the keyer speed), or null for the encoder speed */
+  private replayWpm: number | null = null;
   private replayText = '';
   private readonly replayIndex = signal(0);
   private replayForwardedIndex = -1;
@@ -342,15 +344,17 @@ export class MorseEncoderService {
    * The TX button pauses and resumes the replay; clearing the input stops both.
    * With `localOnly` it plays as sidetone and vibration only, never to serial, MIDI,
    * WinKeyer or RTDB (Send practice's "Hear it first").
+   * With `wpm` it plays at that speed, plain (no Farnsworth), instead of the encoder speed.
    * Returns false if there is nothing to replay or playback is already active.
    */
-  startReplay(text: string, localOnly = false): boolean {
+  startReplay(text: string, localOnly = false, wpm: number | null = null): boolean {
     const clean = text.replace(/\s+/g, ' ').trim();
     if (!clean || this.isSending() || this.replayPending()) return false;
     this.replayText = clean.toUpperCase();
     this.replayIndex.set(0);
     this.replayForwardedIndex = -1;
     this.replayLocalOnly = localOnly;
+    this.replayWpm = wpm;
     this.replayMode.set(true);
     this.startTx();
     return true;
@@ -370,6 +374,7 @@ export class MorseEncoderService {
     this.replayIndex.set(0);
     this.replayForwardedIndex = -1;
     this.replayLocalOnly = false;
+    this.replayWpm = null;
   }
 
   private resetForwardedIfTokenChanged(previous: string, next: string): void {
@@ -453,7 +458,8 @@ export class MorseEncoderService {
   // ---- Playback on the audio clock ----
 
   /** The timings of the current speed and Farnsworth settings. */
-  private currentTimings(s: ReturnType<SettingsService['settings']>): ReturnType<typeof timingsFromWpm> {
+  private currentTimings(s: ReturnType<SettingsService['settings']>, replay = false): ReturnType<typeof timingsFromWpm> {
+    if (replay && this.replayWpm !== null) return timingsFromWpm(this.replayWpm);
     const fwSource = s.encoderMode === 'practice' ? s.practiceSource : s.encoderSource;
     return adjustGapTimings(timingsFromWpm(s.encoderWpm), s.encoderWpm, fwSource, s);
   }
@@ -571,6 +577,7 @@ export class MorseEncoderService {
     } finally {
       this.timelineActive = false;
       if (signal.aborted) this.cancelTimeline();
+      else this.audioOutput.releaseIfIdle();
     }
   }
 
@@ -600,7 +607,7 @@ export class MorseEncoderService {
     token: string, idx: number, endIdx: number, at: number, replay: boolean,
   ): { token: TimelineToken; lengthMs: number } {
     const s = this.settings.settings();
-    const timings = this.currentTimings(s);
+    const timings = this.currentTimings(s, replay);
     const source = s.encoderSource;
     const external = !this.isLocalOnly(s);
     // Lens follows typed text; Copy Practice has its own view

@@ -187,10 +187,14 @@ app-ebook-reader {
   -webkit-text-fill-color: transparent;
   text-shadow: 0 0 .55em currentColor, 0 0 .55em currentColor, 0 0 .55em currentColor;
 }
-/* Prosigns are not typed or scored, so they are never blurred */
-.eb-scroll .eb-sign {
-  -webkit-text-fill-color: currentColor;
-  text-shadow: none;
+/* In Blurred and Type-along a prosign follows its prosign action: a new line or paragraph after it */
+.eb-signs .eb-w.eb-nl::after {
+  content: '\A';
+  white-space: pre-line;
+}
+.eb-signs .eb-w.eb-np::after {
+  content: '\A\A';
+  white-space: pre-line;
 }
 .blur-revealing .eb-scroll .eb-ch {
   -webkit-text-fill-color: currentColor;
@@ -227,10 +231,11 @@ app-ebook-reader {
 
 /*
  * In the full-screen view the text takes the view's size, line height and row gap (the font size is
- * fitted by the view), and the bottom reserve stays free for the touch keys and the round buttons.
+ * fitted by the view), and stops above the touch keys when they are shown; otherwise it runs to the
+ * bottom (the Send practice prompt sits above the text, so it takes nothing from the bottom).
  */
 .fs-conversation.ebook-on app-ebook-reader {
-  bottom: var(--fs-reserve, 60px);
+  bottom: var(--fs-ebook-bottom, 0px);
 }
 .fs-conversation.ebook-on .eb-scroll {
   padding: 0 .75rem;

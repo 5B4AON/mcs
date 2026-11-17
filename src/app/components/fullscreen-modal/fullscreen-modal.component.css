@@ -33,6 +33,49 @@
   container-type: size;
 }
 
+/* Loop and feedback warning over the top of the view (the main screen's banner is hidden behind this view) */
+.fs-loop-warning {
+  position: absolute;
+  top: .5rem;
+  left: .5rem;
+  right: .5rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: rgba(74, 26, 26, 0.96);
+  border: 1px solid #f44;
+  border-radius: 8px;
+  color: #fcc;
+  font-family: system-ui, sans-serif;
+  font-size: .85rem;
+  line-height: 1.4;
+  text-shadow: none;
+}
+.fs-loop-warning-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+.fs-loop-warning-text {
+  flex: 1;
+}
+.fs-loop-warning-dismiss {
+  flex-shrink: 0;
+  background: none;
+  border: 1px solid #f66;
+  border-radius: 4px;
+  color: #f66;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.fs-loop-warning-dismiss:hover {
+  background: #f44;
+  color: #fff;
+}
+
 /*
  * Auto-fit text size: the base follows the smaller side of the body box, and the
  * font-size slider multiplies it. Small screens shrink it (24px at the 360 x 800
@@ -65,6 +108,7 @@
 }
 .fs-fit.touch-on {
   --fs-reserve: 96px;
+  --fs-ebook-bottom: 96px;
 }
 /*
  * An audio file player along the bottom (84px bar + 12px margin = 96px, 190px above the touch keys)
@@ -97,6 +141,21 @@
 }
 .fs-fit.scope-on.touch-on {
   --fs-reserve: 192px;
+}
+/*
+ * The scope sits above the text, so it must not push the text up from the bottom: while the detector or a file is decoded
+ * the last row stops just above what is at the bottom (the touch keys, the audio player bar, or the end of the view).
+ * `--fs-pad` is the conversation's bottom padding (see fs-conversation-view.component.css).
+ */
+.fs-fit.scope-on {
+  --fs-pad: .5rem;
+}
+.fs-fit.scope-on.touch-on,
+.fs-fit.scope-on.audio-on {
+  --fs-pad: calc(96px + .5rem);
+}
+.fs-fit.scope-on.audio-on.touch-on {
+  --fs-pad: calc(190px + .5rem);
 }
 
 /* ---- Responsive ---- */

@@ -139,7 +139,7 @@
 </div>
 
 @if (kochHelpShown) {
-  <app-koch-help-overlay [style.top.px]="overlayTop" />
+  <app-koch-help-overlay #kochOverlay />
 }
 @if (celebrating) {
   <app-fireworks />
@@ -220,7 +220,7 @@
     </button>
   }
   @if (ebookView && ebook.info()?.href) {
-    <button class="fs-float-btn fs-float-ghost" [disabled]="ebook.loading()" (mousedown)="$event.preventDefault()" (click)="reloadBook()"
+    <button class="fs-float-btn fs-float-ghost" [style.order]="sendPracticeView ? -2 : null" [disabled]="ebook.loading()" (mousedown)="$event.preventDefault()" (click)="reloadBook()"
             title="Reload the book from its web address" aria-label="Reload the book from its web address">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor"
            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -229,11 +229,11 @@
       </svg>
     </button>
   }
-  @if (ebookView && sendPracticeView && ebook.loaded()) {
-    <button class="fs-float-btn fs-float-ghost" [class.revealing]="sendPractice.ebookAssistOn()"
-            [attr.aria-pressed]="sendPractice.ebookAssistOn()"
-            (mousedown)="$event.preventDefault()" (click)="sendPractice.toggleEbookAssist()"
-            title="Assist: show the next characters to key, with their dots and dashes" aria-label="Assist: show the next characters to key, with their dots and dashes">
+  @if (sendPracticeView && (!ebookView || ebook.loaded())) {
+    <button class="fs-float-btn fs-float-ghost" [class.assist-on]="sendPractice.assistOn()"
+            [attr.aria-pressed]="sendPractice.assistOn()"
+            (mousedown)="$event.preventDefault()" (click)="sendPractice.toggleAssist()"
+            [title]="sendPractice.assistLabel()" [attr.aria-label]="sendPractice.assistLabel()">
       <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" aria-hidden="true">
         <circle cx="5" cy="8" r="2"/><rect x="10" y="6" width="10" height="4" rx="2"/>
         <rect x="4" y="14" width="10" height="4" rx="2"/><circle cx="19" cy="16" r="2"/>
@@ -270,9 +270,8 @@
     </button>
   }
   @if (sendPracticeView) {
-    @if (!ebookView) {
-    <button class="fs-float-btn fs-float-ghost" [class.playing]="sendPractice.promptPlaying()"
-            [disabled]="sendPractice.state() !== 'keying' || sendPractice.hintChar() === ''"
+    <button class="fs-float-btn fs-float-ghost" [style.order]="ebookView ? -1 : null" [class.playing]="sendPractice.promptPlaying()"
+            [disabled]="!sendPractice.canPlayPrompt() || kochHelp.playing()"
             (mousedown)="$event.preventDefault()"
             (click)="sendPracticePromptAudio()"
             [title]="sendPractice.promptPlaying() ? 'Stop the sound' : 'Hear the next character'"
@@ -290,7 +289,6 @@
         </svg>
       }
     </button>
-    }
     <!-- A book has no start button: the first correct key starts it -->
     @if (!ebookView) {
     <button class="fs-float-btn fs-float-play" (click)="sendPracticeAction()"

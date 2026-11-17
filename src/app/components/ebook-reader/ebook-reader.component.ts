@@ -26,6 +26,8 @@ interface WordView {
   rest: Text;
   /** Index of the span marked as the current character, or -1 */
   cur: number;
+  /** The prosign key (such as `<AR>`) when the word is a prosign */
+  sign?: string;
 }
 
 /** One block drawn in the page. */
@@ -103,6 +105,14 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       this.practice.ebookTypedRevision();
       untracked(() => this.applyCells());
     });
+    // Prosign actions can change in Settings while the book is drawn
+    effect(() => {
+      this.settings.settings().prosignActions;
+      this.settings.settings().prosignActionsEnabled;
+      untracked(() => {
+        for (const view of this.views.values()) for (const word of view.words) this.applySign(word);
+      });
+    });
     // A key pressed in Send practice brings the expected letter back to the middle, even when it did not move
     effect(() => {
       this.ebook.recenter();
@@ -115,6 +125,14 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
   /** Copy practice in Type-along: lines have room for the typed text under them. */
   get typedMode(): boolean {
     return this.settings.settings().encoderMode === 'practice' && this.practice.feedbackMode() === 'typealong';
+  }
+
+  /** Copy practice in Blurred or Type-along, and Send practice: prosigns follow their prosign actions, so a new line or paragraph starts after them. */
+  get signBreaks(): boolean {
+    const s = this.settings.settings();
+    if (s.encoderMode === 'send-practice') return true;
+    const mode = this.practice.feedbackMode();
+    return s.encoderMode === 'practice' && (mode === 'blur' || mode === 'typealong');
   }
 
   /** The book has been scored (Validate) and the result is on show until the book plays on. */
@@ -263,26 +281,39 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
     el.className = `eb-block eb-${block.kind}`;
     el.dataset['block'] = String(index);
     const words: WordView[] = [];
-    const re = /(\s+)|(\S+)/g;
+    // A prosign such as <AR> is a word of its own, also when the text has it glued to other characters
+    const re = /(\s+)|(<[A-Za-z]{2,3}>[.,;:!?]*)|((?:(?!<[A-Za-z]{2,3}>)\S)+)/g;
     for (let m = re.exec(block.text); m; m = re.exec(block.text)) {
       if (m[1]) {
         el.appendChild(document.createTextNode(m[1]));
         continue;
       }
-      const text = m[2];
+      const text = m[2] ?? m[3];
       const box = document.createElement('span');
       box.className = text.length > LONG_WORD ? 'eb-w eb-long' : 'eb-w';
-      // A prosign is never blurred: it is not typed or scored, so there is nothing to hide
-      if (SIGN_WORD.test(text) && MORSE_TABLE[text.slice(0, text.indexOf('>') + 1).toUpperCase()]) box.classList.add('eb-sign');
+      const key = SIGN_WORD.test(text) ? text.slice(0, text.indexOf('>') + 1).toUpperCase() : '';
+      const sign = MORSE_TABLE[key] ? key : undefined;
       const rest = document.createTextNode(text);
       box.appendChild(rest);
       el.appendChild(box);
       const chars = Array.from(text);
       const offs = [0];
       for (const c of chars) offs.push(offs[offs.length - 1] + c.length);
-      words.push({ el: box, text, start: m.index, chars, offs, spans: [], rest, cur: -1 });
+      const word: WordView = { el: box, text, start: m.index, chars, offs, spans: [], rest, cur: -1, sign };
+      this.applySign(word);
+      words.push(word);
     }
     return { el, words, lo: 0, hi: -1, state: 'none' };
+  }
+
+  /** Mark a prosign word with the layout break its prosign action asks for (a new line or paragraph after it). */
+  private applySign(word: WordView): void {
+    if (!word.sign) return;
+    const s = this.settings.settings();
+    const entry = s.prosignActionsEnabled ? s.prosignActions[word.sign] : undefined;
+    const action = entry?.enabled ? entry.action : undefined;
+    word.el.classList.toggle('eb-nl', action === 'newLine');
+    word.el.classList.toggle('eb-np', action === 'newParagraph');
   }
 
   /**

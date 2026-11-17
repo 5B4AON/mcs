@@ -635,12 +635,27 @@
   background: rgba(140, 120, 90, 0.5);
   color: #2a1e12;
 }
+/* Assist is a toggle: like the other round buttons while off, with a blue symbol and rim and a firmer background while on */
+.blur-reveal-btn-main.assist-on,
+.blur-reveal-btn-main.assist-on:hover {
+  background: rgba(170, 150, 118, 0.78);
+  border-color: #134f96;
+  color: #0e4a94;
+}
 /* Replay sits directly above the reveal button (44 px + 8 px gap) */
 .blur-replay-btn-main {
   bottom: 62px;
 }
 .blur-replay-btn-main.above-assist {
   bottom: 114px;
+}
+/* Send practice with a book: Hear it first sits above Assist, so the reload button goes above it */
+.blur-replay-btn-main.above-replay {
+  bottom: 166px;
+}
+/* Send practice has no reveal button, so Hear it first takes the corner; Assist sits above it and lesson help above that */
+.blur-replay-btn-main.replay-low {
+  bottom: 10px;
 }
 /* The "Replay last:" question opens to the left of the replay button */
 .replay-menu-main {
@@ -684,9 +699,9 @@
   bottom: 10px;
   z-index: 5;
 }
-/* While a file is loaded the text stops a row above the player (84px bar + 10px margin) */
+/* While a file is loaded the text stops just above the player (84px bar + 10px margin) */
 .decoded-text.audio-on {
-  padding-bottom: calc(96px + 1.6em);
+  padding-bottom: calc(96px + .5rem);
 }
 .blur-reveal-btn-main:disabled {
   opacity: 0.45;

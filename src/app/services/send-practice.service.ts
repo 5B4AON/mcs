@@ -119,8 +119,8 @@ export class SendPracticeService {
   readonly currentRound = computed(() => this.roundScores().length + 1);
   /** Whether a multi-round briefing or summary is on screen (only those stages show prompt text) */
   readonly promptShowing = computed(() => this.sessionStage() === 'briefing' || this.sessionStage() === 'summary');
-  /** The prompt is playing as sound ("Hear it first") */
-  readonly promptPlaying = computed(() => this.encoder.replayPending());
+  /** The prompt is playing as sound ("Hear it first"); the lesson help is a replay too, but its own button owns it */
+  readonly promptPlaying = computed(() => this.encoder.replayPending() && !this.kochHelp.playing());
 
   readonly accuracy = computed(() => practiceAccuracy(this.feedback()));
   readonly averageRoundScore = computed(() => {
@@ -187,6 +187,33 @@ export class SendPracticeService {
   /** Switch Assist on or off (the round button over the book) */
   toggleEbookAssist(): void {
     this.settings.updateAndPersist({ sendPracticeEbookAssist: !this.ebookAssistOn() });
+  }
+
+  /**
+   * The Assist button is on: the book's assist for a book, otherwise the pattern hint under the prompt (the same
+   * setting as in Send Practice settings).
+   */
+  readonly assistOn = computed(() => this.ebookMode()
+    ? this.ebookAssistOn()
+    : this.settings.settings().sendPracticeHint === 'current');
+
+  /**
+   * Switch Assist on or off. A book's assist is saved at once; for other content it flips the pattern hint for this
+   * session only, so the setting keeps its saved value until the user saves Settings.
+   */
+  toggleAssist(): void {
+    if (this.ebookMode()) {
+      this.toggleEbookAssist();
+      return;
+    }
+    this.settings.update({ sendPracticeHint: this.assistOn() ? 'off' : 'current' });
+  }
+
+  /** Tooltip and name of the Assist button. */
+  assistLabel(): string {
+    return this.ebookMode()
+      ? 'Assist: show the next characters to key, with their dots and dashes'
+      : (this.assistOn() ? 'Hide the dots and dashes of the character to key' : 'Show the dots and dashes of the character to key');
   }
 
   /**
@@ -380,10 +407,29 @@ export class SendPracticeService {
     if (this.state() === 'keying' && !this.ebookMode()) this.finishRound();
   }
 
+  /**
+   * The character to key next in the book, also before keying has started: from the running cursor, otherwise from
+   * the reading position (empty when there is none). A prosign comes as its `<AR>` form.
+   */
+  ebookNextChar(): string {
+    const running = this.ebookCursor?.current;
+    if (running) return running.char;
+    const window = this.ebook.text;
+    if (!this.ebookMode() || !window || this.ebook.atEnd) return '';
+    return new EbookCursor(window, this.ebook.position()).current?.char ?? '';
+  }
+
+  /** Whether "Hear it first" has a character to play: the one to key next, while keying (a book: any time it is loaded). */
+  canPlayPrompt(): boolean {
+    if (this.ebookMode()) return this.ebook.loaded() && this.ebookNextChar() !== '';
+    return this.state() === 'keying' && this.hintChar() !== '';
+  }
+
   /** Play the character to key next as sound on this device only ("Hear it first"). */
   playPrompt(): void {
-    const next = this.hintChar();
-    if (next && this.state() === 'keying') this.encoder.startReplay(next, true);
+    if (!this.canPlayPrompt()) return;
+    const next = this.ebookMode() ? this.ebookNextChar() : this.hintChar();
+    this.encoder.startReplay(next, true, this.settings.settings().keyerWpm);
   }
 
   /** Stop the prompt sound. */

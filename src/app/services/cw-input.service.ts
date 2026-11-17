@@ -214,6 +214,8 @@ export class CwInputService {
 
     const s = this.settings.settings();
     if (!s.cwInputEnabled) return;
+    // Copy and Send practice never use the detector, and it would hear their sidetone (see AppComponent's practice effect)
+    if (s.encoderMode === 'practice' || s.encoderMode === 'send-practice') return;
 
     // Request audio input with selected device, disable all processing.
     // Use { exact: false } so the browser MUST disable processing;

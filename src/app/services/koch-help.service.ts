@@ -110,7 +110,7 @@ export class KochHelpService {
     }
     if (this.mode() === 'countdown') return;
     const kind = this.kind();
-    if (kind && this.play(this.lesson(kind)) && !this.introduced.has(this.key(kind))) {
+    if (kind && this.play(this.lesson(kind), kind) && !this.introduced.has(this.key(kind))) {
       this.introduced.add(this.key(kind));
       this.countdownDue.add(this.key(kind));
     }
@@ -132,7 +132,7 @@ export class KochHelpService {
     const key = this.key(kind);
     if (!this.introduced.has(key)) {
       this.introduced.add(key);
-      if (!this.play(this.lesson(kind))) return false;
+      if (!this.play(this.lesson(kind), kind)) return false;
       this.countdownDue.add(key);
       return true;
     }
@@ -162,9 +162,11 @@ export class KochHelpService {
     return kind === 'send' ? s.sendPracticeKochLesson : s.practiceKochLesson;
   }
 
-  private play(lesson: number): boolean {
+  private play(lesson: number, kind: KochHelpKind): boolean {
     const chars = [...kochNewChars(lesson)];
-    if (!this.encoder.startReplay(chars.join(' '), true)) return false;
+    // Send practice plays at the speed the learner keys at, as it is the hint for what to key
+    const wpm = kind === 'send' ? this.settings.settings().keyerWpm : null;
+    if (!this.encoder.startReplay(chars.join(' '), true, wpm)) return false;
     this.chars.set(chars);
     this.finished.set(false);
     this.clearTimers();

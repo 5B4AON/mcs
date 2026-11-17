@@ -18,6 +18,7 @@ import { SendPracticeService } from '../../services/send-practice.service';
 import { PracticeService } from '../../services/practice.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { AudioFileService } from '../../services/audio-file.service';
+import { LoopDetectionService } from '../../services/loop-detection.service';
 import { fullscreenFontStack } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
@@ -127,6 +128,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private practice: PracticeService,
     private cwInput: CwInputService,
     public audioFile: AudioFileService,
+    public loopDetection: LoopDetectionService,
   ) {
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {
