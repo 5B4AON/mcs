@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, effect, inject, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Subscription } from 'rxjs';
+import { Subscription, merge } from 'rxjs';
+import type { PaddleContactEvent } from './services/paddle-contacts';
 import { SettingsService, AppSettings } from './services/settings.service';
 import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
@@ -196,7 +197,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   spriteReady = false;
 
   /**
-   * True while the straight-key sprite is on the main screen. The CSS then
+   * True while the touch keyer sprite (straight key or paddle) is on the main screen. The CSS then
    * fits the output panel and the sprite into the viewport (`sprite-fit`):
    * the sprite takes the room left over and the text box gives way first.
    */
@@ -684,12 +685,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
-    // Sprite button animation — react to straight key events from other keyers
+    // Main screen touch keyer animation — straight key sprite: react to straight key events from other keyers
     this.subs.push(
       this.keyer.straightKeyEvent$.subscribe(evt => {
         const s = this.settings.settings();
         if (evt.down && !evt.inputPath?.startsWith('keyboard')) this.releaseTextFocus();
-        if (!s.spriteButtonEnabled) return;
+        if (!s.spriteButtonEnabled || s.spriteKeyerMode !== 'straight') return;
         const animate =
           (evt.inputPath === 'keyboardStraightKey' && s.spriteAnimateKeyboard) ||
           (evt.inputPath === 'mouseStraightKey' && s.spriteAnimateMouse) ||
@@ -701,36 +702,55 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
-    // Sprite button animation — react to encoder element events
+    // Straight key sprite — react to encoder element events (the paddle sprite shows the matching paddle)
     this.subs.push(
       this.encoder.elementEvent$.subscribe(evt => {
         const s = this.settings.settings();
-        if (s.spriteButtonEnabled && s.spriteAnimateEncoder) {
+        if (!s.spriteButtonEnabled || !s.spriteAnimateEncoder) return;
+        if (s.spriteKeyerMode === 'paddle') {
+          this.ngZone.run(() => this.setSpriteHold('encoder', evt.element, evt.down));
+        } else {
           this.spriteKeyDown = evt.down;
         }
       })
     );
 
-    // Sprite button animation — react to mic straight key events
+    // Straight key sprite — react to mic straight key events
     this.subs.push(
       this.audioInput.keyEvent$.subscribe(evt => {
         if (evt.down) this.releaseTextFocus();
         const s = this.settings.settings();
-        if (s.spriteButtonEnabled && s.spriteAnimateMic) {
+        if (s.spriteButtonEnabled && s.spriteKeyerMode === 'straight' && s.spriteAnimateMic) {
           this.spriteKeyDown = evt.down;
         }
       })
     );
 
-    // Sprite button animation — react to serial straight key events
+    // Straight key sprite — react to serial straight key events
     this.subs.push(
       this.serialInput.straightKeyEvent$.subscribe(evt => {
         if (evt.down) this.releaseTextFocus();
         const s = this.settings.settings();
-        if (s.spriteButtonEnabled && s.spriteAnimateSerial) {
+        if (s.spriteButtonEnabled && s.spriteKeyerMode === 'straight' && s.spriteAnimateSerial) {
           this.spriteKeyDown = evt.down;
         }
       })
+    );
+
+    // Straight key sprite — react to MIDI straight key events (MIDI callbacks run outside Angular's zone)
+    this.subs.push(
+      this.midiInput.straightKeyEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (s.spriteButtonEnabled && s.spriteKeyerMode === 'straight' && s.spriteAnimateMidi) {
+          this.ngZone.run(() => { this.spriteKeyDown = evt.down; });
+        }
+      })
+    );
+
+    // Paddle sprite — react to the paddle contacts of the keyboard, mouse, MIDI and serial keyers
+    this.subs.push(
+      merge(this.keyer.paddleEvent$, this.midiInput.paddleEvent$, this.serialInput.paddleEvent$)
+        .subscribe(evt => this.onSpritePaddleContact(evt))
     );
 
     // MIDI cannot reliably auto-reconnect after a browser refresh because
@@ -2331,12 +2351,33 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.defaultsResetInSettings) this.defaultsResetSaved = true;
   }
 
-  // ---- Straight-key sprite button ----
+  // ---- Main screen touch keyer (straight key or paddle sprite) ----
 
   /** Drop focus from the main text box so keying from a non-keyboard input does not raise the on-screen keyboard. */
   private releaseTextFocus(): void {
     const textarea = this.encoderInputRef?.nativeElement;
     if (textarea && document.activeElement === textarea) textarea.blur();
+  }
+
+  /** True while the main screen touch keyer is shown as two paddles instead of a straight key */
+  get spritePaddle(): boolean {
+    return this.settings.settings().spriteKeyerMode === 'paddle';
+  }
+
+  /**
+   * Switch the main screen touch keyer between the straight key and the paddles and save the choice at once
+   * (the Settings Save is not needed). Anything the sprite holds down is let go first.
+   */
+  toggleSpriteMode(): void {
+    if (this.spriteKeyDown) {
+      const s = this.settings.settings();
+      this.spriteKeyDown = false;
+      this.spriteMouseActive = false;
+      this.keyer.straightKeyInput(false, s.spriteSource, false, 'touchStraightKey');
+    }
+    (['left', 'right'] as const).forEach(side => this.setSpritePaddle(side, false));
+    this.spriteMouseSides.clear();
+    this.settings.updateAndPersist({ spriteKeyerMode: this.spritePaddle ? 'straight' : 'paddle' });
   }
 
   /** Visual pressed state for the straight-key sprite */
@@ -2370,6 +2411,116 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     const s = this.settings.settings();
     this.keyer.straightKeyInput(down, s.spriteSource, false, 'touchStraightKey',
       { name: s.spriteName || undefined, color: s.spriteColor || undefined });
+  }
+
+  // ---- Paddle sprite ----
+
+  /** The paddle element a side of the sprite makes: dot on the left, dash on the right (swapped by Reverse Paddles) */
+  spritePaddleElement(side: 'left' | 'right'): 'dit' | 'dah' {
+    const dotOnLeft = !this.settings.settings().spriteReversePaddles;
+    return (side === 'left') === dotOnLeft ? 'dit' : 'dah';
+  }
+
+  /** Sides touched right now, with the element each one is keying (kept so the release matches the press) */
+  private spriteTouched = new Map<'left' | 'right', 'dit' | 'dah'>();
+  /** Sides pressed by the mouse, so a repeated mouse event is ignored */
+  private spriteMouseSides = new Set<'left' | 'right'>();
+  /** Paddles held by other inputs (keyboard, mouse, MIDI, serial, encoder), per element and input */
+  private spriteHolds: Record<'dit' | 'dah', Set<string>> = { dit: new Set(), dah: new Set() };
+
+  /**
+   * Whether one side of the sprite is drawn pressed: touched, or held by another input. Other inputs always
+   * move the left paddle for a dot and the right paddle for a dash: Reverse Paddles only changes what a touch
+   * on a side sends, never how the picture animates.
+   */
+  spritePaddleDown(side: 'left' | 'right'): boolean {
+    return this.spriteTouched.has(side) || this.spriteHolds[side === 'left' ? 'dit' : 'dah'].size > 0;
+  }
+
+  /** Which of the four sprite frames to show */
+  get spritePaddleFrame(): 'rest' | 'left' | 'right' | 'both' {
+    const left = this.spritePaddleDown('left');
+    const right = this.spritePaddleDown('right');
+    return left && right ? 'both' : left ? 'left' : right ? 'right' : 'rest';
+  }
+
+  /** Handle touch events on one half of the paddle sprite */
+  onSpritePaddleTouch(side: 'left' | 'right', down: boolean, event: TouchEvent): void {
+    event.preventDefault();
+    if (down) this.releaseTextFocus();
+    this.setSpritePaddle(side, down);
+  }
+
+  /** Handle mouse events on one half of the paddle sprite (desktop fallback) */
+  onSpritePaddleMouse(side: 'left' | 'right', down: boolean, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    if (down) {
+      if (this.spriteMouseSides.has(side)) return;
+      this.spriteMouseSides.add(side);
+      this.releaseTextFocus();
+    } else {
+      if (!this.spriteMouseSides.has(side)) return;
+      this.spriteMouseSides.delete(side);
+    }
+    this.setSpritePaddle(side, down);
+  }
+
+  /** Press or release one paddle of the sprite and pass it to the keyer service as a touch paddle. */
+  private setSpritePaddle(side: 'left' | 'right', down: boolean): void {
+    const s = this.settings.settings();
+    let element: 'dit' | 'dah';
+    if (down) {
+      if (this.spriteTouched.has(side)) return;
+      element = this.spritePaddleElement(side);
+      this.spriteTouched.set(side, element);
+    } else {
+      const held = this.spriteTouched.get(side);
+      if (!held) return;
+      element = held;
+      this.spriteTouched.delete(side);
+    }
+    const opts = { name: s.spriteName || undefined, color: s.spriteColor || undefined };
+    if (element === 'dit') {
+      this.keyer.ditPaddleInput(down, s.spriteSource, false, 'touchPaddle', s.spritePaddleMode, opts);
+    } else {
+      this.keyer.dahPaddleInput(down, s.spriteSource, false, 'touchPaddle', s.spritePaddleMode, opts);
+    }
+  }
+
+  /** Remember that another input holds (or let go of) a paddle element; without an element it lets go of both. */
+  private setSpriteHold(source: string, element: 'dit' | 'dah' | undefined, down: boolean): void {
+    if (!element) {
+      this.spriteHolds.dit.delete(source);
+      this.spriteHolds.dah.delete(source);
+      return;
+    }
+    if (down) this.spriteHolds[element].add(source);
+    else this.spriteHolds[element].delete(source);
+  }
+
+  /**
+   * A paddle of another keyer closed or opened. The sprite's own touches (and the fullscreen touch
+   * keyer, which is not on screen at the same time) arrive as `touchPaddle` and are drawn from the touch itself.
+   * A release is always followed, so no paddle can stay drawn pressed after its input is switched off.
+   */
+  private onSpritePaddleContact(evt: PaddleContactEvent): void {
+    if (evt.inputPath === 'touchPaddle') return;
+    const source = String(evt.inputPath);
+    this.ngZone.run(() => {
+      if (!evt.down) {
+        this.setSpriteHold(source, evt.element, false);
+        return;
+      }
+      const s = this.settings.settings();
+      if (!s.spriteButtonEnabled || s.spriteKeyerMode !== 'paddle') return;
+      const animate =
+        (source.startsWith('keyboardPaddle') && s.spriteAnimateKeyboard) ||
+        (source === 'mousePaddle' && s.spriteAnimateMouse) ||
+        (source.startsWith('midiPaddle') && s.spriteAnimateMidi) ||
+        (source.startsWith('serialPaddle') && s.spriteAnimateSerial);
+      if (animate) this.setSpriteHold(source, evt.element, true);
+    });
   }
 
   // ---- Fullscreen modal ----

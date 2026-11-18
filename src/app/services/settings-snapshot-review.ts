@@ -390,7 +390,7 @@ function settingGroup(field: keyof PortableAppSettings): SettingChange['group'] 
     return 'Outputs';
   }
   if (field.startsWith('encoder') || field.startsWith('keyboard') || field.startsWith('keyer')
-    || field.startsWith('paddle') || field.startsWith('mouse') || field.startsWith('touch')) {
+    || field.startsWith('paddle') || field.startsWith('mouse') || field.startsWith('touch') || field.startsWith('sprite')) {
     return 'Keying and encoder';
   }
   return 'Other';

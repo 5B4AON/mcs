@@ -19,6 +19,8 @@ const fullscreen: Condition = any(ebook, answerIs('screen', 'fullscreen'));
 
 /** On a touch screen the guide switches the fullscreen touch keyer on as a straight key and counts it as a key. */
 const touchDevice: Condition = () => isTouchDevice();
+/** The main screen touch keyer works with a mouse too, so its pages follow its own switch (the guide turns it on for a touch screen). */
+const spriteAvailable: Condition = any(touchDevice, settingIs('spriteButtonEnabled', true));
 const touchNotCounted: Condition = ctx => !ctx.settings.sendPracticeInputs.includes('touch');
 
 /** Setting changes this goal always makes, plus the ones the user chose with the mode and screen questions. */
@@ -26,7 +28,9 @@ const FORCED: ForcedSetting[] = [
   { key: 'sendPracticeEnabled', value: true, label: 'Send practice on' },
   { key: 'touchKeyerEnabled', value: true, label: 'Turn the fullscreen touch keyer on', when: touchDevice },
   { key: 'touchKeyerMode', value: 'straight', label: 'Use the fullscreen touch keyer as a straight key', when: all(touchDevice, settingIs('touchKeyerEnabled', false), ctx => ctx.level === 'novice') },
-  { key: 'sendPracticeInputs', value: ctx => [...ctx.settings.sendPracticeInputs, 'touch'], label: 'Count the fullscreen touch keyer as a key', when: all(touchDevice, touchNotCounted) },
+  { key: 'spriteButtonEnabled', value: true, label: 'Turn the main screen touch keyer on', when: touchDevice },
+  { key: 'spriteKeyerMode', value: 'straight', label: 'Use the main screen touch keyer as a straight key', when: all(touchDevice, settingIs('spriteButtonEnabled', false), ctx => ctx.level === 'novice') },
+  { key: 'sendPracticeInputs', value: ctx => [...ctx.settings.sendPracticeInputs, 'touch'], label: 'Count the touch keyers as a key', when: all(touchDevice, touchNotCounted) },
   { key: 'encoderMode', value: 'send-practice', label: 'Switch the main screen to Send practice', when: any(ebook, answerIs(SWITCH_MODE, 'yes')) },
   { key: 'fullscreenLensEnabled', value: false, label: 'Turn Lens off in the full screen', when: fullscreen },
   { key: 'fullscreenInputMode', value: 'key', label: 'Open the full screen in Key mode', when: fullscreen },
@@ -74,7 +78,7 @@ export const SEND_PRACTICE_FLOW: WizardFlow = {
     {
       id: 'keys',
       title: 'Which keys do you practise with?',
-      intro: 'Only the ticked keys count as keying the text. Greyed keys are set up but switched off in Settings. On a touch screen this guide switches the fullscreen touch keyer on and counts it.',
+      intro: 'Only the ticked keys count as keying the text. Greyed keys are set up but switched off in Settings. On a touch screen this guide switches the fullscreen and main screen touch keyers on and counts them.',
       helpSection: 's3-6',
       items: [{ item: 'send-practice-keys' }],
     },
@@ -86,6 +90,24 @@ export const SEND_PRACTICE_FLOW: WizardFlow = {
       helpSection: 's4-3',
       when: touchDevice,
       items: [{ item: 'touch-keyer-mode' }],
+    },
+    {
+      id: 'spriteMode',
+      level: 'intermediate',
+      title: 'Main screen touch keyer',
+      intro: 'Choose how the on-screen key at the bottom of the main screen keys: as a straight key (one button, you time the dots and dashes) or as a paddle (two buttons). It appears only when the screen has room for it.',
+      helpSection: 's4-6',
+      when: spriteAvailable,
+      items: [{ item: 'sprite-key-mode' }],
+    },
+    {
+      id: 'spriteAnimate',
+      level: 'intermediate',
+      title: 'Which inputs also move the main screen touch keyer?',
+      intro: 'The on-screen key can also move when you key with another input, so you can watch your own keying. Tick the inputs that should move it. Touching the key itself always moves it.',
+      helpSection: 's4-6',
+      when: spriteAvailable,
+      items: [{ item: 'sprite-key-animate' }],
     },
     {
       id: 'content',
@@ -133,7 +155,7 @@ export const SEND_PRACTICE_FLOW: WizardFlow = {
     speedStep({ keyer: true }, {
       level: 'intermediate',
       intro: 'The keyer speed decides how clean the dits and dahs of your paddle are, so a speed you can keep up with decodes best. A straight key is timed by your hand, so this page is only shown when a paddle is ticked and switched on.',
-      when: any(sendPracticeUsesPaddle, all(touchDevice, settingIs('touchKeyerMode', 'paddle'))),
+      when: any(sendPracticeUsesPaddle, any(all(touchDevice, settingIs('touchKeyerMode', 'paddle')), all(spriteAvailable, settingIs('spriteKeyerMode', 'paddle')))),
     }),
     {
       id: 'hint',

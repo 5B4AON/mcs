@@ -13,6 +13,9 @@ import { MidiOutputService } from './midi-output.service';
 import { LoopDetectionService } from './loop-detection.service';
 import { LensService } from './lens.service';
 import { SendPracticeGateService } from './send-practice-gate.service';
+import {
+  analyseElements, MAX_ELEMENT_MS, MIN_ELEMENT_MS, pushElement, unitFromDitDah,
+} from './decoder-calibration';
 
 /**
  * Options for onKeyDown / onKeyUp calls.
@@ -128,8 +131,13 @@ interface DecoderPipeline {
  *  keyer produces mathematically perfect timing.
  *
  * **Auto-calibration strategy** (when perfectTiming is false):
- *  - Every interval is expressed in "dit units" (dit=1, dah=3, gaps=1/3/7)
- *  - A rolling median of dit-unit estimates converges to the sender's speed
+ *  - The latest key-down times of a pool (`decoder-calibration.ts`) are split into a short and a
+ *    long group, the dits and the dahs; their medians set the dit/dah threshold and the speed
+ *  - What was keyed lately decides, not what the decoder believed before, so a wrong belief
+ *    cannot keep itself alive: after a long hold or a big change of speed correct keying is
+ *    followed again within a few characters
+ *  - A key-down held longer than a dah at about 3 WPM still reads as a dah but is not learned from,
+ *    and pauses never teach the speed
  *
  * Output:
  *  - taggedOutput signal: the newest decoded entries {type, char, inputPath} (older ones rotate out);
@@ -193,20 +201,13 @@ export class MorseDecoderService {
   readonly rxEstimatedWpm = signal(12);
   readonly rxAvgDit = signal(100);
   readonly rxAvgDah = signal(300);
-  private rxDitSamples: number[] = [];
-  private rxDahSamples: number[] = [];
-  private rxDitUnitSamples: number[] = [];
+  private rxElementSamples: number[] = [];
 
   // ---- TX calibration pool (shared across all TX-source pipelines) ----
   readonly txEstimatedWpm = signal(12);
   readonly txAvgDit = signal(100);
   readonly txAvgDah = signal(300);
-  private txDitSamples: number[] = [];
-  private txDahSamples: number[] = [];
-  private txDitUnitSamples: number[] = [];
-
-  private readonly MAX_UNIT_SAMPLES = 40;
-  private readonly MAX_SAMPLES = 20;
+  private txElementSamples: number[] = [];
 
   /** Per-input pipeline state — each InputPath has independent decode state */
   private pipelines = new Map<InputPath, DecoderPipeline>();
@@ -270,9 +271,7 @@ export class MorseDecoderService {
     const t = timingsFromWpm(this.settings.settings().rxDecoderWpm);
     this.rxAvgDit.set(t.dit);
     this.rxAvgDah.set(t.dah);
-    this.rxDitSamples = [];
-    this.rxDahSamples = [];
-    this.rxDitUnitSamples = [];
+    this.rxElementSamples = [];
     this.rxEstimatedWpm.set(this.settings.settings().rxDecoderWpm);
   }
 
@@ -281,18 +280,16 @@ export class MorseDecoderService {
     const t = timingsFromWpm(this.settings.settings().txDecoderWpm);
     this.txAvgDit.set(t.dit);
     this.txAvgDah.set(t.dah);
-    this.txDitSamples = [];
-    this.txDahSamples = [];
-    this.txDitUnitSamples = [];
+    this.txElementSamples = [];
     this.txEstimatedWpm.set(this.settings.settings().txDecoderWpm);
   }
 
   /**
    * Call when key goes DOWN on a specific input pipeline.
    *
-   * Measures the silence gap since the previous key-up on this pipeline.
-   * For human-timed inputs (perfectTiming = false), the gap is classified
-   * and fed into the active calibration pool (RX or TX per source).
+   * Measures the silence gap since the previous key-up on this pipeline and
+   * uses it to end the character or the word in progress. Silences are never
+   * fed into the calibration: a pause tells nothing about the speed.
    *
    * @param path    Identifies which input the event comes from
    * @param source  Which calibration pool to use ('rx' or 'tx')
@@ -306,18 +303,6 @@ export class MorseDecoderService {
     if (pipeline.keyUpTime > 0 && !pipeline.externalTiming) {
       const silenceMs = now - pipeline.keyUpTime;
       this.handleSilence(pipeline, path, silenceMs);
-
-      // Only feed silence gaps into calibration for human-timed input
-      if (!pipeline.perfectTiming) {
-        const ditEst = this.avgDitForSource(source);
-        if (silenceMs < ditEst * 2) {
-          this.addDitUnitSample(source, silenceMs / 1);   // intra-char = 1 unit
-        } else if (silenceMs < ditEst * 5) {
-          this.addDitUnitSample(source, silenceMs / 3);   // inter-char = 3 units
-        } else {
-          this.addDitUnitSample(source, silenceMs / 7);   // word gap = 7 units
-        }
-      }
     }
 
     // Cancel pending timers for this pipeline
@@ -439,21 +424,8 @@ export class MorseDecoderService {
       ? this.getKeyerThreshold()
       : this.thresholdForSource(source);
 
-    if (durationMs < threshold) {
-      pipeline.pattern += '.';
-      if (!pipeline.perfectTiming) {
-        this.pushSample(this.ditSamplesForSource(source), durationMs);
-        this.avgDitSignalForSource(source).set(this.avg(this.ditSamplesForSource(source)));
-        this.addDitUnitSample(source, durationMs / 1);   // dit = 1 unit
-      }
-    } else {
-      pipeline.pattern += '-';
-      if (!pipeline.perfectTiming) {
-        this.pushSample(this.dahSamplesForSource(source), durationMs);
-        this.avgDahSignalForSource(source).set(this.avg(this.dahSamplesForSource(source)));
-        this.addDitUnitSample(source, durationMs / 3);   // dah = 3 units
-      }
-    }
+    pipeline.pattern += durationMs < threshold ? '.' : '-';
+    if (!pipeline.perfectTiming) this.learnElement(source, durationMs);
 
     this.updatePatternSignals(pipeline);
     // Use keyer WPM timing for perfect elements, adaptive dit average otherwise.
@@ -585,6 +557,16 @@ export class MorseDecoderService {
     return source === 'tx' ? this.txAvgDit() : this.rxAvgDit();
   }
 
+  /** Get avgDah for a calibration pool */
+  private avgDahForSource(source: 'rx' | 'tx'): number {
+    return source === 'tx' ? this.txAvgDah() : this.rxAvgDah();
+  }
+
+  /** Get the latest key-down times of a pool */
+  private elementSamplesForSource(source: 'rx' | 'tx'): number[] {
+    return source === 'tx' ? this.txElementSamples : this.rxElementSamples;
+  }
+
   /** Get the avgDit WritableSignal for a pool */
   private avgDitSignalForSource(source: 'rx' | 'tx') {
     return source === 'tx' ? this.txAvgDit : this.rxAvgDit;
@@ -593,21 +575,6 @@ export class MorseDecoderService {
   /** Get the avgDah WritableSignal for a pool */
   private avgDahSignalForSource(source: 'rx' | 'tx') {
     return source === 'tx' ? this.txAvgDah : this.rxAvgDah;
-  }
-
-  /** Get dit samples array for a pool */
-  private ditSamplesForSource(source: 'rx' | 'tx'): number[] {
-    return source === 'tx' ? this.txDitSamples : this.rxDitSamples;
-  }
-
-  /** Get dah samples array for a pool */
-  private dahSamplesForSource(source: 'rx' | 'tx'): number[] {
-    return source === 'tx' ? this.txDahSamples : this.rxDahSamples;
-  }
-
-  /** Get dit-unit samples array for a pool */
-  private ditUnitSamplesForSource(source: 'rx' | 'tx'): number[] {
-    return source === 'tx' ? this.txDitUnitSamples : this.rxDitUnitSamples;
   }
 
   /** Get estimated WPM WritableSignal for a pool */
@@ -754,35 +721,21 @@ export class MorseDecoderService {
     }
   }
 
-  private pushSample(arr: number[], value: number): void {
-    arr.push(value);
-    if (arr.length > this.MAX_SAMPLES) arr.shift();
-  }
+  /**
+   * Learn from one key-down time of a human-timed input: add it to its pool's latest times, find the dit and
+   * dah lengths in them again and update the speed. A hold or a contact bounce is not learned from.
+   */
+  private learnElement(source: 'rx' | 'tx', durationMs: number): void {
+    if (durationMs < MIN_ELEMENT_MS || durationMs > MAX_ELEMENT_MS) return;
+    const current = { dit: this.avgDitForSource(source), dah: this.avgDahForSource(source) };
+    const samples = pushElement(this.elementSamplesForSource(source), durationMs, current);
+    if (source === 'tx') this.txElementSamples = samples;
+    else this.rxElementSamples = samples;
 
-  private avg(arr: number[]): number {
-    if (arr.length === 0) return 100;
-    return arr.reduce((a, b) => a + b, 0) / arr.length;
-  }
-
-  /** Add a dit-unit estimate and recalculate WPM for a calibration pool */
-  private addDitUnitSample(source: 'rx' | 'tx', ditUnitMs: number): void {
-    // Sanity: reject extreme outliers (< 10ms or > 1000ms per dit-unit)
-    if (ditUnitMs < 10 || ditUnitMs > 1000) return;
-
-    const samples = this.ditUnitSamplesForSource(source);
-    samples.push(ditUnitMs);
-    if (samples.length > this.MAX_UNIT_SAMPLES) {
-      samples.shift();
-    }
-
-    // Median is more robust than mean against outliers
-    const sorted = [...samples].sort((a, b) => a - b);
-    const mid = Math.floor(sorted.length / 2);
-    const medianDitMs = sorted.length % 2 === 0
-      ? (sorted[mid - 1] + sorted[mid]) / 2
-      : sorted[mid];
-
-    const wpm = Math.round(1200 / medianDitMs);
+    const est = analyseElements(samples, current);
+    this.avgDitSignalForSource(source).set(est.dit);
+    this.avgDahSignalForSource(source).set(est.dah);
+    const wpm = Math.round(1200 / unitFromDitDah(est));
     this.estimatedWpmSignalForSource(source).set(Math.max(1, Math.min(60, wpm)));
   }
 

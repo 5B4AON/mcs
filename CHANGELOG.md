@@ -4,6 +4,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.21.0] - 2026-11-18
+
+### Added
+
+- **Paddle on the main screen** — The key at the bottom of the main screen can now be a pair of paddles instead of a straight key. The card is renamed **Main Screen Touch Keyer** (Settings → Inputs, below the Fullscreen Touch Keyer) and has the same choices: Touch Mode (Straight Key or Paddle), **Reverse Paddles** and **Paddle Mode** (Iambic A and B, Ultimatic, Single Lever). The picture is split exactly in the middle: the left half sends dots and the right half dashes (swapped by Reverse Paddles), and each pressed paddle swings inward. A new set of four pictures shows the paddles at rest, left pressed, right pressed and squeezed.
+- **Setup Wizard** — The main screen touch keyer now appears in the same guides as the fullscreen touch keyer, with the same levels: **Key and see the text** (a new "Main screen touch keyer" choice with its own pages for mode, paddle behaviour, name and colour) and **Practice sending Morse** (touch mode on touch screens). From Intermediate level a new page picks which other inputs also move the on-screen key.
+- **Straight key / paddle toggle** — A round button in the top left corner of the main screen touch keyer area switches between the straight key and the paddles. Its picture shows the other choice, and the choice is saved at once without opening Settings.
+- **Animation from paddles** — "Also animate when these inputs key" (formerly "Also press down when these inputs key") follows the mode. With the paddles it offers keyboard, mouse, MIDI and serial paddles and the keyboard encoder; a dot moves the left paddle and a dash the right one, whatever Reverse Paddles is set to, and a squeeze moves both. The microphone straight key is offered only for the straight key.
+- **MIDI straight keys animate the key** — A MIDI straight key can now press the main-screen key too (it could not before).
+
+### Changed
+
+- **New straight-key picture** — The key now has the same wood base in both states, a lever that pivots (the arm, the cross bars and the screw lean forward together when the knob goes down), a smoother and symmetrical knob, and no bright or dark specks.
+- **Keys centred on the main screen** — The straight key and the paddles are centred between the text box and the bottom of the screen instead of sitting at the top of that space.
+- **Send practice** — The touch key in the list of keys counts both touch keyers, and the keyer-speed advice also applies to the main-screen paddles.
+- **Smaller pictures** — Both key pictures are now compressed WebP files (the straight key from 144 KB to 24 KB) and are kept for offline use.
+- **Decoder calibration** — The RX and TX decoders now find the dit and dah lengths from the latest sixteen key-down times instead of a running average, and pauses no longer count towards the speed.
+
+### Fixed
+
+- **Decoder lost after a long press** — Holding the straight key down for a long time, or sending at a very different speed than before, could make the TX speed fall to 6 or 9 WPM and the decoder show only dits until the speed was reset by hand. Long presses and pauses are no longer learned from, and correct keying is followed again within a few characters.
+
 ## [2.20.3] - 2026-11-18
 
 ### Added

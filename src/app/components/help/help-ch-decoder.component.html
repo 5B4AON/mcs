@@ -40,8 +40,8 @@
 </table>
 
 <p>
-  Each pool tracks its own rolling average of dit/dah durations and derives
-  its own WPM estimate independently. This is essential because the person
+  Each pool follows its own recent dit and dah lengths and derives its own WPM
+  estimate independently. This is essential because the person
   you are working will almost certainly send at a different speed to you.
   If both speeds were mixed into a single pool, the adaptive thresholds would
   drift and produce decoding errors.
@@ -72,10 +72,20 @@
 <p>
   When a human operates a key (straight key or hand-sent paddle), element
   durations are never mathematically perfect. The auto-calibration algorithm
-  measures each interval and, by dividing by the expected unit count (1 for
-  dit, 3 for dah, etc.), estimates the current dit-unit length. A rolling
-  average of these estimates converges on the sender's actual speed within a
-  few characters.
+  looks at the latest key-down times (about the last sixteen) and sorts them
+  into a short group, the dits, and a long group, the dahs. The typical length of
+  each group sets the dit/dah threshold and the speed, and converges on the
+  sender's actual speed within a few characters.
+</p>
+
+<p>
+  Because the latest elements always decide, the decoder recovers by itself. If
+  you hold the key down for a long time, lean on it or pause for a while, that
+  is not learned from (a very long press still decodes as a dash, but it does
+  not move the speed), and when you or the other station start sending properly
+  timed Morse again, or change speed a lot, the decoder follows within a few
+  characters. You never need the reset button for this; it is only there to
+  go back to the start speed.
 </p>
 
 <p>

@@ -1674,7 +1674,7 @@ select { max-width: 300px; }
 }
 
 /* ============================================================
-   TOUCH STRAIGHT-KEY SPRITE BUTTON
+   MAIN SCREEN TOUCH KEYER: STRAIGHT-KEY SPRITE BUTTON AND PADDLE SPRITE
    ============================================================ */
 .panel:has(+ .touch-key-sprite-wrapper) {
   margin-bottom: 0;
@@ -1693,13 +1693,39 @@ select { max-width: 300px; }
   from { opacity: 0; }
   to   { opacity: 1; }
 }
-/* One 297 x 300 frame of the two-frame image, centred; clip-path is in styles.css */
-.touch-key-sprite {
-  --img: url('/morse-key-sprite-transparent.png');
+/* Round toggle between the straight key and the paddles, in the top left corner of the sprite area */
+.sprite-mode-btn {
   position: absolute;
-  top: 0;
+  top: 1.5rem;
+  left: .5rem;
+  z-index: 1;
+  width: 40px;
+  min-width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #556;
+  background: #282c34;
+  color: #8cf;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .15s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.sprite-mode-btn:hover { background: #3a4050; }
+.sprite-mode-btn:active { background: #5577aa; color: #fff; transform: scale(.88); }
+.sprite-mode-btn svg { display: block; }
+
+/* One 297 x 300 frame of the two-frame image, centred in the room left over; clip-path is in styles.css */
+.touch-key-sprite {
+  --img: url('/morse-key-sprite.webp');
+  position: absolute;
+  top: 50%;
   left: 50%;
-  transform: translateX(-50%);
+  transform: translate(-50%, -50%);
   height: min(100cqh, 100cqw * 300 / 297);
   aspect-ratio: 297 / 300;
   border: none;
@@ -1720,6 +1746,53 @@ select { max-width: 300px; }
 .touch-key-sprite.pressed:hover,
 .touch-key-sprite.pressed:active {
   background: var(--img) no-repeat center bottom / auto 200%;
+}
+
+/*
+ * Paddle sprite: one 480 x 300 frame of the four-frame image (released, left pressed, right pressed,
+ * both pressed, top to bottom), centred; clip-path is in styles.css. Two invisible buttons share the
+ * frame, split exactly at its horizontal middle; the clip-path of the frame limits where they react.
+ */
+.touch-paddle-sprite {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  height: min(100cqh, 100cqw * 300 / 480);
+  aspect-ratio: 480 / 300;
+  background: url('/morse-paddle-sprite.webp') no-repeat 0 0 / 100% 400%;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+}
+.touch-paddle-sprite[data-pressed='left'] { background-position: 0 33.3333%; }
+.touch-paddle-sprite[data-pressed='right'] { background-position: 0 66.6667%; }
+.touch-paddle-sprite[data-pressed='both'] { background-position: 0 100%; }
+.touch-paddle-half,
+.touch-paddle-half:hover,
+.touch-paddle-half:active,
+.touch-paddle-half:focus {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: none;
+  user-select: none;
+  transition: none;
+}
+.touch-paddle-left { left: 0; }
+.touch-paddle-right { right: 0; }
+.touch-paddle-half:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: -3px;
 }
 
 /*
@@ -1761,7 +1834,7 @@ select { max-width: 300px; }
    ============================================================ */
 @media (pointer: coarse) {
   /* Larger touch targets */
-  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main):not(.update-dismiss) {
+  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.sprite-mode-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main):not(.update-dismiss) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }

@@ -548,18 +548,51 @@
     </div>
   </section>
 
-  <!-- ========== STRAIGHT-KEY SPRITE BUTTON ========== -->
+  <!-- ========== MAIN SCREEN TOUCH KEYER (STRAIGHT-KEY OR PADDLE SPRITE) ========== -->
   @if (spriteShown) {
     <div class="touch-key-sprite-wrapper">
-      <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
-              (touchstart)="onSpriteTouch(true, $event)"
-              (touchend)="onSpriteTouch(false, $event)"
-              (touchcancel)="onSpriteTouch(false, $event)"
-              (contextmenu)="$event.preventDefault()"
-              (mousedown)="onSpriteMouse(true, $event)"
-              (mouseup)="onSpriteMouse(false, $event)"
-              (mouseleave)="onSpriteMouse(false, $event)">
+      <button type="button" class="sprite-mode-btn" (click)="toggleSpriteMode()"
+              [title]="spritePaddle ? 'Switch to the straight key' : 'Switch to the paddles'"
+              [attr.aria-label]="spritePaddle ? 'Switch the main screen touch keyer to a straight key' : 'Switch the main screen touch keyer to paddles'">
+        @if (spritePaddle) {
+          <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="18" width="20" height="3.5" rx="1"/><line x1="13" y1="18" x2="13" y2="13.5"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><line x1="6" y1="13.5" x2="6" y2="9"/><path d="M2.5 8.5a3.5 2 0 0 1 7 0z" fill="currentColor"/><line x1="19" y1="13.5" x2="19" y2="18"/></svg>
+        } @else {
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="-1 -1 26 26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="15" height="15" rx="4" transform="rotate(45 10.500 10.500)"/><line x1="11.500" y1="15.500" x2="19.500" y2="23.500" stroke-width="2.400"/><line x1="15.500" y1="11.500" x2="23.500" y2="19.500" stroke-width="2.400"/></svg>
+        }
       </button>
+      @if (spritePaddle) {
+        <div class="touch-paddle-sprite" [attr.data-pressed]="spritePaddleFrame" role="group" aria-label="Paddle keyer"
+             (contextmenu)="$event.preventDefault()">
+          <button type="button" class="touch-paddle-half touch-paddle-left"
+                  [attr.aria-label]="(spritePaddleElement('left') === 'dit' ? 'Dot' : 'Dash') + ' paddle. Press and hold to key.'"
+                  (touchstart)="onSpritePaddleTouch('left', true, $event)"
+                  (touchend)="onSpritePaddleTouch('left', false, $event)"
+                  (touchcancel)="onSpritePaddleTouch('left', false, $event)"
+                  (mousedown)="onSpritePaddleMouse('left', true, $event)"
+                  (mouseup)="onSpritePaddleMouse('left', false, $event)"
+                  (mouseleave)="onSpritePaddleMouse('left', false, $event)">
+          </button>
+          <button type="button" class="touch-paddle-half touch-paddle-right"
+                  [attr.aria-label]="(spritePaddleElement('right') === 'dit' ? 'Dot' : 'Dash') + ' paddle. Press and hold to key.'"
+                  (touchstart)="onSpritePaddleTouch('right', true, $event)"
+                  (touchend)="onSpritePaddleTouch('right', false, $event)"
+                  (touchcancel)="onSpritePaddleTouch('right', false, $event)"
+                  (mousedown)="onSpritePaddleMouse('right', true, $event)"
+                  (mouseup)="onSpritePaddleMouse('right', false, $event)"
+                  (mouseleave)="onSpritePaddleMouse('right', false, $event)">
+          </button>
+        </div>
+      } @else {
+        <button class="touch-key-sprite" [class.pressed]="spriteKeyDown"
+                (touchstart)="onSpriteTouch(true, $event)"
+                (touchend)="onSpriteTouch(false, $event)"
+                (touchcancel)="onSpriteTouch(false, $event)"
+                (contextmenu)="$event.preventDefault()"
+                (mousedown)="onSpriteMouse(true, $event)"
+                (mouseup)="onSpriteMouse(false, $event)"
+                (mouseleave)="onSpriteMouse(false, $event)">
+        </button>
+      }
     </div>
   }
 

@@ -118,9 +118,10 @@ export class MorseEncoderService {
 
   /**
    * Emits key-down/key-up events for each morse element the encoder plays.
-   * Used by the app component to animate the sprite when the encoder trigger is enabled.
+   * Used by the app component to animate the main-screen touch keyer when the encoder trigger is enabled
+   * (`element` tells the paddle sprite which paddle to press; a key-up without it releases everything).
    */
-  readonly elementEvent$ = new Subject<{ down: boolean }>();
+  readonly elementEvent$ = new Subject<{ down: boolean; element?: 'dit' | 'dah' }>();
 
   /**
    * True while a replay is playing or paused. A replay uses the encoder's outputs
@@ -650,9 +651,10 @@ export class MorseEncoderService {
     if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
     if (q.lens && q.token !== ' ' && pauseQuarters(q.token) === 0) this.lens.show('encoder', q.lens, '', q.token, q.morse);
     q.elements.forEach((e, i) => {
+      const element = q.morse.charAt(i) === '.' ? 'dit' : 'dah';
       this.timelineLater(e.offset, () => {
         this.timelineKeyDown = true;
-        this.elementEvent$.next({ down: true });
+        this.elementEvent$.next({ down: true, element });
         void this.vibrationOutput.schedulePulse(e.dur, q.source);
         const pattern = q.morse.slice(0, i + 1);
         if (this.replayMode()) this.replayProgress.update(p => p && { ...p, pattern });
@@ -663,7 +665,7 @@ export class MorseEncoderService {
       });
       this.timelineLater(e.offset + e.dur, () => {
         this.timelineKeyDown = false;
-        this.elementEvent$.next({ down: false });
+        this.elementEvent$.next({ down: false, element });
       });
     });
   }

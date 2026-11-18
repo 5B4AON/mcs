@@ -16,11 +16,12 @@ const METHODS: {
   label: string;
   /** How the keyer is named in the review ("Turn the ... on") */
   phrase: string;
-  key: 'keyboardKeyerEnabled' | 'mouseKeyerEnabled' | 'touchKeyerEnabled' | 'midiInputEnabled';
+  key: 'keyboardKeyerEnabled' | 'mouseKeyerEnabled' | 'touchKeyerEnabled' | 'spriteButtonEnabled' | 'midiInputEnabled';
 }[] = [
   { id: 'keyboard', label: 'Keyboard keyer', phrase: 'keyboard key or paddle', key: 'keyboardKeyerEnabled' },
   { id: 'mouse', label: 'Mouse keyer', phrase: 'mouse keyer', key: 'mouseKeyerEnabled' },
   { id: 'touch', label: 'Fullscreen touch keyer', phrase: 'fullscreen touch keyer', key: 'touchKeyerEnabled' },
+  { id: 'sprite', label: 'Main screen touch keyer', phrase: 'main screen touch keyer', key: 'spriteButtonEnabled' },
   { id: 'midi', label: 'MIDI keyer', phrase: 'MIDI keyer', key: 'midiInputEnabled' },
 ];
 
@@ -39,7 +40,7 @@ const mouseHasPaddle: Condition = ctx => [ctx.settings.mouseLeftAction, ctx.sett
 
 /**
  * True when a chosen keyer has a paddle set up: a paddle keyboard or MIDI
- * mapping, a mouse button that dits or dahs, or the touch keyer in paddle mode.
+ * mapping, a mouse button that dits or dahs, or a touch keyer (fullscreen or main screen) in paddle mode.
  * Only a paddle makes the keyer generate the dits and dahs, so only then does the
  * keyer speed matter. Farnsworth timing is never asked here: no keyer applies it,
  * because the operator's hands set the gaps.
@@ -49,6 +50,7 @@ const paddleConfigured: Condition = any(
     ctx => ctx.settings.keyboardInputMappings.some(m => m.enabled && m.mode === 'paddle')),
   all(answerIncludes('methods', 'mouse'), mouseHasPaddle),
   all(answerIncludes('methods', 'touch'), ctx => ctx.settings.touchKeyerMode === 'paddle'),
+  all(answerIncludes('methods', 'sprite'), ctx => ctx.settings.spriteKeyerMode === 'paddle'),
   all(answerIncludes('methods', 'midi'),
     ctx => ctx.settings.midiInputMappings.some(m => m.enabled && m.mode === 'paddle')),
 );
@@ -57,7 +59,7 @@ const PADDLE_ONLY = 'This only applies to a paddle, where the keyer makes the di
 
 /**
  * Goal "Key and see the text": choose which local keyers to use (keyboard,
- * mouse, touch, MIDI), then one step per chosen keyer (a summary of the keyboard
+ * mouse, fullscreen touch, main screen touch, MIDI), then one step per chosen keyer (a summary of the keyboard
  * or MIDI mappings, each opened to edit), then the keyer speed when a paddle is
  * set up, then the sidetone. There is no Farnsworth step: your hands time the
  * gaps, so it would change nothing. Local keyers never start
@@ -158,6 +160,41 @@ export const SEND_FLOW: WizardFlow = {
       helpSection: 's4-3',
       when: answerIncludes('methods', 'touch'),
       items: [{ item: 'touch-keyer-identity' }],
+    },
+    {
+      id: 'sprite',
+      title: 'Main screen touch keyer',
+      intro: 'Choose how the on-screen key at the bottom of the main screen keys. It appears only when the screen has room for it, and it is not shown in Copy practice.',
+      helpSection: 's4-6',
+      when: answerIncludes('methods', 'sprite'),
+      items: [{ item: 'sprite-key-mode' }],
+    },
+    {
+      id: 'spritePaddle',
+      level: 'intermediate',
+      title: 'Main screen touch paddle behaviour',
+      intro: 'Two touch paddles work as a paddle. Choose which side is which and how holding both paddles behaves.',
+      helpSection: 'paddle-modes',
+      when: all(answerIncludes('methods', 'sprite'), settingIs('spriteKeyerMode', 'paddle')),
+      items: [{ item: 'sprite-key-paddle' }],
+    },
+    {
+      id: 'spriteName',
+      level: 'expert',
+      title: 'Name and colour of main screen touch keying',
+      intro: 'Optional. A name and colour label the text you key on the main screen touch keyer, so it stands out where names are shown.',
+      helpSection: 's4-6',
+      when: answerIncludes('methods', 'sprite'),
+      items: [{ item: 'sprite-key-identity' }],
+    },
+    {
+      id: 'spriteAnimate',
+      level: 'intermediate',
+      title: 'Which inputs also move the main screen touch keyer?',
+      intro: 'The on-screen key can also move when you key with another input, so you can watch your own keying. Tick the inputs that should move it. Touching the key itself always moves it.',
+      helpSection: 's4-6',
+      when: answerIncludes('methods', 'sprite'),
+      items: [{ item: 'sprite-key-animate' }],
     },
     {
       id: 'midi',

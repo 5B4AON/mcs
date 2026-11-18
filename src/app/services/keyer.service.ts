@@ -9,6 +9,7 @@ import { PaddleMode } from './settings-common';
 import { KeyboardInputMapping } from '../components/settings-items/keyboard-keyer/keyboard-keyer-item.model';
 import { MorseDecoderService } from './morse-decoder.service';
 import { timingsFromWpm } from '../morse-table';
+import { PaddleContacts } from './paddle-contacts';
 
 /**
  * Per-mapping iambic keyer state.
@@ -98,6 +99,14 @@ export class KeyerService implements OnDestroy {
    */
   straightKeyEvent$ = new Subject<{ down: boolean; inputPath: InputPath }>();
 
+  private readonly paddleContacts = new PaddleContacts();
+
+  /**
+   * Emits every paddle contact that closes or opens (the dit or the dah paddle of an input path,
+   * after that input's own reverse setting). The main-screen paddle sprite follows it.
+   */
+  readonly paddleEvent$ = this.paddleContacts.event$;
+
   constructor(
     private settings: SettingsService,
     private decoder: MorseDecoderService,
@@ -153,6 +162,7 @@ export class KeyerService implements OnDestroy {
       if (idx < 0) continue;
       state.leftPaddleDown = false;
       state.rightPaddleDown = false;
+      this.paddleContacts.releasePath(state.path);
       this.stopKeyer(state);
     }
   }
@@ -170,6 +180,7 @@ export class KeyerService implements OnDestroy {
       ks.rightPaddleDown = false;
       this.stopKeyer(ks);
     }
+    this.paddleContacts.releaseAll();
     // Release any held straight keys
     for (const [idx, held] of this.straightKeyStates) {
       if (held) {
@@ -261,9 +272,11 @@ export class KeyerService implements OnDestroy {
     if (down && !ks.leftPaddleDown) {
       ks.leftPaddleDown = true;
       ks.ditMemory = true;
+      this.paddleContacts.set(path, 'dit', true);
       this.startKeyer(ks);
     } else if (!down) {
       ks.leftPaddleDown = false;
+      this.paddleContacts.set(path, 'dit', false);
       this.checkStopKeyer(ks);
     }
   }
@@ -291,9 +304,11 @@ export class KeyerService implements OnDestroy {
     if (down && !ks.rightPaddleDown) {
       ks.rightPaddleDown = true;
       ks.dahMemory = true;
+      this.paddleContacts.set(path, 'dah', true);
       this.startKeyer(ks);
     } else if (!down) {
       ks.rightPaddleDown = false;
+      this.paddleContacts.set(path, 'dah', false);
       this.checkStopKeyer(ks);
     }
   }
@@ -427,6 +442,7 @@ export class KeyerService implements OnDestroy {
         if (shouldRelease) {
           ks.leftPaddleDown = false;
           ks.rightPaddleDown = false;
+          this.paddleContacts.releasePath(ks.path);
           this.stopKeyer(ks);
         }
       }
@@ -496,6 +512,7 @@ export class KeyerService implements OnDestroy {
     if (ks.leftPaddleDown) return;
     ks.leftPaddleDown = true;
     ks.ditMemory = true;
+    this.paddleContacts.set(path, 'dit', true);
     this.startKeyer(ks);
   }
 
@@ -503,6 +520,7 @@ export class KeyerService implements OnDestroy {
     const ks = this.paddleKeyers.get(idx);
     if (!ks) return;
     ks.leftPaddleDown = false;
+    this.paddleContacts.set(ks.path, 'dit', false);
     this.checkStopKeyer(ks);
   }
 
@@ -512,6 +530,7 @@ export class KeyerService implements OnDestroy {
     if (ks.rightPaddleDown) return;
     ks.rightPaddleDown = true;
     ks.dahMemory = true;
+    this.paddleContacts.set(path, 'dah', true);
     this.startKeyer(ks);
   }
 
@@ -519,6 +538,7 @@ export class KeyerService implements OnDestroy {
     const ks = this.paddleKeyers.get(idx);
     if (!ks) return;
     ks.rightPaddleDown = false;
+    this.paddleContacts.set(ks.path, 'dah', false);
     this.checkStopKeyer(ks);
   }
 

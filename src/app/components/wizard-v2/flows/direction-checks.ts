@@ -37,12 +37,13 @@ export function farnsworthProblems(settings: AppSettings, directions: Direction[
   return [`The longer pauses are set for ${NAME[settings.farnsworthAppliesTo]} Morse only, but ${what} counts as ${NAME[unaffected[0]]}, so they would change nothing. Set "Applies to" to "Both RX and TX".`];
 }
 
-/** The directions of the local keys of the given kinds (`keyboard`, `mouse`, `touch`, `midi`, `serial`). */
+/** The directions of the local keys of the given kinds (`keyboard`, `mouse`, `touch`, `sprite`, `midi`, `serial`). */
 export function keySources(settings: AppSettings, kinds: readonly string[]): Direction[] {
   const sources: Direction[] = [];
   if (kinds.includes('keyboard')) sources.push(...settings.keyboardInputMappings.filter(m => m.enabled).map(m => m.source));
   if (kinds.includes('mouse')) sources.push(settings.mouseKeyerSource);
   if (kinds.includes('touch')) sources.push(settings.touchKeyerSource);
+  if (kinds.includes('sprite')) sources.push(settings.spriteSource);
   if (kinds.includes('midi')) sources.push(...settings.midiInputMappings.filter(m => m.enabled).map(m => m.source));
   if (kinds.includes('serial')) sources.push(...settings.serialInputMappings.filter(m => m.enabled).map(m => m.source));
   return sources;
@@ -60,7 +61,10 @@ export function sendPracticeSources(settings: AppSettings): Direction[] {
       const mapping = list[Number(mapped[2])];
       if (mapping?.enabled) sources.push(mapping.source);
     } else if (id === 'mouse') sources.push(settings.mouseKeyerSource);
-    else if (id === 'touch') sources.push(settings.touchKeyerSource);
+    else if (id === 'touch') {
+      if (settings.touchKeyerEnabled) sources.push(settings.touchKeyerSource);
+      if (settings.spriteButtonEnabled) sources.push(settings.spriteSource);
+    }
   }
   return sources;
 }

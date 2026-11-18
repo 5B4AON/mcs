@@ -1,16 +1,19 @@
-<!-- Straight-Key Sprite -->
-<app-item-shell cardId="sprite-key-card" title="Straight-Key Sprite" [mode]="mode"
+<!-- Main Screen Touch Keyer -->
+<app-item-shell cardId="sprite-key-card" title="Main Screen Touch Keyer" [mode]="mode"
                 [enabled]="s().spriteButtonEnabled"
                 (enabledChange)="scope.update({ spriteButtonEnabled: $event })">
   <span item-badges>
     <span class="source-badge" [class.source-rx]="s().spriteSource === 'rx'" [class.source-tx]="s().spriteSource === 'tx'">{{ s().spriteSource === 'rx' ? 'RX' : 'TX' }}</span>
   </span>
 
+@if (part === 'all') {
 <div class="cw-hint">
-  Shows an on-screen straight key. Hold for a dash, tap for a dot.
-  <app-help-link-button section="s4-6" label="Help: on-screen key" />
+  Shows an on-screen straight key or paddle at the bottom of the main screen.
+  <app-help-link-button section="s4-6" label="Help: main screen touch keyer" />
 </div>
+}
 
+@if (part === 'all' || part === 'mode') {
 <label>Used for:
   <select [value]="s().spriteSource" (change)="onSettingChange('spriteSource', $event)">
     <option value="rx">RX &mdash; received morse</option>
@@ -19,8 +22,49 @@
   <app-help-link-button section="s5-1" label="Help: RX and TX" />
 </label>
 
-<div class="card-section-divider"></div>
+<label>Touch Mode:
+  <select [value]="s().spriteKeyerMode" (change)="onSettingChange('spriteKeyerMode', $event)">
+    <option value="straight">Straight Key</option>
+    <option value="paddle">Paddle</option>
+  </select>
+</label>
 
+<div class="cw-hint">
+  @if (paddle) {
+    @if (s().spriteReversePaddles) {
+      Two paddles: touch the left half for dashes and the right half for dots.
+    } @else {
+      Two paddles: touch the left half for dots and the right half for dashes.
+    }
+  } @else {
+    One key. Hold for a dash, tap for a dot.
+  }
+</div>
+}
+
+@if ((part === 'all' || part === 'paddle') && paddle) {
+  <label>
+    <input type="checkbox" [checked]="s().spriteReversePaddles"
+           (change)="onBoolChange('spriteReversePaddles', $event)">
+    Reverse Paddles
+  </label>
+
+  <label>Paddle Mode:
+    <select [value]="s().spritePaddleMode" (change)="onSettingChange('spritePaddleMode', $event)">
+      <option value="iambic-b" [selected]="s().spritePaddleMode === 'iambic-b'">Iambic B</option>
+      <option value="iambic-a" [selected]="s().spritePaddleMode === 'iambic-a'">Iambic A</option>
+      <option value="ultimatic" [selected]="s().spritePaddleMode === 'ultimatic'">Ultimatic</option>
+      <option value="single-lever" [selected]="s().spritePaddleMode === 'single-lever'">Single Lever</option>
+    </select>
+    <app-help-link-button section="paddle-modes" />
+  </label>
+}
+
+@if (part === 'all') {
+<div class="card-section-divider"></div>
+}
+
+@if (part === 'all' || part === 'identity') {
 <label>Name:
   <input type="text" [value]="s().spriteName"
          (input)="onSettingChange('spriteName', $event)"
@@ -39,16 +83,26 @@
     }
   </div>
 </label>
+}
 
+@if (part === 'all') {
 <div class="card-section-divider"></div>
+}
 
-<div class="cw-hint">Also press down when these inputs key:</div>
+@if (part === 'all' || part === 'animate') {
+<div class="cw-hint">Also animate when these inputs key:</div>
+@if (paddle) {
+  <div class="cw-hint">
+    Other inputs move the left paddle for a dot and the right paddle for a dash. Reverse Paddles
+    changes only what touching each paddle sends.
+  </div>
+}
 
 <div class="settings-row">
   <label class="settings-checkbox">
     <input type="checkbox" [checked]="s().spriteAnimateKeyboard"
            (change)="onAnimateChange('spriteAnimateKeyboard', $event)">
-    Keyboard straight key
+    {{ paddle ? 'Keyboard paddle' : 'Keyboard straight key' }}
   </label>
 </div>
 <div class="settings-row">
@@ -62,28 +116,31 @@
   <label class="settings-checkbox">
     <input type="checkbox" [checked]="s().spriteAnimateMouse"
            (change)="onAnimateChange('spriteAnimateMouse', $event)">
-    Mouse straight key
+    {{ paddle ? 'Mouse paddle' : 'Mouse straight key' }}
   </label>
 </div>
 <div class="settings-row">
   <label class="settings-checkbox">
     <input type="checkbox" [checked]="s().spriteAnimateMidi"
            (change)="onAnimateChange('spriteAnimateMidi', $event)">
-    MIDI straight key
+    {{ paddle ? 'MIDI paddle' : 'MIDI straight key' }}
   </label>
 </div>
 <div class="settings-row">
   <label class="settings-checkbox">
     <input type="checkbox" [checked]="s().spriteAnimateSerial"
            (change)="onAnimateChange('spriteAnimateSerial', $event)">
-    Serial straight key
+    {{ paddle ? 'Serial paddle' : 'Serial straight key' }}
   </label>
 </div>
-<div class="settings-row">
-  <label class="settings-checkbox">
-    <input type="checkbox" [checked]="s().spriteAnimateMic"
-           (change)="onAnimateChange('spriteAnimateMic', $event)">
-    Straight key via mic
-  </label>
-</div>
+@if (!paddle) {
+  <div class="settings-row">
+    <label class="settings-checkbox">
+      <input type="checkbox" [checked]="s().spriteAnimateMic"
+             (change)="onAnimateChange('spriteAnimateMic', $event)">
+      Straight key via mic
+    </label>
+  </div>
+}
+}
 </app-item-shell>

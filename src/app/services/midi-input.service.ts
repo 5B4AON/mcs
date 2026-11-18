@@ -9,6 +9,7 @@ import { PaddleMode, DecoderSource } from './settings-common';
 import { MorseDecoderService } from './morse-decoder.service';
 import { MidiOutputService } from './midi-output.service';
 import { timingsFromWpm } from '../morse-table';
+import { PaddleContacts } from './paddle-contacts';
 
 
 /**
@@ -106,6 +107,14 @@ export class MidiInputService implements OnDestroy {
 
   /** Emits captured note during learn mode */
   readonly learnedNote$ = new Subject<MidiLearnResult>();
+
+  /** Emits MIDI straight-key presses and releases (the main-screen touch keyer can animate with them). */
+  readonly straightKeyEvent$ = new Subject<{ down: boolean; mappingIndex: number }>();
+
+  private readonly paddleContacts = new PaddleContacts();
+
+  /** Emits every MIDI paddle contact that closes or opens (after the mapping's own reverse setting). */
+  readonly paddleEvent$ = this.paddleContacts.event$;
 
   private midiAccess: MIDIAccess | null = null;
   private started = false;
@@ -468,6 +477,7 @@ export class MidiInputService implements OnDestroy {
       switch (active.action) {
         case 'straightKey': {
           const skPath: InputPath = `midiStraightKey:${active.mappingIndex}`;
+          this.straightKeyEvent$.next({ down: false, mappingIndex: active.mappingIndex });
           this.zone.run(() => {
             this.decoder.onKeyUp(skPath, active.source, {
               fromMidi: true, name: active.name, color: active.color,
@@ -508,6 +518,7 @@ export class MidiInputService implements OnDestroy {
         this.activeNotes.set(note, { action: 'straightKey', source: mapping.source, name: mapping.name || '', color: mapping.color || '', mappingIndex: mi, noteOnTime: performance.now(), suppressed });
         if (suppressed) return;
         const skPath: InputPath = `midiStraightKey:${mi}`;
+        this.straightKeyEvent$.next({ down: true, mappingIndex: mi });
         this.zone.run(() => {
           this.decoder.onKeyDown(skPath, mapping.source, {
             fromMidi: true, name: mapping.name || undefined, color: mapping.color || undefined,
@@ -562,6 +573,7 @@ export class MidiInputService implements OnDestroy {
       switch (active.action) {
         case 'straightKey': {
           const skPath: InputPath = `midiStraightKey:${active.mappingIndex}`;
+          this.straightKeyEvent$.next({ down: false, mappingIndex: active.mappingIndex });
           this.zone.run(() => {
             this.decoder.onKeyUp(skPath, active.source, { fromMidi: true });
           });
@@ -577,6 +589,7 @@ export class MidiInputService implements OnDestroy {
     }
     this.activeNotes.clear();
     this.stopAllMidiKeyers();
+    this.paddleContacts.releaseAll();
   }
 
   // ---- Independent MIDI paddle keyer (per mapping) ----
@@ -625,9 +638,11 @@ export class MidiInputService implements OnDestroy {
       ks.leftPaddleDown = true;
       ks.leftPaddleDownTime = performance.now();
       ks.ditMemory = true;
+      this.paddleContacts.set(ks.path, 'dit', true);
       this.startMidiKeyer(ks);
     } else if (!down) {
       ks.leftPaddleDown = false;
+      this.paddleContacts.set(ks.path, 'dit', false);
       this.checkStopMidiKeyer(ks);
     }
   }
@@ -639,9 +654,11 @@ export class MidiInputService implements OnDestroy {
       ks.rightPaddleDown = true;
       ks.rightPaddleDownTime = performance.now();
       ks.dahMemory = true;
+      this.paddleContacts.set(ks.path, 'dah', true);
       this.startMidiKeyer(ks);
     } else if (!down) {
       ks.rightPaddleDown = false;
+      this.paddleContacts.set(ks.path, 'dah', false);
       this.checkStopMidiKeyer(ks);
     }
   }
@@ -695,9 +712,11 @@ export class MidiInputService implements OnDestroy {
     const now = performance.now();
     if (ks.leftPaddleDown && now - ks.leftPaddleDownTime > 5000) {
       ks.leftPaddleDown = false;
+      this.paddleContacts.set(ks.path, 'dit', false);
     }
     if (ks.rightPaddleDown && now - ks.rightPaddleDownTime > 5000) {
       ks.rightPaddleDown = false;
+      this.paddleContacts.set(ks.path, 'dah', false);
     }
 
     const timings = timingsFromWpm(this.settings.settings().keyerWpm);
@@ -820,6 +839,7 @@ export class MidiInputService implements OnDestroy {
           switch (active.action) {
             case 'straightKey': {
               const skPath: InputPath = `midiStraightKey:${active.mappingIndex}`;
+              this.straightKeyEvent$.next({ down: false, mappingIndex: active.mappingIndex });
               this.zone.run(() => {
                 this.decoder.onKeyUp(skPath, active.source, { fromMidi: true });
               });

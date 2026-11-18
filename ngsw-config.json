@@ -24,6 +24,8 @@
         "files": [
           "/icon-*.png",
           "/apple-touch-icon.png",
+          "/morse-*-sprite*.png",
+          "/morse-*-sprite*.webp",
           "/help/**",
           "/media/*.woff2"
         ]

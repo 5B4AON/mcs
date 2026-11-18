@@ -16,7 +16,7 @@ export function isValidSendPracticeInputId(id: string): boolean {
 /**
  * Picker id of the key that produced a decoded entry, from its decoder input path.
  * Returns null for paths that never count (for example the CW tone detector).
- * Sprite and touch keys both arrive as `touch*`.
+ * The fullscreen touch keyer and the main-screen touch keyer (sprite) both arrive as `touch*`.
  */
 export function sendPracticeInputId(inputPath: string | undefined): string | null {
   if (!inputPath) return null;
@@ -68,7 +68,7 @@ export function sendPracticeInputRows(s: AppSettings): SendPracticeInputRow[] {
   }));
   rows.push({ id: 'mouse', group: 'Mouse', label: 'Mouse keyer', color: '', available: s.mouseKeyerEnabled });
   rows.push({
-    id: 'touch', group: 'Touch', label: 'Fullscreen touch keyer and sprite key', color: '',
+    id: 'touch', group: 'Touch', label: 'Fullscreen and main screen touch keyers', color: '',
     available: s.touchKeyerEnabled || s.spriteButtonEnabled,
   });
   rows.push({ id: 'mic', group: 'Microphone', label: 'Straight key via microphone', color: '', available: s.micInputEnabled });
@@ -91,7 +91,9 @@ export function sendPracticeHasPaddle(s: AppSettings): boolean {
     if (id === 'mouse') {
       return s.mouseKeyerEnabled && [s.mouseLeftAction, s.mouseMiddleAction, s.mouseRightAction].some(a => a === 'dit' || a === 'dah');
     }
-    if (id === 'touch') return s.touchKeyerEnabled && s.touchKeyerMode === 'paddle';
+    if (id === 'touch') {
+      return (s.touchKeyerEnabled && s.touchKeyerMode === 'paddle') || (s.spriteButtonEnabled && s.spriteKeyerMode === 'paddle');
+    }
     const mapped = /^(keyboard|midi|serial):(\d+)$/.exec(id);
     if (!mapped) return false;
     const m = ({ keyboard: s.keyboardInputMappings, midi: s.midiInputMappings, serial: s.serialInputMappings })[mapped[1] as 'keyboard' | 'midi' | 'serial'][+mapped[2]];

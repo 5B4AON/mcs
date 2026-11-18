@@ -40,7 +40,7 @@ import { MOUSE_KEYER_BUTTONS_DESCRIPTOR, MOUSE_KEYER_DESCRIPTOR, MOUSE_KEYER_IDE
 import { TouchKeyerItemComponent } from './touch-keyer/touch-keyer-item.component';
 import { TOUCH_KEYER_DESCRIPTOR, TOUCH_KEYER_IDENTITY_DESCRIPTOR, TOUCH_KEYER_MODE_DESCRIPTOR, TOUCH_KEYER_PADDLE_DESCRIPTOR } from './touch-keyer/touch-keyer-item.model';
 import { SpriteKeyItemComponent } from './sprite-key/sprite-key-item.component';
-import { SPRITE_KEY_DESCRIPTOR } from './sprite-key/sprite-key-item.model';
+import { SPRITE_KEY_ANIMATE_DESCRIPTOR, SPRITE_KEY_DESCRIPTOR, SPRITE_KEY_IDENTITY_DESCRIPTOR, SPRITE_KEY_MODE_DESCRIPTOR, SPRITE_KEY_PADDLE_DESCRIPTOR } from './sprite-key/sprite-key-item.model';
 import { SerialInputItemComponent } from './serial-input/serial-input-item.component';
 import { SERIAL_INPUT_DESCRIPTOR } from './serial-input/serial-input-item.model';
 import { SerialOutputItemComponent } from './serial-output/serial-output-item.component';
@@ -109,6 +109,10 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'touch-keyer-paddle': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_PADDLE_DESCRIPTOR, inputs: { part: 'paddle' } },
   'touch-keyer-identity': { component: TouchKeyerItemComponent, descriptor: TOUCH_KEYER_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
   'sprite-key': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_DESCRIPTOR },
+  'sprite-key-mode': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_MODE_DESCRIPTOR, inputs: { part: 'mode' } },
+  'sprite-key-paddle': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_PADDLE_DESCRIPTOR, inputs: { part: 'paddle' } },
+  'sprite-key-identity': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_IDENTITY_DESCRIPTOR, inputs: { part: 'identity' } },
+  'sprite-key-animate': { component: SpriteKeyItemComponent, descriptor: SPRITE_KEY_ANIMATE_DESCRIPTOR, inputs: { part: 'animate' } },
   'midi-output': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_DESCRIPTOR },
   'midi-output-connect': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_CONNECT_DESCRIPTOR, inputs: { part: 'connect' } },
   'midi-output-speed': { component: MidiOutputItemComponent, descriptor: MIDI_OUTPUT_SPEED_DESCRIPTOR, inputs: { part: 'speed' } },

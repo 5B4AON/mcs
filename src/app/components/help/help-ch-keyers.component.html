@@ -195,7 +195,7 @@
 <p>
   <strong>It works only in the fullscreen conversation view, in Key mode.</strong>
   The touch buttons do not appear on the main screen; to key by touch there,
-  use the straight-key sprite button (section 4.6) instead.
+  use the main screen touch keyer (section 4.6) instead.
 </p>
 
 <p>
@@ -277,8 +277,9 @@
 <h2 id="s4-5">4.5 &nbsp;Reverse Paddles</h2>
 
 <p>
-  The mouse and fullscreen touch keyers each have their own independent
-  <strong>Reverse Paddles</strong> toggle in Settings. Keyboard paddle
+  The mouse keyer, the fullscreen touch keyer and the main screen touch keyer
+  each have their own independent <strong>Reverse Paddles</strong> toggle in
+  Settings. Keyboard paddle
   mappings carry a per-mapping reverse paddles setting (configured in each
   mapping's edit modal). When enabled, the dit and dah paddle assignments
   are swapped for that keyer or mapping only.
@@ -301,40 +302,80 @@
   </p>
 </div>
 
-<!-- 4.6 Straight-Key Sprite Button -->
-<h2 id="s4-6">4.6 &nbsp;Straight-Key Sprite Button</h2>
+<!-- 4.6 Main Screen Touch Keyer -->
+<h2 id="s4-6">4.6 &nbsp;Main Screen Touch Keyer</h2>
 
 <p>
-  A large on-screen straight-key button appears at the bottom of the main
+  A large on-screen key appears at the bottom of the main
   screen whenever there is enough vertical space. It grows or shrinks to
   fill the room left below the text box (the text box gives way first on a
   small screen) and is hidden when the screen is less than 560 pixels high,
   for example a phone held in landscape. Tap or click it to key
-  Morse code just like a physical straight key &mdash; press and hold for
-  dashes, tap briefly for dots.
+  Morse code. It is a straight key or a pair of paddles, like the
+  fullscreen touch keyer (section 4.3).
 </p>
 
 <p>
-  The sprite button is <strong>enabled by default</strong> on all devices
-  and has its own independent RX/TX source, name, and colour settings.
-  Configure it in <em>Settings &rarr; Inputs &rarr; Straight-Key Sprite</em>.
+  The round button in the top left corner of the keyer area switches between
+  the straight key and the paddles. It shows the picture of the other choice
+  (the straight key while the paddles are showing, the paddles while the straight
+  key is showing). The choice is saved at once, with no visit to Settings.
 </p>
+
+<p>
+  The main screen touch keyer is <strong>enabled by default</strong> on all
+  devices and has its own independent RX/TX source, name, and colour settings.
+  Configure it in <em>Settings &rarr; Inputs &rarr; Main Screen Touch Keyer</em>,
+  just below the Fullscreen Touch Keyer. It is not shown in Copy Practice, which
+  accepts typing only.
+</p>
+
+<table>
+  <tr><th>Touch Mode</th><th>Behaviour</th></tr>
+  <tr>
+    <td><strong>Straight Key</strong></td>
+    <td>One key. Hold for a dash, tap briefly for a dot. Only the key itself
+        reacts, not the empty sides of the picture.</td>
+  </tr>
+  <tr>
+    <td><strong>Paddle</strong></td>
+    <td>Two paddles. The picture is split exactly in the middle: touch the left
+        half for the left paddle and the right half for the right one. The left
+        paddle sends dots and the right one dashes (swapped by
+        <strong>Reverse Paddles</strong>). Hold both for a squeeze, and the keyer
+        alternates according to the <strong>Paddle Mode</strong> you choose
+        (Iambic B, Iambic A, Ultimatic or Single Lever, section 4.1), at the
+        Keyer WPM. Each paddle is drawn pressed while you touch it.</td>
+  </tr>
+</table>
 
 <h3>Animation from Other Keyers</h3>
 <p>
-  The sprite button can optionally animate (depress visually) when a
-  key press is detected from another input source. This provides
-  a satisfying visual indicator of keying activity. In the settings card,
-  check any combination of:
+  The picture can optionally animate (press down visually) when a key press is
+  detected from another input source. This provides a satisfying visual
+  indicator of keying activity. Below <em>Also animate when these inputs key</em>,
+  check any combination of the inputs. The list follows the Touch Mode:
 </p>
-<ul>
-  <li><strong>Keyboard straight key</strong></li>
-  <li><strong>Keyboard encoder</strong></li>
-  <li><strong>Mouse straight key</strong></li>
-  <li><strong>MIDI straight key</strong></li>
-  <li><strong>Serial straight key</strong></li>
-  <li><strong>Straight key via mic</strong></li>
-</ul>
+<table>
+  <tr><th>Straight Key</th><th>Paddle</th></tr>
+  <tr><td>Keyboard straight key</td><td>Keyboard paddle</td></tr>
+  <tr><td>Keyboard encoder</td><td>Keyboard encoder</td></tr>
+  <tr><td>Mouse straight key</td><td>Mouse paddle</td></tr>
+  <tr><td>MIDI straight key</td><td>MIDI paddle</td></tr>
+  <tr><td>Serial straight key</td><td>Serial paddle</td></tr>
+  <tr><td>Straight key via mic</td><td><em>(not offered: a microphone key has no paddles)</em></td></tr>
+</table>
 <p>
-  All animation checkboxes are unchecked by default.
+  With the paddles, another input moves the paddle that makes the same element:
+  a dot paddle on a keyboard, MIDI or serial key presses the left paddle of the
+  picture and a dash paddle the right one, a squeeze presses both, and the
+  keyboard encoder presses the left or right paddle for each dot or dash it
+  sends. <strong>Reverse Paddles</strong> does not change this animation; it
+  only swaps what touching the picture sends (left dashes, right dots). A
+  mapping&rsquo;s own reverse setting is applied first, so the picture always
+  shows the element that is really keyed.
+</p>
+<p>
+  All animation checkboxes are unchecked by default and keep their value when
+  you switch between the two modes.
 </p>

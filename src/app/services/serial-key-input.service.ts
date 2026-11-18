@@ -10,6 +10,7 @@ import { SerialInputMapping, SerialInputPin } from '../components/settings-items
 import { MorseDecoderService } from './morse-decoder.service';
 import { SerialKeyOutputService } from './serial-key-output.service';
 import { timingsFromWpm } from '../morse-table';
+import { PaddleContacts } from './paddle-contacts';
 
 /**
  * USB Vendor/Product ID filters for common USB-to-serial adapter chips.
@@ -126,6 +127,11 @@ export class SerialKeyInputService implements OnDestroy {
    * Used by AppComponent for sprite animation.
    */
   readonly straightKeyEvent$ = new Subject<{ down: boolean; mappingIndex: number }>();
+
+  private readonly paddleContacts = new PaddleContacts();
+
+  /** Emits every serial paddle contact that closes or opens (after the mapping's own reverse setting). */
+  readonly paddleEvent$ = this.paddleContacts.event$;
 
   /** Polling interval limits in ms */
   static readonly MIN_POLL_INTERVAL = 5;
@@ -608,6 +614,7 @@ export class SerialKeyInputService implements OnDestroy {
       }
       this.stopMappingKeyer(idx);
     }
+    this.paddleContacts.releaseAll();
     this.keyerStates.clear();
     this.lastError.set(null);
   }
@@ -649,9 +656,11 @@ export class SerialKeyInputService implements OnDestroy {
     if (down && !ks.leftPaddleDown) {
       ks.leftPaddleDown = true;
       ks.ditMemory = true;
+      this.paddleContacts.set(`serialPaddle:${mappingIndex}`, 'dit', true);
       this.startMappingKeyer(mappingIndex, paddleMode);
     } else if (!down) {
       ks.leftPaddleDown = false;
+      this.paddleContacts.set(`serialPaddle:${mappingIndex}`, 'dit', false);
       this.checkStopMappingKeyer(mappingIndex);
     }
   }
@@ -662,9 +671,11 @@ export class SerialKeyInputService implements OnDestroy {
     if (down && !ks.rightPaddleDown) {
       ks.rightPaddleDown = true;
       ks.dahMemory = true;
+      this.paddleContacts.set(`serialPaddle:${mappingIndex}`, 'dah', true);
       this.startMappingKeyer(mappingIndex, paddleMode);
     } else if (!down) {
       ks.rightPaddleDown = false;
+      this.paddleContacts.set(`serialPaddle:${mappingIndex}`, 'dah', false);
       this.checkStopMappingKeyer(mappingIndex);
     }
   }
