@@ -185,6 +185,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @ViewChild(SetupWizardV2Component) private wizardRef?: SetupWizardV2Component;
   @ViewChild('goalPresets') private goalPresetsRef?: SettingsModalComponent;
+  @ViewChild(HelpComponent) private helpRef?: HelpComponent;
+  @ViewChild(SymbolsRefComponent) private symbolsRefRef?: SymbolsRefComponent;
   @ViewChild('decoderBox') decoderBoxRef?: ElementRef<HTMLDivElement>;
   @ViewChild('encoderInput') encoderInputRef?: ElementRef<HTMLTextAreaElement>;
   @ViewChild('audioToggleButton') private audioToggleButtonRef?: ElementRef<HTMLButtonElement>;
@@ -521,9 +523,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           const encSource = es.encoderSource;
           const displayName = this.getDisplayName(encSource, es.encoderName || undefined);
           const displayColor = es.encoderColor || undefined;
-          this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
-          // The remote screen needs the word gap too, or the next send runs on from this one
-          void this.rtdbService.forwardEncoderChar(' ', es.encoderWpm, encSource, es.encoderName, es.encoderColor);
+          // A typed space already on screen is the word gap
+          if (!this.displayBuffers.sentSpaceShown(encSource)) {
+            this.displayBuffers.pushSent(encSource, ' ', displayName, displayColor);
+            // The remote screen needs the word gap too, or the next send runs on from this one
+            void this.rtdbService.forwardEncoderChar(' ', es.encoderWpm, encSource, es.encoderName, es.encoderColor);
+          }
         }
       }
       this.lastWordGapCount = count;
@@ -834,10 +839,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Close the topmost modal — called by popstate (back button) */
   private closeActiveModal(): void {
     // Help and the symbols reference open on top of every other dialog, so they close first
+    // An open search bar closes first; the dialog stays, so its history entry is restored
     if (this.showHelp) {
-      this.showHelp = false;
+      if (this.helpRef?.searchOpen) {
+        this.helpRef.closeSearch();
+        this.restoreModalState();
+      } else {
+        this.showHelp = false;
+      }
     } else if (this.showSymbolsRef) {
-      this.showSymbolsRef = false;
+      if (this.symbolsRefRef?.searchOpen) {
+        this.symbolsRefRef.closeSearch();
+        this.restoreModalState();
+      } else {
+        this.showSymbolsRef = false;
+      }
     } else if (this.modalBack.handleBack()) {
       // a popup opened by a card (a mapping editor) closed itself
     } else if (this.showGoalPresets) {
@@ -1037,6 +1053,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (event.key === 'F1' && !event.ctrlKey && !event.altKey && !event.metaKey && !event.shiftKey) {
       this.onHelpShortcut(event);
       return;
+    }
+    // Find keys reach Help and the Symbols Reference even when focus has left them (the browser's own find bar stays out)
+    if (!event.defaultPrevented && (this.showHelp || this.showSymbolsRef)) {
+      const finder = this.showHelp ? this.helpRef : this.symbolsRefRef;
+      if (finder?.handleFindKey(event)) return;
     }
     this.catchPracticeTyping(event);
     if (event.key !== 'Escape' || event.defaultPrevented) return;

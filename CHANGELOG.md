@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.20.3] - 2026-11-18
+
+### Added
+
+- **Find keys in Help and the Symbols Reference** — <kbd>F3</kbd> or <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>G</kbd> opens the search bar when it is closed and otherwise goes to the next match (with <kbd>Shift</kbd>, the previous one). The find keys also work when focus has left the dialog, and the browser's own find bar stays out of the way.
+- **Keyboard Shortcuts in Help** — A new section 11.6 lists the keys of the app (F1, Escape, Back, find keys, Enter, Tab); the Help introduction mentions the new find keys.
+
+### Changed
+
+- **Back closes the search bar first** — In Help and the Symbols Reference the browser's Back button closes an open search bar before the dialog itself.
+
+### Fixed
+
+- **Double space in sent text** — A typed space followed by the word-gap space no longer shows (or relays) two spaces in a row.
+- **Spaces at the start of a line** — Spaces that would begin a line are no longer shown there; the stored text and the saved transcript keep them, and practice text is still shown exactly as sent.
+
 ## [2.20.2] - 2026-11-17
 
 ### Added

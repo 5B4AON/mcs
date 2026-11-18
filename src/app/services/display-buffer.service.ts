@@ -34,18 +34,26 @@ export const TRANSCRIPT_MAX_CHARS = 25 * 6 * 60 * 48;
 /** Share of the transcript cap at which the user is warned */
 const TRANSCRIPT_WARN_SHARE = 0.9;
 
-/** A stretch of text from one source: the same type, name and colour */
+/** A stretch of text from one source: the same type, name and colour (and, for practice text, shown exactly) */
 interface TextRun {
   type: 'rx' | 'tx';
   text: string;
   name?: string;
   color?: string;
+  /** Practice text: shown exactly as sent, spaces at the start of a line included */
+  exact?: boolean;
 }
 
 /** Cut `count` UTF-16 units off the start of `s`, never leaving half of a surrogate pair */
 function cutStart(s: string, count: number): string {
   const code = s.charCodeAt(count);
   return s.slice(code >= 0xdc00 && code <= 0xdfff ? count + 1 : count);
+}
+
+/** The text without the spaces that would start a line: at its start when `atStart`, and after each newline in it. */
+function hideLineStartSpaces(text: string, atStart: boolean): string {
+  const inner = text.replace(/\n +/g, '\n');
+  return atStart ? inner.replace(/^ +/, '') : inner;
 }
 
 /**
@@ -90,10 +98,16 @@ export class DisplayBuffer {
   }
 
   /** Append one or more characters. */
-  push(type: 'rx' | 'tx', text: string, name?: string, color?: string): void {
-    this.append(type, text, name, color);
+  push(type: 'rx' | 'tx', text: string, name?: string, color?: string, exact = false): void {
+    this.append(type, text, name, color, exact);
     this.trim();
     this.rebuild();
+  }
+
+  /** True when the newest text is a space from the given source (a second one would show as a double space). */
+  endsWithSpace(type: 'rx' | 'tx'): boolean {
+    const last = this.runs.at(-1);
+    return !!last && last.type === type && last.text.endsWith(' ');
   }
 
   /** Clear all content. */
@@ -128,13 +142,13 @@ export class DisplayBuffer {
   }
 
   /** Add text to the end, joining the last run when it has the same source. */
-  private append(type: 'rx' | 'tx', text: string, name?: string, color?: string): void {
+  private append(type: 'rx' | 'tx', text: string, name?: string, color?: string, exact = false): void {
     if (!text) return;
     const last = this.runs.at(-1);
-    if (last && last.type === type && last.name === name && last.color === color) {
+    if (last && last.type === type && last.name === name && last.color === color && !!last.exact === exact) {
       last.text += text;
     } else {
-      this.runs.push({ type, text, name, color });
+      this.runs.push({ type, text, name, color, exact });
     }
     this.total += text.length;
   }
@@ -275,6 +289,7 @@ export class DisplayBuffer {
     const lines: DisplayLine[] = [];
     let flat = '';
     let prev: TextRun | null = null;
+    let linesAtStart = true;
     for (let i = first; i < this.runs.length; i++) {
       const run = this.runs[i];
       const text = i === first && remaining < 0 ? cutStart(run.text, -remaining) : run.text;
@@ -285,9 +300,15 @@ export class DisplayBuffer {
           && text[0] !== '\n' && !flat.endsWith('\n')) {
         flat += '\n';
       }
+      // Spaces at the start of a line are hidden here only; the stored text and the saved transcript keep them.
+      // A line starts at the beginning, after a newline, and where the source or name changes
+      const sourceChanged = prev === null || run.type !== prev.type || run.name !== prev.name;
       prev = run;
-      flat += text;
-      lines.push({ type: run.type, text, name: run.name, color: run.color });
+      flat += run.exact ? text : hideLineStartSpaces(text, flat === '' || flat.endsWith('\n'));
+      const shown: string = run.exact ? text : hideLineStartSpaces(text, sourceChanged || linesAtStart);
+      if (!shown) continue;
+      linesAtStart = shown.endsWith('\n');
+      lines.push({ type: run.type, text: shown, name: run.name, color: run.color });
     }
 
     this.lines.set(lines);
@@ -371,9 +392,17 @@ export class DisplayBufferService {
       this.suppressNextSpace = true;
     } else {
       this.suppressNextSpace = false;
-      this.mainOutput.push(type, char, name, color);
-      this.fullscreenConversation.push(type, char, name, color);
+      // A typed space and the word-gap space can arrive one after the other: keep only one
+      for (const buffer of [this.mainOutput, this.fullscreenConversation]) {
+        if (char === ' ' && !literal && buffer.endsWithSpace(type)) continue;
+        buffer.push(type, char, name, color, literal);
+      }
     }
+  }
+
+  /** True when the main output already ends with a space from this source (see `pushSent`). */
+  sentSpaceShown(type: 'rx' | 'tx'): boolean {
+    return this.mainOutput.endsWithSpace(type);
   }
 
   /**

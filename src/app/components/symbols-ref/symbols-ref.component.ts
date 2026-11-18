@@ -99,12 +99,31 @@ export class SymbolsRefComponent implements AfterViewInit, OnDestroy {
       this.closeSearch();
       return;
     }
-    if ((event.ctrlKey || event.metaKey) && !event.altKey && event.key.toLowerCase() === 'f') {
+    if (this.handleFindKey(event)) return;
+    trapDialogTabKey(event, this.host.nativeElement);
+  }
+
+  /**
+   * Find shortcuts: Ctrl/Cmd+F opens the search bar (instead of the browser's find bar); F3 or Ctrl/Cmd+G
+   * opens it when closed, otherwise goes to the next hit, and with Shift to the previous one.
+   * Also called by the app for these keys when focus is outside the dialog. Returns true when handled.
+   */
+  handleFindKey(event: KeyboardEvent): boolean {
+    if (event.altKey) return false;
+    const mod = event.ctrlKey || event.metaKey;
+    const key = event.key.toLowerCase();
+    if (mod && key === 'f') {
       event.preventDefault();
       this.openSearch();
-      return;
+      return true;
     }
-    trapDialogTabKey(event, this.host.nativeElement);
+    if (event.key === 'F3' || (mod && key === 'g')) {
+      event.preventDefault();
+      if (this.searchOpen) this.search.step(event.shiftKey ? -1 : 1);
+      else this.openSearch();
+      return true;
+    }
+    return false;
   }
 
   /** Show the search bar (or focus it when already open) with the old query selected. */

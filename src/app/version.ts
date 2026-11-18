@@ -1,15 +1,15 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.20.2';
+export const APP_VERSION = '2.20.3';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
-export const APP_RELEASE_DATE = '2026-11-17';
+export const APP_RELEASE_DATE = '2026-11-18';
 
 /**
  * A very short note (a phrase or one brief sentence; up to three short sentences when several very important changes ship together) about the main user-visible changes in APP_VERSION, shown once
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Assist works in every Send practice mode, and its hints play at your keyer speed. Plus smaller improvements.';
+export const WHATS_NEW = 'New keyboard shortcuts guide in Help, with F3 to find the next match. Plus smaller fixes.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {
