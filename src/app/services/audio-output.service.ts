@@ -390,6 +390,17 @@ export class AudioOutputService {
     return performance.now() + (t - ctx.currentTime) * 1000;
   }
 
+  /**
+   * The page-clock time (ms) at which audio-clock time `t` is heard: `perfTimeOf()` is the time it is rendered,
+   * and the base and output latency of the context come on top. Used to put pictures at the instant of the sound.
+   */
+  heardPerfTimeOf(t: number): number | null {
+    const ctx = this.masterCtx();
+    const rendered = this.perfTimeOf(t);
+    if (!ctx || rendered === null) return null;
+    return rendered + ((ctx.baseLatency || 0) + (ctx.outputLatency || 0)) * 1000;
+  }
+
   /** Make sure the contexts are running (the browser may have paused them), so a timeline starts on a running clock. */
   async ready(): Promise<void> {
     if (!this.started) return;

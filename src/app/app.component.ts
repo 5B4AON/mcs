@@ -716,7 +716,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.encoder.paddleEvent$.subscribe(evt => {
         const s = this.settings.settings();
         if (!s.spriteButtonEnabled || !s.spriteAnimateEncoder || s.spriteKeyerMode !== 'paddle') return;
-        this.ngZone.run(() => this.setSpriteHold('encoder', evt.element, evt.down));
+        this.ngZone.run(() => {
+          if (!evt.element) {
+            this.encoderPaddleSides.clear();
+            this.setSpriteHold('encoder', undefined, false);
+            return;
+          }
+          // The encoder plays as if sent on this sprite: with Reverse Paddles a dot is on the right paddle.
+          // The paddle used at press is remembered so a release matches it even if the setting changed meanwhile
+          let shown: 'dit' | 'dah';
+          if (evt.down) {
+            shown = s.spriteReversePaddles ? (evt.element === 'dit' ? 'dah' : 'dit') : evt.element;
+            this.encoderPaddleSides.set(evt.element, shown);
+          } else {
+            shown = this.encoderPaddleSides.get(evt.element) ?? evt.element;
+            this.encoderPaddleSides.delete(evt.element);
+          }
+          this.setSpriteHold('encoder', shown, evt.down);
+        });
       })
     );
 
@@ -2437,6 +2454,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /** Sides touched right now, with the element each one is keying (kept so the release matches the press) */
+  /** The sprite paddle each encoder element is shown on while it is down */
+  private encoderPaddleSides = new Map<'dit' | 'dah', 'dit' | 'dah'>();
+
   private spriteTouched = new Map<'left' | 'right', 'dit' | 'dah'>();
   /** Sides pressed by the mouse, so a repeated mouse event is ignored */
   private spriteMouseSides = new Set<'left' | 'right'>();

@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, NgZone, computed, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService } from './settings.service';
 import { MORSE_TABLE, timingsFromWpm, adjustGapTimings, pauseQuarters } from '../morse-table';
@@ -43,6 +43,9 @@ const TIMELINE_FORWARD_S = 0.03;
 const TIMELINE_PAUSE_MARGIN_S = 0.02;
 /** A gap shorter than this needs no snap-to-silence event after the tone before it (see `scheduleToneAt`) */
 const SNAP_GAP_MS = 35;
+
+/** How long before the sound a picture is drawn, for the time it takes to reach the screen (animation frame, paint, display) */
+const VISUAL_LEAD_MS = 30;
 
 /** A token placed on the audio clock, waiting for its turn to start sounding. */
 interface TimelineToken {
@@ -204,6 +207,7 @@ export class MorseEncoderService {
     private rtdbOutput: FirebaseRtdbService,
     private loopDetection: LoopDetectionService,
     private lens: LensService,
+    private zone: NgZone,
   ) {}
 
   /** Enqueue text for sending */
@@ -662,16 +666,17 @@ export class MorseEncoderService {
 
   /** A token has started sounding: the sprite, Lens, the symbols and the vibration follow its elements. */
   private startToken(q: TimelineToken, replay: boolean): void {
-    this.typedPattern.set(null);
-    if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
-    if (q.lens && q.token !== ' ' && pauseQuarters(q.token) === 0) this.lens.show('encoder', q.lens, '', q.token, q.morse);
+    this.visualAt(q.at, () => {
+      this.typedPattern.set(null);
+      if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
+      if (q.lens && q.token !== ' ' && pauseQuarters(q.token) === 0) this.lens.show('encoder', q.lens, '', q.token, q.morse);
+    });
     this.startPaddleContacts(q);
     q.elements.forEach((e, i) => {
       const element = q.morse.charAt(i) === '.' ? 'dit' : 'dah';
-      this.timelineLater(e.offset, () => {
+      this.visualAt(q.at + e.offset / 1000, () => {
         this.timelineKeyDown = true;
         this.elementEvent$.next({ down: true, element });
-        void this.vibrationOutput.schedulePulse(e.dur, q.source);
         const pattern = q.morse.slice(0, i + 1);
         if (this.replayMode()) this.replayProgress.update(p => p && { ...p, pattern });
         if (q.lens) {
@@ -679,10 +684,11 @@ export class MorseEncoderService {
           this.typedPattern.set({ pattern, source: q.source, color: q.lens.color });
         }
       });
-      this.timelineLater(e.offset + e.dur, () => {
+      this.visualAt(q.at + (e.offset + e.dur) / 1000, () => {
         this.timelineKeyDown = false;
         this.elementEvent$.next({ down: false, element });
       });
+      this.timerAt(q.at + e.offset / 1000, () => void this.vibrationOutput.schedulePulse(e.dur, q.source));
     });
   }
 
@@ -692,11 +698,58 @@ export class MorseEncoderService {
     if (!q.morse || !s.spriteButtonEnabled || !s.spriteAnimateEncoder || s.spriteKeyerMode !== 'paddle') return;
     const timings = { dit: q.ditMs, dah: q.ditMs * 3, intraChar: q.gapMs };
     for (const step of planPaddleContacts(q.morse, s.spritePaddleMode, timings)) {
-      this.timelineLater(step.at, () => {
+      this.visualAt(q.at + step.at / 1000, () => {
         if (step.down) this.timelinePaddles.add(step.side);
         else this.timelinePaddles.delete(step.side);
         this.paddleEvent$.next({ down: step.down, element: step.side });
       });
+    }
+  }
+
+  /**
+   * Run `fn` (a picture: the sprite) at the instant the sound placed at audio-clock time `audioTime` is heard.
+   * Nothing is timed with timers: the due pictures are taken from a queue on animation frames, by the page
+   * clock that belongs to the audio clock, so a busy page cannot make them lag more and more behind the
+   * sound (a late frame shows the state that is due then), and all pictures due in a frame are drawn together.
+   */
+  private visualAt(audioTime: number, fn: () => void, own: 'tx' | 'rx' = 'tx'): void {
+    const at = this.audioOutput.heardPerfTimeOf(audioTime) ?? this.perfOf(audioTime);
+    let i = this.visualQueue.length;
+    while (i > 0 && this.visualQueue[i - 1].at > at) i--;
+    this.visualQueue.splice(i, 0, { at, fn, own });
+    if (!this.visualFrame) this.zone.runOutsideAngular(() => { this.visualFrame = requestAnimationFrame(() => this.runVisuals()); });
+  }
+
+  /**
+   * Run `fn` at the instant the sound at audio-clock time `audioTime` is heard, from a timer aimed at that
+   * absolute time (not at a delay from some earlier moment, which would pass on every lateness). For what must
+   * also work when the page is hidden and so gets no animation frames, such as the vibration.
+   */
+  private timerAt(audioTime: number, fn: () => void, own: 'tx' | 'rx' = 'tx'): void {
+    const at = this.audioOutput.heardPerfTimeOf(audioTime) ?? this.perfOf(audioTime);
+    const id = setTimeout(() => {
+      this.timelineTimers.delete(id);
+      fn();
+    }, Math.max(0, at - performance.now()));
+    if (own === 'tx') this.timelineTimers.add(id);
+  }
+
+  private visualQueue: { at: number; fn: () => void; own: 'tx' | 'rx' }[] = [];
+  private visualFrame = 0;
+
+  private runVisuals(): void {
+    this.visualFrame = 0;
+    // A picture drawn in this frame reaches the screen a refresh or two later (frame callback, paint, display),
+    // so what is due within that time is drawn now
+    const until = performance.now() + VISUAL_LEAD_MS;
+    let n = 0;
+    while (n < this.visualQueue.length && this.visualQueue[n].at <= until) n++;
+    if (n > 0) {
+      const due = this.visualQueue.splice(0, n);
+      this.zone.run(() => due.forEach(v => v.fn()));
+    }
+    if (this.visualQueue.length > 0) {
+      this.visualFrame = requestAnimationFrame(() => this.runVisuals());
     }
   }
 
@@ -714,6 +767,7 @@ export class MorseEncoderService {
     this.timelineTimers.clear();
     this.audioOutput.cancelScheduledTones();
     this.serialOutput.cancelPulses();
+    this.visualQueue = this.visualQueue.filter(v => v.own === 'rx');
     if (this.timelineKeyDown) {
       this.timelineKeyDown = false;
       this.elementEvent$.next({ down: false });
@@ -823,7 +877,7 @@ export class MorseEncoderService {
           continue;
         }
         await wait(next);
-        this.receivedPattern.set(null);
+        this.visualAt(next, () => this.receivedPattern.set(null), 'rx');
         if (this.sidetoneQueue.length > 0) continue;
         return;
       }
@@ -856,20 +910,21 @@ export class MorseEncoderService {
   /** A received character has started sounding: Lens, the symbols and the vibration follow its elements. */
   private startRxChar(q: RxToken): void {
     const meta = { source: q.source, name: q.name, color: q.color };
-    this.receivedPattern.set(null);
+    const rx = 'rx' as const;
+    this.visualAt(q.at, () => this.receivedPattern.set(null), rx);
     if (q.suppressed) {
-      if (q.char !== ' ' && q.morse) this.lens.show('rtdb', meta, q.morse, q.char);
+      if (q.char !== ' ' && q.morse) this.visualAt(q.at, () => this.lens.show('rtdb', meta, q.morse, q.char), rx);
       return;
     }
     if (q.char === ' ') return;
-    this.lens.show('rtdb', meta, '', q.char, q.morse);
+    this.visualAt(q.at, () => this.lens.show('rtdb', meta, '', q.char, q.morse), rx);
     q.elements.forEach((e, i) => {
-      setTimeout(() => {
+      this.visualAt(q.at + e.offset / 1000, () => {
         const pattern = q.morse.slice(0, i + 1);
         this.lens.show('rtdb', meta, pattern, q.char, q.morse);
         this.receivedPattern.set({ pattern, source: q.source, color: q.color });
-        void this.vibrationOutput.schedulePulse(e.dur, q.source);
-      }, e.offset);
+      }, rx);
+      this.timerAt(q.at + e.offset / 1000, () => void this.vibrationOutput.schedulePulse(e.dur, q.source), rx);
     });
   }
 
