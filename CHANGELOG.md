@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.21.1] - 2026-11-19
+
+### Added
+
+- **Straight key / paddle toggle in full screen** — The fullscreen touch keyer has the same switch as the main screen: the top button of the round button stack on the right (shown in Key mode with the touch keyer on) swaps between the straight key and the paddles. Its picture shows the other choice, and the choice is saved at once.
+- **Discard question for unsaved edits** — The Settings mapping editors (keyboard, MIDI input and output, serial input and output), the emoji editor and the e-book Custom text popup now ask "Discard your changes?" (Discard / Stay) when something was changed and you leave with the close button, Escape, a click outside or the browser Back button. The Cancel button still closes at once, and an untouched popup closes without asking.
+
+### Changed
+
+- **Paddles follow the paddle mode when the keyboard encoder keys them** — The main screen paddle picture no longer shows two independent keys when typed text is sent. A new model of Iambic A, Iambic B, Ultimatic and Single Lever (`paddle-simulation.ts`) works out how a hand would send each character, and every plan is checked against that mode's rules before it is drawn. A run of the same element keeps its paddle down; changing paddle overlaps the two with the first paddle leading by 50–140 ms (growing with the dot length); characters that alternate all the way (C, K, R, …) are a held squeeze that Iambic A releases in the last element and Iambic B one element earlier; Ultimatic keeps the old paddle down into the next element; Single Lever never presses both.
+- **Touch keyer waits for the settings** — The main screen touch keyer shows a centred spinner until the saved settings are loaded, so the straight key no longer flashes before the paddles (or the other way round).
+- **Paddle picture sits lower** — The main screen paddles have more space between them and the output above.
+- **Straight key picture** — In the pressed frame the central bar now narrows slightly from the pivot to the knob, as it tilts away from the viewer, and a piece of the cross bar that was left on the bar's left edge is gone.
+
+### Fixed
+
+- **Send practice used only the first key** — With several keys ticked, the first one used in a round stayed the only one decoded until the round ended. Every picked key now works at any time, and you can change between them.
+- **MIDI mappings after a replug** — After unplugging and reconnecting a MIDI interface the saved device no longer matched, so each mapping had to be selected and saved again. A mapping whose device identity changed now uses the only connected MIDI device (with several devices it still needs selecting).
+- **Back after discarding went too far** — Answering Discard (or any dialog that removes two browser history steps at once) could close Settings and the other dialogs behind it as well. Only the popup you were in closes now.
+
 ## [2.21.0] - 2026-11-18
 
 ### Added

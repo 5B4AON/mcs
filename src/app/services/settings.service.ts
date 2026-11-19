@@ -316,6 +316,13 @@ export class SettingsService {
   /** True when no saved profile exists for the current device configuration */
   readonly needsValidation = signal(false);
 
+  /**
+   * True once the start-up profile lookup has finished (a profile loaded, none found, or no device
+   * fingerprint available). Until then `settings` only holds defaults, so UI that depends on a saved
+   * choice (the main screen touch keyer: straight key or paddle) waits for it.
+   */
+  readonly profileLoaded = signal(false);
+
   /** Current device fingerprint (set after enumeration) */
   readonly currentFingerprint = signal('');
 
@@ -419,6 +426,7 @@ export class SettingsService {
       this.savedBaseline = structuredClone(loaded);
       this.isDirty.set(false);
       this.needsValidation.set(false);
+      this.profileLoaded.set(true);
       return true;
     }
 
@@ -436,6 +444,7 @@ export class SettingsService {
     this.savedBaseline = null;
     this.needsValidation.set(true);
     this.isDirty.set(true);
+    this.profileLoaded.set(true);
     return false;
   }
 

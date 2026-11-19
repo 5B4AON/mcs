@@ -1693,6 +1693,23 @@ select { max-width: 300px; }
   from { opacity: 0; }
   to   { opacity: 1; }
 }
+/* Shown in the middle of the sprite area until the saved settings say which touch keyer to draw */
+.sprite-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(28px, 30cqmin, 72px);
+  height: clamp(28px, 30cqmin, 72px);
+  translate: -50% -50%;
+  box-sizing: border-box;
+  border: max(3px, 0.08 * clamp(28px, 30cqmin, 72px)) solid rgba(255, 255, 255, .2);
+  border-top-color: #8cf;
+  border-radius: 50%;
+  animation: spin .8s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sprite-loading { animation-duration: 2s; }
+}
 /* Round toggle between the straight key and the paddles, in the top left corner of the sprite area */
 .sprite-mode-btn {
   position: absolute;
@@ -1755,10 +1772,11 @@ select { max-width: 300px; }
  */
 .touch-paddle-sprite {
   position: absolute;
-  top: 50%;
+  top: calc(50% + .75rem);
   left: 50%;
   transform: translate(-50%, -50%);
-  height: min(100cqh, 100cqw * 300 / 480);
+  /* 1.5rem less than the area, centred .75rem lower: more room between the paddles and the output above */
+  height: min(100cqh - 1.5rem, 100cqw * 300 / 480);
   aspect-ratio: 480 / 300;
   background: url('/morse-paddle-sprite.webp') no-repeat 0 0 / 100% 400%;
   -webkit-tap-highlight-color: transparent;

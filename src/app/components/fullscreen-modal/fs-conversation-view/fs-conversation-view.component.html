@@ -147,6 +147,17 @@
   <app-fireworks [launchDelayMs]="0" />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
+  @if (inputMode === 'key' && settings.settings().touchKeyerEnabled) {
+    <button type="button" class="fs-float-btn fs-float-ghost" (mousedown)="$event.preventDefault()" (click)="toggleTouchMode()"
+            [title]="settings.settings().touchKeyerMode === 'straight' ? 'Switch to the paddles' : 'Switch to the straight key'"
+            [attr.aria-label]="settings.settings().touchKeyerMode === 'straight' ? 'Switch the full-screen touch keyer to paddles' : 'Switch the full-screen touch keyer to a straight key'">
+      @if (settings.settings().touchKeyerMode === 'straight') {
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="18" width="20" height="3.5" rx="1"/><line x1="13" y1="18" x2="13" y2="13.5"/><line x1="3" y1="13.5" x2="21" y2="13.5"/><line x1="6" y1="13.5" x2="6" y2="9"/><path d="M2.5 8.5a3.5 2 0 0 1 7 0z" fill="currentColor"/><line x1="19" y1="13.5" x2="19" y2="18"/></svg>
+      } @else {
+        <svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="-1 -1 26 26" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="15" height="15" rx="4" transform="rotate(45 10.500 10.500)"/><line x1="11.500" y1="15.500" x2="19.500" y2="23.500" stroke-width="2.400"/><line x1="15.500" y1="11.500" x2="23.500" y2="19.500" stroke-width="2.400"/></svg>
+      }
+    </button>
+  }
   @if (audioFile.allowed()) {
     <app-audio-file-player part="load" variant="fs" [hideLoad]="lensView" />
   }

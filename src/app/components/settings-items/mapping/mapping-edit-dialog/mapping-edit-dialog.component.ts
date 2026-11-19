@@ -2,7 +2,8 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild, inject } from '@angular/core';
+import { ConfirmService } from '../../../../services/confirm.service';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../../modal-accessibility';
 import { BackdropClickDirective } from '../../../backdrop-click.directive';
 import { BackCloseDirective } from '../../../back-close.directive';
@@ -36,11 +37,41 @@ export class MappingEditDialogComponent implements AfterViewInit, OnDestroy {
   /** OK pressed: the editor validates and emits the result */
   @Output() confirmed = new EventEmitter<void>();
 
-  /** Cancel, the close button or a click outside the dialog */
+  /** Cancel, or the close button, Escape, a click outside or Back once any change was confirmed to be discarded */
   @Output() cancelled = new EventEmitter<void>();
 
-  /** The browser Back button closes this popup like Cancel */
-  readonly backClose = (): void => { this.cancelled.emit(); };
+  /** True while the fields differ from the mapping the dialog opened with */
+  @Input() isDirty: () => boolean = () => false;
+
+  private readonly confirm = inject(ConfirmService);
+  private asking = false;
+
+  /** Close button, Escape or a click outside: with unsaved changes ask first (the Cancel button never asks) */
+  requestClose(): void {
+    if (!this.isDirty()) {
+      this.cancelled.emit();
+      return;
+    }
+    void this.askDiscard();
+  }
+
+  /** The browser Back button: closes like the close button, or stays open while the question is shown */
+  readonly backClose = (): boolean => {
+    if (!this.isDirty()) {
+      this.cancelled.emit();
+      return false;
+    }
+    void this.askDiscard();
+    return true;
+  };
+
+  private async askDiscard(): Promise<void> {
+    if (this.asking) return;
+    this.asking = true;
+    const discard = await this.confirm.askDiscardChanges('this mapping');
+    this.asking = false;
+    if (discard) this.cancelled.emit();
+  }
 
   ngAfterViewInit(): void {
     if (this.dialog) focusDialog(this.dialog.nativeElement, '.md-close-btn');

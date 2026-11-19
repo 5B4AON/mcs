@@ -4,6 +4,7 @@
 
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { KeyboardInputMapping } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.model';
+import { mappingFieldsDirty } from '../../settings-items/mapping/mapping-dirty';
 import { MappingEditDialogComponent } from '../../settings-items/mapping/mapping-edit-dialog/mapping-edit-dialog.component';
 import {
   KeyboardInputEditSaveEvent, KeyboardMappingEditorComponent,
@@ -24,6 +25,9 @@ export type { KeyboardInputEditSaveEvent };
 })
 export class KeyboardInputEditModalComponent {
   @ViewChild(KeyboardMappingEditorComponent) private editor?: KeyboardMappingEditorComponent;
+
+  /** True while the editor's fields differ from the mapping it opened with (asks before the popup is discarded) */
+  readonly dirty = (): boolean => mappingFieldsDirty(this.editor?.fields(), this.mapping);
 
   /** The mapping being edited (initial values) */
   @Input() mapping: KeyboardInputMapping = {

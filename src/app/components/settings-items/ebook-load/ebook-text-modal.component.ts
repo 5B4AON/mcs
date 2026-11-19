@@ -2,7 +2,8 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, computed, signal } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, computed, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../../services/confirm.service';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
 import { BackdropClickDirective } from '../../backdrop-click.directive';
 import { BackCloseDirective } from '../../back-close.directive';
@@ -19,12 +20,12 @@ import { CUSTOM_TEXT_MAX_CHARS } from '../../../services/ebook.service';
   standalone: true,
   imports: [BackdropClickDirective, BackCloseDirective],
   template: `
-    <div class="settings-transfer-overlay" (appBackdropClick)="cancelled.emit()" [appBackClose]="backClose">
+    <div class="settings-transfer-overlay" (appBackdropClick)="requestClose()" [appBackClose]="backClose">
       <section #dialog class="settings-transfer-dialog" role="dialog" aria-modal="true" aria-labelledby="ebook-text-title"
                tabindex="-1" (click)="$event.stopPropagation()" (keydown)="onKeydown($event)">
         <header class="settings-transfer-header">
           <h2 id="ebook-text-title">Custom text</h2>
-          <button type="button" class="settings-close-btn" (click)="cancelled.emit()" aria-label="Close custom text" title="Close">
+          <button type="button" class="settings-close-btn" (click)="requestClose()" aria-label="Close custom text" title="Close">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </header>
@@ -121,7 +122,35 @@ export class EbookTextModalComponent implements OnInit, AfterViewInit, OnDestroy
   readonly tooLong = computed(() => this.text().length > CUSTOM_TEXT_MAX_CHARS);
   readonly canUse = computed(() => !!this.text().trim() && !this.tooLong());
 
-  readonly backClose = (): void => { this.cancelled.emit(); };
+  readonly backClose = (): boolean => {
+    if (!this.dirty()) {
+      this.cancelled.emit();
+      return false;
+    }
+    void this.askDiscard();
+    return true;
+  };
+
+  private readonly confirm = inject(ConfirmService);
+  private asking = false;
+
+  private dirty(): boolean {
+    return this.text() !== this.initialText;
+  }
+
+  /** Close button, Escape or a click outside: with an edited text ask first (the Cancel button never asks) */
+  requestClose(): void {
+    if (this.dirty()) void this.askDiscard();
+    else this.cancelled.emit();
+  }
+
+  private async askDiscard(): Promise<void> {
+    if (this.asking) return;
+    this.asking = true;
+    const discard = await this.confirm.askDiscardChanges('the custom text');
+    this.asking = false;
+    if (discard) this.cancelled.emit();
+  }
 
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;

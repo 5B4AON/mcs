@@ -551,6 +551,9 @@
   <!-- ========== MAIN SCREEN TOUCH KEYER (STRAIGHT-KEY OR PADDLE SPRITE) ========== -->
   @if (spriteShown) {
     <div class="touch-key-sprite-wrapper">
+      @if (!settings.profileLoaded()) {
+        <div class="sprite-loading" role="status" aria-label="Loading the touch keyer"></div>
+      } @else {
       <button type="button" class="sprite-mode-btn" (click)="toggleSpriteMode()"
               [title]="spritePaddle ? 'Switch to the straight key' : 'Switch to the paddles'"
               [attr.aria-label]="spritePaddle ? 'Switch the main screen touch keyer to a straight key' : 'Switch the main screen touch keyer to paddles'">
@@ -592,6 +595,7 @@
                 (mouseup)="onSpriteMouse(false, $event)"
                 (mouseleave)="onSpriteMouse(false, $event)">
         </button>
+      }
       }
     </div>
   }

@@ -2,6 +2,7 @@
  * Morse Code Studio
  */
 
+import { resolveMidiPort } from './midi-device-match';
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { SettingsService } from './settings.service';
 import { MORSE_TABLE, timingsFromWpm, adjustGapTimings } from '../morse-table';
@@ -686,17 +687,16 @@ export class MidiOutputService implements OnDestroy {
 
   /**
    * Resolve a MIDI output port for the given device ID.
-   * If deviceId is empty, returns the first available connected output.
+   * If deviceId is empty, returns the first available connected output; a saved id that no longer
+   * exists resolves to the only connected output (see `resolveMidiPort()`).
    */
   getOutputForDevice(deviceId: string): MIDIOutput | null {
     if (!this.midiAccess) return null;
-    let first: MIDIOutput | null = null;
+    const connected: MIDIOutput[] = [];
     for (const output of this.midiAccess.outputs.values()) {
-      if (output.state !== 'connected') continue;
-      if (deviceId && output.id === deviceId) return output;
-      if (!first) first = output;
+      if (output.state === 'connected') connected.push(output);
     }
-    return deviceId ? null : first;
+    return deviceId ? resolveMidiPort(deviceId, connected) : connected[0] ?? null;
   }
 
   /** Update the connected signal based on available outputs */

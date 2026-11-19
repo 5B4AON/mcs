@@ -702,16 +702,21 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
-    // Straight key sprite — react to encoder element events (the paddle sprite shows the matching paddle)
+    // Straight key sprite — react to encoder element events
     this.subs.push(
       this.encoder.elementEvent$.subscribe(evt => {
         const s = this.settings.settings();
-        if (!s.spriteButtonEnabled || !s.spriteAnimateEncoder) return;
-        if (s.spriteKeyerMode === 'paddle') {
-          this.ngZone.run(() => this.setSpriteHold('encoder', evt.element, evt.down));
-        } else {
-          this.spriteKeyDown = evt.down;
-        }
+        if (!s.spriteButtonEnabled || !s.spriteAnimateEncoder || s.spriteKeyerMode === 'paddle') return;
+        this.spriteKeyDown = evt.down;
+      })
+    );
+
+    // Paddle sprite — the encoder keys it like a person would in the sprite's paddle mode (squeeze, lead, hand-over)
+    this.subs.push(
+      this.encoder.paddleEvent$.subscribe(evt => {
+        const s = this.settings.settings();
+        if (!s.spriteButtonEnabled || !s.spriteAnimateEncoder || s.spriteKeyerMode !== 'paddle') return;
+        this.ngZone.run(() => this.setSpriteHold('encoder', evt.element, evt.down));
       })
     );
 
@@ -820,8 +825,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Open the full screen once the wizard has left the history (set by the wizard's screen choice) */
   private fullscreenAfterWizard = false;
 
-  /** Guard to ignore the popstate event triggered by our own history.back() */
-  private ignoringPopState = false;
+  /** How many popstate events caused by our own history.back()/forward()/go() are still to come (each is ignored) */
+  private ignoredPopStates = 0;
+
+  /** True while one of those is still on its way */
+  private get ignoringPopState(): boolean {
+    return this.ignoredPopStates > 0;
+  }
 
   /**
    * A reload (pull-to-refresh, update) with a dialog open leaves that dialog's history entries behind
@@ -843,7 +853,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Back left the entry of a popup that is still open: step forward onto it again */
   private restoreModalState(): void {
     this.modalHistoryDepth++;
-    this.ignoringPopState = true;
+    this.ignoredPopStates++;
     history.forward();
   }
 
@@ -851,7 +861,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private popModalState(): void {
     if (this.modalHistoryDepth > 0) {
       this.modalHistoryDepth--;
-      this.ignoringPopState = true;
+      this.ignoredPopStates++;
       history.back();
     }
   }
@@ -935,7 +945,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     if (this.ignoringPopState) {
-      this.ignoringPopState = false;
+      this.ignoredPopStates--;
       // The wizard's history entries are gone now, so the full screen can take its own entry
       if (this.fullscreenAfterWizard) {
         this.fullscreenAfterWizard = false;
@@ -2092,7 +2102,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.defaultsResetSaved = false;
     if (steps > 0) {
       this.modalHistoryDepth -= steps;
-      this.ignoringPopState = true;
+      this.ignoredPopStates++;
       history.go(-steps);
     }
     window.requestAnimationFrame(() => {
@@ -2246,7 +2256,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Device config / profiles ----
 
   async refreshDeviceConfig(): Promise<void> {
-    await this.devices.enumerate();
+    try {
+      await this.devices.enumerate();
+    } finally {
+      // Without a fingerprint no profile can load; the defaults are then the final answer
+      if (!this.devices.computeFingerprint()) this.settings.profileLoaded.set(true);
+    }
     const fp = this.devices.computeFingerprint();
     if (fp && fp !== this.settings.currentFingerprint()) {
       const found = this.settings.loadForFingerprint(

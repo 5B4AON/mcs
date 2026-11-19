@@ -6,6 +6,7 @@
  * Morse Code Studio
  */
 
+import { resolveMidiPort } from '../../../services/midi-device-match';
 import { Component, Input, computed, inject } from '@angular/core';
 import { SettingsService } from '../../../services/settings.service';
 import { DecoderSource } from '../../../services/settings-common';
@@ -191,7 +192,7 @@ export class MidiInputItemComponent {
   /** Get a device display name for a mapping */
   deviceDisplay(m: MidiInputMapping): string {
     if (!m.deviceId) return 'Any';
-    const dev = this.midiInput.midiInputs().find(d => d.id === m.deviceId);
+    const dev = resolveMidiPort(m.deviceId, this.midiInput.midiInputs());
     return dev ? dev.name : 'Disconnected';
   }
 
@@ -211,6 +212,6 @@ export class MidiInputItemComponent {
   isMappingConnected(m: MidiInputMapping): boolean {
     const devices = this.midiInput.midiInputs();
     if (!m.deviceId) return devices.length > 0;
-    return devices.some(d => d.id === m.deviceId);
+    return !!resolveMidiPort(m.deviceId, devices);
   }
 }

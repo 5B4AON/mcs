@@ -27,6 +27,17 @@ export class ConfirmService {
   private readonly injector = inject(EnvironmentInjector);
   private readonly modalBack = inject(ModalBackService);
 
+  /** The shared question when a popup with unsaved edits is closed other than by its Cancel button; true = discard */
+  askDiscardChanges(what: string): Promise<boolean> {
+    return this.ask({
+      title: 'Discard your changes?',
+      message: `The changes you made to ${what} are discarded.`,
+      confirmLabel: 'Discard',
+      cancelLabel: 'Stay',
+      danger: true,
+    });
+  }
+
   ask(options: ConfirmOptions): Promise<boolean> {
     return new Promise(resolve => {
       const ref = createComponent(ConfirmDialogComponent, { environmentInjector: this.injector });

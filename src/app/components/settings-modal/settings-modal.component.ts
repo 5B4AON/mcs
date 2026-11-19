@@ -2,6 +2,7 @@
  * Morse Code Studio
  */
 
+import { resolveMidiPort } from '../../services/midi-device-match';
 import {
   AfterViewInit,
   Component,
@@ -956,11 +957,11 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
       const index = Number(route.id.slice(isInput ? 'midi-input-'.length : 'midi-'.length));
       if (isInput) {
         const mapping = settings.midiInputMappings[index];
-        const device = this.midiInput.midiInputs().find(item => item.id === mapping?.deviceId);
+        const device = mapping?.deviceId ? resolveMidiPort(mapping.deviceId, this.midiInput.midiInputs()) : null;
         return `${device?.name || 'unverified MIDI device'}, channel ${mapping?.channel ?? 'unknown'}${mapping?.mode === 'paddle' ? `, notes ${mapping.value}/${mapping.dahValue}` : `, note ${mapping?.value ?? 'unknown'}`}`;
       }
       const mapping = settings.midiOutputMappings[index];
-      const device = this.midiOutput.midiOutputs().find(item => item.id === mapping?.deviceId);
+      const device = mapping?.deviceId ? resolveMidiPort(mapping.deviceId, this.midiOutput.midiOutputs()) : null;
       return `${device?.name || 'unverified MIDI device'}, channel ${mapping?.channel ?? 'unknown'}; forwards ${mapping?.forward?.toUpperCase() ?? 'unknown'}`;
     }
     if (route.id === 'rtdb-input') {

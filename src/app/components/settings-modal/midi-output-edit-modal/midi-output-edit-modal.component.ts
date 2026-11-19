@@ -5,6 +5,7 @@
 import { Component, EventEmitter, Input, Output, ViewChild } from '@angular/core';
 import { MidiOutputMapping } from '../../settings-items/midi-output/midi-output-item.model';
 import { MidiInputMapping } from '../../settings-items/midi-input/midi-input-item.model';
+import { mappingFieldsDirty } from '../../settings-items/mapping/mapping-dirty';
 import { MappingEditDialogComponent } from '../../settings-items/mapping/mapping-edit-dialog/mapping-edit-dialog.component';
 import {
   MidiOutputEditSaveEvent, MidiOutputMappingEditorComponent,
@@ -25,6 +26,9 @@ export type { MidiOutputEditSaveEvent };
 })
 export class MidiOutputEditModalComponent {
   @ViewChild(MidiOutputMappingEditorComponent) private editor?: MidiOutputMappingEditorComponent;
+
+  /** True while the editor's fields differ from the mapping it opened with (asks before the popup is discarded) */
+  readonly dirty = (): boolean => mappingFieldsDirty(this.editor?.fields(), this.mapping);
 
   /** The mapping being edited (initial values) */
   @Input() mapping: MidiOutputMapping = {

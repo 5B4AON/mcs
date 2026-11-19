@@ -14,6 +14,7 @@ import { MidiOutputService } from './midi-output.service';
 import { FirebaseRtdbService } from './firebase-rtdb.service';
 import { LoopDetectionService } from './loop-detection.service';
 import { LensService } from './lens.service';
+import { planPaddleContacts } from './paddle-simulation';
 
 /** Queue entry for playback of received characters through all matching outputs */
 interface SidetoneQueueEntry { char: string; source: 'rx' | 'tx'; wpm?: number; name?: string; color?: string; }
@@ -59,6 +60,9 @@ interface TimelineToken {
   external: boolean;
   /** Who the typed character is shown for in Lens; null in practice and replays */
   lens: { source: 'rx' | 'tx'; name?: string; color?: string } | null;
+  /** Length of a dot and of the gap inside the character, for the paddle animation */
+  ditMs: number;
+  gapMs: number;
 }
 
 /** A received (relay) character placed on the audio clock. */
@@ -122,6 +126,15 @@ export class MorseEncoderService {
    * (`element` tells the paddle sprite which paddle to press; a key-up without it releases everything).
    */
   readonly elementEvent$ = new Subject<{ down: boolean; element?: 'dit' | 'dah' }>();
+
+  /**
+   * Paddle contacts of a person sending the same characters with the main-screen paddle sprite's paddle mode
+   * (`planPaddleContacts()`: Iambic A/B squeezes, Ultimatic, Single lever), emitted only while the sprite is
+   * in paddle mode and animates the encoder. A contact is closed or opened per event; one without an
+   * `element` opens both.
+   */
+  readonly paddleEvent$ = new Subject<{ down: boolean; element?: 'dit' | 'dah' }>();
+  private timelinePaddles = new Set<'dit' | 'dah'>();
 
   /**
    * True while a replay is playing or paused. A replay uses the encoder's outputs
@@ -615,7 +628,9 @@ export class MorseEncoderService {
     const lens = s.encoderMode === 'practice' || replay
       ? null
       : { source, name: s.encoderName || undefined, color: s.encoderColor || undefined };
-    const placed: TimelineToken = { token, idx, endIdx, at, elements: [], morse: '', source, external, lens };
+    const placed: TimelineToken = {
+      token, idx, endIdx, at, elements: [], morse: '', source, external, lens, ditMs: timings.dit, gapMs: timings.intraChar,
+    };
 
     const quarters = pauseQuarters(token);
     if (quarters > 0) return { token: placed, lengthMs: timings.interWord * quarters / 4 };
@@ -650,6 +665,7 @@ export class MorseEncoderService {
     this.typedPattern.set(null);
     if (replay) this.replayProgress.set({ index: q.idx, pattern: '' });
     if (q.lens && q.token !== ' ' && pauseQuarters(q.token) === 0) this.lens.show('encoder', q.lens, '', q.token, q.morse);
+    this.startPaddleContacts(q);
     q.elements.forEach((e, i) => {
       const element = q.morse.charAt(i) === '.' ? 'dit' : 'dah';
       this.timelineLater(e.offset, () => {
@@ -670,6 +686,20 @@ export class MorseEncoderService {
     });
   }
 
+  /** Schedule the paddle contacts that a person would make to key this character, for the sprite's paddle mode */
+  private startPaddleContacts(q: TimelineToken): void {
+    const s = this.settings.settings();
+    if (!q.morse || !s.spriteButtonEnabled || !s.spriteAnimateEncoder || s.spriteKeyerMode !== 'paddle') return;
+    const timings = { dit: q.ditMs, dah: q.ditMs * 3, intraChar: q.gapMs };
+    for (const step of planPaddleContacts(q.morse, s.spritePaddleMode, timings)) {
+      this.timelineLater(step.at, () => {
+        if (step.down) this.timelinePaddles.add(step.side);
+        else this.timelinePaddles.delete(step.side);
+        this.paddleEvent$.next({ down: step.down, element: step.side });
+      });
+    }
+  }
+
   private timelineLater(ms: number, fn: () => void): void {
     const id = setTimeout(() => {
       this.timelineTimers.delete(id);
@@ -687,6 +717,10 @@ export class MorseEncoderService {
     if (this.timelineKeyDown) {
       this.timelineKeyDown = false;
       this.elementEvent$.next({ down: false });
+    }
+    if (this.timelinePaddles.size > 0) {
+      this.timelinePaddles.clear();
+      this.paddleEvent$.next({ down: false });
     }
   }
 

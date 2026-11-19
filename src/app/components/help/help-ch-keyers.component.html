@@ -216,6 +216,12 @@
 </table>
 
 <p>
+  The top button of the round button stack on the right switches between the
+  straight key and the paddles. It shows the picture of the other choice, and
+  the choice is saved at once, with no visit to Settings.
+</p>
+
+<p>
   The fullscreen keyer is also usable with a keyboard: move focus to a keyer
   button, press and hold <kbd>Space</kbd> or <kbd>Enter</kbd>, then release the
   key to send. The keyer releases automatically if focus is lost.
@@ -368,9 +374,16 @@
 <p>
   With the paddles, another input moves the paddle that makes the same element:
   a dot paddle on a keyboard, MIDI or serial key presses the left paddle of the
-  picture and a dash paddle the right one, a squeeze presses both, and the
-  keyboard encoder presses the left or right paddle for each dot or dash it
-  sends. <strong>Reverse Paddles</strong> does not change this animation; it
+  picture and a dash paddle the right one, and a squeeze presses both. The
+  keyboard encoder moves the paddles the way a hand would in the chosen
+  <strong>Paddle Mode</strong>: a run of dots or dashes keeps one paddle down;
+  in Iambic A and B a letter such as C or K is a held squeeze in which one
+  paddle always goes down a little before the other (Iambic A lets go during
+  the last element, Iambic B one element earlier, because B adds the last
+  one itself); Ultimatic keeps the old paddle down a moment into the next
+  element, because the paddle pressed last wins; Single Lever swings from one
+  paddle to the other without ever pressing both. The lead grows with the
+  length of a dot. <strong>Reverse Paddles</strong> does not change this animation; it
   only swaps what touching the picture sends (left dashes, right dots). A
   mapping&rsquo;s own reverse setting is applied first, so the picture always
   shows the element that is really keyed.

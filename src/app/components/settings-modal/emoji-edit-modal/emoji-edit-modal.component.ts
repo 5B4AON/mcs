@@ -3,9 +3,10 @@
  */
 
 import {
-  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild,
+  AfterViewInit, Component, ElementRef, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild, inject,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { ConfirmService } from '../../../services/confirm.service';
 import { EmojiPickerComponent } from '../emoji-picker/emoji-picker.component';
 import { EmojiMapping } from '../../settings-items/emojis/emojis-item.model';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../../modal-accessibility';
@@ -167,7 +168,37 @@ export class EmojiEditModalComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   /** The browser Back button closes this popup like Cancel */
-  readonly backClose = (): void => { this.cancelled.emit(); };
+  readonly backClose = (): boolean => {
+    if (!this.dirty()) {
+      this.cancelled.emit();
+      return false;
+    }
+    void this.askDiscard();
+    return true;
+  };
+
+  private readonly confirm = inject(ConfirmService);
+  private asking = false;
+
+  /** True while the fields differ from the mapping the popup opened with */
+  private dirty(): boolean {
+    return this.editMatch !== this.mapping.match || this.editEmoji !== this.mapping.emoji
+      || this.editMeaning !== (this.mapping.meaning ?? '');
+  }
+
+  /** Close button, Escape or a click outside: with unsaved changes ask first (the Cancel button never asks) */
+  requestClose(): void {
+    if (this.dirty()) void this.askDiscard();
+    else this.cancelled.emit();
+  }
+
+  private async askDiscard(): Promise<void> {
+    if (this.asking) return;
+    this.asking = true;
+    const discard = await this.confirm.askDiscardChanges('this emoji mapping');
+    this.asking = false;
+    if (discard) this.cancelled.emit();
+  }
 
   /** Open the emoji picker, remembering cursor position */
   openPicker(): void {

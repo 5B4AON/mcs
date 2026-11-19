@@ -257,7 +257,6 @@ export class SendPracticeService {
   });
 
   private readonly generator = new PracticeSequenceGenerator();
-  private lockedInput: string | null = null;
   private wpmSamples: number[] = [];
   private lastTaggedTotal = 0;
   private graceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -394,7 +393,6 @@ export class SendPracticeService {
     this.feedback.set([]);
     this.keyedText.set('');
     this.keyedWpm.set(0);
-    this.lockedInput = null;
     this.wpmSamples = [];
     // Nothing from before the prompt may count, and no half-keyed character may linger
     this.displayBuffers.clearAll();
@@ -448,7 +446,6 @@ export class SendPracticeService {
     this.feedback.set([]);
     this.keyedText.set('');
     this.keyedWpm.set(0);
-    this.lockedInput = null;
     this.wpmSamples = [];
     this.sessionStage.set('none');
     this.roundScores.set([]);
@@ -526,15 +523,12 @@ export class SendPracticeService {
       if (entry.char !== ' ' && this.active() && Date.now() - this.finishedAt > NEXT_KEY_GUARD_MS) this.advance();
       return;
     }
-    if (this.lockedInput && this.lockedInput !== id) return;
-
     const keyed = this.keyedText();
     if (entry.char === ' ') {
       // A word gap; leading and repeated gaps carry nothing
       if (keyed !== '' && !keyed.endsWith(' ')) this.keyedText.set(keyed + ' ');
       return;
     }
-    this.lockedInput = id;
     if (entry.char === ERASE_PROSIGN) {
       this.keyedText.set(keyed.trimEnd().slice(0, -1));
     } else {
@@ -563,7 +557,6 @@ export class SendPracticeService {
     this.referenceText.set('');
     this.feedback.set([]);
     this.keyedText.set('');
-    this.lockedInput = null;
     this.displayBuffers.clearAll();
     this.decoder.clearOutput();
     this.ebookCursor = new EbookCursor(window, this.ebook.position());

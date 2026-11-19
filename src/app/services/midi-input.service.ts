@@ -2,6 +2,7 @@
  * Morse Code Studio
  */
 
+import { resolveMidiPort } from './midi-device-match';
 import { Injectable, OnDestroy, NgZone, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { SettingsService, InputPath } from './settings.service';
@@ -365,6 +366,15 @@ export class MidiInputService implements OnDestroy {
     this.connected.set(inputs.length > 0);
   }
 
+  /** The inputs that are connected right now, straight from the browser (the signal may lag a state change) */
+  private connectedInputs(): { id: string }[] {
+    const ports: { id: string }[] = [];
+    for (const input of this.midiAccess?.inputs.values() ?? []) {
+      if (input.state === 'connected') ports.push({ id: input.id });
+    }
+    return ports;
+  }
+
   /**
    * Attach onmidimessage to all connected inputs that are referenced
    * by at least one enabled mapping (or all inputs if any mapping uses
@@ -382,7 +392,8 @@ export class MidiInputService implements OnDestroy {
     const gen = ++this.listenerGeneration;
     const mappings = this.settings.settings().midiInputMappings.filter(m => m.enabled);
     const listenAll = mappings.some(m => !m.deviceId) || this.learnCallback !== null;
-    const deviceIds = new Set(mappings.map(m => m.deviceId).filter(Boolean));
+    const connected = this.connectedInputs();
+    const deviceIds = new Set(mappings.map(m => resolveMidiPort(m.deviceId, connected)?.id).filter(Boolean));
 
     for (const input of this.midiAccess.inputs.values()) {
       // Skip disconnected devices and devices that don't match any mapping
@@ -498,13 +509,14 @@ export class MidiInputService implements OnDestroy {
     // Note-on: find matching mapping
     const deviceId = (msg.target as MIDIInput | null)?.id || '';
     const mappings = this.settings.settings().midiInputMappings;
+    const connectedPorts = this.connectedInputs();
     const outputMappings = this.settings.settings().midiOutputMappings;
 
     for (let mi = 0; mi < mappings.length; mi++) {
       const mapping = mappings[mi];
       if (!mapping.enabled) continue;
       // Device filter
-      if (mapping.deviceId && mapping.deviceId !== deviceId) continue;
+      if (mapping.deviceId && resolveMidiPort(mapping.deviceId, connectedPorts)?.id !== deviceId) continue;
       // Channel filter
       if (mapping.channel > 0 && mapping.channel !== channel) continue;
 

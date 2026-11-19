@@ -726,6 +726,18 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     }
   }
 
+  /**
+   * Switch the full-screen touch keyer between straight key and paddles. Anything held is let go
+   * first, and the choice is saved at once like the main screen's toggle.
+   */
+  toggleTouchMode(): void {
+    this.releaseKeyboardHeldButtons();
+    this.touchMouseActive.clear();
+    (['straight', 'left', 'right'] as const).forEach(button => this.dispatchTouchButton(button, false));
+    const mode = this.settings.settings().touchKeyerMode;
+    this.settings.updateAndPersist({ touchKeyerMode: mode === 'straight' ? 'paddle' : 'straight' });
+  }
+
   private releaseKeyboardHeldButtons(): void {
     for (const button of this.keyboardHeldButtons) {
       this.dispatchTouchButton(button, false);
