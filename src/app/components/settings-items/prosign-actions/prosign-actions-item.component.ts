@@ -8,6 +8,8 @@ import { ProsignAction, ProsignActionEntry } from './prosign-actions-item.model'
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
+import { ConfirmService } from '../../../services/confirm.service';
+import { ProsignActionSettings, joinPhrases, newErasingProsigns } from '../../../services/prosign-erase';
 
 /**
  * Settings item — Prosign Actions.
@@ -28,6 +30,7 @@ export class ProsignActionsItemComponent {
   @Input() mode: 'card' | 'embedded' = 'card';
 
   readonly scope = inject(SETTINGS_SCOPE);
+  private readonly confirm = inject(ConfirmService);
 
   /** Current values from the scope */
   readonly s = this.scope.value;
@@ -50,26 +53,54 @@ export class ProsignActionsItemComponent {
         ?? { enabled: false, action: 'newLine' };
   }
 
+  /**
+   * Prosign actions take effect at once in live Settings. While the CW detector is on, a change that
+   * makes a prosign erase decoded text is confirmed first (it can be kept anyway); a refused change
+   * is not applied. Returns whether the change was applied.
+   */
+  private async applyChange(patch: Partial<ProsignActionSettings>): Promise<boolean> {
+    const before = this.s();
+    if (this.scope.isLive && before.cwInputEnabled) {
+      const added = newErasingProsigns(before, { ...before, ...patch });
+      if (added.length) {
+        const keep = await this.confirm.ask({
+          title: 'Prosigns can erase decoded text',
+          message: `The CW detector is on, so with this change ${joinPhrases(added)} whenever that prosign is received, `
+            + 'including one misheard in noise, and the text is also removed from what Save keeps. Keep this setting?',
+          confirmLabel: 'Keep this setting',
+          cancelLabel: 'Undo the change',
+          danger: true,
+        });
+        if (!keep) return false;
+      }
+    }
+    this.scope.update(patch);
+    return true;
+  }
+
   /** Toggle an individual prosign entry on/off */
-  onProsignEntryEnabledChange(key: string, event: Event): void {
-    const checked = (event.target as HTMLInputElement).checked;
+  async onProsignEntryEnabledChange(key: string, event: Event): Promise<void> {
+    const box = event.target as HTMLInputElement;
+    const checked = box.checked;
     const actions = { ...this.s().prosignActions };
     const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
     actions[key] = { ...existing, enabled: checked };
-    this.scope.update({ prosignActions: actions });
+    // A refused change puts the box back to what the setting says
+    if (!(await this.applyChange({ prosignActions: actions }))) box.checked = existing.enabled;
   }
 
   /** Change the action assigned to a prosign key */
-  onProsignEntryActionChange(key: string, event: Event): void {
-    const value = (event.target as HTMLSelectElement).value as ProsignAction;
+  async onProsignEntryActionChange(key: string, event: Event): Promise<void> {
+    const select = event.target as HTMLSelectElement;
+    const value = select.value as ProsignAction;
     const actions = { ...this.s().prosignActions };
     const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
     actions[key] = { ...existing, action: value };
-    this.scope.update({ prosignActions: actions });
+    if (!(await this.applyChange({ prosignActions: actions }))) select.value = existing.action;
   }
 
-  /** Master switch */
-  onEnabledChange(enabled: boolean): void {
-    this.scope.update({ prosignActionsEnabled: enabled });
+  /** Master switch (the card puts it back when the change is refused) */
+  async onEnabledChange(enabled: boolean): Promise<void> {
+    await this.applyChange({ prosignActionsEnabled: enabled });
   }
 }

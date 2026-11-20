@@ -59,6 +59,8 @@ import { SymbolsRefComponent } from './components/symbols-ref/symbols-ref.compon
 import { SetupWizardV2Component } from './components/wizard-v2/setup-wizard-v2.component';
 import { WizardGoalId } from './components/settings-modal/goal-navigator/setup-goals';
 import { GoalNavigatorModalComponent } from './components/goal-navigator-modal/goal-navigator-modal.component';
+import { toProsignDisplay } from './morse-table';
+import { erasingProsigns, joinPhrases } from './services/prosign-erase';
 import * as practiceUi from './components/settings-items/practice/practice-ui.utils';
 import * as sendPracticeUi from './components/settings-items/send-practice/send-practice-ui.utils';
 
@@ -101,6 +103,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   audioRunning = false;
   /** True while start/stop is in progress (shows spinner) */
   audioStarting = false;
+  /** Pulses the audio button and notice for a few seconds after keying while audio is stopped */
+  audioAttention = false;
+  private audioAttentionTimer: number | null = null;
   audioState: 'stopped' | 'starting' | 'running' | 'stopping' | 'failed' = 'stopped';
   audioStatusMessage = 'Audio is stopped. Press the speaker button above to begin.';
   audioFailureMessage: string | null = null;
@@ -153,6 +158,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Whether the first-use Morse guide is visible */
   showTryMorseGuide = true;
+  /** The Try Morse example was loaded and not sent yet: the send button pulses */
+  tryExamplePending = false;
 
   /** Active confirmation action for example replacement or external TX */
   tryMorseConfirmAction: 'replace' | 'external-send' | 'live-send' | 'replay' | null = null;
@@ -282,6 +289,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     effect(() => {
       this.viewport.height();
       this.correctHostHeight();
+    });
+
+    // The example has been sent: the send button stops pulsing
+    effect(() => {
+      if (this.encoder.isSending()) this.tryExamplePending = false;
     });
 
     // Copy and Send practice never use the CW tone detector and it would hear the practice's own sidetone, so
@@ -617,6 +629,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       })
     );
 
+    // Keying with audio stopped: draw attention to the audio button and notice
+    this.subs.push(
+      this.decoder.keyDown$.subscribe(evt => {
+        if (evt.fromFile || this.activeModal || this.audioState !== 'stopped') return;
+        this.ngZone.run(() => {
+          this.audioAttention = true;
+          if (this.audioAttentionTimer !== null) clearTimeout(this.audioAttentionTimer);
+          this.audioAttentionTimer = window.setTimeout(() => this.clearAudioAttention(), 3000);
+        });
+      })
+    );
+
     // Mic level meter � auto-scale the max
     this.subs.push(
       this.audioInput.level$.subscribe(level => {
@@ -804,6 +828,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   ngOnDestroy(): void {
     document.removeEventListener('pointerdown', this.outsidePressHandler, true);
+    this.clearAudioAttention();
     for (const type of this.gestureEvents) document.removeEventListener(type, this.gestureResumeHandler, true);
     this.subs.forEach(s => s.unsubscribe());
     this.mouseKeyer.detachAll();
@@ -1158,6 +1183,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     dismissButton.click();
   }
 
+  private clearAudioAttention(): void {
+    if (this.audioAttentionTimer !== null) clearTimeout(this.audioAttentionTimer);
+    this.audioAttentionTimer = null;
+    this.audioAttention = false;
+  }
+
   async toggleAudio(): Promise<void> {
     if (this.audioRunning) {
       await this.stopAudio();
@@ -1239,6 +1270,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    *   paused-audio notice and the next tap deal with it.
    */
   private async startAudio(waitForOutput = true): Promise<void> {
+    this.clearAudioAttention();
     this.audioStarting = true;
     this.audioState = 'starting';
     this.audioStatusMessage = 'Starting audio...';
@@ -1306,12 +1338,35 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** After an audio file is unloaded: the microphone inputs start again, as they do after a settings change, when audio is running. */
   private async resumeInputsAfterFile(): Promise<void> {
     if (!this.audioRunning) return;
+    await this.warnErasingProsignsBeforeMic();
+    if (!this.audioRunning) return;
     try {
       if (this.settings.settings().micInputEnabled) await this.audioInput.start();
       await this.cwInput.start();
     } catch (error) {
       this.audioFailureMessage = this.audioStartFailureMessage(error, 'microphone input');
     }
+  }
+
+  /**
+   * The settings may have changed while the file played: before the detector listens to the microphone
+   * again, say so when a prosign would erase the text it decodes. Decoding resumes either way; the second
+   * button also opens Settings on the Prosign Actions card.
+   */
+  private async warnErasingProsignsBeforeMic(): Promise<void> {
+    const s = this.settings.settings();
+    const erasing = s.cwInputEnabled ? erasingProsigns(s) : [];
+    if (!erasing.length) return;
+    const resumeOnly = await this.confirmService.ask({
+      title: 'Prosigns can erase decoded text',
+      message: `The recording has been unloaded and the detector is about to listen to the microphone again. Your prosign actions are set so that ${joinPhrases(erasing)}. `
+        + 'If those prosigns are received, decoded text will be erased from the screen and from the text Save keeps. '
+        + 'You can change this in Settings → Other → Prosign Actions.',
+      confirmLabel: 'Resume decoding',
+      cancelLabel: 'Resume and open Settings',
+      danger: true,
+    });
+    if (!resumeOnly) this.openSettings('prosign-actions');
   }
 
   private async stopAudio(): Promise<void> {
@@ -1612,6 +1667,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private fillTryMorseExample(textarea: HTMLTextAreaElement): void {
     textarea.value = 'CQ TEST';
     this.encoderInputHasText = true;
+    this.tryExamplePending = true;
   }
 
   private selectExampleEncoderMode(): void {
@@ -1818,6 +1874,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       return s.practiceSource;
     }
     return s.textBlurEnabled ? s.textBlurAppliesTo : null;
+  }
+
+    /** Text of a main-screen line, with prosign names in place of their punctuation when Show prosign names is on. */
+  mainLineText(text: string): string {
+    const s = this.settings.settings();
+    // Copy practice shows the text as played (`=` stays `=`), as the full screen does
+    return s.showProsigns && s.encoderMode !== 'practice' ? toProsignDisplay(text) : text;
   }
 
   /**

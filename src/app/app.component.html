@@ -160,7 +160,8 @@
       <div class="audio-inline-status" [class.audio-status-stopped]="audioState === 'stopped'"
            [class.audio-status-progress]="audioState === 'starting' || audioState === 'stopping' || audioNeedsTap || audioWarming"
            [class.audio-status-running]="audioState === 'running' && !audioNeedsTap && !audioWarming"
-           [class.audio-status-failed]="audioState === 'failed'" role="status" aria-live="polite" aria-atomic="true">
+           [class.audio-status-failed]="audioState === 'failed'"
+           [class.audio-attention]="audioAttention" role="status" aria-live="polite" aria-atomic="true">
         @if (audioState === 'stopped' && !audioNeedsTap) {
           <span>Audio is stopped. Press
           @if (settings.settings().cwInputEnabled) {
@@ -230,7 +231,7 @@
              [class.fb-correct]="sendPractice.checkMode() === 'live' && mark.result === 'correct'"
              [class.fb-incorrect]="sendPractice.checkMode() === 'live' && mark.result === 'incorrect'">{{ mark.char === ' ' ? '\u00a0' : mark.char }}</span>}</span>}} @else if (practice.sessionStage() === 'briefing' && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>{{ practiceUi.practiceHeading(settings.settings(), 'Practice session') }}</strong>@for (line of practiceUi.practiceSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Type what you hear,</div><div>hit Enter to validate.</div></section>} @else if (practice.isSessionSummary() && settings.settings().encoderMode === 'practice') {<section class="practice-session-summary" aria-live="polite"><strong>Practice results</strong>@for (score of practice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%</div>}<div><strong>Average — {{ practice.averageRoundScore() }}%</strong></div><app-practice-next-lesson [accuracy]="practice.averageRoundScore()" /></section>} @else if (practiceCompare) {<app-practice-compare [source]="settings.settings().practiceSource" />@if (practice.feedback().length > 0) {<div class="fb-accuracy">Accuracy: {{ practice.accuracy() }}%</div>@if (!practice.isMultiRoundTypeAlong()) {<app-practice-next-lesson [accuracy]="practice.accuracy()" />}}} @else {@for (line of displayBuffers.mainOutput.lines(); track $index) {<span
              [class.rx-line]="line.type === 'rx'"
-             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ line.text }}</span></span>}}@if (!ebookActive) {<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}}</div>
+             [class.tx-line]="line.type === 'tx'">{{ mainLinePrefix($index) }}<span class="line-text">{{ mainLineText(line.text) }}</span></span>}}@if (!ebookActive) {<span class="cursor"><app-morse-pattern [pattern]="decoder.currentPattern()" /></span>@for (playing of mainPlayingPatterns; track $index) {<span class="cursor"><app-morse-pattern [pattern]="playing.pattern" /></span>}}</div>
       @if (celebrating) {
         <app-fireworks [launchDelayMs]="fireworksLaunchDelayMs" />
       }
@@ -515,13 +516,14 @@
         }
       } @else {
         <button class="tx-icon-btn" [class.tx-active]="encoder.isSending()" [class.tx-ready]="canStartTx"
+                [class.resume-attention]="tryExamplePending && showTryMorseGuide && canStartTx"
                 [disabled]="!encoder.isSending() && !canStartTx" (click)="requestEncoderTx(encoderInput)"
                 [title]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')"
                 [attr.aria-label]="encoder.replayPending() ? (encoder.isSending() ? 'Pause replay' : 'Resume replay') : (encoder.isSending() ? 'Stop transmitting' : 'Start transmitting')">
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.9 19.1C1 15.2 1 8.8 4.9 4.9"/><path d="M7.8 16.2c-2.3-2.3-2.3-6.1 0-8.5"/><circle cx="12" cy="12" r="2"/><path d="M16.2 7.8c2.3 2.3 2.3 6.1 0 8.5"/><path d="M19.1 4.9C23 8.8 23 15.2 19.1 19.1"/></svg>
         </button>
       }
-      <button #audioToggleButton class="audio-toggle-btn action-right" [class.audio-running]="audioRunning" (click)="toggleAudio()" [disabled]="audioStarting"
+      <button #audioToggleButton class="audio-toggle-btn action-right" [class.audio-running]="audioRunning" [class.audio-attention]="audioAttention" (click)="toggleAudio()" [disabled]="audioStarting"
               [attr.aria-label]="audioState === 'starting' ? 'Starting audio' : audioState === 'stopping' ? 'Stopping audio' : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete; retry stopping audio' : audioRunning ? 'Stop audio; audio is running' : 'Start audio; audio is stopped'"
               [attr.aria-pressed]="audioRunning"
               [title]="audioStarting ? audioStatusMessage : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete. Retry stopping audio' : audioRunning ? 'Audio is running. Stop Audio' : 'Audio is stopped. Start Audio'">

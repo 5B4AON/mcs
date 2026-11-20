@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.21.2] - 2026-11-20
+
+### Added
+
+- **Prosign warning for microphone decoding** — The "Prosigns can erase decoded text" warning, until now shown only before playing an audio file, also appears when you switch the CW Tone Detector on (**Turn detector on** / **Not now**) and when decoding returns to the microphone after an audio file is unloaded (**Resume decoding** / **Resume and open Settings**; decoding resumes either way).
+- **Prosign Actions check while the detector is on** — With the CW Tone Detector on, changing a prosign action (a prosign's checkbox, its action, or the master switch) so that it erases decoded text (Clear Last Word, Clear Line, Clear Screen) asks first: **Keep this setting** or **Undo the change**. The warnings can always be overridden.
+- **Audio button and notice pulse** — Keying on the main screen while audio is stopped makes the audio button (green) and the "Audio is stopped" notice pulse for about 3 seconds, like the Resume button in Copy practice. The pulse ends when audio starts, and it does not show in full screen.
+- **Try Morse: send button pulses** — After **Load example** in the Try Morse guide, the send button pulses until you send the text or close the guide.
+
+### Changed
+
+- **Show Prosigns on the main screen** — The setting now applies to the main-screen output as well as the full screen: `+`, `&`, `=` and `(` appear as `<AR>`, `<AS>`, `<BT>` and `<KN>`. Copy practice still shows the text as played. Only the display changes, not what is stored, saved or sent.
+- **Full-screen touch keyer toggle icon** — The button's picture now matches the main screen: the straight key while paddles are active, the paddles while the straight key is active.
+
 ## [2.21.1] - 2026-11-19
 
 ### Added

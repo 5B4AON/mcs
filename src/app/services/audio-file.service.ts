@@ -8,6 +8,7 @@ import { AudioInputService } from './audio-input.service';
 import { ConfirmService } from './confirm.service';
 import { CwInputService } from './cw-input.service';
 import { EbookService } from './ebook.service';
+import { erasingProsigns, joinPhrases } from './prosign-erase';
 import { SettingsService } from './settings.service';
 import { ViewportService } from './viewport.service';
 
@@ -275,20 +276,11 @@ export class AudioFileService {
    */
   private async confirmErasingProsigns(): Promise<boolean> {
     if (this.prosignWarned) return true;
-    const s = this.settings.settings();
-    if (!s.prosignActionsEnabled) return true;
-    const what: Record<string, string> = {
-      clearLastWord: 'erases the last word',
-      clearLine: 'erases the line',
-      clearScreen: 'erases all the text',
-    };
-    const erasing = Object.entries(s.prosignActions)
-      .filter(([, entry]) => entry.enabled && what[entry.action])
-      .map(([prosign, entry]) => `${prosign} ${what[entry.action]}`);
+    const erasing = erasingProsigns(this.settings.settings());
     if (!erasing.length) return true;
     const play = await this.confirm.ask({
       title: 'Prosigns can erase decoded text',
-      message: `Your prosign actions are set so that ${erasing.join(', ')}. If the recording contains them, decoded text will be erased `
+      message: `Your prosign actions are set so that ${joinPhrases(erasing)}. If the recording contains them, decoded text will be erased `
         + 'from the screen and from the text Save keeps. You can change this in Settings → Other → Prosign Actions.',
       confirmLabel: 'Play anyway',
       cancelLabel: 'Change in Settings',

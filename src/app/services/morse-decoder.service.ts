@@ -3,6 +3,7 @@
  */
 
 import { Injectable, signal } from '@angular/core';
+import { Subject } from 'rxjs';
 import { SettingsService, InputPath } from './settings.service';
 import { OutputForward } from './settings-common';
 import { MORSE_REVERSE, timingsFromWpm } from '../morse-table';
@@ -161,6 +162,9 @@ export class MorseDecoderService {
    */
   readonly currentPattern = signal('');
 
+  /** Announces every key-down on any input pipeline (before outputs are activated); used to point out that audio is stopped */
+  readonly keyDown$ = new Subject<{ path: InputPath; fromFile: boolean }>();
+
   /**
    * Tagged output — each decoded character/space is paired with its source,
    * input path, and metadata. Used for output forwarding (RTDB, MIDI,
@@ -298,6 +302,7 @@ export class MorseDecoderService {
   onKeyDown(path: InputPath, source: 'rx' | 'tx', opts?: DecoderKeyOptions): void {
     const pipeline = this.getOrCreatePipeline(path, source, opts);
     const now = performance.now();
+    this.keyDown$.next({ path, fromFile: pipeline.fromFile });
 
     // If there was a previous key-up on this pipeline, measure the silence gap
     if (pipeline.keyUpTime > 0 && !pipeline.externalTiming) {

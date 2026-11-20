@@ -9,6 +9,7 @@ import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
 import { ClearService } from '../../../services/clear.service';
 import { ConfirmService } from '../../../services/confirm.service';
+import { erasingProsigns, joinPhrases } from '../../../services/prosign-erase';
 import { WakeLockService } from '../../../services/wake-lock.service';
 import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
@@ -85,6 +86,21 @@ export class CwDetectorItemComponent {
    * Switching it off offers to turn a muted sidetone back on.
    */
   async onCwEnabledChange(checked: boolean): Promise<void> {
+    if (checked && this.scope.isLive) {
+      const erasing = erasingProsigns(this.s());
+      if (erasing.length) {
+        const proceed = await this.confirm.ask({
+          title: 'Prosigns can erase decoded text',
+          message: `Your prosign actions are set so that ${joinPhrases(erasing)}. The detector decodes what it hears, so if those `
+            + 'prosigns are received (or misheard in noise), decoded text will be erased from the screen and from the text Save keeps. '
+            + 'You can change this in Settings → Other → Prosign Actions.',
+          confirmLabel: 'Turn detector on',
+          cancelLabel: 'Not now',
+          danger: true,
+        });
+        if (!proceed) return;
+      }
+    }
     if (checked && this.sidetoneFollowsDetector()) {
       const mute = await this.confirm.ask({
         title: 'Mute the sidetone?',
