@@ -59,7 +59,7 @@ export class CwDecoderControlService {
         confirmLabel: 'Mute sidetone',
         cancelLabel: 'Keep sidetone',
       });
-      if (mute) this.settings.update({ sidetoneEnabled: false });
+      if (mute) this.settings.updateAndPersist({ sidetoneEnabled: false });
     }
 
     if (this.wakeLock.supported && !this.settings.settings().wakeLockEnabled && isMobileDevice()) {
@@ -105,7 +105,7 @@ export class CwDecoderControlService {
         confirmLabel: 'Turn sidetone on',
         cancelLabel: 'Keep it off',
       });
-      if (unmute) this.settings.update({ sidetoneEnabled: true });
+      if (unmute) this.settings.updateAndPersist({ sidetoneEnabled: true });
     }
   }
 }

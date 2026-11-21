@@ -13,6 +13,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - **Replay button** — It is disabled, with a tooltip saying why, while an audio file is playing (pause it first) and while no output would play the replay (no sidetone, opto/key output, vibration, serial, MIDI, WinKeyer or relay output on for the Encoder's source; in Copy Practice on "This device only" and in Send Practice only the sidetone, opto/key output and vibration count). Full screen also disables Send Practice's "Hear it first" when nothing could play it.
 - **"Hear it first" icon** — In Send Practice the button that plays the next character now shows a speaker with sound waves, so it is not mistaken for the replay button.
 - **Audio file and Mode** — Choosing another mode, or turning the CW Decoder off, unloads the audio file and its player, like Stop. The decoded text stays on the screen.
+- **Sidetone answers are saved at once** — When you answer the questions that come with the CW Decoder in the Mode list ("Mute the sidetone?" on entering, turning it back on when leaving), the sidetone setting is now saved immediately, like the Mode itself, so a restart cannot bring the decoder back with the sidetone on.
+- **Back asks about unsaved settings** — Pressing Back on the main screen, where it would leave the app, now asks "Leave without saving?" (Stay or Leave without saving) while settings are unsaved. Nothing changes when everything is saved. In an installed app, Leave needs one more Back press to exit.
 
 ### Fixed
 

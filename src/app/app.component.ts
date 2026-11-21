@@ -305,6 +305,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     public installHint: InstallHintService,
     public clear: ClearService,
   ) {
+    // Unsaved settings put a guard entry under Back (see `ensureGuard`); saving or reverting lifts a "Leave" answer
+    effect(() => {
+      const dirty = this.settings.isDirty();
+      if (!dirty) this.guardDismissed = false;
+      else untracked(() => this.ensureGuard());
+    });
     // Browser toolbars collapsing, rotation and zoom change the visual viewport without always firing
     // a window resize, so the host height follows the service's signal.
     effect(() => {
@@ -968,9 +974,50 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
-    const depth = ++this.modalHistoryDepth;
+    // The guard entry (if any) sits below the dialogs, so a reloaded page must walk back over it too
+    const depth = ++this.modalHistoryDepth + (this.guardActive ? 1 : 0);
     // `depth` lets a reloaded page know how many entries the previous page left on top of the base entry
     this.runHistoryOp(() => history.pushState({ modal, depth }, ''), true);
+  }
+
+  /** A guard history entry sits on top of the base entry, so Back from the main screen can ask about unsaved settings */
+  private guardActive = false;
+
+  /** The user chose "Leave without saving": no new guard until the settings are saved or reverted */
+  private guardDismissed = false;
+
+  /**
+   * While settings are unsaved and no dialog is open, put one extra history entry on top of the base entry. A page
+   * cannot intercept Back at its first entry, but it can at this one: `handlePopState` then asks before the app is left.
+   */
+  private ensureGuard(): void {
+    this.runHistoryOp(() => {
+      if (this.guardActive || this.guardDismissed || this.modalHistoryDepth > 0 || !this.settings.isDirty()) return;
+      this.guardActive = true;
+      history.pushState({ guard: true, depth: 1 }, '');
+    }, true);
+  }
+
+  /** Back reached the base entry while the guard was up: ask if settings are unsaved, otherwise carry on out of the app */
+  private async leaveOrAsk(): Promise<void> {
+    this.guardActive = false;
+    if (this.settings.isDirty()) {
+      const leave = await this.confirmService.ask({
+        title: 'Leave without saving?',
+        message: 'You have settings changes that are not saved. If you leave the app now they are lost. '
+          + 'Stay and use Settings → Save to keep them.',
+        confirmLabel: 'Leave without saving',
+        cancelLabel: 'Stay',
+        danger: true,
+      });
+      if (!leave) {
+        this.ensureGuard();
+        return;
+      }
+      this.guardDismissed = true;
+    }
+    // Where the browser has an earlier page this leaves the app; an installed app stays on its first entry and needs one more Back
+    this.runHistoryOp(() => history.back());
   }
 
   /** Back left the entry of a popup that is still open: step forward onto it again */
@@ -1072,6 +1119,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     } finally {
       this.handlingPopState = false;
       this.flushHistoryQueue();
+      this.ensureGuard();
     }
   }
 
@@ -1099,6 +1147,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.modalHistoryDepth > 0) {
       this.modalHistoryDepth--;
       this.closeActiveModal();
+    } else if (this.guardActive) {
+      void this.leaveOrAsk();
     }
   }
 
