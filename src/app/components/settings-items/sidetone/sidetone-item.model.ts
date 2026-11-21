@@ -35,7 +35,7 @@ export const SIDETONE_FIELD_RULES: SettingsFieldRules = {
 };
 
 /** Frequency range the sidetone accepts (Hz) */
-export const SIDETONE_FREQUENCY_RANGE = { min: 500, max: 800 } as const;
+export const SIDETONE_FREQUENCY_RANGE = { min: 500, max: 1000, step: 25 } as const;
 
 /** What the Sidetone item edits, checks and says in a review. */
 export const SIDETONE_DESCRIPTOR: ItemDescriptor = {

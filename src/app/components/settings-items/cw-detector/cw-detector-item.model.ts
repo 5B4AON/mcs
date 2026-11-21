@@ -14,7 +14,7 @@ export type CwInputChannel = typeof CW_INPUT_CHANNELS[number];
 export const CW_FILE_PIPELINES = ['local', 'full'] as const;
 export type CwFilePipeline = typeof CW_FILE_PIPELINES[number];
 
-/** The settings the CW Tone Detector (straight key via audio channel) item owns. */
+/** The settings the CW Tone Decoder (straight key via audio channel) item owns. */
 export interface CwDetectorSettings {
   cwInputEnabled: boolean;
   /** Decoder source: which calibration pool CW input feeds ('rx' or 'tx') */
@@ -50,7 +50,7 @@ function reviewText(key: keyof AppSettings, value: unknown): string {
   return value === '' || value === undefined || value === null ? 'none' : String(value);
 }
 
-/** What the CW Tone Detector item edits, checks and says in a review. */
+/** What the CW Tone Decoder item edits, checks and says in a review. */
 export const CW_DETECTOR_DESCRIPTOR: ItemDescriptor = {
   id: 'cw-detector',
   keys: [
@@ -66,7 +66,7 @@ export const CW_DETECTOR_DESCRIPTOR: ItemDescriptor = {
     return errors;
   },
   review: labelledReview({
-    cwInputEnabled: 'CW tone detector',
+    cwInputEnabled: 'CW tone decoder',
     cwInputSource: 'CW detector used for',
     cwInputDeviceId: 'CW detector input device',
     cwInputChannel: 'CW detector input channel',

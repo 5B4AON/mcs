@@ -104,6 +104,12 @@ export class DisplayBuffer {
     this.rebuild();
   }
 
+  /** True when there is no text yet or the text ends with a line break. */
+  endsWithNewLine(): boolean {
+    const last = this.runs.at(-1);
+    return !last || last.text.endsWith('\n');
+  }
+
   /** True when the newest text is a space from the given source (a second one would show as a double space). */
   endsWithSpace(type: 'rx' | 'tx'): boolean {
     const last = this.runs.at(-1);
@@ -366,6 +372,17 @@ export class DisplayBufferService {
       this.suppressNextSpace = false;
       this.mainOutput.push(type, char, name, color);
       this.fullscreenConversation.push(type, char, name, color);
+    }
+  }
+
+  /**
+   * Start a new line in the decoded text (the CW tone decoder locked onto another signal). Nothing is
+   * added at the very start, or when the text already ends with a line break.
+   */
+  pushDecodedNewLine(type: 'rx' | 'tx', name?: string, color?: string): void {
+    this.suppressNextSpace = false;
+    for (const buffer of [this.mainOutput, this.fullscreenConversation]) {
+      if (!buffer.endsWithNewLine()) buffer.push(type, '\n', name, color);
     }
   }
 

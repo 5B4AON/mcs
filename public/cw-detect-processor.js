@@ -72,6 +72,7 @@
  *   { type: 'pattern', pattern, unitMs }        dots and dashes of the character so far ('' clears it)
  *   { type: 'char', pattern, unitMs, wpm }      a finished character
  *   { type: 'word' }                            a word gap
+ *   { type: 'newline' }                         a new lock: the next letter starts a new line
  *   { type: 'stat', state, gate, freq, wpm, snrDb, env, noise, signal, hi, lo, fc, windowMs }
  *                                               gate: 'open' (decoding) or 'closed' (listening for Morse)
  *   { type: 'scope', env, raw, key, hi, lo, noise, signal, spectrum? }
@@ -97,6 +98,8 @@ const SQ_Q_A = 0.45;       // mean mark quality to open on rhythm (3+ marks)
 const SQ_Q_STRONG = 0.8;   // quality to open on 2 marks, or on carrier alone
 const SQ_Q_TRUST = 0.5;    // quality to reopen for a recently trusted station
 const SQ_TRUST_MS = 30000; // how long a station stays trusted after the gate closes
+const BB_BLOCKS = 256;     // tone-search blocks (~21 ms) whose broadband level is kept (about 5.5 s, as long as the audio ring)
+const FC_OPEN_MIN = 10;    // narrowest envelope filter (Hz), used only while decoding at a known speed
 const SQ_IMPULSE = 6;      // broadband rise over tone power: a click or crash, not a tone
 const SQ_OFF_OPEN = 3.5;  // Hz: mean pitch error of the newest marks allowed to open the gate
 const SQ_OFF_BAD = 6;     // Hz: a mark this far off the station's pitch is not the station
@@ -165,8 +168,14 @@ class CwDetector {
     this.score = new Float64Array(this.nBins);
     this.sortTmp = new Float64Array(this.nBins);
     this.searchBlocks = 0;
+    this.rawP = new Float64Array(this.nBins);
+    this.sortRaw = new Float64Array(this.nBins);
+    // Broadband level of each search block: the median over all bins, which a tone (the station or an
+    // interferer) does not move but a click or crash does. Shared with the recovery detectors.
+    this.bb = { t: new Float64Array(BB_BLOCKS), v: new Float64Array(BB_BLOCKS), pos: 0, fill: 0, base: 0 };
 
     // Lock state
+    this.newLinePending = true; // set by every lock: the first letter after it starts a new line
     this.state = 'search';
     this.freq = 600;
     this.cand = 0; this.candHits = 0; this.candLastMs = 0;
@@ -282,7 +291,8 @@ class CwDetector {
 
   /** Envelope filter width follows the speed */
   _updateFilter(force) {
-    const fc = Math.max(20, Math.min(90, 800 / this.unitMs));
+    // Narrower while decoding (the speed is then known); otherwise 20 Hz so a fast station's dits are not blurred
+    const fc = Math.max(this.gateOpen ? FC_OPEN_MIN : 20, Math.min(90, 800 / this.unitMs));
     if (!force && Math.abs(fc - this.fc) < this.fc * 0.08) return;
     this.fc = fc;
     // Two sections with these Qs make a 4th-order Butterworth
@@ -336,9 +346,11 @@ class CwDetector {
         s2 = s1; s1 = s0;
       }
       const p = (s1 * s1 + s2 * s2 - c * s1 * s2) / (N * N);
+      this.rawP[b] = p;
       this.meanP[b] += 0.25 * (p - this.meanP[b]);
       this.m2P[b] += 0.25 * (p * p - this.m2P[b]);
     }
+    this._bbBlock(ms);
     this.searchBlocks++;
     this.sortTmp.set(this.meanP);
     this.sortTmp.sort();
@@ -378,7 +390,8 @@ class CwDetector {
       this.lastGoodMs = ms;
     }
     // A much stronger keyed tone elsewhere takes over
-    if (Math.abs(bestF - this.freq) > 60 && this.score[best] >= 6 && keyed && this.score[best] > 3 * nearScore) {
+    // (never while the gate is open: the locked station is sending valid Morse)
+    if (!this.gateOpen && Math.abs(bestF - this.freq) > 60 && this.score[best] >= 6 && keyed && this.score[best] > 3 * nearScore) {
       if (this.swHits > 0 && Math.abs(bestF - this.swCand) <= 20) this.swHits++;
       else { this.swCand = bestF; this.swHits = 1; }
       if (this.swHits >= 40) this._lock(bestF, ms);
@@ -392,6 +405,32 @@ class CwDetector {
       this._closeGate(ms, true);
       this._discardRun();
     }
+  }
+
+  /** Record this block's broadband level (median bin power) and follow the quiet level slowly */
+  _bbBlock(ms) {
+    const bb = this.bb;
+    this.sortRaw.set(this.rawP);
+    this.sortRaw.sort();
+    const v = this.sortRaw[this.nBins >> 1];
+    bb.t[bb.pos] = ms; bb.v[bb.pos] = v;
+    bb.pos = bb.pos + 1 === BB_BLOCKS ? 0 : bb.pos + 1;
+    if (bb.fill < BB_BLOCKS) bb.fill++;
+    if (bb.base <= 0) bb.base = v;
+    // Only quiet moments set the level, and crashes cannot pump it up quickly
+    else if (!this.keyDown && this.pendDown < 0) bb.base += 0.03 * (Math.min(v, 2 * bb.base) - bb.base);
+  }
+
+  /** How much the broadband level (median bin power) rose over its quiet level during [t0, t1] ms: 1 = not at all */
+  _bbRise(t0, t1) {
+    const bb = this.bb;
+    if (bb.base <= 0) return 1;
+    let sum = 0, n = 0;
+    for (let k = 0; k < bb.fill; k++) {
+      const t = bb.t[k];
+      if (t >= t0 && t - 21.4 <= t1) { sum += bb.v[k]; n++; }
+    }
+    return n ? Math.max(1, sum / n / bb.base) : 1;
   }
 
   _cv(b) {
@@ -412,6 +451,7 @@ class CwDetector {
   }
 
   _lock(f, ms) {
+    this.newLinePending = true;
     const quiet = ms - this.lastMarkEndMs > 600 && !this.keyDown;
     this.state = 'locked';
     this.lastGoodMs = ms;
@@ -618,7 +658,7 @@ class CwDetector {
       if (!this.replaying) this.port.postMessage({ type: 'key', down: false, time: t / 1000 });
     }
     const n = this.mkN - Math.max(0, Math.round((this.nowMs - t) / this.tickMs));
-    const qual = this._markQuality(Math.max(1, n), m);
+    const qual = this._markQuality(Math.max(1, n), m, t);
     this.mkN = 0;
     // A long steady tone (tuning carrier) is not an element
     if (m > 8 * this.unitMs && m > 700) {
@@ -722,7 +762,7 @@ class CwDetector {
     if (this.doubt.length || this.goodEma < SQ_DOUBT) {
       this.doubt.push(item);
       if (this.doubt.length > 40) this.doubt.shift();
-    } else if (item === 'w') this.port.postMessage({ type: 'word' });
+    } else if (item === 'w') this._say({ type: 'word' });
     else this._postChar(item);
   }
 
@@ -730,13 +770,23 @@ class CwDetector {
     const items = this.doubt;
     this.doubt = [];
     for (const it of items) {
-      if (it === 'w') this.port.postMessage({ type: 'word' });
+      if (it === 'w') this._say({ type: 'word' });
       else this._postChar(it);
     }
   }
 
   _postChar(marks) {
-    this.port.postMessage({ type: 'char', pattern: this._patternOf(marks), unitMs: this.unitMs, wpm: Math.round(1200 / this.unitMs) });
+    this._say({ type: 'char', pattern: this._patternOf(marks), unitMs: this.unitMs, wpm: Math.round(1200 / this.unitMs) });
+  }
+
+  /** Post a letter or word gap; the first one after a lock is preceded by a new-line signal (a word gap alone is dropped) */
+  _say(msg) {
+    if (this.newLinePending) {
+      if (msg.type === 'word') return;
+      this.newLinePending = false;
+      this.port.postMessage({ type: 'newline' });
+    }
+    this.port.postMessage(msg);
   }
 
   _pattern() {
@@ -757,7 +807,7 @@ class CwDetector {
    * mark whose frequency is clearly off belongs to another station, and one that
    * lifts the whole spectrum is a click or static crash.
    */
-  _markQuality(n, markMs) {
+  _markQuality(n, markMs, endMs) {
     const I = this.mkI, Q = this.mkQ;
     let ar = 0, ai = 0;
     for (let k = 1; k < n; k++) {
@@ -781,8 +831,18 @@ class CwDetector {
     const tol = Math.max(15, 700 / Math.max(markMs, 1));
     // Tone power in our band vs the rise of the whole spectrum
     const pTone = Math.max(1e-14, (se2 / n - 1.27 * this.curMu * this.curMu) / 2);
-    const dWide = sw / n - Math.max(0, this.wbBase);
-    const impulse = dWide > SQ_IMPULSE * pTone;
+    let impulse;
+    const bb = this.bb;
+    if (bb.base > 0) {
+      // The broadband rise is read from the median over all bins (tonal interference, such as a strong
+      // station on another pitch, does not move it). What a flat spectrum with that excess leaks into the
+      // envelope filter (its noise bandwidth, about 2 fc) is compared with the tone's own power.
+      const excess = Math.max(0, (this._bbRise(endMs - markMs, endMs) - 1) * bb.base);
+      const leak = excess * (2.05 * this.fc) * this.searchN / (0.1875 * this.sr);
+      impulse = leak > (SQ_IMPULSE / 80) * pTone;
+    } else {
+      impulse = sw / n - Math.max(0, this.wbBase) > SQ_IMPULSE * pTone;
+    }
     const ok = coh >= SQ_C_MIN && Math.abs(offHz) <= tol && !impulse;
     const score = Math.max(0, Math.min(1, (coh - SQ_C_MIN) / (SQ_C_GOOD - SQ_C_MIN)));
     return { ok, score, offHz, amp: Math.max(0, Math.sqrt(se2 / n) - this.curMu) };
@@ -961,6 +1021,7 @@ class CwDetector {
     if (end <= start) return null;
 
     const detector = new CwDetector({ postMessage() {} }, true);
+    detector.bb = this.bb;
     detector.state = 'locked';
     detector.unitMs = this.unitMs;
     detector._setFreq(this.freq);
@@ -1081,7 +1142,7 @@ class CwDetector {
       this._postChar(cur);
       cur = [];
       this.wordStart = false;
-      if (e.d >= this.wordGapMs) { this.port.postMessage({ type: 'word' }); this.wordStart = true; }
+      if (e.d >= this.wordGapMs) { this._say({ type: 'word' }); this.wordStart = true; }
     }
     this.charMarks = cur;
     this.wordOpen = false;
@@ -1121,12 +1182,14 @@ class CwDetector {
       this.charMarks = [];
       this.port.postMessage({ type: 'pattern', pattern: '', unitMs: this.unitMs });
     }
-    if (this.wordOpen && !this.wordStart) this.port.postMessage({ type: 'word' });
+    if (this.wordOpen && !this.wordStart) this._say({ type: 'word' });
     this.wordOpen = false;
     this.singles = [];
     this.charBad = false;
     this.wordStart = true;
     this.run = [];
+    // Back to the wide filter while listening for the next station
+    this._updateFilter(false);
   }
 
   /** Forget a burst that was not Morse, and the speed it suggested */

@@ -38,7 +38,9 @@ export interface CwLevelEvent {
 export type CwDecodeEvent =
   | { type: 'pattern'; pattern: string; unitMs: number }
   | { type: 'char'; pattern: string; unitMs: number; wpm: number }
-  | { type: 'word' };
+  | { type: 'word' }
+  /** The detector locked onto a signal: the text decoded from it starts a new line */
+  | { type: 'newline' };
 
 /** What the detector is doing, for the status line */
 export interface CwStatus {
@@ -472,6 +474,9 @@ export class CwInputService {
         break;
       case 'word':
         this.zone.run(() => this.decode$.next({ type: 'word' }));
+        break;
+      case 'newline':
+        this.zone.run(() => this.decode$.next({ type: 'newline' }));
         break;
       case 'scope':
         this.scope.push(data.env, data.raw, data.key);

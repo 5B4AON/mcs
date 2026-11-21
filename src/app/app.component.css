@@ -926,10 +926,25 @@
 }
 
 .encoder-input-row {
+  position: relative;
   display: flex;
   gap: .5rem;
   align-items: flex-start;
   margin-top: 1rem;
+}
+/* The unsent text sits in the first line of the input box: what has played is removed, so the rest moves left. The typed text starts one line lower. */
+.encoder-pending {
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  right: 1px;
+  padding: .3rem .6rem 0;
+  font-size: .95rem;
+  line-height: 1.35;
+  white-space: pre;
+  overflow: hidden;
+  text-transform: uppercase;
+  pointer-events: none;
 }
 .encoder-input-row textarea {
   flex: 1;
@@ -944,6 +959,21 @@
   box-shadow: inset 3px 3px 8px rgba(0,0,0,.65), inset -2px -2px 5px rgba(255,255,255,.05);
   border-radius: 4px;
   resize: vertical;
+}
+/* Send on Enter and Live: the box is always two lines high, whatever it holds, so it never changes height. Pending text takes the first line and the typing the second. */
+.encoder-input-row textarea.two-line {
+  /* No flex growth: in the column layout of narrow screens `flex: 1` would size the box from its content and ignore the height */
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  height: calc(2 * 1.35em + .6rem + 2px);
+  min-height: 0;
+  padding-top: .3rem;
+  padding-bottom: .3rem;
+  line-height: 1.35;
+  resize: none;
+}
+.encoder-input-row textarea.two-line.has-pending {
+  padding-top: calc(.3rem + 1.35em);
 }
 /* Copy practice: no box to see; the answer is typed into the text. The row takes no room and the box only catches the typing. */
 .encoder-input-row.input-hidden {
@@ -983,6 +1013,7 @@
 }
 
 .try-morse-guide {
+  position: relative;
   margin: .75rem 0 0;
   padding: .7rem .8rem;
   border-left: 3px solid #46aa9c;
@@ -1017,12 +1048,6 @@
   gap: 0 .35rem;
   margin-top: .65rem;
 }
-.try-morse-guide-heading .try-morse-dismiss {
-  width: auto;
-  margin-top: 0;
-  align-self: auto;
-  flex-shrink: 0;
-}
 .try-morse-load,.try-morse-setup {
   flex: 0 1 120px;
   padding-inline: .4rem;
@@ -1048,10 +1073,11 @@
 }
 
 .practice-guide {
+  position: relative;
   display: grid;
   gap: .35rem;
   margin-top: .75rem;
-  padding: .65rem .75rem;
+  padding: .65rem 2.6rem .65rem .75rem;
   border: 1px solid #3d617a;
   border-radius: 6px;
   background: #1d2b3a;
@@ -1068,6 +1094,35 @@
 }
 .practice-guide strong {
   color: #8cf;
+}
+/* Small square hide button in the top right corner of a practice note */
+.guide-dismiss {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 4px;
+  background: #282c34;
+  border: 1px solid #556;
+  color: #8cf;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.guide-dismiss:hover {
+  background: #3a4050;
+}
+.guide-dismiss:active {
+  background: #5577aa;
+  color: #fff;
+}
+.guide-dismiss:focus-visible {
+  outline: 2px solid #8cf;
+  outline-offset: 1px;
 }
 .encoder-mode-label {
   -webkit-tap-highlight-color: transparent;
@@ -1852,7 +1907,7 @@ select { max-width: 300px; }
    ============================================================ */
 @media (pointer: coarse) {
   /* Larger touch targets */
-  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.sprite-mode-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main):not(.update-dismiss) {
+  button:not(.audio-toggle-btn):not(.clear-icon-btn):not(.tx-icon-btn):not(.header-icon-btn):not(.expand-btn):not(.sprite-mode-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.pill-btn):not(.blur-reveal-btn-main):not(.update-dismiss):not(.guide-dismiss) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }

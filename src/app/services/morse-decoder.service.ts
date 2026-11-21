@@ -59,6 +59,8 @@ export interface TaggedEntry {
   fromSerial?: boolean;
   /** Decoded from a loaded audio file */
   fromFile?: boolean;
+  /** Not a character: the text that follows starts a new line (the CW tone decoder locked onto another signal) */
+  newLine?: boolean;
   wpm?: number;
 }
 
@@ -474,6 +476,18 @@ export class MorseDecoderService {
   externalWord(path: InputPath, source: 'rx' | 'tx', opts: DecoderKeyOptions): void {
     const pipeline = this.getOrCreatePipeline(path, source, { ...opts, externalTiming: true });
     this.finishWord(pipeline, path);
+  }
+
+  /** The input locked onto a signal: what follows starts a new line */
+  externalNewLine(path: InputPath, source: 'rx' | 'tx', opts: DecoderKeyOptions): void {
+    const pipeline = this.getOrCreatePipeline(path, source, { ...opts, externalTiming: true });
+    this.finishCharacter(pipeline, path);
+    this.pushTagged({
+      type: source, char: '\n', newLine: true, inputPath: path,
+      fromFile: pipeline.fromFile || undefined, name: pipeline.name || undefined, color: pipeline.color || undefined,
+    });
+    // A word space after this would start the new line with a blank
+    pipeline.trailingSpaceEmitted = true;
   }
 
   /** Drop the character in progress on one input (for example when it stops) */

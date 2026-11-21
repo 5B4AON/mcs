@@ -87,8 +87,8 @@
   applying them. Applying and saving are separate actions, and presets and
   preset files never include RTDB secrets.
 </p>
-<!-- 6.1 CW Tone Detector -->
-<h2 id="s6-1">6.1 &nbsp;Decode from Audio Channel (CW Tone Detector)</h2>
+<!-- 6.1 CW Tone Decoder -->
+<h2 id="s6-1">6.1 &nbsp;Decode from Audio Channel (CW Tone Decoder)</h2>
 
 <p>
   This input decodes CW audio tones directly from a radio receiver, virtual
@@ -123,7 +123,9 @@
       steady carrier or hum is ignored. It locks within a fraction of a
       second, follows a drifting tone, and moves to a new station only when
       a clearly stronger one keeps sending. While it decodes, another
-      station a little off the frequency cannot pull it away.</li>
+      station a little off the frequency cannot pull it away. Every time
+      the decoder locks onto a signal, the decoded text starts on a new
+      line.</li>
   <li><strong>Filter.</strong> The audio is mixed down at the locked
       frequency and passed through a narrow filter whose width follows the
       speed (wider for fast Morse, narrower for slow Morse), so the noise and
@@ -257,7 +259,7 @@
   <li>The file is streamed from your disk by the browser; the app does not
       copy, cache or save it, so large files work. It never leaves your
       device.</li>
-  <li>Load is offered while the CW Tone Detector is switched on, and not in
+  <li>Load is offered while the CW Tone Decoder is switched on, and not in
       Copy Practice, Send Practice or the e-book. In
       Lens only a file that is already loaded shows its player.</li>
   <li>Use the <strong>Save</strong> button to keep the decoded text; its file
@@ -267,12 +269,12 @@
       file, because a recording that contains that prosign would erase decoded
       text. Choose <em>Play anyway</em> or <em>Change in Settings</em>, which
       opens the Prosign Actions card. The same warning appears when you
-      switch the CW Tone Detector on, and when decoding returns to the
+      switch the CW Tone Decoder on, and when decoding returns to the
       microphone after a file is unloaded, because decoding over the
       microphone can erase text in the same way.</li>
 </ul>
 <p>
-  <strong>Audio file output</strong> in the CW Tone Detector card decides where
+  <strong>Audio file output</strong> in the CW Tone Decoder card decides where
   the text from a file goes. <em>This device only</em> (the default) keeps it on
   the screen: nothing is sent to WinKeyer, MIDI or Firebase RTDB.
   <em>Full pipeline</em> sends it to the outputs you have switched on, as for
@@ -282,7 +284,7 @@
 
 <h3>Name &amp; Colour</h3>
 <p>
-  The CW Tone Detector has optional <strong>Name</strong> and
+  The CW Tone Decoder has optional <strong>Name</strong> and
   <strong>Colour</strong> fields. When a name is set (e.g. a callsign
   or station identifier), decoded text from this input appears on a new
   line in the fullscreen conversation view, prefixed with the name in
@@ -922,7 +924,7 @@
 
 <h3>Name &amp; Colour</h3>
 <p>
-  Like the CW Tone Detector (&sect;6.1), the Straight Key via Mic input
+  Like the CW Tone Decoder (&sect;6.1), the Straight Key via Mic input
   has optional <strong>Name</strong> and <strong>Colour</strong> fields.
   When set, decoded text appears on a colour-coded, named line in the
   fullscreen conversation view.

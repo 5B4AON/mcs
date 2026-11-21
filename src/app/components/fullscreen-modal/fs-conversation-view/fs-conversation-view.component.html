@@ -180,7 +180,7 @@
       }
     </button>
   }
-  @if (blurMode) {
+  @if (replayShown) {
     <div class="fs-replay-wrap">
       <button class="fs-float-btn fs-float-ghost" [class.playing]="replayStops"
               [disabled]="!replayAvailable"
@@ -214,6 +214,8 @@
         </div>
       }
     </div>
+  }
+  @if (blurMode) {
     <button class="fs-float-btn fs-float-ghost" [class.revealing]="revealing" [disabled]="ebookView ? !ebook.loaded() : !hasText"
             (mousedown)="onRevealStart($event)"
             (mouseup)="onRevealEnd()"

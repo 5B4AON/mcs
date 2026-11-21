@@ -1,5 +1,5 @@
-<!-- CW Tone Detector -->
-<app-item-shell cardId="cw-detector-card" title="CW Tone Detector" [mode]="mode"
+<!-- CW Tone Decoder -->
+<app-item-shell cardId="cw-detector-card" title="CW Tone Decoder" [mode]="mode"
                 [enabled]="s().cwInputEnabled" [toggleDisabled]="!!cwInputConflict()"
                 (enabledChange)="onCwEnabledChange($event)">
   <span item-badges>
@@ -8,7 +8,7 @@
 
   <div class="cw-hint">
     Reads Morse tones from an audio input, such as a radio.
-    <app-help-link-button section="s6-1" label="Help: CW tone detector" />
+    <app-help-link-button section="s6-1" label="Help: CW tone decoder" />
   </div>
 
   @if (mode === 'embedded' && !tuneOnly) {

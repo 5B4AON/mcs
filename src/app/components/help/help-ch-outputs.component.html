@@ -356,7 +356,7 @@
 </p>
 <ul>
   <li><strong>RX only</strong> — Only characters decoded from incoming audio
-      inputs (mic pilot tone, CW tone detector) or inputs configured as RX.</li>
+      inputs (mic pilot tone, CW tone decoder) or inputs configured as RX.</li>
   <li><strong>TX only</strong> — Only characters from the encoder (typed text)
       and from keyer inputs (keyboard, mouse, touch) configured as TX.</li>
   <li><strong>Both</strong> — All decoded characters regardless of source.</li>
@@ -538,7 +538,7 @@
       The operator's raw keying is decoded into characters, which are then
       played back as clean dits and dahs at encoder WPM &mdash; effectively
       "cleaning up" the timing.</li>
-  <li><strong>Audio inputs</strong> (mic pilot tone, CW tone detector)
+  <li><strong>Audio inputs</strong> (mic pilot tone, CW tone decoder)
       &mdash; Decoded characters are played back at encoder WPM.</li>
   <li><strong>MIDI input</strong> &mdash; Decoded characters from incoming
       MIDI are played back on the MIDI output.</li>
@@ -813,7 +813,7 @@
 <ul>
   <li><strong>Audio Device</strong> — Which speakers or headphones to use.</li>
   <li><strong>Channel</strong> — Left or Right.</li>
-  <li><strong>Frequency</strong> — Tone pitch in Hz. 500–800 Hz is typical.
+  <li><strong>Frequency</strong> — Tone pitch in Hz, set with a slider and − / + buttons from 500 to 1000 Hz in steps of 25 Hz (500–800 Hz is typical).
       Choose a frequency that is comfortable for long operating sessions.</li>
   <li><strong>Amplitude</strong> — Volume level. Start at 30–50% and adjust
       to taste.</li>
@@ -892,7 +892,7 @@
 <p>
   Only an echo that comes back through a <strong>different input</strong>
   counts (for example characters keyed with the keyboard and then heard
-  again by the CW Tone Detector). One input repeating itself, such as a
+  again by the CW Tone Decoder). One input repeating itself, such as a
   station sending its call twice or you keying &ldquo;CQ CQ CQ&rdquo;, is
   never treated as a loop.
 </p>

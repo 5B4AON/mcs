@@ -291,6 +291,12 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     this.requestTypeInputFocus();
   }
 
+  /** The replay button is offered in Send on Enter and Live (above Save, like above Reveal while the text is blurred) and with blurred text. */
+  get replayShown(): boolean {
+    const mode = this.settings.settings().encoderMode;
+    return !!this.blurMode || mode === 'enter' || mode === 'live';
+  }
+
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get replayAvailable(): boolean {
     // The lesson help is a replay too, but the help button owns it

@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.22.0] - 2026-11-21
+
+### Added
+
+- **Replay in Send on Enter and Live** — The replay button (character, word or line) is also offered in the Send on Enter and Live modes, on the main screen and in full screen, directly above the Save button. It follows the same rules as in Copy practice.
+- **Unsent text in the input box** — On the main screen, the text waiting to be sent shows in the first line of the input box as it plays, as in the full screen: the sounding character in yellow, the rest in grey, each character removed once played. In Send on Enter, text typed meanwhile appears below it and joins the queue on Enter. In Live mode, typed text goes straight to the end of the send queue and leaves the box, and Backspace on an empty box takes back the last character that has not played yet.
+- **Hide button on practice notes and the Try Morse guide** — The blue Copy practice and Send practice notes have a small square hide button in the top right corner; they come back whenever you switch to a mode. The Try Morse guide uses the same button instead of its Close pill.
+- **Sidetone frequency slider** — Settings → Other → Sidetone has a slider with − and + buttons for the frequency, from 500 to 1000 Hz in steps of 25 Hz, like the Amplitude control.
+- **New line when the CW decoder locks** — Whenever the CW Tone Decoder locks onto a signal, the decoded text starts on a new line.
+
+### Changed
+
+- **CW Tone Detector is now CW Tone Decoder** — Renamed in Settings, the Setup Wizard and the Help.
+- **CW decoder resilience** — A strong keyed station on another pitch no longer causes the locked station's marks to be thrown away as clicks (the click test now reads the median over all search bins). The decoder does not switch to another tone while it is decoding valid Morse. While decoding, the envelope filter can narrow down to 10 Hz as the speed settles, and it goes back to the wide filter when the station ends.
+- **Input box height** — In Send on Enter and Live the main-screen input box keeps a fixed two-line height whatever it holds, so it no longer changes size when text is pending.
+
 ## [2.21.2] - 2026-11-20
 
 ### Added

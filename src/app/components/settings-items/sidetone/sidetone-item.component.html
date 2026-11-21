@@ -38,10 +38,9 @@
     </select>
   </label>
 
-  <label>Frequency (Hz):
-    <input type="number" min="500" max="800" [value]="s().sidetoneFrequency"
-           (change)="onSettingChange('sidetoneFrequency', $event)">
-  </label>
+  <div class="amplitude-value">Frequency: {{ s().sidetoneFrequency }} Hz</div>
+  <app-stepper [value]="s().sidetoneFrequency" [min]="frequencyRange.min" [max]="frequencyRange.max" [step]="frequencyRange.step"
+               label="Sidetone frequency" (valueChange)="setFrequency($event)" />
 
   <div class="amplitude-value">Amplitude: {{ amplitudePercent }}%</div>
   <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"

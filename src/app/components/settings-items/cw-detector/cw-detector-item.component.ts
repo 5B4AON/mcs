@@ -18,7 +18,7 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
 import { SETTINGS_SCOPE } from '../settings-scope';
 
 /**
- * Settings item — CW Tone Detector.
+ * Settings item — CW Tone Decoder.
  *
  * CW audio tone detector: RX/TX, device, channel (left, right or both mixed),
  * name and colour. Tone, speed and levels are found by the detector itself.

@@ -12,6 +12,7 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { StepperComponent } from '../stepper/stepper.component';
 import { playTestTone } from '../test-tone';
+import { SIDETONE_FREQUENCY_RANGE } from './sidetone-item.model';
 
 /**
  * Settings item — Sidetone (audio feedback tone during keying).
@@ -49,6 +50,12 @@ export class SidetoneItemComponent {
       value = parseFloat(el.value);
     }
     this.scope.update({ [key]: value } as Partial<AppSettings>);
+  }
+
+  readonly frequencyRange = SIDETONE_FREQUENCY_RANGE;
+
+  setFrequency(hz: number): void {
+    this.scope.update({ sidetoneFrequency: hz });
   }
 
   /** Amplitude is stored from 0 to 1 and shown as 0 to 100 percent */

@@ -83,7 +83,7 @@ export class AudioFileService {
     return mode !== 'practice' && mode !== 'send-practice' && !this.ebook.active();
   });
 
-  /** The Load button is offered: allowed here, and the CW Tone Detector is switched on */
+  /** The Load button is offered: allowed here, and the CW Tone Decoder is switched on */
   readonly canLoad = computed(() => this.allowed() && this.settings.settings().cwInputEnabled);
 
   private element: HTMLAudioElement | null = null;
@@ -306,7 +306,7 @@ export class AudioFileService {
     return this.confirm.ask({
       title: 'Send the text of this file to your outputs?',
       message: `Audio file output is set to Full pipeline. Text decoded from the file will be sent to: ${outputs.join(', ')}. `
-        + 'Choose Cancel to keep it off them, then set Audio file output to "This device only" in Settings → Inputs → CW Tone Detector.',
+        + 'Choose Cancel to keep it off them, then set Audio file output to "This device only" in Settings → Inputs → CW Tone Decoder.',
       confirmLabel: 'Load the file',
       cancelLabel: 'Cancel',
       danger: true,

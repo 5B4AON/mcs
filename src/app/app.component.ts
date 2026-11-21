@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, effect, inject, untracked } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewChild, ElementRef, AfterViewInit, HostBinding, HostListener, NgZone, computed, effect, inject, untracked } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Subscription, merge } from 'rxjs';
 import type { PaddleContactEvent } from './services/paddle-contacts';
@@ -155,6 +155,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   set encoderInputHasText(value: boolean) {
     this.clear.mainInputHasText.set(value);
   }
+
+  /**
+   * The unsent text of Send on Enter and Live, shown in the input box like the full screen's pending text: the
+   * sounding character (yellow) and the rest waiting (grey); what has played is gone. Null when nothing is waiting.
+   */
+  readonly mainPending = computed<{ sounding: string; rest: string } | null>(() => {
+    const mode = this.settings.settings().encoderMode;
+    if (mode !== 'enter' && mode !== 'live') return null;
+    const buffer = this.encoder.buffer();
+    const index = this.encoder.sentIndex();
+    if (index >= buffer.length) return null;
+    if (!this.encoder.isSending() || this.encoder.replayMode()) {
+      const waiting = buffer.slice(index);
+      return waiting.trim() ? { sounding: '', rest: waiting } : null;
+    }
+    const { endIdx } = this.encoder.extractToken(buffer, index);
+    return { sounding: buffer.slice(index, endIdx), rest: buffer.slice(endIdx) };
+  });
 
   /** Whether the first-use Morse guide is visible */
   showTryMorseGuide = true;
@@ -342,6 +360,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         for (const entry of fresh) {
           // Push to independent display buffers for all entries
           const displayName = this.getDisplayName(entry.type, entry.name);
+          // A new line is only shown: it is not a character to forward or to check for loops
+          if (entry.newLine) {
+            if (!sendPracticeKeying) this.displayBuffers.pushDecodedNewLine(entry.type, displayName, entry.color);
+            continue;
+          }
           if (!sendPracticeKeying || entry.fromRtdb) {
             this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
           }
@@ -556,6 +579,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
 
+    // Hidden practice notes show again whenever a mode is switched to
+    effect(() => {
+      this.settings.settings().encoderMode;
+      this.dismissedGuides.clear();
+    });
+
     // Practice on the main screen accepts typing only: no keyboard or mouse keying
     effect(() => {
       this.settings.settings().encoderMode;
@@ -676,6 +705,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         if (evt.type === 'pattern' && !evt.pattern) this.decoder.clearPattern('cwAudio');
         else if (evt.type === 'pattern') this.decoder.externalPattern('cwAudio', source, evt.pattern, cwOpts(), evt.unitMs);
         else if (evt.type === 'char') this.decoder.externalCharacter('cwAudio', source, evt.pattern, cwOpts(), evt.wpm);
+        else if (evt.type === 'newline') this.decoder.externalNewLine('cwAudio', source, cwOpts());
         else this.decoder.externalWord('cwAudio', source, cwOpts());
       }),
     );
@@ -1527,6 +1557,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       return;
     }
+    if (this.settings.settings().encoderMode === 'live') {
+      // Live text leaves the box as it is typed, so Enter has nothing to add and Backspace on an empty box takes back unsent text
+      if (event.key === 'Enter') {
+        event.preventDefault();
+      } else if (event.key === 'Backspace' && !textarea.value) {
+        event.preventDefault();
+        this.removeLastUnsentChar();
+      }
+      return;
+    }
     if (this.settings.settings().encoderMode === 'enter' && event.key === 'Enter') {
       event.preventDefault();
       const hasText = textarea.value.trim().length > 0;
@@ -1550,7 +1590,38 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.encoderInputHasText = false;
   }
 
+  /** Live mode: typed text goes to the end of the encoder buffer at once and leaves the box, as in the full screen. */
+  private sendLiveText(textarea: HTMLTextAreaElement): void {
+    // Runs of white space become one space; none at the start of a message or after another space
+    let text = textarea.value.toUpperCase().replace(/\s+/g, ' ');
+    const buffer = this.encoder.buffer();
+    if (buffer.length <= this.encoder.sentIndex() || /\s$/.test(buffer)) text = text.replace(/^ /, '');
+    textarea.value = '';
+    this.encoderInputHasText = false;
+    if (text) this.encoder.enqueue(text);
+  }
+
+  /** Live mode: take back the last unsent character (never the one that is sounding). */
+  private removeLastUnsentChar(): void {
+    const buffer = this.encoder.buffer();
+    const minimum = this.encoder.isSending() && !this.encoder.replayMode()
+      ? this.encoder.sentIndex() + 1 : this.encoder.sentIndex();
+    if (buffer.length > minimum) this.encoder.setBuffer(buffer.slice(0, -1));
+  }
+
   onEncoderInput(textarea: HTMLTextAreaElement): void {
+    if (this.settings.settings().encoderMode === 'live') {
+      textarea.value = textarea.value.toUpperCase();
+      this.encoderInputHasText = textarea.value.trim().length > 0;
+      const destinations = this.getExternalEncoderDestinations();
+      if (textarea.value.trim() && destinations.length
+          && !this.sameDestinations(destinations, this.confirmedDestinations)) {
+        this.openExternalConfirmation('live-send', destinations);
+        return;
+      }
+      this.sendLiveText(textarea);
+      return;
+    }
     let pos = textarea.selectionStart;
     let value = textarea.value.toUpperCase();
     if (this.settings.settings().encoderMode === 'practice') {
@@ -1570,14 +1641,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.encoderInputHasText = textarea.value.trim().length > 0;
     if (this.settings.settings().encoderMode === 'practice') {
       this.practice.userInput.set(textarea.value);
-    } else if (this.settings.settings().encoderMode === 'live') {
-      const destinations = this.getExternalEncoderDestinations();
-      if (textarea.value.trim() && destinations.length
-          && !this.sameDestinations(destinations, this.confirmedDestinations)) {
-        this.openExternalConfirmation('live-send', destinations);
-        return;
-      }
-      this.encoder.setBuffer(textarea.value);
     }
   }
 
@@ -1658,7 +1721,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (action === 'live-send') {
       const textarea = this.encoderInputRef?.nativeElement;
-      if (textarea) this.encoder.setBuffer(textarea.value);
+      if (textarea) this.sendLiveText(textarea);
     } else if (this.encoderInputRef) {
       this.toggleEncoderTx(this.encoderInputRef.nativeElement);
     }
@@ -1735,7 +1798,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.encoder.startTx();
     } else {
       if (this.settings.settings().encoderMode === 'live' && textarea.value.trim()) {
-        this.encoder.setBuffer(textarea.value);
+        this.sendLiveText(textarea);
         return;
       }
       // A paused send continues; text typed meanwhile is queued behind it
@@ -1926,6 +1989,15 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.kochHelp.kind() === 'copy' && this.practice.state() === 'playing';
   }
 
+  /**
+   * The replay button is offered in Send on Enter and Live (above Save, like above Reveal while the text is blurred),
+   * with blurred text and practice (Send practice's Hear it first).
+   */
+  get mainReplayShown(): boolean {
+    const mode = this.settings.settings().encoderMode;
+    return !!this.mainBlurMode || this.sendPracticeActive || mode === 'enter' || mode === 'live';
+  }
+
   /** Whether the replay button can be pressed (while a replay waits it becomes the stop button). */
   get mainReplayAvailable(): boolean {
     // The lesson help is a replay too, but the help button owns it
@@ -1964,6 +2036,31 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Type-along practice shows the challenge with what was typed under each character (a book has its own reader). */
   get practiceCompare(): boolean {
     return this.settings.settings().encoderMode === 'practice' && this.practice.feedbackMode() === 'typealong' && !this.ebookActive;
+  }
+
+  /** Practice notes the user hid (by their text), until the mode changes. */
+  private readonly dismissedGuides = new Set<string>();
+
+  /** What the Send practice note says; a hidden note shows again when this changes (for example a new warning). */
+  get sendPracticeGuideKey(): string {
+    const s = this.settings.settings();
+    return ['send', sendPracticeUi.sendPracticeHeading(s, 'Send practice'), sendPracticeUi.sendPracticeSessionDescription(s),
+      this.sendPractice.inputsReady(), sendPracticeUi.sendPracticeExternalRouteNotice(s)].join('|');
+  }
+
+  /** What the Copy practice note says; see `sendPracticeGuideKey`. */
+  get copyPracticeGuideKey(): string {
+    const s = this.settings.settings();
+    return ['copy', practiceUi.practiceHeading(s, 'Practice'), practiceUi.practiceHint(s),
+      practiceUi.practiceExternalRouteNotice(s)].join('|');
+  }
+
+  guideDismissed(key: string): boolean {
+    return this.dismissedGuides.has(key);
+  }
+
+  dismissGuide(key: string): void {
+    this.dismissedGuides.add(key);
   }
 
   /** True while the "Replay last:" question of the replay button is open. */
