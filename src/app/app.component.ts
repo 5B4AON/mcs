@@ -1016,8 +1016,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       }
       this.guardDismissed = true;
     }
-    // Where the browser has an earlier page this leaves the app; an installed app stays on its first entry and needs one more Back
-    this.runHistoryOp(() => history.back());
+    // An installed app (TWA, home-screen app) closes with window.close(); history.back() does nothing on its first entry.
+    // A normal tab refuses window.close(), so it falls back to going back to the page before the app.
+    window.close();
+    setTimeout(() => this.runHistoryOp(() => history.back()), 150);
   }
 
   /** Back left the entry of a popup that is still open: step forward onto it again */
