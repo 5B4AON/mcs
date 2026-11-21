@@ -10,6 +10,7 @@ import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.co
 import { SETTINGS_SCOPE } from '../settings-scope';
 import { ConfirmService } from '../../../services/confirm.service';
 import { ProsignActionSettings, joinPhrases, newErasingProsigns } from '../../../services/prosign-erase';
+import { cwDecoderOn } from '../../../services/cw-decoder-state';
 
 /**
  * Settings item — Prosign Actions.
@@ -60,7 +61,7 @@ export class ProsignActionsItemComponent {
    */
   private async applyChange(patch: Partial<ProsignActionSettings>): Promise<boolean> {
     const before = this.s();
-    if (this.scope.isLive && before.cwInputEnabled) {
+    if (this.scope.isLive && cwDecoderOn(before)) {
       const added = newErasingProsigns(before, { ...before, ...patch });
       if (added.length) {
         const keep = await this.confirm.ask({

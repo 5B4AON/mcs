@@ -164,7 +164,7 @@
            [class.audio-attention]="audioAttention" role="status" aria-live="polite" aria-atomic="true">
         @if (audioState === 'stopped' && !audioNeedsTap) {
           <span>Audio is stopped. Press
-          @if (settings.settings().cwInputEnabled) {
+          @if (cwOn) {
             <svg class="audio-inline-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="the muted microphone button"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
           } @else {
             <svg class="audio-inline-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="the muted speaker button"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><line x1="3" y1="3" x2="21" y2="21"/></svg>
@@ -219,8 +219,13 @@
       </div>
     }
 
+    <!-- The CW decoder's scope sits above the text (not drawn behind the full screen); the typing box stays where it was -->
+    @if (cwScopeShown && !activeModal) {
+      <app-cw-scope class="main-cw-scope" [compact]="true" />
+    }
+
     <div class="decoded-parchment" [class.night]="celebrating" (click)="focusPracticeInput()">
-      <div class="decoded-text" #decoderBox [class.roomy]="copyPractice"
+      <div class="decoded-text" #decoderBox [class.roomy]="copyPractice" [class.scope-above]="cwScopeShown && !activeModal"
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
            [class.blur-revealing]="mainRevealing"
            [class.audio-on]="audioFile.loaded()"
@@ -400,15 +405,13 @@
       </section>
     }
 
-    <div class="encoder-input-row" [class.input-hidden]="copyPractice">
+    <div class="encoder-input-row" [class.input-hidden]="copyPractice" [class.has-switch]="typingModeShown">
       @if (sendPracticeActive && (!ebookActive || sendPractice.ebookAssist())) {
         <app-send-prompt />
-      } @else if (cwScopeShown) {
-        <app-cw-scope />
       }
       <!-- Copy practice has no visible box: the answer appears under the challenge text, as in the full screen; this one only catches the typing -->
-      <textarea #encoderInput rows="2" [class.catch-typing]="copyPractice" [class.has-pending]="mainPending() && !cwScopeShown" [class.two-line]="settings.settings().encoderMode === 'enter' || settings.settings().encoderMode === 'live'"
-                [style.display]="sendPracticeActive || (copyPractice && practice.feedbackMode() !== 'typealong') || cwScopeShown ? 'none' : null"
+      <textarea #encoderInput rows="2" [class.catch-typing]="copyPractice" [class.has-pending]="!!mainPending()" [class.two-line]="settings.settings().encoderMode === 'enter' || settings.settings().encoderMode === 'live'"
+                [style.display]="sendPracticeActive || (copyPractice && practice.feedbackMode() !== 'typealong') ? 'none' : null"
                 style="text-transform: uppercase"
                 [placeholder]="settings.settings().encoderMode === 'practice'
                   ? (practice.feedbackMode() === 'typealong'
@@ -420,15 +423,24 @@
                           ? 'Type what you hear; Enter pauses and resumes the book...'
                           : 'Type what you hear, then press Enter to continue...')
                     : 'Practice answer entry is unavailable for this feedback mode.')
-                  : (mainPending() && settings.settings().encoderMode === 'enter' ? 'Type more text, press Enter to queue it...' : 'Type text to encode...')"
+                  : (mainPending() && settings.settings().encoderMode === 'enter' ? 'Type more, press Enter to queue it...' : 'Type to encode...')"
                 [disabled]="settings.settings().encoderMode === 'practice' && practice.feedbackMode() !== 'typealong'"
                 (keydown)="onEncoderKeydown($event, encoderInput)"
                 (input)="onEncoderInput(encoderInput)"></textarea>
       <!-- The text waiting in the encoder, in the first line of the box (the textarea's own text goes below it) -->
       @if (mainPending(); as pending) {
-        @if (!cwScopeShown) {
-          <div class="encoder-pending"><span [style.color]="settings.modalDisplay().sendingForeground">{{ pending.sounding }}</span><span [style.color]="settings.modalDisplay().bufferForeground">{{ pending.rest }}</span></div>
-        }
+        <div class="encoder-pending"><span [style.color]="settings.modalDisplay().sendingForeground">{{ pending.sounding }}</span><span [style.color]="settings.modalDisplay().bufferForeground">{{ pending.rest }}</span></div>
+      }
+      <!-- Typing mode: a vertical switch, Live at the top and Send on Enter at the bottom -->
+      @if (typingModeShown) {
+        <button type="button" role="switch" class="typing-mode-btn" [class.live]="settings.settings().encoderMode === 'live'"
+                [attr.aria-checked]="settings.settings().encoderMode === 'live'"
+                (mousedown)="$event.preventDefault()" (click)="toggleTypingMode()"
+                [title]="typingModeLabel" [attr.aria-label]="typingModeLabel">
+          <span class="ts-ico ts-live" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><polygon points="14 1.5 7 13 11.5 13 9.5 22.5 17 10.5 12.5 10.5 14 1.5"/></svg></span>
+          <span class="ts-ico ts-enter" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+          <span class="ts-knob" aria-hidden="true"></span>
+        </button>
       }
     </div>
 
@@ -464,11 +476,16 @@
       <label class="encoder-mode-label">
         Mode:
         <span class="mode-select">
-          <select [value]="settings.settings().encoderMode" (change)="onSettingChange('encoderMode', $event)">
+          <select [value]="modeSelectValue" (change)="onModeChange($event)">
             <optgroup label="Typing">
-              <option value="enter" [selected]="settings.settings().encoderMode === 'enter'">Send on Enter</option>
-              <option value="live" [selected]="settings.settings().encoderMode === 'live'">Live</option>
+              <option value="enter" [selected]="modeSelectValue === 'enter'">Send on Enter</option>
+              <option value="live" [selected]="modeSelectValue === 'live'">Live</option>
             </optgroup>
+            @if (settings.settings().cwInputEnabled) {
+              <optgroup label="Decoding">
+                <option value="cw" [selected]="modeSelectValue === 'cw'">CW Decoder</option>
+              </optgroup>
+            }
             @if (settings.settings().practiceEnabled || settings.settings().sendPracticeEnabled) {
               <optgroup label="Practice">
                 @if (settings.settings().practiceEnabled) {
@@ -541,7 +558,7 @@
               [title]="audioStarting ? audioStatusMessage : audioState === 'failed' && audioRunning ? 'Audio cleanup incomplete. Retry stopping audio' : audioRunning ? 'Audio is running. Stop Audio' : 'Audio is stopped. Start Audio'">
         @if (audioStarting) {
           <span class="spinner"></span>
-        } @else if (settings.settings().cwInputEnabled) {
+        } @else if (cwOn) {
           <!-- CW tone detector listens through the microphone, so the button shows a microphone -->
           @if (audioRunning) {
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>

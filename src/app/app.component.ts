@@ -7,6 +7,8 @@ import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
 import { AUDIO_RUNNING_KEY } from './services/audio-primer';
 import { CwInputService } from './services/cw-input.service';
+import { CwDecoderControlService } from './services/cw-decoder-control.service';
+import { cwDecoderOn } from './services/cw-decoder-state';
 import { MorseDecoderService } from './services/morse-decoder.service';
 import { MorseEncoderService, PlayingPattern } from './services/morse-encoder.service';
 import { KeyerService } from './services/keyer.service';
@@ -95,6 +97,7 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
 })
 export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Shared labels for the Practice guidance shown in the main view. */
+  private readonly cwControl = inject(CwDecoderControlService);
   readonly practiceUi = practiceUi;
   readonly sendPracticeUi = sendPracticeUi;
 
@@ -326,8 +329,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.practiceFingerprint = fingerprint;
       if (!practice) return;
       untracked(() => {
-        if (s.cwInputEnabled) {
-          this.settings.updateAndPersist({ cwInputEnabled: false });
+        if (cwDecoderOn(s)) {
+          this.settings.updateAndPersist({ cwDecoderActive: false });
           void this.cwInput.stop();
         }
         if (switched && !s.sidetoneEnabled) void this.offerSidetoneForPractice();
@@ -580,8 +583,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     });
 
     // Hidden practice notes show again whenever a mode is switched to
+    // (compared with the previous mode: other settings, such as the key/paddle toggle, change the same signal)
+    let guideMode = this.settings.settings().encoderMode;
     effect(() => {
-      this.settings.settings().encoderMode;
+      const mode = this.settings.settings().encoderMode;
+      if (mode === guideMode) return;
+      guideMode = mode;
       this.dismissedGuides.clear();
     });
 
@@ -1310,7 +1317,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const settings = this.settings.settings();
-      const needsInput = settings.micInputEnabled || settings.cwInputEnabled;
+      const needsInput = settings.micInputEnabled || cwDecoderOn(settings);
       if (typeof AudioContext === 'undefined' || (needsInput && !navigator.mediaDevices?.getUserMedia)) {
         const unsupportedError = new Error();
         unsupportedError.name = 'UnsupportedAudioError';
@@ -1385,7 +1392,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   private async warnErasingProsignsBeforeMic(): Promise<void> {
     const s = this.settings.settings();
-    const erasing = s.cwInputEnabled ? erasingProsigns(s) : [];
+    const erasing = cwDecoderOn(s) ? erasingProsigns(s) : [];
     if (!erasing.length) return;
     const resumeOnly = await this.confirmService.ask({
       title: 'Prosigns can erase decoded text',
@@ -1465,7 +1472,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private audioStartFailureMessage(error: unknown, stage: string): string {
     const errorName = (error as { name?: string } | null)?.name;
-    const inputEnabled = this.settings.settings().micInputEnabled || this.settings.settings().cwInputEnabled;
+    const inputEnabled = this.settings.settings().micInputEnabled || cwDecoderOn(this.settings.settings());
 
     if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
       if (stage === 'microphone input' || stage === 'CW input') {
@@ -1850,10 +1857,57 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   // ---- Send practice mode ----
 
   /** Send practice shows its prompt and keyed text; keying works as usual. */
-  /** The CW scope takes the typing box's place while the CW detector is on or a file is decoded (not in practice modes) */
+  /** The CW scope shows above the text while the CW decoder is on or a file is decoded (not in practice modes) */
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
-    return (s.cwInputEnabled || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+    return (cwDecoderOn(s) || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+  }
+
+  /** The CW tone decoder is listening (chosen in the Mode list) */
+  get cwOn(): boolean {
+    return cwDecoderOn(this.settings.settings());
+  }
+
+  /** What the Mode list shows: the decoder while it listens (the typing mode stays underneath), else the mode */
+  get modeSelectValue(): string {
+    return this.cwOn ? 'cw' : this.settings.settings().encoderMode;
+  }
+
+  /**
+   * The Mode list. Choosing the decoder starts it (after its questions; a declined question puts the list back);
+   * choosing anything else stops it, and the typing mode underneath (Send on Enter or Live) is what remains.
+   */
+  async onModeChange(event: Event): Promise<void> {
+    const el = event.target as HTMLSelectElement;
+    const value = el.value;
+    if (value === 'cw') {
+      const ok = await this.cwControl.activate(this.audioRunning);
+      if (!ok) el.value = this.modeSelectValue;
+      return;
+    }
+    if (this.cwOn) {
+      // Entering a practice mode asks its own sidetone question (see the practice effect)
+      await this.cwControl.deactivate(this.audioRunning, value !== 'practice' && value !== 'send-practice');
+    }
+    this.onSettingChange('encoderMode', event);
+  }
+
+  /** The Send on Enter / Live toggle sits in the input box (only those two modes have one). */
+  get typingModeShown(): boolean {
+    const mode = this.settings.settings().encoderMode;
+    return mode === 'enter' || mode === 'live';
+  }
+
+  get typingModeLabel(): string {
+    return this.settings.settings().encoderMode === 'live'
+      ? 'Live: each letter is sent as you type. Switch to Send on Enter'
+      : 'Send on Enter. Switch to Live';
+  }
+
+  /** Switch between Send on Enter and Live (saved at once, like the Mode select) and keep typing in the box. */
+  toggleTypingMode(): void {
+    this.settings.updateAndPersist({ encoderMode: this.settings.settings().encoderMode === 'live' ? 'enter' : 'live' });
+    this.encoderInputRef?.nativeElement.focus({ preventScroll: true });
   }
 
   /** Open the Book dialog; a Copy practice that is playing is paused first. */

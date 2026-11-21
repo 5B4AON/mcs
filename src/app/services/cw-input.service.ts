@@ -7,6 +7,7 @@ import { Subject } from 'rxjs';
 import { isContextPaused } from './audio-context-state';
 import { LoopDetectionService } from './loop-detection.service';
 import { SettingsService } from './settings.service';
+import { cwDecoderOn } from './cw-decoder-state';
 import { addWorkletModule, loadWorkletSource, preloadWorkletModule } from './worklet-module';
 import { canRunCwDetectWorker, cwDetectWorkerSource } from './cw-detect-worker';
 
@@ -61,10 +62,10 @@ export interface CwStatus {
 /** Top of the detector's tone search (Hz); the bottom is 400 Hz. Must match SEARCH_HI in `cw-detect-processor.js`. */
 export const SEARCH_HI_HZ = 1500;
 
-/** Short status line: "Locked · 643 Hz · 24 WPM · 18 dB", "Listening for Morse…" or "Searching 400–1500 Hz…" */
+/** Short status line (one line on a phone): "Locked · 643 Hz · 24 WPM · 18 dB", "Listening at 643 Hz…" or "Searching 400–1500 Hz…" */
 export function cwStatusText(st: CwStatus): string {
-  if (st.state === 'search') return `Searching for a CW tone (400–${SEARCH_HI_HZ} Hz)…`;
-  if (st.gate === 'closed') return `Listening for Morse at ${Math.round(st.freq)} Hz…`;
+  if (st.state === 'search') return `Searching 400–${SEARCH_HI_HZ} Hz…`;
+  if (st.gate === 'closed') return `Listening at ${Math.round(st.freq)} Hz…`;
   return `Locked · ${Math.round(st.freq)} Hz · ${st.wpm} WPM · ${Math.max(0, Math.round(st.snrDb))} dB`;
 }
 
@@ -215,7 +216,7 @@ export class CwInputService {
     if (this.fileActive()) return;
 
     const s = this.settings.settings();
-    if (!s.cwInputEnabled) return;
+    if (!cwDecoderOn(s)) return;
     // Copy and Send practice never use the detector, and it would hear their sidetone (see AppComponent's practice effect)
     if (s.encoderMode === 'practice' || s.encoderMode === 'send-practice') return;
 
@@ -521,13 +522,13 @@ export class CwInputService {
       this.stuckTimer = null;
       if (!this.keyIsDown || !this.settings.settings().sidetoneEnabled) return;
       this.zone.run(() => {
-        this.settings.update({ cwInputEnabled: false });
+        this.settings.updateAndPersist({ cwDecoderActive: false });
         void this.stop();
         this.loopDetection.reportFeedback(
           'Audio feedback detected! The CW tone detector stayed keyed for over 2.5 seconds while the sidetone ' +
-          'was on, so it is probably hearing the sidetone. The CW detector was turned off. Use headphones, ' +
+          'was on, so it is probably hearing the sidetone. The CW decoder was stopped. Use headphones, ' +
           'lower the volume, move the sidetone away from the detector tone, or turn the sidetone off, then ' +
-          're-enable the detector.');
+          'choose CW Decoder in the Mode list again.');
       });
     }, this.STUCK_KEY_MS);
   }

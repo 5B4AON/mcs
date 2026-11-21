@@ -147,6 +147,17 @@
   <app-fireworks [launchDelayMs]="0" />
 }
 <div class="fs-btn-stack" [class.fs-btn-stack-above-touch]="inputMode === 'key' && settings.settings().touchKeyerEnabled">
+  <!-- Typing mode (Type input only): a vertical switch, Live at the top and Send on Enter at the bottom -->
+  @if (typingModeShown) {
+    <button type="button" role="switch" class="fs-typing-switch" [class.live]="settings.settings().encoderMode === 'live'"
+            [attr.aria-checked]="settings.settings().encoderMode === 'live'"
+            (mousedown)="$event.preventDefault()" (click)="toggleTypingMode()"
+            [title]="typingModeLabel" [attr.aria-label]="typingModeLabel">
+      <span class="ts-ico ts-live" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"><polygon points="14 1.5 7 13 11.5 13 9.5 22.5 17 10.5 12.5 10.5 14 1.5"/></svg></span>
+          <span class="ts-ico ts-enter" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span>
+          <span class="ts-knob" aria-hidden="true"></span>
+    </button>
+  }
   @if (inputMode === 'key' && settings.settings().touchKeyerEnabled) {
     <button type="button" class="fs-float-btn fs-float-ghost" (mousedown)="$event.preventDefault()" (click)="toggleTouchMode()"
             [title]="settings.settings().touchKeyerMode === 'straight' ? 'Switch to the paddles' : 'Switch to the straight key'"

@@ -8,6 +8,9 @@
 
   <div class="cw-hint">
     Reads Morse tones from an audio input, such as a radio.
+    @if (mode === 'card') {
+      Switching it on adds it to the Mode list on the main screen: choose it there to start listening.
+    }
     <app-help-link-button section="s6-1" label="Help: CW tone decoder" />
   </div>
 
@@ -19,7 +22,7 @@
     </label>
     <div class="keyer-hint">
       @if (s().cwInputEnabled) {
-        The CW detector is on. Untick the box to turn it off.
+        The CW decoder will listen after Apply. Untick the box to leave it off.
       } @else {
         Tick the box to set it up.
       }

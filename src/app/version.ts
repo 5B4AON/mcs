@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.22.0';
+export const APP_VERSION = '2.23.0';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-21';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-21';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'A Replay button in Send on Enter and Live. Unsent text now shows in the input box as it plays. The CW decoder starts a new line when it locks onto a signal.';
+export const WHATS_NEW = 'CW Decoder is now a choice in the Mode list, with a Send on Enter / Live switch beside the input box. The scope moved above the text.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {
@@ -30,6 +30,7 @@ export const VERSION_HISTORY_MAX = 20;
  * the oldest entry drops off the end. Keep each text to about 150 characters (the average length of the list; 160 at most). The owner approves every entry; draft them from CHANGELOG.md.
  */
 const EARLIER_VERSION_NOTES: VersionNote[] = [
+  { version: '2.22.0', date: '2026-11-21', text: 'Replay in Send on Enter and Live, unsent text shown in the input box as it plays, a sidetone frequency slider, and a new line when the CW decoder locks.' },
   { version: '2.21.0', date: '2026-11-18', text: 'The main-screen touch keyer can be paddles, with a button to switch between them and the straight key. New key picture; the decoder recovers after a long press.' },
   { version: '2.20.0', date: '2026-11-16', text: 'Type along with an e-book, blurred if you like. The Replay button asks what to repeat, and your place in a book is kept to the exact character.' },
   { version: '2.19.0', date: '2026-11-15', text: 'Load an audio recording of Morse and decode it with the CW tone detector while you listen, with a player bar on the main screen and in full screen.' },

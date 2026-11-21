@@ -7,6 +7,7 @@ import {
   ViewChild, effect, untracked
 } from '@angular/core';
 import { AppSettings, SettingsService } from '../../services/settings.service';
+import { cwDecoderOn } from '../../services/cw-decoder-state';
 import { MorseEncoderService } from '../../services/morse-encoder.service';
 import { KeyerService } from '../../services/keyer.service';
 import { FsToolbarComponent } from './fs-toolbar/fs-toolbar.component';
@@ -103,7 +104,7 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
-    return (s.cwInputEnabled || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+    return (cwDecoderOn(s) || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
   /** Font stack chosen in the fullscreen menu. */

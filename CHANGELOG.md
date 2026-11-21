@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.0] - 2026-11-21
+
+### Added
+
+- **CW Decoder in the Mode list** — Ticking the CW Tone Decoder card in Settings now only sets it up: it then appears in the main screen's Mode list, under *Decoding*, as **CW Decoder**. Choosing it starts listening, after the questions that used to come with the Settings switch (prosigns that erase text, muting the sidetone, keeping the screen on a phone); choosing another mode stops it, offers to turn a muted sidetone back on, and leaves it set up in Settings. The choice is saved at once. Choosing it from a practice mode returns to Send on Enter. Users who already had the decoder enabled start idle and choose it from the list once. The Load button for audio files is offered while it is chosen.
+- **Send on Enter / Live switch** — A small vertical switch (a bolt at the top for Live, a paper plane at the bottom for Send on Enter) shows and changes the typing mode. On the main screen it stands to the right of the input box; in full screen it is at the top of the round buttons in Type input. The typing mode keeps working while the CW decoder listens.
+
+### Changed
+
+- **CW scope above the text** — On the main screen the scope sits above the output text and the typing box stays where it was; the text area is shorter by the scope's height. The scope is not drawn behind the full screen, and its status reads "Listening at 643 Hz…" or "Searching 400–1500 Hz…" on one line.
+- **Settings → Inputs order** — The Main Screen Touch Keyer card now comes before the Fullscreen Touch Keyer card.
+- **Shorter input placeholders** — "Type to encode…" and "Type more, press Enter to queue it…".
+
+### Fixed
+
+- **Hidden practice notes reappeared** — A hidden Copy practice or Send practice note came back when switching the main-screen touch keyer between the straight key and the paddles. It now comes back only when you switch mode or when what it says changes.
+
 ## [2.22.0] - 2026-11-21
 
 ### Added

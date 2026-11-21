@@ -2,15 +2,15 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { CwInputService, CwScopeBuffer, cwStatusText } from '../../services/cw-input.service';
 
 /** Seconds of history across the trace */
 const SPAN_MS = 2500;
 
 /**
- * CW scope — shows what the CW tone detector hears, in the place of the
- * typing box (main screen) or above the conversation (full screen).
+ * CW scope — shows what the CW tone decoder hears, above the output text
+ * (main screen, `compact`: a fixed height) or above the conversation (full screen).
  *
  * Left: the last 2.5 s scrolling to the left. The faint grey trace is the
  * raw received sound, the filled blue area is the tone at the locked
@@ -33,6 +33,9 @@ const SPAN_MS = 2500;
   styleUrls: ['./cw-scope.component.css'],
 })
 export class CwScopeComponent implements AfterViewInit, OnDestroy {
+  /** Fixed total height (the main screen takes the same room from the text box, so the typing box stays where it was) */
+  @Input() @HostBinding('class.compact') compact = false;
+
   @ViewChild('canvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
 
   private frame = 0;

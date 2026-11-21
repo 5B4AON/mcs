@@ -159,10 +159,13 @@
 
 <h3 id="s6-1-scope">The CW Scope</h3>
 <p>
-  While the detector is on, a scope takes the place of the typing box on the
-  main screen and sits above the text in full screen (it is hidden in the
-  practice modes; switch the detector off to type on the main screen
-  again).
+  While the decoder is on, a scope sits above the text, on the main screen
+  and in full screen (it is hidden in the practice modes). The typing box
+  stays where it is, so you can still type while decoding. A small vertical
+  switch to the right of the box (in full screen, at the top of the round
+  buttons while you are in Type) shows the typing mode: the knob is at the
+  bottom, on the paper plane, for Send on Enter, and at the top, on the
+  bolt, for Live. Tap it to switch.
 </p>
 <ul>
   <li><strong>Left:</strong> the last 2.5 seconds, newest at the right. The
@@ -177,8 +180,8 @@
       window the tone search is working on.</li>
   <li><strong>Right:</strong> the spectrum from 400 to 1500 Hz, with an amber
       marker on the locked tone.</li>
-  <li><strong>Status line:</strong> <em>Searching</em>; <em>Listening for
-      Morse</em> when a tone is found but the squelch is still closed; or
+  <li><strong>Status line:</strong> <em>Searching</em>; <em>Listening at</em>
+      the tone's frequency when a tone is found but the squelch is still closed; or
       <em>Locked</em> with the tone, the measured speed and the
       signal-to-noise ratio.</li>
 </ul>
@@ -214,13 +217,19 @@
   short noise spikes. The levels it chose are drawn as lines on the scope.
 </p>
 <p>
-  If the sidetone is on and plays this source, switching the detector on
-  asks whether to mute the sidetone, so the detector does not hear its own
-  tone through the speaker. Switching the detector off while the sidetone is
-  off asks whether to turn the sidetone back on. On a phone or tablet it also
-  asks whether to keep the screen on (see 9.6), and if a practice mode is on
-  the main screen returns to Send on Enter, because the scope is not shown in
-  a practice mode.
+  Ticking the card in Settings only sets the decoder up: it then appears in
+  the <strong>Mode</strong> list on the main screen, under <em>Decoding</em>.
+  Choose <strong>CW Decoder</strong> there to start listening, and
+  choose another mode to stop it (it stays set up in Settings). While it
+  listens, your typing mode (Send on Enter or Live) still works and is shown
+  by the switch next to the input box. When you choose the decoder and the
+  sidetone is on and plays this source, you are asked whether to mute the
+  sidetone, so the decoder does not hear its own tone through the speaker.
+  Stopping it while the sidetone is off asks whether to turn the sidetone back
+  on. On a phone or tablet it also asks whether to keep the screen on (see
+  9.6). If a practice mode is on, choosing the decoder returns to Send on
+  Enter, because the decoder is not used in a practice mode. It is saved at
+  once, like the mode.
 </p>
 <p>
   When the page is reloaded or the app is opened again with audio running,
@@ -259,7 +268,7 @@
   <li>The file is streamed from your disk by the browser; the app does not
       copy, cache or save it, so large files work. It never leaves your
       device.</li>
-  <li>Load is offered while the CW Tone Decoder is switched on, and not in
+  <li>Load is offered while the CW Tone Decoder is chosen in the Mode list, and not in
       Copy Practice, Send Practice or the e-book. In
       Lens only a file that is already loaded shows its player.</li>
   <li>Use the <strong>Save</strong> button to keep the decoded text; its file
@@ -269,7 +278,7 @@
       file, because a recording that contains that prosign would erase decoded
       text. Choose <em>Play anyway</em> or <em>Change in Settings</em>, which
       opens the Prosign Actions card. The same warning appears when you
-      switch the CW Tone Decoder on, and when decoding returns to the
+      choose CW Decoder in the Mode list, and when decoding returns to the
       microphone after a file is unloaded, because decoding over the
       microphone can erase text in the same way.</li>
 </ul>
@@ -297,7 +306,7 @@
   <p>
     On Windows, install "VB-Cable" or "Virtual Audio Cable". Route your SDR
     receiver's audio output to the virtual cable. In Morse Code Studio, select
-    the virtual cable as the Audio Input Device and switch the detector on.
+    the virtual cable as the Audio Input Device, then choose CW Decoder in the Mode list.
     Once the scope shows "Locked", the decoder shows the CW text live.
   </p>
 </div>

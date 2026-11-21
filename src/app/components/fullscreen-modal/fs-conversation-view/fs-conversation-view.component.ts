@@ -291,6 +291,24 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     this.requestTypeInputFocus();
   }
 
+  /** The Send on Enter / Live toggle: shown while typing (Type input) in those two modes. */
+  get typingModeShown(): boolean {
+    const mode = this.settings.settings().encoderMode;
+    return this.inputMode === 'type' && (mode === 'enter' || mode === 'live');
+  }
+
+  get typingModeLabel(): string {
+    return this.settings.settings().encoderMode === 'live'
+      ? 'Live: each letter is sent as you type. Switch to Send on Enter'
+      : 'Send on Enter. Switch to Live';
+  }
+
+  /** Switch between Send on Enter and Live (saved at once, like the main screen's Mode select) and keep typing. */
+  toggleTypingMode(): void {
+    this.settings.updateAndPersist({ encoderMode: this.settings.settings().encoderMode === 'live' ? 'enter' : 'live' });
+    this.requestTypeInputFocus();
+  }
+
   /** The replay button is offered in Send on Enter and Live (above Save, like above Reveal while the text is blurred) and with blurred text. */
   get replayShown(): boolean {
     const mode = this.settings.settings().encoderMode;

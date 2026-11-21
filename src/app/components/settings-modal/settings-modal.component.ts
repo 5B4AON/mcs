@@ -42,6 +42,7 @@ import { PracticeService } from '../../services/practice.service';
 import { AudioInputService } from '../../services/audio-input.service';
 import { AudioOutputService } from '../../services/audio-output.service';
 import { CwInputService } from '../../services/cw-input.service';
+import { cwDecoderOn } from '../../services/cw-decoder-state';
 import { WakeLockService } from '../../services/wake-lock.service';
 import { AutoFullscreenService } from '../../services/auto-fullscreen.service';
 import { compareExternalRoutes } from '../../services/output-change-checker';
@@ -554,11 +555,12 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
         }
       }
 
-      const cwMoved = before.cwInputEnabled && restored.cwInputEnabled
+      const cwBefore = cwDecoderOn(before), cwNow = cwDecoderOn(restored);
+      const cwMoved = cwBefore && cwNow
         && (before.cwInputDeviceId !== restored.cwInputDeviceId || before.cwInputChannel !== restored.cwInputChannel);
-      if (before.cwInputEnabled && (!restored.cwInputEnabled || cwMoved)) await this.cwInput.stop();
-      if (restored.cwInputEnabled) {
-        if (!before.cwInputEnabled || cwMoved) await this.cwInput.start();
+      if (cwBefore && (!cwNow || cwMoved)) await this.cwInput.stop();
+      if (cwNow) {
+        if (!cwBefore || cwMoved) await this.cwInput.start();
       }
     }
 

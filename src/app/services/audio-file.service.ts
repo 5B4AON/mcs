@@ -10,6 +10,7 @@ import { CwInputService } from './cw-input.service';
 import { EbookService } from './ebook.service';
 import { erasingProsigns, joinPhrases } from './prosign-erase';
 import { SettingsService } from './settings.service';
+import { cwDecoderOn } from './cw-decoder-state';
 import { ViewportService } from './viewport.service';
 
 /** An audio format a person may know by name, and how to ask the browser whether it can play it */
@@ -83,8 +84,8 @@ export class AudioFileService {
     return mode !== 'practice' && mode !== 'send-practice' && !this.ebook.active();
   });
 
-  /** The Load button is offered: allowed here, and the CW Tone Decoder is switched on */
-  readonly canLoad = computed(() => this.allowed() && this.settings.settings().cwInputEnabled);
+  /** The Load button is offered: allowed here, and the CW Tone Decoder is chosen in the Mode list */
+  readonly canLoad = computed(() => this.allowed() && cwDecoderOn(this.settings.settings()));
 
   private element: HTMLAudioElement | null = null;
   private url = '';

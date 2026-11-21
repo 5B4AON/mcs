@@ -28,7 +28,7 @@ export const DECODE_FLOW: WizardFlow = {
   id: 'decode',
   title: 'Decode Morse from a radio or sound',
   goal: 'decode',
-  forced: [{ key: 'cwInputEnabled', value: true, label: 'CW tone decoder on' }, ...leavePracticeForced(), {
+  forced: [{ key: 'cwInputEnabled', value: true, label: 'CW tone decoder set up' }, { key: 'cwDecoderActive', value: true, label: 'CW tone decoder listening' }, ...leavePracticeForced(), {
     key: 'wakeLockEnabled',
     value: true,
     label: 'Keep the screen on',

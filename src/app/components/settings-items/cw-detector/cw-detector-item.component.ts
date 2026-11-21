@@ -4,13 +4,10 @@
 
 import { Component, Input, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { isMobileDevice } from '../../../services/settings-common';
 import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
-import { ClearService } from '../../../services/clear.service';
+import { CwDecoderControlService } from '../../../services/cw-decoder-control.service';
 import { ConfirmService } from '../../../services/confirm.service';
-import { erasingProsigns, joinPhrases } from '../../../services/prosign-erase';
-import { WakeLockService } from '../../../services/wake-lock.service';
 import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { CwFilePipeline } from './cw-detector-item.model';
@@ -22,13 +19,11 @@ import { SETTINGS_SCOPE } from '../settings-scope';
  *
  * CW audio tone detector: RX/TX, device, channel (left, right or both mixed),
  * name and colour. Tone, speed and levels are found by the detector itself.
- * Switching it on offers to mute a sidetone that would play along, and
- * switching it off offers to turn a muted sidetone back on. Switching it on
- * on a phone or tablet in live Settings offers to keep the screen on (the page
- * stops listening when the screen locks) and leaves a practice mode for Send
- * on Enter, because the scope does not show in practice modes. The detector is
- * only started, stopped or restarted in live Settings; a wizard draft just
- * holds the values.
+ * The switch only sets the decoder up: it is then listed in the main screen's
+ * Mode list, and choosing it there starts it (see CwDecoderControlService, which
+ * asks about prosigns that erase text, muting the sidetone and keeping the screen on).
+ * The detector is only restarted (new device or channel) in live Settings; a
+ * wizard draft just holds the values.
  */
 @Component({
   selector: 'app-cw-detector-item',
@@ -50,8 +45,7 @@ export class CwDetectorItemComponent {
   readonly devices = inject(AudioDeviceService);
   readonly cwInput = inject(CwInputService);
   private readonly confirm = inject(ConfirmService);
-  private readonly clear = inject(ClearService);
-  private readonly wakeLock = inject(WakeLockService);
+  private readonly control = inject(CwDecoderControlService);
 
   /** Current values from the scope */
   readonly s = this.scope.value;
@@ -80,72 +74,17 @@ export class CwDetectorItemComponent {
   }
 
   /**
-   * Master switch; the detector starts or stops only in live Settings with
-   * audio running. Switching it on first offers to mute a sidetone that would
-   * play every received tone: near a microphone the detector would hear it.
-   * Switching it off offers to turn a muted sidetone back on.
+   * Master switch. In live Settings it only sets the decoder up (it then appears in the main screen's Mode list;
+   * choosing it there starts it, with the questions that go with that). Switching it off while the decoder is
+   * listening stops it. In a wizard draft it holds both values: ticking it means "decode now" at Apply.
    */
   async onCwEnabledChange(checked: boolean): Promise<void> {
-    if (checked && this.scope.isLive) {
-      const erasing = erasingProsigns(this.s());
-      if (erasing.length) {
-        const proceed = await this.confirm.ask({
-          title: 'Prosigns can erase decoded text',
-          message: `Your prosign actions are set so that ${joinPhrases(erasing)}. The detector decodes what it hears, so if those `
-            + 'prosigns are received (or misheard in noise), decoded text will be erased from the screen and from the text Save keeps. '
-            + 'You can change this in Settings → Other → Prosign Actions.',
-          confirmLabel: 'Turn detector on',
-          cancelLabel: 'Not now',
-          danger: true,
-        });
-        if (!proceed) return;
-      }
+    if (!this.scope.isLive) {
+      this.scope.update({ cwInputEnabled: checked, cwDecoderActive: checked });
+      return;
     }
-    if (checked && this.sidetoneFollowsDetector()) {
-      const mute = await this.confirm.ask({
-        title: 'Mute the sidetone?',
-        message: 'The sidetone would play every tone the CW detector hears. If the microphone can hear the '
-          + 'speaker, the detector hears its own echo and decodes it again. Mute the sidetone? '
-          + 'You can turn it back on in Settings → Outputs → Sidetone.',
-        confirmLabel: 'Mute sidetone',
-        cancelLabel: 'Keep sidetone',
-      });
-      if (mute) this.scope.update({ sidetoneEnabled: false });
-    } else if (!checked && !this.s().sidetoneEnabled) {
-      const unmute = await this.confirm.ask({
-        title: 'Turn the sidetone back on?',
-        message: 'The sidetone is off. Turn it back on now that the CW detector is off? '
-          + 'You can also change it later in Settings → Outputs → Sidetone.',
-        confirmLabel: 'Turn sidetone on',
-        cancelLabel: 'Keep it off',
-      });
-      if (unmute) this.scope.update({ sidetoneEnabled: true });
-    }
-    if (checked && this.scope.isLive && this.shouldOfferKeepScreenOn()) {
-      const keepOn = await this.confirm.ask({
-        title: 'Keep the screen on?',
-        message: 'The CW detector listens through the microphone. When the screen dims or locks, a phone or tablet '
-          + 'usually pauses the page and stops listening, so decoding would stop. Keep the screen on while the app is open? '
-          + 'You can change this in Settings → Other → Screen Settings.',
-        confirmLabel: 'Keep screen on',
-        cancelLabel: 'Not now',
-      });
-      if (keepOn) {
-        this.scope.update({ wakeLockEnabled: true });
-        void this.wakeLock.onSettingChanged(true);
-      }
-    }
-    // The scope takes the typing box's place only outside the practice modes, so leave them (live Settings only; the wizard asks)
-    const mode = this.s().encoderMode;
-    if (checked && this.scope.isLive && (mode === 'practice' || mode === 'send-practice')) {
-      this.clear.clearInput();
-      this.scope.update({ cwInputEnabled: checked, encoderMode: 'enter' });
-    } else {
-      this.scope.update({ cwInputEnabled: checked });
-    }
-    if (!this.scope.isLive || !this.audioRunning) return;
-    if (checked) await this.cwInput.start();
-    else await this.cwInput.stop();
+    if (!checked) await this.control.deactivate(this.audioRunning);
+    this.scope.update({ cwInputEnabled: checked });
   }
 
   /**
@@ -172,19 +111,6 @@ export class CwDetectorItemComponent {
       }
     }
     this.scope.update({ cwFilePipeline: value });
-  }
-
-  /** A phone or tablet (touch main pointer, no hover) that can hold a screen wake lock and does not yet */
-  private shouldOfferKeepScreenOn(): boolean {
-    return this.wakeLock.supported
-      && !this.s().wakeLockEnabled
-      && isMobileDevice();
-  }
-
-  /** The sidetone is on and plays the direction (RX or TX) the detector feeds */
-  private sidetoneFollowsDetector(): boolean {
-    const s = this.s();
-    return s.sidetoneEnabled && (s.sidetoneForward === 'both' || s.sidetoneForward === s.cwInputSource);
   }
 
   /** A new device or channel rewires the audio input, so a running detector restarts */

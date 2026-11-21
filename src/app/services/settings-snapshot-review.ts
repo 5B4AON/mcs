@@ -149,6 +149,7 @@ export function prepareSettingsImport(
   if (proposed.cwInputEnabled && !current.cwInputEnabled
     && !hasUniqueAudioDevice(devices, imported.cwInputDeviceId, true)) {
     proposed.cwInputEnabled = false;
+    proposed.cwDecoderActive = false;
     unresolvedTargets.push('CW audio input was not enabled because its target could not be verified.');
   }
   if (proposed.serialInputEnabled && !current.serialInputEnabled
