@@ -998,28 +998,30 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }, true);
   }
 
-  /** Back reached the base entry while the guard was up: ask if settings are unsaved, otherwise carry on out of the app */
+  /**
+   * Back reached the base entry while the guard was up. With unsaved settings, say so: the Stay button keeps the guard
+   * for the next Back; Back itself closes the note and leaves no guard, so one more Back exits. A page cannot exit
+   * an installed app by itself (history.back() and window.close() do nothing there), which is why Back is the way out.
+   */
   private async leaveOrAsk(): Promise<void> {
     this.guardActive = false;
-    if (this.settings.isDirty()) {
-      const leave = await this.confirmService.ask({
-        title: 'Leave without saving?',
-        message: 'You have settings changes that are not saved. If you leave the app now they are lost. '
-          + 'Stay and use Settings → Save to keep them.',
-        confirmLabel: 'Leave without saving',
-        cancelLabel: 'Stay',
-        danger: true,
-      });
-      if (!leave) {
-        this.ensureGuard();
-        return;
-      }
-      this.guardDismissed = true;
+    if (!this.settings.isDirty()) {
+      this.runHistoryOp(() => history.back());
+      return;
     }
-    // An installed app (TWA, home-screen app) closes with window.close(); history.back() does nothing on its first entry.
-    // A normal tab refuses window.close(), so it falls back to going back to the page before the app.
-    window.close();
-    setTimeout(() => this.runHistoryOp(() => history.back()), 150);
+    // Set first: the popstate of a Back that closes the note must not put a new guard up
+    this.guardDismissed = true;
+    const stay = await this.confirmService.ask({
+      title: 'Unsaved settings',
+      message: 'You have settings changes that are not saved. If you leave the app now they are lost. '
+        + 'Stay and use Settings → Save to keep them, or press Back again to leave without saving.',
+      confirmLabel: 'Stay',
+      singleAction: true,
+    });
+    if (stay) {
+      this.guardDismissed = false;
+      this.ensureGuard();
+    }
   }
 
   /** Back left the entry of a popup that is still open: step forward onto it again */
