@@ -228,7 +228,7 @@
       <div class="decoded-text" #decoderBox [class.roomy]="copyPractice" [class.scope-above]="cwScopeShown && !activeModal"
            [class.blur-rx]="mainBlurMode === 'rx'" [class.blur-tx]="mainBlurMode === 'tx'" [class.blur-both]="mainBlurMode === 'both'"
            [class.blur-revealing]="mainRevealing"
-           [class.audio-on]="audioFile.loaded()"
+           [class.audio-on]="audioFile.loaded()" [class.input-gone]="audioFile.loaded()"
            [class.ebook-on]="ebookActive">@if (ebookActive) {<app-ebook-reader />} @else if (sendPracticeActive) {@if (sendPractice.sessionStage() === 'briefing') {<section class="practice-session-summary" aria-live="polite"><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice session') }}</strong>@for (line of sendPracticeUi.sendPracticeSessionLines(settings.settings()); track $index) {<div>{{ line }}</div>}<div>Key what you see.</div></section>} @else if (sendPractice.isSessionSummary()) {<section class="practice-session-summary" aria-live="polite"><strong>Send practice results</strong>@for (score of sendPractice.roundScores(); track $index) {<div>Round {{ $index + 1 }} — {{ score }}%@if (sendPractice.roundSpeeds()[$index]) { · ≈ {{ sendPractice.roundSpeeds()[$index] }} WPM}</div>}<div><strong>Average — {{ sendPractice.averageRoundScore() }}%</strong>@if (sendPractice.averageSpeed()) { · ≈ {{ sendPractice.averageSpeed() }} WPM}</div><app-practice-next-lesson kind="send" [accuracy]="sendPractice.averageRoundScore()" /></section>} @else if (sendPractice.feedback().length > 0) {<span class="fb-results">@for (fb of sendPractice.feedback(); track $index) {<span
              [class.fb-correct]="fb.result === 'correct'"
              [class.fb-incorrect]="fb.result === 'incorrect'"
@@ -298,7 +298,6 @@
         </button>
       }
       @if (audioFile.allowed()) {
-        <app-audio-file-player class="afp-main" part="load" [class.above-one]="!mainReplayShown" [class.above-two]="mainReplayShown" variant="main" />
         <app-audio-file-player class="afp-bar-main" part="bar" variant="main" />
       }
       @if (kochHelpShown) {
@@ -405,7 +404,7 @@
       </section>
     }
 
-    <div class="encoder-input-row" [class.input-hidden]="copyPractice" [class.has-switch]="typingModeShown">
+    <div class="encoder-input-row" [class.input-hidden]="copyPractice" [class.file-hidden]="audioFile.loaded()" [class.has-switch]="typingModeShown">
       @if (sendPracticeActive && (!ebookActive || sendPractice.ebookAssist())) {
         <app-send-prompt />
       }

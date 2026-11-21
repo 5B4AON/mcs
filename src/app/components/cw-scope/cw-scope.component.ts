@@ -4,6 +4,7 @@
 
 import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { CwInputService, CwScopeBuffer, cwStatusText } from '../../services/cw-input.service';
+import { AudioFilePlayerComponent } from '../audio-file-player/audio-file-player.component';
 
 /** Seconds of history across the trace */
 const SPAN_MS = 2500;
@@ -21,13 +22,14 @@ const SPAN_MS = 2500;
  * search works on.
  *
  * Right: the spectrum of the search band (400–1500 Hz) with a marker at the
- * locked tone.
+ * locked tone, and, while no audio file is loaded, the Load button for one.
  *
  * Drawing runs on animation frames outside Angular's zone.
  */
 @Component({
   selector: 'app-cw-scope',
   standalone: true,
+  imports: [AudioFilePlayerComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './cw-scope.component.html',
   styleUrls: ['./cw-scope.component.css'],

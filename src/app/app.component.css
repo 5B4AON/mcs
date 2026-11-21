@@ -610,6 +610,16 @@
 .decoded-text.scope-above {
   height: calc(12em - 5.9rem);
 }
+/* While an audio file plays there is no typing box (the room goes to the text and the player) */
+.encoder-input-row.file-hidden {
+  display: none;
+}
+.decoded-text.input-gone {
+  height: calc(12em + 4.3rem);
+}
+.decoded-text.input-gone.scope-above {
+  height: calc(12em - 1.6rem);
+}
 /* Reveal button — parchment-themed */
 .blur-reveal-btn-main {
   position: absolute;
@@ -685,19 +695,6 @@
 }
 .blur-help-btn-main.help-alone {
   bottom: 10px;
-}
-/* The audio file Load button or player sits above Save, or above Replay and Reveal while the text is blurred */
-.afp-main {
-  position: absolute;
-  right: 10px;
-  bottom: 10px;
-  z-index: 5;
-}
-.afp-main.above-one {
-  bottom: 62px;
-}
-.afp-main.above-two {
-  bottom: 114px;
 }
 /* The player bar runs along the bottom of the output area, from the left edge to the round buttons (44px + 10px margin + 8px gap) */
 .afp-bar-main {
@@ -1976,6 +1973,12 @@ select { max-width: 300px; }
   }
   :host(.sprite-fit) .decoded-text.scope-above {
     flex-basis: calc(12em - 5.9rem);
+  }
+  :host(.sprite-fit) .decoded-text.input-gone {
+    flex-basis: calc(12em + 4.3rem);
+  }
+  :host(.sprite-fit) .decoded-text.input-gone.scope-above {
+    flex-basis: calc(12em - 1.6rem);
   }
 }
 @media (max-height: 559.98px) {

@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.1] - 2026-11-21
+
+### Changed
+
+- **Audio file Load button in the scope** — The Load button now sits at the right edge of the CW scope (main screen and full screen) instead of among the round buttons. While a file is loaded the main screen drops the typing box and its switch, and the text area takes the room.
+
 ## [2.23.0] - 2026-11-21
 
 ### Added

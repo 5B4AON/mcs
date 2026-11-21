@@ -169,9 +169,6 @@
       }
     </button>
   }
-  @if (audioFile.allowed()) {
-    <app-audio-file-player part="load" variant="fs" [hideLoad]="lensView" />
-  }
   @if (kochHelpShown) {
     <button class="fs-float-btn fs-float-ghost" [class.playing]="kochHelp.playing()"
             [disabled]="kochHelpDisabled"

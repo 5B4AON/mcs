@@ -1,5 +1,11 @@
 <div class="cw-scope" role="group" aria-label="CW decoder scope">
-  <canvas #canvas class="cw-scope-canvas" aria-hidden="true"></canvas>
+  <div class="cw-scope-plot">
+    <canvas #canvas class="cw-scope-canvas" aria-hidden="true"></canvas>
+    <!-- The Load button for an audio file sits in the spectrum box (same width as the spectrum the canvas draws) -->
+    <div class="cw-scope-load">
+      <app-audio-file-player part="load" variant="fs" />
+    </div>
+  </div>
   <div class="cw-scope-status">
     <span class="cw-scope-text">{{ statusText() }}</span>
     <span class="cw-scope-legend" aria-hidden="true">
