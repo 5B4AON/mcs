@@ -248,7 +248,6 @@
 .settings-card-body > .pilot-settings,
 .settings-card-body > .calibration-row,
 .settings-card-body > .cw-hint,
-.settings-card-body > .cw-auto-info,
 .settings-card-body > .opto-wiring-hint,
 .settings-card-body > .serial-port-row,
 .settings-card-body > .conflict-warning,
@@ -765,15 +764,6 @@ select.midi-octave-select {
   justify-self: end;
   margin-left: 0;
 }
-.cw-auto-info {
-  font-size: .75rem;
-  color: #acd;
-  padding: .25rem .5rem;
-  background: #1a2a30;
-  border-radius: 3px;
-  font-family: monospace;
-}
-
 /* Prosign display styling (shared — used in Other tab & potentially hints) */
 .prosign-example {
   font-size: 0.85em;

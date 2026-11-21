@@ -55,7 +55,7 @@ const METADATA_WAIT_MS = 4000;
  * while a file is loaded.
  *
  * Decoded text from a file stays on this device unless the CW detector's
- * "Audio file output" is set to the full pipeline.
+ * "Decoder output" is set to the full pipeline.
  */
 @Injectable({ providedIn: 'root' })
 export class AudioFileService {
@@ -102,9 +102,9 @@ export class AudioFileService {
     private viewport: ViewportService,
     private ebook: EbookService,
   ) {
-    // Starting a practice mode or a book ends the file
+    // Starting a practice mode or a book, or leaving the CW Decoder mode, ends the file
     effect(() => {
-      if (!this.allowed() && this.loaded()) void this.unload();
+      if (this.loaded() && (!this.allowed() || !cwDecoderOn(this.settings.settings()))) void this.unload();
     });
   }
 
@@ -298,7 +298,7 @@ export class AudioFileService {
   /** With the full pipeline chosen, loading a file can send its text to the outputs: ask first. */
   private async confirmFullPipeline(): Promise<boolean> {
     const s = this.settings.settings();
-    if (s.cwFilePipeline !== 'full') return true;
+    if (s.cwOutputPipeline !== 'full') return true;
     const outputs: string[] = [];
     if (s.winkeyerEnabled) outputs.push('WinKeyer');
     if (s.midiOutputEnabled) outputs.push('MIDI output');
@@ -306,8 +306,8 @@ export class AudioFileService {
     if (!outputs.length) return true;
     return this.confirm.ask({
       title: 'Send the text of this file to your outputs?',
-      message: `Audio file output is set to Full pipeline. Text decoded from the file will be sent to: ${outputs.join(', ')}. `
-        + 'Choose Cancel to keep it off them, then set Audio file output to "This device only" in Settings → Inputs → CW Tone Decoder.',
+      message: `Decoder output is set to Full pipeline. Text decoded from the file will be sent to: ${outputs.join(', ')}. `
+        + 'Choose Cancel to keep it off them, then set Decoder output to "This device only" in Settings → Inputs → CW Tone Decoder.',
       confirmLabel: 'Load the file',
       cancelLabel: 'Cancel',
       danger: true,

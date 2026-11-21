@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.2] - 2026-11-22
+
+### Changed
+
+- **Decoder output** — One setting in the CW Tone Decoder card, **Decoder output**, replaces **Audio file output** and covers text decoded from the microphone as well as from a loaded audio file (the microphone is off while a file is loaded). **This device only** (the default) keeps the text on the screen; **Full pipeline** also sends it to your switched-on WinKeyer, MIDI and Firebase RTDB outputs, and still asks first. Text decoded from the microphone no longer reaches those outputs unless you choose the full pipeline. Importing settings or a preset never turns the full pipeline on.
+- **CW Tone Decoder card** — The live "Listening at…" status row is gone from the card; the scope shows it.
+- **Replay button** — It is disabled, with a tooltip saying why, while an audio file is playing (pause it first) and while no output would play the replay (no sidetone, opto/key output, vibration, serial, MIDI, WinKeyer or relay output on for the Encoder's source; in Copy Practice on "This device only" and in Send Practice only the sidetone, opto/key output and vibration count). Full screen also disables Send Practice's "Hear it first" when nothing could play it.
+- **"Hear it first" icon** — In Send Practice the button that plays the next character now shows a speaker with sound waves, so it is not mistaken for the replay button.
+- **Audio file and Mode** — Choosing another mode, or turning the CW Decoder off, unloads the audio file and its player, like Stop. The decoded text stays on the screen.
+
+### Fixed
+
+- **Back button leaving the app** — Pressing Back in the full screen could sometimes leave the app instead of returning to the main screen. Dialog history changes (opening and closing menus, Settings, Help and popups) are now made one at a time, each after the browser has finished the one before it.
+- **Confirmation buttons on desktop** — Two long buttons, such as "Resume and open Settings" and "Resume decoding", sit side by side in the confirmation dialog instead of stacking.
+
 ## [2.23.1] - 2026-11-21
 
 ### Changed

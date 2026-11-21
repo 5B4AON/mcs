@@ -84,3 +84,21 @@ export function replayChoiceLabel(unit: ReplayUnit, settings: AppSettings, midWo
       return 'Line';
   }
 }
+
+/**
+ * Whether a replay would be heard, felt or sent anywhere: the sidetone, optocoupler or vibration that plays the
+ * encoder's source, or, unless the replay stays on this device (Copy practice on "This device only", Hear it
+ * first), a switched-on serial, MIDI, WinKeyer or relay output that does. With none, the replay would run in silence.
+ */
+export function replayHasOutput(s: AppSettings, localOnly = false): boolean {
+  const source = s.encoderSource;
+  const plays = (forward: string) => forward === 'both' || forward === source;
+  if (s.sidetoneEnabled && plays(s.sidetoneForward)) return true;
+  if (s.optoEnabled && plays(s.optoForward)) return true;
+  if (s.vibrateEnabled && plays(s.vibrateForward)) return true;
+  if (localOnly || (s.encoderMode === 'practice' && s.practicePipeline === 'local')) return false;
+  if (s.serialEnabled && s.serialOutputMappings.some(m => m.enabled && m.portIndex >= 0 && plays(m.forward))) return true;
+  if (s.midiOutputEnabled && s.midiOutputMappings.some(m => m.enabled && plays(m.forward))) return true;
+  if (s.winkeyerEnabled && s.winkeyerPortIndex >= 0 && plays(s.winkeyerForward)) return true;
+  return s.rtdbOutputEnabled && plays(s.rtdbOutputForward);
+}

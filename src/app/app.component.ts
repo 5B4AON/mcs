@@ -21,7 +21,7 @@ import { MidiOutputService } from './services/midi-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
-import { ReplayUnit, replayChoiceLabel, replayChoices, replayWordLabel } from './services/replay-units';
+import { ReplayUnit, replayChoiceLabel, replayChoices, replayHasOutput, replayWordLabel } from './services/replay-units';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { WhatsNewService } from './services/whats-new.service';
@@ -357,7 +357,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       // Send practice shows its own prompt and keyed text; on "This device only" its keying stays off the outputs
       const sendPracticeKeying = this.sendPractice.active();
       const sendPracticeLocal = this.sendPracticeGate.blocked();
-      const fileLocal = this.settings.settings().cwFilePipeline === 'local';
+      const decoderLocal = this.settings.settings().cwOutputPipeline === 'local';
       if (fresh.length > 0) {
         // Forward only the newly added characters
         for (const entry of fresh) {
@@ -372,8 +372,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
           }
           if (sendPracticeLocal && !entry.fromRtdb) continue;
-          // Text decoded from an audio file stays on this device unless the full pipeline was chosen
-          if (entry.fromFile && fileLocal) continue;
+          // Text decoded by the CW detector (microphone or audio file) stays on this device unless the full pipeline was chosen
+          if ((entry.fromFile || entry.inputPath === 'cwAudio') && decoderLocal) continue;
 
           // Compute whether this entry is from a relay-allowed input path.
           // Used both for loop detection exclusion and for output forwarding.
@@ -907,9 +907,53 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** How many popstate events caused by our own history.back()/forward()/go() are still to come (each is ignored) */
   private ignoredPopStates = 0;
 
+  /** History changes waiting until the traversal in flight has finished (see `runHistoryOp`) */
+  private historyQueue: (() => void)[] = [];
+
+  /** Gives up waiting for a popstate that never comes, so a lost one cannot swallow the user's next Back press */
+  private historyWatchdog: ReturnType<typeof setTimeout> | null = null;
+
+  /** True while `onPopState` runs, so a dialog opened by Back (a question asked from a popup) is pushed only afterwards */
+  private handlingPopState = false;
+
   /** True while one of those is still on its way */
   private get ignoringPopState(): boolean {
     return this.ignoredPopStates > 0;
+  }
+
+  /**
+   * Run a history change now, or once the traversals before it have finished. Browsers can merge two
+   * back/forward calls made close together into one traversal (one popstate for two calls), and a pushState made
+   * while a traversal is on its way can land the page on a different entry than counted. Either leaves the
+   * browser's history one entry off our count, and the next Back then leaves the app instead of closing the
+   * full screen. A push made while Back is being handled waits too, so the entry Back just left is still there
+   * when a popup that stays open steps forward onto it again.
+   */
+  private runHistoryOp(op: () => void, push = false): void {
+    if (this.ignoredPopStates > 0 || (push && this.handlingPopState)) this.historyQueue.push(op);
+    else op();
+  }
+
+  /** A history traversal of ours is starting: its popstate is ignored */
+  private expectPopState(): void {
+    this.ignoredPopStates++;
+    this.armHistoryWatchdog();
+  }
+
+  private armHistoryWatchdog(): void {
+    if (this.historyWatchdog) clearTimeout(this.historyWatchdog);
+    this.historyWatchdog = setTimeout(() => {
+      this.historyWatchdog = null;
+      if (this.ignoredPopStates > 0) {
+        this.ignoredPopStates = 0;
+        this.flushHistoryQueue();
+      }
+    }, 1500);
+  }
+
+  /** Run the waiting history changes until one of them starts a traversal */
+  private flushHistoryQueue(): void {
+    while (this.ignoredPopStates === 0 && this.historyQueue.length) this.historyQueue.shift()!();
   }
 
   /**
@@ -924,24 +968,28 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   /** Push a history entry so the back button can close the modal */
   private pushModalState(modal: string): void {
-    this.modalHistoryDepth++;
+    const depth = ++this.modalHistoryDepth;
     // `depth` lets a reloaded page know how many entries the previous page left on top of the base entry
-    history.pushState({ modal, depth: this.modalHistoryDepth }, '');
+    this.runHistoryOp(() => history.pushState({ modal, depth }, ''), true);
   }
 
   /** Back left the entry of a popup that is still open: step forward onto it again */
   private restoreModalState(): void {
     this.modalHistoryDepth++;
-    this.ignoredPopStates++;
-    history.forward();
+    this.runHistoryOp(() => {
+      this.expectPopState();
+      history.forward();
+    });
   }
 
   /** Pop the history entry when closing a modal via UI (not back button) */
   private popModalState(): void {
     if (this.modalHistoryDepth > 0) {
       this.modalHistoryDepth--;
-      this.ignoredPopStates++;
-      history.back();
+      this.runHistoryOp(() => {
+        this.expectPopState();
+        history.back();
+      });
     }
   }
 
@@ -1018,6 +1066,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   @HostListener('window:popstate', ['$event'])
   onPopState(_event: PopStateEvent): void {
+    this.handlingPopState = true;
+    try {
+      this.handlePopState();
+    } finally {
+      this.handlingPopState = false;
+      this.flushHistoryQueue();
+    }
+  }
+
+  private handlePopState(): void {
     if (!this.ignoringPopState && this.modalHistoryDepth > 0 && this.leftwardMouseDragRecent) {
       // Not a real Back press: restore the entry and leave the dialogs open.
       history.pushState({ modal: 'restored', depth: this.modalHistoryDepth }, '');
@@ -1025,6 +1083,12 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
     if (this.ignoringPopState) {
       this.ignoredPopStates--;
+      if (this.ignoredPopStates > 0) {
+        this.armHistoryWatchdog();
+      } else if (this.historyWatchdog) {
+        clearTimeout(this.historyWatchdog);
+        this.historyWatchdog = null;
+      }
       // The wizard's history entries are gone now, so the full screen can take its own entry
       if (this.fullscreenAfterWizard) {
         this.fullscreenAfterWizard = false;
@@ -2057,6 +2121,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     // The lesson help is a replay too, but the help button owns it
     if (this.kochHelp.playing()) return false;
     if (this.encoder.replayPending()) return true;
+    if (this.mainReplayBlocked) return false;
     if (this.sendPracticeActive) return this.sendPractice.canPlayPrompt();
     if (this.settings.settings().encoderMode === 'practice') {
       return this.practice.replayableText() !== '';
@@ -2125,8 +2190,20 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return !this.sendPracticeActive && !this.mainReplayStops;
   }
 
+  /** Why the replay button cannot be used right now, or null: an audio file is being decoded, or nothing would play the replay. */
+  get mainReplayBlocked(): string | null {
+    if (this.audioFile.playing()) return 'Pause the audio file to replay';
+    if (!replayHasOutput(this.settings.settings(), this.sendPracticeActive)) {
+      return this.sendPracticeActive
+        ? 'Turn on the sidetone or another output to hear it'
+        : 'Turn on the sidetone or another output to replay';
+    }
+    return null;
+  }
+
   /** Name and tooltip of the replay button. */
   get mainReplayLabel(): string {
+    if (!this.mainReplayStops && !this.mainReplayAvailable && this.mainReplayBlocked) return this.mainReplayBlocked;
     if (this.sendPracticeActive) return this.mainReplayStops ? 'Stop the sound' : 'Hear the next character';
     return this.mainReplayStops ? 'Stop replay' : 'Replay the last character, ' + this.mainReplayWordLabel.toLowerCase() + ' or line';
   }
@@ -2333,8 +2410,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.defaultsResetSaved = false;
     if (steps > 0) {
       this.modalHistoryDepth -= steps;
-      this.ignoredPopStates++;
-      history.go(-steps);
+      this.runHistoryOp(() => {
+        this.expectPopState();
+        history.go(-steps);
+      });
     }
     window.requestAnimationFrame(() => {
       if (this.activeModal || this.fullscreenAfterWizard) return;

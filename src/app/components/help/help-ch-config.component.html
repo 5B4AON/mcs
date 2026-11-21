@@ -305,7 +305,13 @@
       buttons are disabled while there is no text on screen. Replay is also
       disabled while something else is being sent, and in Copy Practice before
       the first character has played. On the main screen, replay also waits
-      when the input area holds a new draft and no send is paused.</li>
+      when the input area holds a new draft and no send is paused. It is also
+      disabled, with a tooltip saying why, while an audio file is playing
+      (pause it first) and while no output would play it: no sidetone,
+      opto/key output, vibration, serial, MIDI, WinKeyer or relay output is on
+      for the Encoder's source (in Copy Practice on <em>This device
+      only</em> and in Send Practice, only the sidetone, opto/key output and
+      vibration count).</li>
 </ul>
 
 <!-- 8.5 Farnsworth / Wordsworth Timing -->

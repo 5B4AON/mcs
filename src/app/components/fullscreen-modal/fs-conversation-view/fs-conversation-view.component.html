@@ -292,21 +292,19 @@
   }
   @if (sendPracticeView) {
     <button class="fs-float-btn fs-float-ghost" [style.order]="ebookView ? -1 : null" [class.playing]="sendPractice.promptPlaying()"
-            [disabled]="!sendPractice.canPlayPrompt() || kochHelp.playing()"
+            [disabled]="!sendPractice.canPlayPrompt() || kochHelp.playing() || (promptSilent && !sendPractice.promptPlaying())"
             (mousedown)="$event.preventDefault()"
             (click)="sendPracticePromptAudio()"
-            [title]="sendPractice.promptPlaying() ? 'Stop the sound' : 'Hear the next character'"
-            [attr.aria-label]="sendPractice.promptPlaying() ? 'Stop the sound' : 'Hear the next character'">
+            [title]="sendPractice.promptPlaying() ? 'Stop the sound' : promptSilent ? 'Turn on the sidetone or another output to hear it' : 'Hear the next character'"
+            [attr.aria-label]="sendPractice.promptPlaying() ? 'Stop the sound' : promptSilent ? 'Turn on the sidetone or another output to hear it' : 'Hear the next character'">
       @if (sendPractice.promptPlaying()) {
         <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="1"/></svg>
       } @else {
         <svg viewBox="0 0 24 24" width="27" height="27" fill="none" stroke="currentColor"
              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <g transform="translate(0.25 0.9)">
-            <path d="M20.46 15.08A9 9 0 1 1 15.8 3.84"/>
-            <polygon points="19.24 5.45 17.07 1.12 14.53 6.56" fill="currentColor"/>
-            <polygon points="10 8 16.5 12 10 16" fill="currentColor"/>
-          </g>
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
         </svg>
       }
     </button>

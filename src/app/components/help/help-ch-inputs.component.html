@@ -206,10 +206,13 @@
       mono source. Pick <em>Left</em> or <em>Right</em> when the radio audio
       is on only one channel of a stereo input. Changing the device or the
       channel while the detector runs restarts it.</li>
-  <li><strong>Audio file output</strong> — Where text decoded from a loaded
-      audio file goes: <em>This device only</em> (the default) or
-      <em>Full pipeline</em> (see <em>Decoding a recorded audio file</em>
-      below). Shown in Settings only.</li>
+  <li><strong>Decoder output</strong> — Where text decoded by the detector
+      goes, from the microphone or from a loaded audio file (the microphone is
+      off while a file is loaded, so one choice covers both): <em>This device
+      only</em> (the default) keeps it on the screen; <em>Full pipeline</em>
+      also sends it to your switched-on WinKeyer, MIDI and Firebase RTDB
+      outputs (see <em>Decoding a recorded audio file</em> below). Shown in
+      Settings only.</li>
 </ul>
 <p>
   There is nothing to tune: the detector finds the tone (400–1500 Hz), the
@@ -270,6 +273,8 @@
   <li>The file is streamed from your disk by the browser; the app does not
       copy, cache or save it, so large files work. It never leaves your
       device.</li>
+  <li>Choosing another mode (or turning the CW Tone Decoder off) unloads the
+      file and its player, like Stop; the decoded text stays on the screen.</li>
   <li>Load is offered while the CW Tone Decoder is chosen in the Mode list, and not in
       Copy Practice, Send Practice or the e-book. In
       Lens only a file that is already loaded shows its player.</li>
@@ -285,11 +290,12 @@
       microphone can erase text in the same way.</li>
 </ul>
 <p>
-  <strong>Audio file output</strong> in the CW Tone Decoder card decides where
-  the text from a file goes. <em>This device only</em> (the default) keeps it on
+  <strong>Decoder output</strong> in the CW Tone Decoder card decides where
+  the text from a file (and from the microphone) goes. <em>This device only</em>
+  (the default) keeps it on
   the screen: nothing is sent to WinKeyer, MIDI or Firebase RTDB.
-  <em>Full pipeline</em> sends it to the outputs you have switched on, as for
-  the microphone; the app asks before you choose it and again each time you load
+  <em>Full pipeline</em> sends it to the outputs you have switched on; the app
+  asks before you choose it and again each time you load
   a file while it is chosen. Importing settings or a preset never turns it on.
 </p>
 

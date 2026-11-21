@@ -8,9 +8,9 @@ import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
 import { CwDecoderControlService } from '../../../services/cw-decoder-control.service';
 import { ConfirmService } from '../../../services/confirm.service';
-import { CwInputService, CwStatus, cwStatusText } from '../../../services/cw-input.service';
+import { CwInputService } from '../../../services/cw-input.service';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
-import { CwFilePipeline } from './cw-detector-item.model';
+import { CwOutputPipeline } from './cw-detector-item.model';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
 
@@ -60,11 +60,6 @@ export class CwDetectorItemComponent {
       : null;
   });
 
-  /** One-line detector state, the same wording as the scope's status line */
-  statusText(st: CwStatus): string {
-    return cwStatusText(st);
-  }
-
   /** Handle a string or numeric setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {
     const el = event.target as HTMLInputElement;
@@ -88,29 +83,29 @@ export class CwDetectorItemComponent {
   }
 
   /**
-   * Where text decoded from an audio file goes. Choosing the full pipeline
-   * first asks: it makes a loaded file send its text to the switched-on
-   * outputs (WinKeyer, MIDI, RTDB). Cancel keeps it on this device.
+   * Where text decoded from the microphone or an audio file goes. Choosing the full pipeline
+   * first asks: it sends the text to the switched-on outputs (WinKeyer, MIDI, RTDB), and a
+   * recording could make a radio transmit. Cancel keeps it on this device.
    */
-  async onFilePipelineChange(event: Event): Promise<void> {
+  async onPipelineChange(event: Event): Promise<void> {
     const select = event.target as HTMLSelectElement;
-    const value = select.value as CwFilePipeline;
+    const value = select.value as CwOutputPipeline;
     if (value === 'full') {
       const ok = await this.confirm.ask({
-        title: 'Send audio file text to your outputs?',
-        message: 'With the full pipeline, the text decoded from a loaded audio file is sent to the WinKeyer, MIDI and '
-          + 'Firebase RTDB outputs you have switched on, just like text from the microphone. A recording could make a '
+        title: 'Send decoded text to your outputs?',
+        message: 'With the full pipeline, the text the decoder hears through the microphone or in a loaded audio file is '
+          + 'sent to the WinKeyer, MIDI and Firebase RTDB outputs you have switched on. A recording could make a '
           + 'radio transmit. Choose the full pipeline only if that is what you want.',
         confirmLabel: 'Use full pipeline',
         cancelLabel: 'Keep this device only',
         danger: true,
       });
       if (!ok) {
-        select.value = this.s().cwFilePipeline;
+        select.value = this.s().cwOutputPipeline;
         return;
       }
     }
-    this.scope.update({ cwFilePipeline: value });
+    this.scope.update({ cwOutputPipeline: value });
   }
 
   /** A new device or channel rewires the audio input, so a running detector restarts */

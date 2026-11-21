@@ -10,9 +10,9 @@ import { ItemDescriptor, labelledReview } from '../item-descriptor';
 export const CW_INPUT_CHANNELS = ['both', 'left', 'right'] as const;
 export type CwInputChannel = typeof CW_INPUT_CHANNELS[number];
 
-/** Where text decoded from an audio file goes: this device only, or also the user's switched-on outputs */
-export const CW_FILE_PIPELINES = ['local', 'full'] as const;
-export type CwFilePipeline = typeof CW_FILE_PIPELINES[number];
+/** Where text decoded by the CW detector (microphone or audio file) goes: this device only, or also the user's switched-on outputs */
+export const CW_OUTPUT_PIPELINES = ['local', 'full'] as const;
+export type CwOutputPipeline = typeof CW_OUTPUT_PIPELINES[number];
 
 /** The settings the CW Tone Decoder (straight key via audio channel) item owns. */
 export interface CwDetectorSettings {
@@ -28,8 +28,8 @@ export interface CwDetectorSettings {
   cwInputName: string;
   /** Optional text color (CSS color string) — overrides RX/TX default in fullscreen views */
   cwInputColor: string;
-  /** Text decoded from a loaded audio file: this device only (default) or the full output pipeline */
-  cwFilePipeline: CwFilePipeline;
+  /** Text decoded from the microphone or a loaded audio file: this device only (default) or the full output pipeline */
+  cwOutputPipeline: CwOutputPipeline;
 }
 
 export const CW_DETECTOR_DEFAULTS: CwDetectorSettings = {
@@ -40,16 +40,16 @@ export const CW_DETECTOR_DEFAULTS: CwDetectorSettings = {
   cwInputChannel: 'both',
   cwInputName: '',
   cwInputColor: '',
-  cwFilePipeline: 'local',
+  cwOutputPipeline: 'local',
 };
 
 export const CW_DETECTOR_FIELD_RULES: SettingsFieldRules = {
-  enums: { cwInputSource: DECODER_SOURCES, cwInputChannel: CW_INPUT_CHANNELS, cwFilePipeline: CW_FILE_PIPELINES },
+  enums: { cwInputSource: DECODER_SOURCES, cwInputChannel: CW_INPUT_CHANNELS, cwOutputPipeline: CW_OUTPUT_PIPELINES },
 };
 
-/** How the file output reads in a review; everything else reads like other items. */
+/** How the decoder output reads in a review; everything else reads like other items. */
 function reviewText(key: keyof AppSettings, value: unknown): string {
-  if (key === 'cwFilePipeline') return value === 'full' ? 'Full pipeline' : 'This device only';
+  if (key === 'cwOutputPipeline') return value === 'full' ? 'Full pipeline' : 'This device only';
   if (typeof value === 'boolean') return value ? 'On' : 'Off';
   return value === '' || value === undefined || value === null ? 'none' : String(value);
 }
@@ -59,7 +59,7 @@ export const CW_DETECTOR_DESCRIPTOR: ItemDescriptor = {
   id: 'cw-detector',
   keys: [
     'cwInputEnabled', 'cwDecoderActive', 'cwInputSource', 'cwInputDeviceId', 'cwInputChannel', 'cwInputName', 'cwInputColor',
-    'cwFilePipeline',
+    'cwOutputPipeline',
   ],
   validate: s => {
     if (!s.cwInputEnabled) return [];
@@ -77,6 +77,6 @@ export const CW_DETECTOR_DESCRIPTOR: ItemDescriptor = {
     cwInputChannel: 'CW detector input channel',
     cwInputName: 'CW detector name',
     cwInputColor: 'CW detector colour',
-    cwFilePipeline: 'Audio file output',
+    cwOutputPipeline: 'Decoder output',
   }, reviewText),
 };

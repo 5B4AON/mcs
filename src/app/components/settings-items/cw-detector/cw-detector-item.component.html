@@ -68,22 +68,18 @@
       <app-help-link-button section="s6-1-scope" label="Help: CW scope" />
     </div>
 
-    @if (scope.isLive && cwInput.status(); as st) {
-      <div class="cw-auto-info">{{ statusText(st) }}</div>
-    }
-
     @if (mode === 'card' && scope.isLive) {
-      <label>Audio file output:
-        <select (change)="onFilePipelineChange($event)">
-          <option value="local" [selected]="s().cwFilePipeline === 'local'">This device only</option>
-          <option value="full" [selected]="s().cwFilePipeline === 'full'">Full pipeline</option>
+      <label>Decoder output:
+        <select (change)="onPipelineChange($event)">
+          <option value="local" [selected]="s().cwOutputPipeline === 'local'">This device only</option>
+          <option value="full" [selected]="s().cwOutputPipeline === 'full'">Full pipeline</option>
         </select>
       </label>
       <div class="cw-hint">
-        @if (s().cwFilePipeline === 'local') {
-          A recorded audio file you load with the Load button on the output area is heard and decoded on screen. Nothing is sent to WinKeyer, MIDI or Firebase RTDB.
+        @if (s().cwOutputPipeline === 'local') {
+          Text decoded from the microphone or from a recorded audio file (Load button on the output area) is only shown on this screen. Nothing is sent to WinKeyer, MIDI or Firebase RTDB.
         } @else {
-          Text decoded from a loaded audio file also goes to your switched-on WinKeyer, MIDI and Firebase RTDB outputs, as text from the microphone does.
+          Text decoded from the microphone or from a loaded audio file also goes to your switched-on WinKeyer, MIDI and Firebase RTDB outputs.
         }
       </div>
     }

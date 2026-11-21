@@ -11,7 +11,7 @@ import { AppSettings, SettingsService } from '../../../services/settings.service
 import { MorseDecoderService } from '../../../services/morse-decoder.service';
 import { MorseEncoderService, PlayingPattern } from '../../../services/morse-encoder.service';
 import { DisplayBufferService, DisplayLine } from '../../../services/display-buffer.service';
-import { ReplayUnit, replayChoiceLabel, replayChoices, replayWordLabel } from '../../../services/replay-units';
+import { ReplayUnit, replayChoiceLabel, replayChoices, replayHasOutput, replayWordLabel } from '../../../services/replay-units';
 import { KeyerService } from '../../../services/keyer.service';
 import { MouseKeyerService } from '../../../services/mouse-keyer.service';
 import { PracticeService } from '../../../services/practice.service';
@@ -320,6 +320,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     // The lesson help is a replay too, but the help button owns it
     if (this.kochHelp.playing()) return false;
     if (this.encoder.replayPending()) return true;
+    if (this.replayBlocked) return false;
     if (this.isPractice) return this.practice.replayableText() !== '';
     if (!this.hasText) return false;
     return !this.encoder.isSending() && this.displayBuffers.fullscreenConversation.lastLine() !== null;
@@ -333,8 +334,16 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   /** True while the "Replay last:" question of the replay button is open. */
   replayMenuOpen = false;
 
+  /** Why the replay button cannot be used right now, or null: an audio file is being decoded, or nothing would play the replay. */
+  get replayBlocked(): string | null {
+    if (this.audioFile.playing()) return 'Pause the audio file to replay';
+    if (!replayHasOutput(this.settings.settings())) return 'Turn on the sidetone or another output to replay';
+    return null;
+  }
+
   /** Name and tooltip of the replay button. */
   get replayLabel(): string {
+    if (!this.replayStops && !this.replayAvailable && this.replayBlocked) return this.replayBlocked;
     return this.replayStops ? 'Stop replay' : 'Replay the last character, ' + this.replayWordLabel.toLowerCase() + ' or line';
   }
 
@@ -518,6 +527,11 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
   sendPracticePromptAudio(): void {
     if (this.sendPractice.promptPlaying()) this.sendPractice.stopPrompt();
     else this.sendPractice.playPrompt();
+  }
+
+  /** Whether "Hear it first" has nothing to play it on: it stays on this device (sidetone, opto, vibration). */
+  get promptSilent(): boolean {
+    return !replayHasOutput(this.settings.settings(), true);
   }
 
   /** Start, advance, pause, or resume the active practice flow. */
