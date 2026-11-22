@@ -465,9 +465,8 @@
   letter-spacing: 0.03em;
   height: 12em;
   overflow-y: scroll;
-  /* Firefox scrollbar styling */
-  scrollbar-width: thin;
-  scrollbar-color: rgba(139, 100, 60, 0.45) transparent;
+  /* The text scrolls without a scrollbar: one popping up while keying would distract */
+  scrollbar-width: none;
   margin-right: 1rem;
   padding: 0.6rem 1.7rem 0.5rem 1.5rem;
   line-height: 1.35em;
@@ -862,18 +861,18 @@
   );
 }
 
-/* Parchment scrollbar styling — wood grain handle */
-.decoded-text::-webkit-scrollbar,
+/* Parchment scrollbar styling — wood grain handle (the decoded text hides its scrollbar) */
+.decoded-text::-webkit-scrollbar {
+  display: none;
+}
 .encoder-buffer::-webkit-scrollbar {
   width: 10px;
 }
-.decoded-text::-webkit-scrollbar-track,
 .encoder-buffer::-webkit-scrollbar-track {
   background: rgba(180, 160, 130, 0.18);
   border-radius: 5px;
   margin: 4px 0;
 }
-.decoded-text::-webkit-scrollbar-thumb,
 .encoder-buffer::-webkit-scrollbar-thumb {
   background:
     linear-gradient(
@@ -888,7 +887,6 @@
   border: 1px solid rgba(120, 85, 50, 0.15);
   min-height: 40px;
 }
-.decoded-text::-webkit-scrollbar-thumb:hover,
 .encoder-buffer::-webkit-scrollbar-thumb:hover {
   background:
     linear-gradient(
@@ -900,7 +898,6 @@
       rgba(139, 100, 60, 0.50)
     );
 }
-.decoded-text::-webkit-scrollbar-thumb:active,
 .encoder-buffer::-webkit-scrollbar-thumb:active {
   background:
     linear-gradient(

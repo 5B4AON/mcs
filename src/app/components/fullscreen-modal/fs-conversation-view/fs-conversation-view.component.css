@@ -19,6 +19,11 @@
   padding-bottom: var(--fs-pad, calc(var(--fs-reserve, 60px) + var(--fs-audio, 0px)));
   scroll-behavior: smooth;
   text-shadow: 0 0 6px currentColor, 0 1px 3px rgba(0, 0, 0, 0.4);
+  /* The text scrolls without a scrollbar: one popping up while keying would distract */
+  scrollbar-width: none;
+}
+.fs-conversation::-webkit-scrollbar {
+  display: none;
 }
 .fs-conversation.vk-open {
   padding-bottom: 0;
