@@ -4,7 +4,7 @@
 
 import {
   AfterViewInit, Component, ElementRef, EventEmitter, Input, Output, OnInit, OnDestroy,
-  ViewChild, effect, untracked
+  ViewChild, effect, signal, untracked
 } from '@angular/core';
 import { AppSettings, SettingsService } from '../../services/settings.service';
 import { cwDecoderOn } from '../../services/cw-decoder-state';
@@ -19,11 +19,14 @@ import { SendPracticeService } from '../../services/send-practice.service';
 import { PracticeService } from '../../services/practice.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { AudioFileService } from '../../services/audio-file.service';
+import { ConfirmService } from '../../services/confirm.service';
+import { ModalBackService } from '../../services/modal-back.service';
 import { LoopDetectionService } from '../../services/loop-detection.service';
-import { fullscreenFontStack } from '../../fullscreen-fonts';
+import { fullscreenFontStack, isRegularOnlyFont } from '../../fullscreen-fonts';
 import { FsConversationViewComponent } from './fs-conversation-view/fs-conversation-view.component';
 import { SendPromptComponent } from '../send-prompt/send-prompt.component';
 import { CwScopeComponent } from '../cw-scope/cw-scope.component';
+import { VINTAGE_CONFIRM, VINTAGE_DISPLAY, VINTAGE_FONT } from './vintage-look';
 import { focusDialog, getFocusableElements, restoreDialogFocus } from '../modal-accessibility';
 
 /**
@@ -104,12 +107,41 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   /** The CW scope sits where the Send practice prompt would, while the CW detector is on (not in practice modes). */
   get cwScopeShown(): boolean {
     const s = this.settings.settings();
-    return (cwDecoderOn(s) || this.cwInput.fileActive()) && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
+    return !this.vintage() && (cwDecoderOn(s) || this.cwInput.fileActive())
+      && s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice';
   }
 
-  /** Font stack chosen in the fullscreen menu. */
+  /** The font in use: the one chosen in the fullscreen menu, or Special Elite while Vintage Look is on. */
+  private get fontId(): string {
+    return this.vintage() ? VINTAGE_FONT : this.settings.settings().fullscreenFont;
+  }
+
+  /** Font stack in use. */
   get fontStack(): string {
-    return fullscreenFontStack(this.settings.settings().fullscreenFont);
+    return fullscreenFontStack(this.fontId);
+  }
+
+  /** Bold is requested only for fonts that have a bold weight. */
+  get fontWeight(): string {
+    return this.settings.settings().fullscreenFontBold && !isRegularOnlyFont(this.fontId) ? 'bold' : 'normal';
+  }
+
+  /** Regular-weight-only font in use: nothing in the view may ask for a heavier weight. */
+  get regularOnlyFont(): boolean {
+    return isRegularOnlyFont(this.fontId);
+  }
+
+  /**
+   * Vintage Look: dark ink on aged paper in Special Elite, with the toolbar and every button hidden. The
+   * touch keyer stays in place and keeps working, but cannot be seen. Never saved; Esc or Back leaves it.
+   */
+  readonly vintage = signal(false);
+  private releaseVintageBack: (() => void) | null = null;
+
+  /** Practice modes and the e-book need their buttons, so Vintage Look is not offered there. */
+  get vintageAllowed(): boolean {
+    const s = this.settings.settings();
+    return s.encoderMode !== 'practice' && s.encoderMode !== 'send-practice' && !this.ebook.active();
   }
 
   @ViewChild(FsConversationViewComponent) private conversationView?: FsConversationViewComponent;
@@ -130,7 +162,13 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     private cwInput: CwInputService,
     public audioFile: AudioFileService,
     public loopDetection: LoopDetectionService,
+    private confirm: ConfirmService,
+    private modalBack: ModalBackService,
   ) {
+    // A practice mode or a book starting under Vintage Look would leave the user without its buttons
+    effect(() => {
+      if (this.vintage() && !this.vintageAllowed) untracked(() => this.exitVintage());
+    });
     // The effective input mode can change under us (a practice mode locks it): mapped keys follow it
     effect(() => {
       this.keyer.setKeyboardMappingsEnabled(this.inputMode === 'key');
@@ -157,6 +195,9 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   }
 
   ngOnDestroy(): void {
+    this.settings.modalDisplayOverride.set(null);
+    this.releaseVintageBack?.();
+    this.releaseVintageBack = null;
     this.lens.setEnabled(false);
     // Closing by any route (Back, Escape) must give mapped keys back to the main screen
     this.keyer.setKeyboardMappingsEnabled(true);
@@ -166,12 +207,18 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
     );
   }
 
-  /** Keep focus in fullscreen and stop an active encoder before closing it. */
+  /** Keep focus in fullscreen and stop an active encoder before closing it; Esc also leaves Vintage Look. */
   onDialogKeydown(event: KeyboardEvent): void {
     if (event.key === 'Escape' && this.encoder.isSending()) {
       event.preventDefault();
       event.stopPropagation();
       this.encoder.stopTx();
+      return;
+    }
+    if (event.key === 'Escape' && this.vintage()) {
+      event.preventDefault();
+      event.stopPropagation();
+      this.exitVintage();
       return;
     }
     if (this.fullscreenDialog) {
@@ -202,6 +249,41 @@ export class FullscreenModalComponent implements OnInit, OnDestroy, AfterViewIni
   close(): void {
     this.keyer.setKeyboardMappingsEnabled(true);
     this.closed.emit();
+  }
+
+  /** Ask, then switch to Vintage Look (the toolbar button). Back and Esc leave it. */
+  async startVintage(): Promise<void> {
+    if (this.vintage() || !this.vintageAllowed) return;
+    if (!await this.confirm.ask(VINTAGE_CONFIRM) || this.vintage() || !this.vintageAllowed) return;
+    this.settings.modalDisplayOverride.set(VINTAGE_DISPLAY);
+    this.vintage.set(true);
+    this.releaseVintageBack = this.modalBack.open(() => {
+      this.releaseVintageBack = null;
+      this.endVintage();
+    });
+    this.refocus();
+  }
+
+  /** Leave Vintage Look (Esc, or a practice mode or book starting). */
+  private exitVintage(): void {
+    this.releaseVintageBack?.();
+    this.releaseVintageBack = null;
+    this.endVintage();
+  }
+
+  /** The menu colours and font come back; nothing was ever saved. */
+  private endVintage(): void {
+    this.settings.modalDisplayOverride.set(null);
+    this.vintage.set(false);
+    this.refocus();
+  }
+
+  /** The element that had focus (a menu button) may be gone: keep focus inside the dialog so Esc keeps working. */
+  private refocus(): void {
+    setTimeout(() => {
+      if (this.inputMode === 'type') this.conversationView?.focusTypeInput();
+      else this.conversationView?.focusMain();
+    });
   }
 
   /** Switch between Key and Type and remember the choice. */

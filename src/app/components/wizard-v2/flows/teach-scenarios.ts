@@ -708,6 +708,7 @@ function signalLines(ctx: ConditionContext): string[] {
   if (actions['<AR>']?.enabled) lines.push(`Key AR (dit dah dit dah dit) to ${does[actions['<AR>'].action]}.`);
   if (actions['<BK>']?.enabled) lines.push(`Key BK to ${does[actions['<BK>'].action]}.`);
   if (actions['<HH>']?.enabled) lines.push(`Key HH (eight dits) to ${does[actions['<HH>'].action]}.`);
+  if (actions['<SK>']?.enabled) lines.push(`Key SK to ${does[actions['<SK>'].action]}.`);
   return lines;
 }
 

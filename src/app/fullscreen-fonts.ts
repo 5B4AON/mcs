@@ -8,7 +8,7 @@
  * must not be renamed without a migration. A removed id (such as the former 'arial')
  * is rejected on import and falls back to the default for a stored profile.
  */
-export type FullscreenFontId = 'courier' | 'times' | 'verdana' | 'code';
+export type FullscreenFontId = 'courier' | 'times' | 'verdana' | 'code' | 'elite';
 
 export interface FullscreenFont {
   id: FullscreenFontId;
@@ -18,18 +18,22 @@ export interface FullscreenFont {
    * loaded lazily the first time the font is used), then a generic fallback shown until it loads.
    */
   stack: string;
+  /** The face ships only in regular weight: bold is never asked for, so it is not faked by the browser. */
+  regularOnly?: boolean;
 }
 
 /**
  * Faces chosen for reading single characters at a glance: a typewriter face, a heavy
- * screen serif, a sans designed so look-alike characters differ (0/O, 1/I/l), and a
- * monospace made for aircraft cockpit displays.
+ * screen serif, a sans designed so look-alike characters differ (0/O, 1/I/l), a
+ * monospace made for aircraft cockpit displays, and a worn, ink-stamped typewriter face
+ * (regular weight only, shown exactly as designed).
  */
 export const FULLSCREEN_FONTS: readonly FullscreenFont[] = [
   { id: 'courier', label: 'Typewriter', stack: "'Courier Prime', 'Courier New', Courier, monospace" },
   { id: 'times', label: 'Classic', stack: "Merriweather, Georgia, 'Times New Roman', serif" },
   { id: 'verdana', label: 'Readable', stack: "'Atkinson Hyperlegible', Verdana, system-ui, sans-serif" },
   { id: 'code', label: 'Cockpit', stack: "'B612 Mono', Consolas, Menlo, 'DejaVu Sans Mono', monospace" },
+  { id: 'elite', label: 'Special Elite', stack: "'Special Elite', 'Courier New', Courier, monospace", regularOnly: true },
 ];
 
 export const DEFAULT_FULLSCREEN_FONT: FullscreenFontId = 'courier';
@@ -37,6 +41,11 @@ export const DEFAULT_FULLSCREEN_FONT: FullscreenFontId = 'courier';
 /** CSS font-family for a stored id; an unknown or missing id falls back to the default. */
 export function fullscreenFontStack(id: string | undefined): string {
   return (FULLSCREEN_FONTS.find(f => f.id === id) ?? FULLSCREEN_FONTS[0]).stack;
+}
+
+/** True when the font is regular-weight only (stored id; unknown ids use the default font). */
+export function isRegularOnlyFont(id: string | undefined): boolean {
+  return !!(FULLSCREEN_FONTS.find(f => f.id === id) ?? FULLSCREEN_FONTS[0]).regularOnly;
 }
 
 /** True when the value is one of the offered font ids. */

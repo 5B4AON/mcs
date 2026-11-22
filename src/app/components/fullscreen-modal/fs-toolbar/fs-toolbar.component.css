@@ -219,11 +219,6 @@
 .fs-face-ctl {
   gap: .4rem;
 }
-.fs-face-ctl .fs-mode-select {
-  flex: 1 1 0;
-  width: 0;
-  min-width: 0;
-}
 
 /* ---- Colour picker row ---- */
 .fs-color-row {
@@ -306,17 +301,23 @@
 .fs-close-btn:hover { background: #3a4050; }
 .fs-close-btn:active { background: #5577aa; color: #fff; transform: scale(0.88); }
 
-/* ---- Font select, shaped like the pill buttons ---- */
-.fs-mode-select {
+/* ---- Font picker: a pill showing the font, with the whole list (five rows) opening under it ---- */
+.fs-font-btn {
   position: relative;
-  display: inline-flex;
+  display: flex;
   align-items: center;
   background: linear-gradient(180deg, #506078 0%, #3a4858 100%);
   border: 1px solid #556;
   border-radius: 20px;
+  color: #fff;
+  font-size: .85rem;
+  font-weight: 600;
+  padding: .45rem 2rem .45rem 1rem;
   cursor: pointer;
+  min-height: 0;
+  text-align: left;
 }
-.fs-mode-select::after {
+.fs-font-btn::after {
   content: '';
   position: absolute;
   right: .9rem;
@@ -328,31 +329,48 @@
   transform: translateY(-70%) rotate(45deg);
   pointer-events: none;
 }
-.fs-mode-select:has(select:focus-visible) {
+.fs-font-btn[aria-expanded="true"]::after {
+  transform: translateY(-30%) rotate(-135deg);
+}
+.fs-font-btn:focus-visible,
+.fs-font-option:focus-visible {
   outline: 2px solid #8cf;
   outline-offset: 1px;
 }
-.fs-mode-select select {
-  appearance: none;
-  -webkit-appearance: none;
-  background: transparent;
-  color: #fff;
-  border: none;
-  font-size: .85rem;
-  font-weight: 600;
-  width: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: .45rem 2rem .45rem 1rem;
+.fs-font-name {
+  overflow: hidden;
   text-overflow: ellipsis;
-  cursor: pointer;
-  outline: none;
+  white-space: nowrap;
 }
-.fs-mode-select select option {
+.fs-face-ctl .fs-font-btn {
+  flex: 1 1 0;
+  width: 0;
+  min-width: 0;
+}
+.fs-font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: .4rem;
+  padding: 4px;
   background: #222;
-  color: #ddd;
+  border: 1px solid #556;
+  border-radius: 14px;
 }
-.fs-mode-select select option:checked {
+.fs-font-option {
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  color: #ddd;
+  font-size: .85rem;
+  padding: .4rem .8rem;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+  min-height: 0;
+}
+.fs-font-option:hover { background: #2e3646; }
+.fs-font-option.selected {
   background: #3a4858;
   color: #fff;
 }
@@ -514,7 +532,7 @@ label { user-select: none; }
    TOUCH — coarser pointer (phones/tablets)
    ============================================================ */
 @media (pointer: coarse) {
-  button:not(.fs-clear-btn):not(.fs-close-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.kebab-step-btn) {
+  button:not(.fs-clear-btn):not(.fs-close-btn):not(.kebab-btn):not(.kebab-help-btn):not(.clear-menu-btn):not(.kebab-step-btn):not(.fs-font-btn):not(.fs-font-option) {
     min-height: 40px;
     padding: 0.4rem 0.9rem;
   }

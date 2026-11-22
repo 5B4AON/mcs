@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.23.4';
+export const APP_VERSION = '2.24.0';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-22';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-22';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Leaving the CW Decoder now offers to turn the sidetone on and the keep-screen-on setting off. <HH> starts off and asks before turning on.';
+export const WHATS_NEW = 'New Vintage Look in full screen, with the Special Elite typewriter font. <SK> can now clear the screen.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {

@@ -377,36 +377,8 @@
     url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="200" height="200" filter="url(%23n)" opacity="0.07"/></svg>'),
     /* Fine paper fiber texture — second noise layer */
     url('data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="300" height="300"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="1.8" numOctaves="3" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/></filter><rect width="300" height="300" filter="url(%23f)" opacity="0.04"/></svg>'),
-    /* Corner wear — darkened edges from handling */
-    radial-gradient(ellipse at 0% 0%, rgba(100, 75, 50, 0.12), transparent 30%),
-    radial-gradient(ellipse at 100% 0%, rgba(100, 75, 50, 0.10), transparent 28%),
-    radial-gradient(ellipse at 0% 100%, rgba(100, 75, 50, 0.10), transparent 28%),
-    radial-gradient(ellipse at 100% 100%, rgba(100, 75, 50, 0.12), transparent 30%),
-    /* Coffee ring stain — faint circular mark */
-    radial-gradient(ellipse at 72% 35%, rgba(120, 90, 55, 0.06) 8%, transparent 12%),
-    radial-gradient(ellipse at 72% 35%, transparent 5%, rgba(120, 90, 55, 0.04) 7%, transparent 10%),
-    /* Age spots and foxing — scattered discolouration */
-    radial-gradient(ellipse at 80% 20%, rgba(139, 115, 85, 0.09), transparent 40%),
-    radial-gradient(ellipse at 20% 80%, rgba(139, 115, 85, 0.07), transparent 35%),
-    radial-gradient(ellipse at 60% 60%, rgba(139, 115, 85, 0.06), transparent 50%),
-    radial-gradient(ellipse at 35% 25%, rgba(145, 120, 80, 0.07), transparent 25%),
-    radial-gradient(ellipse at 15% 45%, rgba(130, 105, 75, 0.05), transparent 30%),
-    radial-gradient(ellipse at 90% 65%, rgba(135, 110, 80, 0.06), transparent 20%),
-    radial-gradient(ellipse at 50% 10%, rgba(125, 100, 70, 0.04), transparent 22%),
-    radial-gradient(ellipse at 45% 85%, rgba(140, 118, 82, 0.05), transparent 28%),
-    radial-gradient(circle at 25% 55%, rgba(150, 125, 90, 0.04), transparent 8%),
-    radial-gradient(circle at 68% 78%, rgba(150, 125, 90, 0.04), transparent 6%),
-    radial-gradient(circle at 82% 45%, rgba(150, 125, 90, 0.03), transparent 5%),
-    /* Faint fold crease running diagonally */
-    linear-gradient(135deg, transparent 48%, rgba(100, 80, 55, 0.04) 49.5%, rgba(100, 80, 55, 0.06) 50%, rgba(100, 80, 55, 0.04) 50.5%, transparent 52%),
-    /* Base aged parchment */
-    linear-gradient(
-      to bottom,
-      #d4c4a8,
-      #cdbaa0 25%,
-      #c8b599 75%,
-      #c0ad91
-    );
+    /* Cream paper, the same as Vintage Look in the full screen */
+    linear-gradient(#f4efe6, #f4efe6);
   /* Worn paper edges and realistic shadow */
   box-shadow:
     /* Drop shadow layers */
@@ -474,6 +446,16 @@
 }
 
 /* Inner scrollable text area — sits inside the parchment wrapper */
+.decoded-text .line-text {
+  font-family: 'Special Elite', 'Courier Prime', 'Courier New', monospace;
+  font-size: 0.95em;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  text-shadow: none;
+  /* At this small size the browser's glyph hinting snaps the font's hand-typed digits to different pixel heights; unhinted, they keep their drawn heights like in the full screen */
+  text-rendering: geometricPrecision;
+}
+
 .decoded-text {
   font-family: 'American Typewriter', 'Courier Prime', 'Courier New', 'Lucida Console', monospace;
   font-size: 1.08rem;
@@ -490,12 +472,10 @@
   white-space: pre-wrap;
   word-break: break-all;
   transition: color .8s ease;
-  /* Faded typewriter ribbon ink — dark blue-brown */
-  color: #1e1812;
-  text-shadow:
-    0 0 0.2px rgba(20, 14, 8, 0.4),
-    0.3px 0.2px 0 rgba(30, 20, 10, 0.12),
-    -0.2px 0.1px 0 rgba(30, 20, 10, 0.08);
+  /* Warm charcoal ribbon ink, the same as Vintage Look in the full screen */
+  color: #262320;
+  /* No ink-bleed shadow: it would blur the worn edges of Special Elite (the line prefix and cursor sit outside .line-text) */
+  text-shadow: none;
   /* Ruled lines scroll with text via background-attachment: local */
   background:
     linear-gradient(

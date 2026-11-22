@@ -50,6 +50,10 @@
   color: color-mix(in srgb, var(--char-color, currentColor) 90%, black);
   animation: lens-pop 0.18s ease-out;
 }
+/* A face with no bold weight is shown as designed, never thickened by the browser */
+:host-context(.regular-only) .lens-char {
+  font-weight: 400;
+}
 .lens-char.lens-pending {
   visibility: hidden;
   animation: none;

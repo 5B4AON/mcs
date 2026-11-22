@@ -112,18 +112,28 @@
                   [disabled]="rowSpacingMultiplier >= ROW_MULT_MAX" (click)="nudgeRowSpacing(1)"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" aria-hidden="true"><line x1="5" y1="12" x2="19" y2="12"/><line x1="12" y1="5" x2="12" y2="19"/></svg></button>
         </div>
 
-        <label class="fs-font-ctl fs-face-ctl" title="Font">
-          <span class="kebab-step-icon">Font</span>
-          <span class="fs-mode-select">
-            <select aria-label="Fullscreen font"
-                    (change)="onSettingChange('fullscreenFont', $event)">
-              @for (f of fonts; track f.id) {
-                <option [value]="f.id" [selected]="f.id === settings.settings().fullscreenFont"
-                        [style.fontFamily]="f.stack">{{ f.label }}</option>
-              }
-            </select>
-          </span>
-        </label>
+        <div class="fs-font-picker">
+          <div class="fs-font-ctl fs-face-ctl">
+            <span class="kebab-step-icon">Font</span>
+            <button type="button" class="fs-font-btn" aria-haspopup="listbox"
+                    [attr.aria-expanded]="fontListOpen"
+                    [attr.aria-label]="'Fullscreen font: ' + currentFont.label"
+                    (click)="toggleFontList()">
+              <span class="fs-font-name" [style.fontFamily]="currentFont.stack"
+                    [style.fontWeight]="currentFont.regularOnly ? 400 : null">{{ currentFont.label }}</span>
+            </button>
+          </div>
+          <div class="fs-font-list" role="listbox" aria-label="Fullscreen font" *appCollapse="fontListOpen">
+            @for (f of fonts; track f.id) {
+              <button type="button" class="fs-font-option" role="option"
+                      [attr.aria-selected]="f.id === currentFont.id"
+                      [class.selected]="f.id === currentFont.id"
+                      [style.fontFamily]="f.stack"
+                      [style.fontWeight]="f.regularOnly ? 400 : null"
+                      (click)="chooseFont(f.id)">{{ f.label }}</button>
+            }
+          </div>
+        </div>
 
         <div class="fs-color-row">
           <label class="fs-color-ctl" title="RX text colour">
@@ -143,6 +153,12 @@
           </label>
         </div>
 
+        <button class="kebab-help-btn" type="button" [disabled]="!vintageAllowed" (click)="startVintage()"
+                [title]="vintageAllowed ? 'Vintage Look: dark ink on aged paper, nothing else on screen' : 'Vintage Look is not available in practice modes or with a book'"
+                aria-label="Vintage Look">
+          <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="14" y2="17"/></svg>
+          <span>Vintage Look</span>
+        </button>
       </div>
       <button class="kebab-help-btn lens-toggle-btn" type="button" role="switch"
               [attr.aria-checked]="lensMode" [class.lens-toggle-on]="lensMode"

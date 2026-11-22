@@ -291,7 +291,13 @@ export class SettingsService {
     });
   }
 
-  /** Fullscreen display settings: a read-only view of the `fullscreen*` fields of `settings` */
+  /**
+   * Temporary replacement for some fullscreen display values (Vintage Look). It is never saved or
+   * included in presets: clearing it brings back the colours set in the fullscreen menu.
+   */
+  readonly modalDisplayOverride = signal<Partial<ModalDisplaySettings> | null>(null);
+
+  /** Fullscreen display settings: a read-only view of the `fullscreen*` fields of `settings`, plus any temporary override */
   readonly modalDisplay = computed<ModalDisplaySettings>(() => {
     const s = this.settings();
     return {
@@ -304,6 +310,7 @@ export class SettingsService {
       txBackground: s.fullscreenTxBackground,
       bufferForeground: s.fullscreenBufferForeground,
       sendingForeground: s.fullscreenSendingForeground,
+      ...this.modalDisplayOverride(),
     };
   });
 

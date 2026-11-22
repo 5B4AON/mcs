@@ -30,6 +30,7 @@ export const PROSIGN_ACTIONS_DEFAULTS: ProsignActionsSettings = {
     '<BK>': { enabled: true, action: 'newParagraph' },
     '<BT>': { enabled: true, action: 'newLine' },
     '<HH>': { enabled: false, action: 'clearLastWord' },
+    '<SK>': { enabled: false, action: 'clearScreen' },
   },
 };
 

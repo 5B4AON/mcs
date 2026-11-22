@@ -4,7 +4,7 @@
 
 import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { ProsignAction, ProsignActionEntry } from './prosign-actions-item.model';
+import { PROSIGN_ACTIONS_DEFAULTS, ProsignAction, ProsignActionEntry } from './prosign-actions-item.model';
 import { ItemShellComponent } from '../item-shell/item-shell.component';
 import { HelpLinkButtonComponent } from '../help-link-button/help-link-button.component';
 import { SETTINGS_SCOPE } from '../settings-scope';
@@ -37,7 +37,7 @@ export class ProsignActionsItemComponent {
   readonly s = this.scope.value;
 
   /** Ordered list of prosign keys for the Prosign Actions card */
-  readonly prosignKeys = ['<AR>', '<BK>', '<BT>', '<HH>'];
+  readonly prosignKeys = ['<AR>', '<BK>', '<BT>', '<HH>', '<SK>'];
 
   /** Available action choices for prosign action dropdowns */
   readonly prosignActionOptions: { value: ProsignAction; label: string }[] = [
@@ -48,9 +48,10 @@ export class ProsignActionsItemComponent {
     { value: 'clearScreen', label: 'Clear Screen' },
   ];
 
-  /** Safely get the entry for a prosign key, falling back to a default */
+  /** Safely get the entry for a prosign key; a profile saved before the prosign existed shows its default */
   getEntry(key: string): ProsignActionEntry {
     return this.s().prosignActions[key]
+        ?? PROSIGN_ACTIONS_DEFAULTS.prosignActions[key]
         ?? { enabled: false, action: 'newLine' };
   }
 
@@ -84,7 +85,7 @@ export class ProsignActionsItemComponent {
     const box = event.target as HTMLInputElement;
     const checked = box.checked;
     const actions = { ...this.s().prosignActions };
-    const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
+    const existing = this.getEntry(key);
     actions[key] = { ...existing, enabled: checked };
     // A refused change puts the box back to what the setting says
     if (!(await this.applyChange({ prosignActions: actions }))) box.checked = existing.enabled;
@@ -95,7 +96,7 @@ export class ProsignActionsItemComponent {
     const select = event.target as HTMLSelectElement;
     const value = select.value as ProsignAction;
     const actions = { ...this.s().prosignActions };
-    const existing = actions[key] ?? { enabled: false, action: 'newLine' as ProsignAction };
+    const existing = this.getEntry(key);
     actions[key] = { ...existing, action: value };
     if (!(await this.applyChange({ prosignActions: actions }))) select.value = existing.action;
   }

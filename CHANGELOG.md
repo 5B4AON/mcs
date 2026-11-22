@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.24.0] - 2026-11-22
+
+### Added
+
+- **Special Elite font** — A fifth full-screen font, Special Elite, a worn typewriter face, bundled with the app (Apache-2.0) so it works offline. In the full screen it is drawn exactly as designed: no glow, never faux-bold, and prosigns such as `<BT>` and `<SK>` are plain, slightly larger text with no pill behind them.
+- **Vintage Look** — A button at the end of the Styling section of the full-screen menu. After a confirmation it shows the text as dark ink (`#262320`) on cream paper (`#f4efe6`) in Special Elite, whatever font you chose, and hides the toolbar and every button. The touch keyer stays in place and keeps working, unseen. Esc or the browser Back button leaves it and brings back your own colours and font. Nothing is saved, and it is not offered in the practice modes or with a book.
+- **`<SK>` prosign action** — Settings → Other → Prosign Actions now lists `<SK>`, off by default, with Clear Screen as its action. The Teach guide's run sheet mentions it when it is on.
+
+### Changed
+
+- **Font picker** — The Font choice in the full-screen menu is an open list of all five fonts, each shown in its own face, instead of a drop-down that scrolled.
+- **Main screen text and paper** — Decoded text on the main screen is now in Special Elite (95 % size, slightly wider spacing) in the same ink as Vintage Look, on the same flat cream paper (the stains and age marks are gone; the grain, torn edges and the paper's drop shadow stay). The text has no shadow or glow, so the worn edges of the font show as designed, also in the practice results.
+
 ## [2.23.4] - 2026-11-22
 
 ### Changed

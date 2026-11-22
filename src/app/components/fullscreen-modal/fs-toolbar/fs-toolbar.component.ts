@@ -22,7 +22,7 @@ import { ViewportService } from '../../../services/viewport.service';
 import { ModalBackService } from '../../../services/modal-back.service';
 import { ClearService } from '../../../services/clear.service';
 import { EbookService } from '../../../services/ebook.service';
-import { FULLSCREEN_FONTS } from '../../../fullscreen-fonts';
+import { FULLSCREEN_FONTS, FullscreenFont, FullscreenFontId } from '../../../fullscreen-fonts';
 
 /**
  * Fullscreen modal toolbar component.
@@ -56,6 +56,12 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   /** Emitted when the user switches Lens on or off. */
   @Output() lensToggle = new EventEmitter<void>();
 
+  /** False in the practice modes and with a book, which need their buttons (Vintage Look hides them). */
+  @Input() vintageAllowed = true;
+
+  /** Emitted when the user chooses Vintage Look; the full screen asks for confirmation. */
+  @Output() vintageRequested = new EventEmitter<void>();
+
   /** Emitted when the user clicks the close button */
   @Output() closeRequest = new EventEmitter<void>();
   /** Emitted when the user changes the temporary fullscreen input choice. */
@@ -78,6 +84,31 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
 
   /** Fonts offered in the kebab menu. */
   readonly fonts = FULLSCREEN_FONTS;
+
+  /** The font list sits open under the Font pill; it closes when a font is chosen or the menu closes. */
+  fontListOpen = false;
+
+  /** The font in use (an unknown stored id shows the default). */
+  get currentFont(): FullscreenFont {
+    const id = this.settings.settings().fullscreenFont;
+    return FULLSCREEN_FONTS.find(f => f.id === id) ?? FULLSCREEN_FONTS[0];
+  }
+
+  /** Close the menu first, so its Back entry is gone before the confirmation question opens. */
+  startVintage(): void {
+    this.fsKebabOpen = false;
+    this.vintageRequested.emit();
+  }
+
+  toggleFontList(): void {
+    this.fontListOpen = !this.fontListOpen;
+  }
+
+  chooseFont(id: FullscreenFontId): void {
+    this.settings.update({ fullscreenFont: id });
+    this.saveSettings();
+    this.fontListOpen = false;
+  }
 
   // ---- Menu state ----
   private kebabOpen = false;
@@ -116,10 +147,11 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
       clearTimeout(this.stylingResetTimer);
       this.stylingResetTimer = null;
     }
-    if (!open && (this.stylingOpen || this.speedsOpen)) {
+    if (!open && (this.stylingOpen || this.speedsOpen || this.fontListOpen)) {
       this.stylingResetTimer = setTimeout(() => {
         this.stylingOpen = false;
         this.speedsOpen = false;
+        this.fontListOpen = false;
         this.stylingResetTimer = null;
       }, 0);
     }
@@ -132,6 +164,7 @@ export class FsToolbarComponent implements OnInit, OnDestroy {
   toggleStyling(): void {
     this.stylingOpen = !this.stylingOpen;
     if (this.stylingOpen) this.speedsOpen = false;
+    else this.fontListOpen = false;
   }
 
   toggleSpeeds(): void {

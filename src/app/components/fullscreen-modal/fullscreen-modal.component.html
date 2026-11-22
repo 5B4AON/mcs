@@ -1,12 +1,15 @@
-<div class="fs-modal-overlay" [style.height.px]="viewport.height()" [style.top.px]="viewport.offsetTop()">
+<div class="fs-modal-overlay" [class.vintage]="vintage()" [style.height.px]="viewport.height()" [style.top.px]="viewport.offsetTop()">
   <div #fullscreenDialog class="fs-modal" role="dialog" aria-modal="true"
        aria-label="Full-screen conversation" tabindex="-1"
        (keydown)="onDialogKeydown($event)">
 
     <!-- Top toolbar: close, level meter, WPM pills, clear, kebab menu -->
+    @if (!vintage()) {
     <app-fs-toolbar
       [inputMode]="inputMode"
       [lensMode]="lensMode"
+      [vintageAllowed]="vintageAllowed"
+      (vintageRequested)="startVintage()"
       (lensToggle)="toggleLens()"
       (closeRequest)="close()"
       (inputModeChange)="setInputMode($event)"
@@ -16,6 +19,7 @@
       (wizardRequested)="wizardRequested.emit()"
       (presetsRequested)="presetsRequested.emit()">
     </app-fs-toolbar>
+    }
 
     <!-- Main content area -->
     <div class="fs-body"
@@ -39,11 +43,12 @@
       }
 
       <!-- The text size is auto-fitted to the body box; the slider value is a multiplier (24 = 1x) -->
-      <div class="fs-fit" [class.touch-on]="touchKeysShown" [class.prompt-on]="sendPromptShown" [class.scope-on]="cwScopeShown" [class.audio-on]="audioFile.loaded()"
+      <div class="fs-fit" [class.touch-on]="touchKeysShown" [class.prompt-on]="sendPromptShown" [class.scope-on]="cwScopeShown" [class.audio-on]="audioFile.loaded() && !vintage()"
+           [class.regular-only]="regularOnlyFont"
            [style.--fs-mult]="settings.modalDisplay().fontSize / fontSizeBase"
            [style.--fs-space]="settings.modalDisplay().lineSpacing"
            [style.fontFamily]="fontStack"
-           [style.fontWeight]="settings.modalDisplay().fontBold ? 'bold' : 'normal'">
+           [style.fontWeight]="fontWeight">
         <app-fs-conversation-view [viewportKeyboardOpen]="viewport.keyboardOpen()"
                              [inputMode]="inputMode"
                              [lensMode]="lensMode"

@@ -41,7 +41,8 @@
               "node_modules/@fontsource/atkinson-hyperlegible/latin-400.css",
               "node_modules/@fontsource/atkinson-hyperlegible/latin-700.css",
               "node_modules/@fontsource/b612-mono/latin-400.css",
-              "node_modules/@fontsource/b612-mono/latin-700.css"
+              "node_modules/@fontsource/b612-mono/latin-700.css",
+              "node_modules/@fontsource/special-elite/latin-400.css"
             ],
             "scripts": []
           },

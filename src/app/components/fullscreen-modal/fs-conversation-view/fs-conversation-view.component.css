@@ -23,6 +23,35 @@
 .fs-conversation.vk-open {
   padding-bottom: 0;
 }
+/* Special Elite is shown as Google draws it: no glow over its worn, inked edges */
+:host-context(.fs-fit.regular-only) .fs-conversation {
+  text-shadow: none;
+  font-synthesis: none;
+}
+/* Special Elite shows a prosign as plain text, with no pill behind it, a bit larger than inside a pill */
+:host-context(.fs-fit.regular-only) ::ng-deep .prosign-display {
+  font-size: 0.8em;
+  font-family: inherit;
+  font-weight: 400;
+  text-box: normal;
+  height: auto;
+  line-height: normal;
+  padding: 0 .15em;
+  background: none;
+  border-radius: 0;
+  overflow: visible;
+  vertical-align: baseline;
+  opacity: 1;
+}
+
+/* Vintage Look: only the text is visible. The touch keys stay where they are and keep working, unseen. */
+:host-context(.fs-modal-overlay.vintage) .fs-btn-stack,
+:host-context(.fs-modal-overlay.vintage) .fs-audio-bar {
+  display: none;
+}
+:host-context(.fs-modal-overlay.vintage) .touch-overlay {
+  opacity: 0;
+}
 /* The e-book reader fills the area and scrolls the text itself (its own styles are in ebook-reader.component.css) */
 .fs-conversation.ebook-on {
   position: relative;
@@ -434,6 +463,12 @@
 .fb-missed {
   color: #777;
   text-shadow: 0 0 6px rgba(119, 119, 119, 0.4), 0 0 12px rgba(119, 119, 119, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+/* Special Elite keeps its worn, inked edges in the results too: no glow */
+:host-context(.fs-fit.regular-only) .fb-correct,
+:host-context(.fs-fit.regular-only) .fb-incorrect,
+:host-context(.fs-fit.regular-only) .fb-missed {
+  text-shadow: none;
 }
 .fb-accuracy {
   margin-top: 8px;

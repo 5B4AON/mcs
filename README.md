@@ -162,4 +162,4 @@ This is enabled by setting `"extractLicenses": true` in `angular.json`, which is
 
 ### Third‑Party Fonts
 
-The fullscreen view bundles four fonts, self-hosted through [Fontsource](https://fontsource.org/) and licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/): Courier Prime, Merriweather, Atkinson Hyperlegible and B612 Mono. Each package's license file is kept in `node_modules/@fontsource/` and is part of `dist/3rdpartylicenses.txt`.
+The fullscreen view bundles five fonts, self-hosted through [Fontsource](https://fontsource.org/): Courier Prime, Merriweather, Atkinson Hyperlegible and B612 Mono are licensed under the [SIL Open Font License 1.1](https://openfontlicense.org/), and Special Elite under the [Apache License 2.0](https://www.apache.org/licenses/LICENSE-2.0). Each package's license file is kept in `node_modules/@fontsource/` and is part of `dist/3rdpartylicenses.txt`.
