@@ -451,6 +451,8 @@
   font-size: 0.95em;
   font-weight: 400;
   letter-spacing: 0.03em;
+  /* Zero line height: this face has taller metrics than the box's own font, and in an inline box they would make every row taller than the 1.35em ruled-line tile, drifting the text off the lines row by row */
+  line-height: 0;
   text-shadow: none;
   /* At this small size the browser's glyph hinting snaps the font's hand-typed digits to different pixel heights; unhinted, they keep their drawn heights like in the full screen */
   text-rendering: geometricPrecision;
