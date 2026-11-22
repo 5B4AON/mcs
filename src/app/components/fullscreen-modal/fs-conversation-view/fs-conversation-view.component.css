@@ -50,9 +50,19 @@
 }
 
 /* Vintage Look: only the text is visible. The touch keys stay where they are and keep working, unseen. */
-:host-context(.fs-modal-overlay.vintage) .fs-btn-stack,
-:host-context(.fs-modal-overlay.vintage) .fs-audio-bar {
+:host-context(.fs-modal-overlay.vintage) .fs-btn-stack {
   display: none;
+}
+/* The audio file player stays, in muted grey on the cream paper, and uses the width the hidden round buttons left free */
+:host-context(.fs-modal-overlay.vintage) .fs-audio-bar {
+  right: 12px;
+  --afp-bg: rgba(90, 85, 80, 0.1);
+  --afp-panel: rgba(90, 85, 80, 0.1);
+  --afp-border: rgba(90, 85, 80, 0.3);
+  --afp-color: rgba(70, 65, 60, 0.7);
+  --afp-color-hover: rgba(50, 45, 40, 0.9);
+  --afp-bg-hover: rgba(90, 85, 80, 0.2);
+  --afp-accent: rgba(70, 65, 60, 0.75);
 }
 :host-context(.fs-modal-overlay.vintage) .touch-overlay {
   opacity: 0;

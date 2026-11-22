@@ -468,7 +468,12 @@
   background: linear-gradient(180deg, #2f7d5a 0%, #1f5a40 100%);
   box-shadow: 0 0 0 2px #8cf, 0 3px 6px rgba(0,0,0,.35);
 }
-.kebab-help-btn:hover {
+.kebab-help-btn:disabled {
+  opacity: .4;
+  cursor: default;
+  box-shadow: none;
+}
+.kebab-help-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow:
     0 5px 10px rgba(0,0,0,.45),
@@ -476,7 +481,7 @@
     inset 0 -2px 4px rgba(0,0,0,.25);
   filter: brightness(1.15);
 }
-.kebab-help-btn:active {
+.kebab-help-btn:active:not(:disabled) {
   transform: translateY(1px);
   box-shadow:
     0 1px 3px rgba(0,0,0,.5),

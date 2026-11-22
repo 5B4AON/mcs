@@ -4,12 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.24.1] - 2026-11-22
+
+### Changed
+
+- **Vintage Look keeps the audio player** — With an audio file loaded, the playback bar (Play/Pause, seek slider and times) now stays on screen in Vintage Look, in a muted translucent grey that reads on the cream paper. The text keeps clear of it.
+- **No scrollbar on the text** — The vertical scrollbar no longer pops up on the main-screen text or in the full-screen conversation (Vintage Look included) when keying reaches the end of the screen. The text still scrolls by wheel, touch and keyboard.
+- **Cleaner Special Elite text** — The faint ink shadow on the main-screen text, and the glow on the practice results in the full screen, are gone with Special Elite, so the worn edges of the font show as designed.
+
+### Fixed
+
+- **Main-screen text on the ruled lines** — The letters drifted below the horizontal lines, a little more with every row. Every row now stays on its line.
+- **Vintage Look button in the practice modes** — The full-screen menu button now looks dimmed when Vintage Look is not available (Copy and Send practice), instead of looking active and doing nothing when pressed.
+
 ## [2.24.0] - 2026-11-22
 
 ### Added
 
 - **Special Elite font** — A fifth full-screen font, Special Elite, a worn typewriter face, bundled with the app (Apache-2.0) so it works offline. In the full screen it is drawn exactly as designed: no glow, never faux-bold, and prosigns such as `<BT>` and `<SK>` are plain, slightly larger text with no pill behind them.
-- **Vintage Look** — A button at the end of the Styling section of the full-screen menu. After a confirmation it shows the text as dark ink (`#262320`) on cream paper (`#f4efe6`) in Special Elite, whatever font you chose, and hides the toolbar and every button. The touch keyer stays in place and keeps working, unseen. Esc or the browser Back button leaves it and brings back your own colours and font. Nothing is saved, and it is not offered in the practice modes or with a book.
+- **Vintage Look** — A button at the end of the Styling section of the full-screen menu. After a confirmation it shows the text as dark ink (`#262320`) on cream paper (`#f4efe6`) in Special Elite, whatever font you chose, and hides the toolbar and every button. The touch keyer stays in place and keeps working, unseen. Esc or the browser Back button leaves it and brings back your own colours and font. Nothing is saved, and it is not offered in the practice modes.
 - **`<SK>` prosign action** — Settings → Other → Prosign Actions now lists `<SK>`, off by default, with Clear Screen as its action. The Teach guide's run sheet mentions it when it is on.
 
 ### Changed
