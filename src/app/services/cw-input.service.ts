@@ -148,6 +148,9 @@ export class CwInputService {
   /** Observable stream of key-down/key-up events from CW tone detection */
   readonly keyEvent$ = new Subject<CwKeyEvent>();
 
+  /** Fires when the feedback guard has stopped the decoder (the app then offers to stop keeping the screen on) */
+  readonly feedbackStopped$ = new Subject<void>();
+
   /** CW magnitude, threshold, and tracking data for UI level meter */
   readonly level$ = new Subject<CwLevelEvent>();
 
@@ -524,6 +527,7 @@ export class CwInputService {
       this.zone.run(() => {
         this.settings.updateAndPersist({ cwDecoderActive: false });
         void this.stop();
+        this.feedbackStopped$.next();
         this.loopDetection.reportFeedback(
           'Audio feedback detected! The CW tone detector stayed keyed for over 2.5 seconds while the sidetone ' +
           'was on, so it is probably hearing the sidetone. The CW decoder was stopped. Use headphones, ' +

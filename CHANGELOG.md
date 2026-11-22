@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.4] - 2026-11-22
+
+### Changed
+
+- **Keep screen on follows the CW Decoder** — Choosing the CW Decoder in the Mode list on a phone or tablet still asks whether to keep the screen on, and your answer is now saved at once. When the decoder stops, you are asked whether to stop keeping the screen on ("Stop keeping the screen on?"): when you pick another mode, enter a practice mode, switch the decoder off in Settings, reload into a practice mode, or the feedback guard stops it. It is not asked while a Firebase RTDB input or output is on, since the screen lock would cut it too.
+- **Sidetone after the decoder** — Reloading into a practice mode with the decoder still on now also asks whether to turn the sidetone on when it is off.
+- **`<HH>` is off by default** — The `<HH>` (error) prosign no longer clears the last word until you turn it on in Settings → Other → Prosign Actions. Saved profiles and presets keep what they have.
+- **Offer to use `<HH>`** — The first time `<HH>` is decoded in a session in Send on Enter or Live, with prosign actions on and `<HH>` off, the app asks whether to enable it as Clear Last Word. Text that follows waits for your answer. Not asked in the practice modes or from the CW decoder.
+
 ## [2.23.3] - 2026-11-22
 
 ### Changed

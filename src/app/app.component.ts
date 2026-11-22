@@ -9,7 +9,7 @@ import { AUDIO_RUNNING_KEY } from './services/audio-primer';
 import { CwInputService } from './services/cw-input.service';
 import { CwDecoderControlService } from './services/cw-decoder-control.service';
 import { cwDecoderOn } from './services/cw-decoder-state';
-import { MorseDecoderService } from './services/morse-decoder.service';
+import { MorseDecoderService, TaggedEntry } from './services/morse-decoder.service';
 import { MorseEncoderService, PlayingPattern } from './services/morse-encoder.service';
 import { KeyerService } from './services/keyer.service';
 import { AudioDeviceService } from './services/audio-device.service';
@@ -335,11 +335,13 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.practiceFingerprint = fingerprint;
       if (!practice) return;
       untracked(() => {
-        if (cwDecoderOn(s)) {
+        // Stopping a running decoder here (for example a reload that lands in practice) gives back what it asked for
+        const stopped = cwDecoderOn(s);
+        if (stopped) {
           this.settings.updateAndPersist({ cwDecoderActive: false });
           void this.cwInput.stop();
         }
-        if (switched && !s.sidetoneEnabled) void this.offerSidetoneForPractice();
+        if (switched || stopped) void this.offerAfterPracticeEntry(!s.sidetoneEnabled, stopped);
       });
     });
 
@@ -375,7 +377,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
             continue;
           }
           if (!sendPracticeKeying || entry.fromRtdb) {
-            this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
+            this.showDecoded(entry, displayName);
           }
           if (sendPracticeLocal && !entry.fromRtdb) continue;
           // Text decoded by the CW detector (microphone or audio file) stays on this device unless the full pipeline was chosen
@@ -702,6 +704,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         fromFile: this.cwInput.fileActive() || undefined,
       };
     };
+    this.subs.push(this.cwInput.feedbackStopped$.subscribe(() => void this.cwControl.offerScreenOff()));
     this.subs.push(
       this.cwInput.keyEvent$.subscribe(evt => {
         this.cwKeyDown = evt.down;
@@ -1164,6 +1167,65 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Whether the previous look at the Mode was a practice mode (null before the first), and the device profile it was under */
   private wasPractice: boolean | null = null;
   private practiceFingerprint = '';
+
+  /** Asked at most once per page session */
+  private hhPrompted = false;
+
+  /** Decoded entries held back (in order) while the question about the <HH> prosign is open */
+  private hhHeld: { entry: TaggedEntry; displayName: string | undefined }[] | null = null;
+
+  /**
+   * Show a decoded entry. The first <HH> decoded in Send on Enter or Live (not from the CW decoder), while prosign
+   * actions are on and <HH> has no action, asks whether to enable it; text that follows waits for the answer so
+   * the order is kept and an accepted action also applies to this <HH>.
+   */
+  private showDecoded(entry: TaggedEntry, displayName: string | undefined): void {
+    if (this.hhHeld) {
+      this.hhHeld.push({ entry, displayName });
+      return;
+    }
+    if (!this.hhPrompted && entry.char === '<HH>' && this.needsHhPrompt(entry)) {
+      this.hhPrompted = true;
+      this.hhHeld = [{ entry, displayName }];
+      void this.askEnableHh();
+      return;
+    }
+    this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
+  }
+
+  private needsHhPrompt(entry: TaggedEntry): boolean {
+    const s = this.settings.settings();
+    if (!s.prosignActionsEnabled || s.prosignActions['<HH>']?.enabled) return false;
+    if (s.encoderMode !== 'enter' && s.encoderMode !== 'live') return false;
+    return !cwDecoderOn(s) && !entry.fromFile && entry.inputPath !== 'cwAudio';
+  }
+
+  private async askEnableHh(): Promise<void> {
+    const enable = await this.confirmService.ask({
+      title: 'Use <HH> to clear the last word?',
+      message: 'The error prosign <HH> (eight dits) was just decoded, and it has no action. Turn it on so that '
+        + '<HH> removes the last word from the text? You can change this in Settings → Other → Prosign Actions.',
+      confirmLabel: 'Enable <HH>',
+      cancelLabel: 'Not now',
+    });
+    if (enable) {
+      const s = this.settings.settings();
+      this.settings.updateAndPersist({
+        prosignActions: { ...s.prosignActions, '<HH>': { enabled: true, action: 'clearLastWord' } },
+      });
+    }
+    const held = this.hhHeld ?? [];
+    this.hhHeld = null;
+    for (const { entry, displayName } of held) {
+      this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
+    }
+  }
+
+  /** Entering a practice mode: offer the sidetone, then (when the decoder was stopped for it) the screen. */
+  private async offerAfterPracticeEntry(sidetoneOff: boolean, decoderStopped: boolean): Promise<void> {
+    if (sidetoneOff) await this.offerSidetoneForPractice();
+    if (decoderStopped) await this.cwControl.offerScreenOff();
+  }
 
   /** Switching to a practice mode with the sidetone off: practice is played through the sidetone, so offer to turn it on. */
   private async offerSidetoneForPractice(): Promise<void> {
@@ -2004,7 +2066,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       return;
     }
     if (this.cwOn) {
-      // Entering a practice mode asks its own sidetone question (see the practice effect)
+      // Entering a practice mode asks its own sidetone question (see the practice effect); the screen question is asked here
       await this.cwControl.deactivate(this.audioRunning, value !== 'practice' && value !== 'send-practice');
     }
     this.onSettingChange('encoderMode', event);

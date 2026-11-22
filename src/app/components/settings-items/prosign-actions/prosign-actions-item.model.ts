@@ -29,7 +29,7 @@ export const PROSIGN_ACTIONS_DEFAULTS: ProsignActionsSettings = {
     '<AR>': { enabled: true, action: 'newParagraph' },
     '<BK>': { enabled: true, action: 'newParagraph' },
     '<BT>': { enabled: true, action: 'newLine' },
-    '<HH>': { enabled: true, action: 'clearLastWord' },
+    '<HH>': { enabled: false, action: 'clearLastWord' },
   },
 };
 

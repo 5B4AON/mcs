@@ -16,7 +16,7 @@ import { WakeLockService } from './wake-lock.service';
  * Starts and stops the CW tone decoder when the user picks it in (or leaves it through) the main screen's Mode list.
  * Setting it up in Settings only makes it available there; it listens only once chosen. Choosing it asks the
  * questions that used to come with the Settings switch (prosigns that erase text, muting a sidetone that would
- * echo into the microphone, keeping the screen on); leaving it offers to turn a muted sidetone back on.
+ * echo into the microphone, keeping the screen on); leaving it offers to turn a muted sidetone back on and to stop keeping the screen on (phones and tablets).
  * The typing mode (Send on Enter or Live) is never changed by it, except that a practice mode is left for Send on Enter.
  */
 @Injectable({ providedIn: 'root' })
@@ -72,7 +72,7 @@ export class CwDecoderControlService {
         cancelLabel: 'Not now',
       });
       if (keepOn) {
-        this.settings.update({ wakeLockEnabled: true });
+        this.settings.updateAndPersist({ wakeLockEnabled: true });
         void this.wakeLock.onSettingChanged(true);
       }
     }
@@ -90,8 +90,9 @@ export class CwDecoderControlService {
   }
 
   /**
-   * Stop listening; the decoder stays set up in Settings. `offerSidetone` asks to turn a muted sidetone back on
-   * (left out when the caller asks a sidetone question of its own, as when entering a practice mode).
+   * Stop listening; the decoder stays set up in Settings. Offers to give back what the decoder asked for: to turn a
+   * muted sidetone back on (`offerSidetone` is false when entering a practice mode, which asks its own sidetone
+   * question) and, on a phone or tablet, to stop keeping the screen on when nothing else needs it.
    */
   async deactivate(audioRunning: boolean, offerSidetone = true): Promise<void> {
     if (!cwDecoderOn(this.settings.settings())) return;
@@ -106,6 +107,30 @@ export class CwDecoderControlService {
         cancelLabel: 'Keep it off',
       });
       if (unmute) this.settings.updateAndPersist({ sidetoneEnabled: true });
+    }
+    await this.offerScreenOff();
+  }
+
+  /**
+   * After the decoder has stopped for any reason: on a phone or tablet with Keep screen on, ask whether to stop keeping
+   * the screen on. Not asked while the decoder listens again or while a relay (RTDB) connection, which the screen
+   * lock would also cut, is switched on.
+   */
+  async offerScreenOff(): Promise<void> {
+    const s = this.settings.settings();
+    if (!this.wakeLock.supported || !s.wakeLockEnabled || !isMobileDevice()) return;
+    if (cwDecoderOn(s) || s.rtdbInputEnabled || s.rtdbOutputEnabled) return;
+    const release = await this.confirm.ask({
+      title: 'Stop keeping the screen on?',
+      message: 'The screen was kept on so the CW decoder could keep listening. The decoder has stopped, so the screen can '
+        + 'sleep again and save battery. Turn off Keep screen on? '
+        + 'You can also change it later in Settings → Other → Screen Settings.',
+      confirmLabel: 'Turn off',
+      cancelLabel: 'Keep it on',
+    });
+    if (release && this.settings.settings().wakeLockEnabled) {
+      this.settings.updateAndPersist({ wakeLockEnabled: false });
+      void this.wakeLock.onSettingChanged(false);
     }
   }
 }
