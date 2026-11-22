@@ -11,8 +11,14 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: .25rem;
-  padding: .35rem .45rem .3rem;
+  /*
+   * A fixed height (5rem), so the text box can give up exactly that room (main screen) or the full-screen reserve matches.
+   * The plot (5rem less frame, padding, gap and one status line = 52.8px) is just taller than the 44px Load button,
+   * which leaves about 4px above and below it.
+   */
+  height: 5rem;
+  gap: .125rem;
+  padding: .25rem .45rem .2rem;
   background: #181c22;
   border: 1px solid #2e3a44;
   box-shadow: inset 3px 3px 8px rgba(0,0,0,.65), inset -2px -2px 5px rgba(255,255,255,.05);
@@ -22,6 +28,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  flex: 1 1 0;
   min-height: 0;
 }
 /* Over the spectrum box: its width is the canvas's (22% of the width, 72–160 px) */
@@ -34,7 +41,8 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding-right: 4px;
+  /* The round buttons on the parchment (and in full screen) sit 10px from the edge: the Load button's right edge lines up with them */
+  padding-right: calc(10px - 1px - .45rem);
   box-sizing: border-box;
   pointer-events: none;
 }
@@ -43,24 +51,29 @@
 }
 .cw-scope-canvas {
   display: block;
+  flex: 1 1 0;
+  min-height: 0;
   width: 100%;
-  height: 4.2rem;
   border-radius: 3px;
 }
 .cw-scope-status {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: space-between;
   gap: .15rem .75rem;
   font-family: system-ui, sans-serif;
   font-size: .75rem;
-  line-height: 1.1rem;
+  line-height: 1rem;
   color: #9ab;
   font-weight: normal;
   letter-spacing: normal;
   text-transform: none;
 }
 .cw-scope-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: #cde;
   font-variant-numeric: tabular-nums;
 }
@@ -84,26 +97,4 @@
   width: .5rem;
   border: 1px solid rgba(255,255,255,.35);
   background: rgba(255,255,255,.12);
-}
-
-/* Main screen: a fixed height (5.5rem), so the text box can give up exactly that room; the status stays on one line */
-:host(.compact) .cw-scope {
-  height: 5.5rem;
-}
-:host(.compact) .cw-scope-plot {
-  flex: 1 1 0;
-}
-:host(.compact) .cw-scope-canvas {
-  flex: 1 1 0;
-  min-height: 0;
-  height: auto;
-}
-:host(.compact) .cw-scope-status {
-  flex-wrap: nowrap;
-}
-:host(.compact) .cw-scope-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

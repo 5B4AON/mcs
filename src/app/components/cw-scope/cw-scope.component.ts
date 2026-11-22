@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, HostBinding, Input, NgZone, OnDestroy, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, NgZone, OnDestroy, ViewChild } from '@angular/core';
 import { CwInputService, CwScopeBuffer, cwStatusText } from '../../services/cw-input.service';
 import { AudioFilePlayerComponent } from '../audio-file-player/audio-file-player.component';
 
@@ -11,7 +11,7 @@ const SPAN_MS = 2500;
 
 /**
  * CW scope — shows what the CW tone decoder hears, above the output text
- * (main screen, `compact`: a fixed height) or above the conversation (full screen).
+ * (main screen) or above the conversation (full screen), at one fixed height (5rem) in both.
  *
  * Left: the last 2.5 s scrolling to the left. The faint grey trace is the
  * raw received sound, the filled blue area is the tone at the locked
@@ -35,9 +35,6 @@ const SPAN_MS = 2500;
   styleUrls: ['./cw-scope.component.css'],
 })
 export class CwScopeComponent implements AfterViewInit, OnDestroy {
-  /** Fixed total height (the main screen takes the same room from the text box, so the typing box stays where it was) */
-  @Input() @HostBinding('class.compact') compact = false;
-
   @ViewChild('canvas') private canvasRef?: ElementRef<HTMLCanvasElement>;
 
   private frame = 0;
@@ -188,11 +185,13 @@ export class CwScopeComponent implements AfterViewInit, OnDestroy {
     const spec = buf.spectrum;
     if (st && spec && spec.length > 1) {
       const bw = specW / spec.length;
+      // The trace leaves room under its baseline for the key-down strip; the spectrum has none and starts at the very bottom
+      const specH = h - top;
       for (let i = 0; i < spec.length; i++) {
         const v = Math.max(0, Math.min(1, spec[i] / 30));
-        const bh = v * plotH;
+        const bh = v * specH;
         ctx.fillStyle = v > 0.5 ? 'rgba(120,200,255,0.9)' : 'rgba(100,140,180,0.6)';
-        ctx.fillRect(sx + i * bw, base - bh, Math.max(1, bw - 0.5), bh);
+        ctx.fillRect(sx + i * bw, h - bh, Math.max(1, bw - 0.5), bh);
       }
       if (st.state !== 'search') {
         const fx = sx + ((st.freq - buf.specLo) / buf.specStep + 0.5) * bw;

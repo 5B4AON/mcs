@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.23.3] - 2026-11-22
+
+### Changed
+
+- **More room on the main screen** — The CW scope is shorter (5rem, in the main screen and in full screen, with the same room taken from the text box below it), the "Audio is running" row has less padding around it, and the four speed pills (RX, TX, Keyer, Encoder) moved from the Output panel into the top bar, in the same place as in the full-screen toolbar (still hidden on narrow screens).
+- **Audio file player in one row** — A round Play button (it becomes Pause while the file plays) with the slider beside it, and the elapsed time and the length under the ends of the slider. The player bar is 58px high instead of 84px, and the text above it keeps clear of the new height in the main screen and in full screen.
+- **Stop is on the Load button** — While a file is loaded, the Load button in the scope shows its icon crossed by a diagonal line and stops and unloads the file (the Stop button of the player is gone).
+- **Load button position** — Its right edge lines up with the round buttons on the parchment (10px from the edge), with a small even margin above and below it in the scope.
+- **Scope spectrum** — The bars of the spectrum (right box) now start exactly at the bottom of the box.
+
 ## [2.23.2] - 2026-11-22
 
 ### Changed

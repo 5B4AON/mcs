@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.23.2';
+export const APP_VERSION = '2.23.3';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-22';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-22';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Application Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'New Decoder output setting for the microphone and audio files. Plus Back button and replay fixes.';
+export const WHATS_NEW = 'More room on the main screen: a shorter CW scope, a one-row audio player and speed pills in the top bar.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {

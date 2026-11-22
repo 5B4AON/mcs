@@ -6,9 +6,11 @@ import { Component, Input } from '@angular/core';
 import { AudioFileService } from '../../services/audio-file.service';
 
 /**
- * The Load button for an audio file and, once a file is loaded, its player:
- * Play, Pause and Stop in a row with a slider below. It takes the place of the
- * Load button in the output area's corner, on the main screen (`main`, parchment
+ * The Load button for an audio file and, once a file is loaded, its player: one
+ * Play/Pause button with the slider beside it and the times under the slider.
+ * While a file is loaded the Load button (in the CW scope) shows the same icon
+ * crossed by a diagonal line and stops and unloads the file. The player sits along
+ * the bottom of the output area, on the main screen (`main`, parchment
  * look) and in full screen (`fs`, dark look). The browser plays and decodes the
  * file; this is only the controls (see `AudioFileService`).
  */
@@ -22,9 +24,9 @@ import { AudioFileService } from '../../services/audio-file.service';
 export class AudioFilePlayerComponent {
   /** Look: parchment (main screen) or dark (full screen) */
   @Input() variant: 'main' | 'fs' = 'main';
-  /** `load`: the round Load button (sits with the round buttons); `bar`: the player along the bottom of the output area, shown once a file is loaded */
+  /** `load`: the round Load (or, with a file loaded, Stop) button; `bar`: the player along the bottom of the output area, shown once a file is loaded */
   @Input() part: 'load' | 'bar' = 'load';
-  /** Show only the player of a file that is already loaded, never the Load button (Lens) */
+  /** Never show the Load button (a loaded file's Stop button stays) */
   @Input() hideLoad = false;
 
   /** The slider position while it is being dragged (seconds); null when it follows the file */

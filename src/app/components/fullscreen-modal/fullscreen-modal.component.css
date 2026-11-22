@@ -111,14 +111,14 @@
   --fs-ebook-bottom: 96px;
 }
 /*
- * An audio file player along the bottom (84px bar + 12px margin = 96px, 190px above the touch keys)
+ * An audio file player along the bottom (58px bar + 12px margin = 70px, 164px above the touch keys)
  * needs more than the usual reserve: this is the extra, with about one row of space above the bar.
  */
 .fs-fit.audio-on {
-  --fs-audio: 70px;
+  --fs-audio: 44px;
 }
 .fs-fit.audio-on.touch-on {
-  --fs-audio: 128px;
+  --fs-audio: 102px;
 }
 /* Send practice: the prompt box above the text takes some of the height, so the text fits in what is left */
 .fs-send-prompt {
@@ -137,10 +137,10 @@
   margin-bottom: .35rem;
 }
 .fs-fit.scope-on {
-  --fs-reserve: 156px;
+  --fs-reserve: 146px;
 }
 .fs-fit.scope-on.touch-on {
-  --fs-reserve: 192px;
+  --fs-reserve: 182px;
 }
 /*
  * The scope sits above the text, so it must not push the text up from the bottom: while the detector or a file is decoded
@@ -150,12 +150,14 @@
 .fs-fit.scope-on {
   --fs-pad: .5rem;
 }
-.fs-fit.scope-on.touch-on,
-.fs-fit.scope-on.audio-on {
+.fs-fit.scope-on.touch-on {
   --fs-pad: calc(96px + .5rem);
 }
+.fs-fit.scope-on.audio-on {
+  --fs-pad: calc(70px + .5rem);
+}
 .fs-fit.scope-on.audio-on.touch-on {
-  --fs-pad: calc(190px + .5rem);
+  --fs-pad: calc(164px + .5rem);
 }
 
 /* ---- Responsive ---- */

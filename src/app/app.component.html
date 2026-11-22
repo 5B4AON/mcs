@@ -2,6 +2,29 @@
   <div class="app-header">
     <h1>Morse Code Studio</h1>
     <span class="header-spacer"></span>
+    <!-- Same pills, same place as in the full-screen toolbar (hidden on narrow screens) -->
+    <div class="wpm-indicators">
+      <span class="wpm-indicator" title="RX Decoder WPM">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="wpm-indicator-label">RX</span>
+        <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
+      </span>
+      <span class="wpm-indicator" title="TX Decoder WPM">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="wpm-indicator-label">TX</span>
+        <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
+      </span>
+      <span class="wpm-indicator" title="Keyer WPM">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
+        <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
+      </span>
+      <span class="wpm-indicator" title="Encoder WPM">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
+        <span class="wpm-indicator-label"><span class="label-full">Encoder</span><span class="label-short">ENC</span></span>
+        <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
+      </span>
+    </div>
     <span class="rtdb-status-icon" [class.rtdb-connected]="rtdbService.inputListening() || rtdbService.outputActive()" title="Firebase RTDB">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><circle cx="12" cy="20" r="1" fill="currentColor"/></svg>
       <span class="rtdb-label">RTDB</span>
@@ -182,28 +205,6 @@
           </button>
         }
       </div>
-      <div class="wpm-indicators">
-        <span class="wpm-indicator" title="RX Decoder WPM">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="wpm-indicator-label">RX</span>
-          <span class="wpm-indicator-value">{{ decoder.rxEstimatedWpm() }}</span>
-        </span>
-        <span class="wpm-indicator" title="TX Decoder WPM">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="wpm-indicator-label">TX</span>
-          <span class="wpm-indicator-value">{{ decoder.txEstimatedWpm() }}</span>
-        </span>
-        <span class="wpm-indicator" title="Keyer WPM">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="wpm-indicator-label"><span class="label-full">Keyer</span><span class="label-short">KEY</span></span>
-          <span class="wpm-indicator-value">{{ settings.settings().keyerWpm }}</span>
-        </span>
-        <span class="wpm-indicator" title="Encoder WPM">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22C6.5 22 2 17.5 2 12S6.5 2 12 2s10 4.5 10 10"/><path d="M12 6v6l4 2"/></svg>
-          <span class="wpm-indicator-label"><span class="label-full">Encoder</span><span class="label-short">ENC</span></span>
-          <span class="wpm-indicator-value">{{ settings.settings().encoderWpm }}</span>
-        </span>
-      </div>
     </div>
 
     <!-- Level meters -->
@@ -221,7 +222,7 @@
 
     <!-- The CW decoder's scope sits above the text (not drawn behind the full screen); the typing box stays where it was -->
     @if (cwScopeShown && !activeModal) {
-      <app-cw-scope class="main-cw-scope" [compact]="true" />
+      <app-cw-scope class="main-cw-scope" />
     }
 
     <div class="decoded-parchment" [class.night]="celebrating" (click)="focusPracticeInput()">
