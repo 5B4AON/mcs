@@ -11,7 +11,7 @@ import { ItemShellComponent } from '../../../settings-items/item-shell/item-shel
 import { HelpLinkButtonComponent } from '../../../settings-items/help-link-button/help-link-button.component';
 
 /**
- * Settings card — Application Updates.
+ * Settings card — Updates.
  *
  * Shows the installed version with a **What's new** pill (opens the list of the last significant versions) and a **Check for updates** button, which becomes
  * **Update now** once a new version has been downloaded. This is the way to get a fresh

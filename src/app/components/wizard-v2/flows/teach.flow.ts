@@ -291,7 +291,7 @@ const PRACTICE_STEPS: WizardStep[] = [
   {
     id: 'textBookSend',
     title: 'Which text?',
-    intro: 'Type or paste the text to key, for example each person\'s name, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Other > Send Practice.',
+    intro: 'Type or paste the text to key, for example each person\'s name, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Practice > Send Practice.',
     helpSection: 's3-7',
     when: sendText,
     items: [{ item: 'send-practice-book' }],
@@ -299,7 +299,7 @@ const PRACTICE_STEPS: WizardStep[] = [
   {
     id: 'textBookCopy',
     title: 'Which text?',
-    intro: 'Type or paste the text to play, for example a short story or everyone\'s names, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Other > Copy Practice.',
+    intro: 'Type or paste the text to play, for example a short story or everyone\'s names, or choose a file. It loads as soon as you choose it, and you can change it later in Settings > Practice > Copy Practice.',
     helpSection: 's3-7',
     when: all(isScenario('check-copy'), practiceIs('text')),
     items: [{ item: 'practice-book' }],

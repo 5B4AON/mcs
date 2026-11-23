@@ -1168,50 +1168,58 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   private wasPractice: boolean | null = null;
   private practiceFingerprint = '';
 
-  /** Asked at most once per page session */
-  private hhPrompted = false;
+  /** Each disruptive prosign is asked about at most once per page session */
+  private prosignPrompted = new Set<string>();
 
-  /** Decoded entries held back (in order) while the question about the <HH> prosign is open */
+  /** Decoded entries held back (in order) while the question about a prosign is open */
   private hhHeld: { entry: TaggedEntry; displayName: string | undefined }[] | null = null;
 
   /**
-   * Show a decoded entry. The first <HH> decoded in Send on Enter or Live (not from the CW decoder), while prosign
-   * actions are on and <HH> has no action, asks whether to enable it; text that follows waits for the answer so
-   * the order is kept and an accepted action also applies to this <HH>.
+   * Show a decoded entry. The first <HH> or <SK> decoded in Send on Enter or Live (not from the CW decoder), while
+   * prosign actions are on and that prosign has no action, asks whether to enable it; text that follows waits for the
+   * answer so the order is kept and an accepted action also applies to this prosign.
    */
   private showDecoded(entry: TaggedEntry, displayName: string | undefined): void {
     if (this.hhHeld) {
       this.hhHeld.push({ entry, displayName });
       return;
     }
-    if (!this.hhPrompted && entry.char === '<HH>' && this.needsHhPrompt(entry)) {
-      this.hhPrompted = true;
+    const prosign = entry.char === '<HH>' || entry.char === '<SK>' ? entry.char : null;
+    if (prosign && !this.prosignPrompted.has(prosign) && this.needsProsignPrompt(prosign, entry)) {
+      this.prosignPrompted.add(prosign);
       this.hhHeld = [{ entry, displayName }];
-      void this.askEnableHh();
+      void this.askEnableProsign(prosign);
       return;
     }
     this.displayBuffers.pushDecoded(entry.type, entry.char, displayName, entry.color);
   }
 
-  private needsHhPrompt(entry: TaggedEntry): boolean {
+  private needsProsignPrompt(prosign: '<HH>' | '<SK>', entry: TaggedEntry): boolean {
     const s = this.settings.settings();
-    if (!s.prosignActionsEnabled || s.prosignActions['<HH>']?.enabled) return false;
+    if (!s.prosignActionsEnabled || s.prosignActions[prosign]?.enabled) return false;
     if (s.encoderMode !== 'enter' && s.encoderMode !== 'live') return false;
     return !cwDecoderOn(s) && !entry.fromFile && entry.inputPath !== 'cwAudio';
   }
 
-  private async askEnableHh(): Promise<void> {
+  private async askEnableProsign(prosign: '<HH>' | '<SK>'): Promise<void> {
+    const hh = prosign === '<HH>';
     const enable = await this.confirmService.ask({
-      title: 'Use <HH> to clear the last word?',
-      message: 'The error prosign <HH> (eight dits) was just decoded, and it has no action. Turn it on so that '
-        + '<HH> removes the last word from the text? You can change this in Settings → Other → Prosign Actions.',
-      confirmLabel: 'Enable <HH>',
+      title: hh ? 'Use <HH> to clear the last word?' : 'Use <SK> to clear the screen?',
+      message: hh
+        ? 'The error prosign <HH> (eight dits) was just decoded, and it has no action. Turn it on so that '
+          + '<HH> removes the last word from the text? You can change this in Settings → Other → Prosign Actions.'
+        : 'The end-of-contact prosign <SK> was just decoded, and it has no action. Turn it on so that '
+          + '<SK> clears the screen? You can change this in Settings → Other → Prosign Actions.',
+      confirmLabel: `Enable ${prosign}`,
       cancelLabel: 'Not now',
     });
     if (enable) {
       const s = this.settings.settings();
       this.settings.updateAndPersist({
-        prosignActions: { ...s.prosignActions, '<HH>': { enabled: true, action: 'clearLastWord' } },
+        prosignActions: {
+          ...s.prosignActions,
+          [prosign]: { enabled: true, action: hh ? 'clearLastWord' : 'clearScreen' },
+        },
       });
     }
     const held = this.hhHeld ?? [];

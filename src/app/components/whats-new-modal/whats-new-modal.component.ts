@@ -9,7 +9,7 @@ import { BackdropClickDirective } from '../backdrop-click.directive';
 import { BackCloseDirective } from '../back-close.directive';
 
 /**
- * The "What's new" list opened by the button in Settings → Other → Application Updates: a
+ * The "What's new" list opened by the button in Settings → Other → Updates: a
  * Settings-scale popup (like Presets) with the notes of the last versions that changed something
  * a user can notice, newest first (`VERSION_HISTORY` in `version.ts`). The class names
  * `settings-transfer-*` are those of the Presets dialog, so the shared iOS rules in `viewport.css`

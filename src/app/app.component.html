@@ -459,7 +459,7 @@
         <div><strong>{{ sendPracticeUi.sendPracticeHeading(settings.settings(), 'Send practice') }}</strong></div>
         <div>{{ sendPracticeUi.sendPracticeSessionDescription(settings.settings()) }}. Key what you see.</div>
         @if (!sendPractice.inputsReady()) {
-          <div>No key input is active. Pick keys in Settings → Other → Send Practice.</div>
+          <div>No key input is active. Pick keys in Settings → Practice → Send Practice.</div>
         }
         @if (sendPracticeUi.sendPracticeExternalRouteNotice(settings.settings()); as routeNotice) {
           <div>{{ routeNotice }}</div>

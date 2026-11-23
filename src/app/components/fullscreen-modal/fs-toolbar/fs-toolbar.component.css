@@ -464,6 +464,14 @@
 /* Kebab menu: the flex gap already separates the items, so the pill margins shrink */
 .fs-kebab-items .kebab-help-btn { margin-top: 0; }
 
+/* Buttons inside the Styling block: smaller and bluish, so they read as part of Styling and not of the main menu */
+.kebab-help-btn.fs-sub-btn {
+  font-size: .72rem;
+  padding: .32rem .8rem;
+  background: linear-gradient(180deg, #3d6a9a 0%, #2a4d75 100%);
+}
+.fs-kebab-items .fs-toolbar-display > .fs-sub-btn { width: 9.5rem; }
+
 .kebab-help-btn.lens-toggle-on {
   background: linear-gradient(180deg, #2f7d5a 0%, #1f5a40 100%);
   box-shadow: 0 0 0 2px #8cf, 0 3px 6px rgba(0,0,0,.35);

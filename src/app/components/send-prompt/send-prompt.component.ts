@@ -41,7 +41,7 @@ export class SendPromptComponent {
   /** What the box says while there is no prompt to key */
   get note(): string {
     if (this.sendPractice.state() === 'idle' && !this.sendPractice.inputsReady()) {
-      return 'No key input is active. Pick keys in Settings → Other → Send Practice.';
+      return 'No key input is active. Pick keys in Settings → Practice → Send Practice.';
     }
     return this.sendPractice.isMultiRound()
       ? `Press the button or key: ${this.sendPractice.actionLabel()}.`

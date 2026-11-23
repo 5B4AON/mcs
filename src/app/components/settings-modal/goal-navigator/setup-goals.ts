@@ -3,7 +3,7 @@
  */
 
 /** Settings tab that hosts a goal's target card. */
-export type GoalTab = 'inputs' | 'outputs' | 'other';
+export type GoalTab = 'inputs' | 'outputs' | 'practice' | 'other';
 
 /** Goals that also have a guided setup wizard. */
 export type WizardGoalId = 'send' | 'send-practice' | 'type' | 'practice' | 'relay' | 'hardware' | 'decode' | 'teach';
@@ -53,10 +53,10 @@ export const LANDINGS: Record<string, GoalLanding> = {
     tab: 'inputs', cardId: 'settings-card-encoder-card',
   },
   'practice': {
-    tab: 'other', cardId: 'settings-card-practice-card',
+    tab: 'practice', cardId: 'settings-card-practice-card',
   },
   'send-practice': {
-    tab: 'other', cardId: 'settings-card-send-practice-card',
+    tab: 'practice', cardId: 'settings-card-send-practice-card',
   },
   'serial-input': {
     tab: 'inputs', cardId: 'settings-card-serial-input-card',

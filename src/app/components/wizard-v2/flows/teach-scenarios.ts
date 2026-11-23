@@ -743,7 +743,7 @@ function body(ctx: ConditionContext, scenario: ScenarioInfo): { before: string[]
           `Make sure ${one} can reach the key.`],
         during: ['The screen shows the name with the dots and dashes of the next letter. Key it one letter at a time; the highlight moves on when the letter is right.',
           'To see the name without the help, switch Assist off with the round button above the contents button.',
-          'To change the name, open Settings → Other → Send Practice and press Custom text.'],
+          'To change the name, open Settings → Practice → Send Practice and press Custom text.'],
       };
     case 'copy-secret':
       return {

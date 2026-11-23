@@ -10,7 +10,7 @@
         }
       </div>
     } @else {
-      <span class="send-prompt-note">{{ ebook.loaded() ? 'The end of the book.' : 'No book is loaded. Choose one in Settings → Other → Send Practice.' }}</span>
+      <span class="send-prompt-note">{{ ebook.loaded() ? 'The end of the book.' : 'No book is loaded. Choose one in Settings → Practice → Send Practice.' }}</span>
     }
   } @else if (sendPractice.state() === 'idle' || sendPractice.promptShowing()) {
     <span class="send-prompt-note">{{ note }}</span>

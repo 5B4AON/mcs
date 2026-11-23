@@ -54,6 +54,15 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 17H7V7"/><path d="M7 17 17 7"/></svg>
         Outputs
       </button>
+      <button id="settings-tab-practice" class="settings-tab" role="tab"
+              aria-controls="settings-tab-panel"
+              [attr.aria-selected]="settingsTab === 'practice'"
+              [attr.tabindex]="settingsTab === 'practice' ? 0 : -1"
+              [class.active]="settingsTab === 'practice'" (click)="settingsTab = 'practice'"
+              (keydown)="onTabKeydown($event, 'practice')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+        Practice
+      </button>
       <button id="settings-tab-other" class="settings-tab" role="tab"
               aria-controls="settings-tab-panel"
               [attr.aria-selected]="settingsTab === 'other'"
@@ -77,6 +86,10 @@
       @if (settingsTab === 'outputs') {
         <app-settings-outputs-tab [audioRunning]="audioRunning"
                                   (helpRequested)="helpRequested.emit($event)"></app-settings-outputs-tab>
+      }
+
+      @if (settingsTab === 'practice') {
+        <app-settings-practice-tab></app-settings-practice-tab>
       }
 
       @if (settingsTab === 'other') {

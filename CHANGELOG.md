@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.25.0] - 2026-11-23
+
+### Added
+
+- **Practice tab in Settings** — A new tab between Outputs and Other holds Copy Practice, Farnsworth Timing, Send Practice and Text Blurring, moved from the Other tab. The four tabs fit on one row on a 320–360 px wide screen. The practice goals in the Setup Wizard list open on it.
+- **`<SK>` asks before it clears the screen** — The first time `<SK>` is decoded in a session in Send on Enter or Live while its action is off, a question offers to enable it (Clear Screen), exactly as `<HH>` does for Clear Last Word. Text decoded meanwhile waits for the answer.
+
+### Changed
+
+- **Lens and Vintage Look in the Styling section** — In the full-screen menu both buttons now sit at the end of the Styling section, Lens above Vintage Look, smaller and bluish so they read as part of Styling.
+- **Open cards scroll into view** — When a Settings card opens, the list scrolls so the whole card is visible, or so its header touches the top when it is taller than the view.
+- **Updates card** — Settings → Other → Application Updates is now called Updates.
+
 ## [2.24.1] - 2026-11-22
 
 ### Changed

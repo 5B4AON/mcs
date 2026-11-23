@@ -63,6 +63,7 @@ import {
 } from '../../services/settings-snapshot-review';
 import { SettingsInputsTabComponent } from './settings-inputs-tab/settings-inputs-tab.component';
 import { SettingsOutputsTabComponent } from './settings-outputs-tab/settings-outputs-tab.component';
+import { SettingsPracticeTabComponent } from './settings-practice-tab/settings-practice-tab.component';
 import { SettingsOtherTabComponent } from './settings-other-tab/settings-other-tab.component';
 import { GoalTarget, goalTargetForLanding } from './goal-navigator/setup-goals';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
@@ -97,6 +98,7 @@ import { BackCloseDirective } from '../back-close.directive';
     ConfirmDialogComponent,
     SettingsInputsTabComponent,
     SettingsOutputsTabComponent,
+    SettingsPracticeTabComponent,
     SettingsOtherTabComponent,
   ],
   templateUrl: './settings-modal.component.html',
@@ -135,7 +137,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   // ---- UI state ----
 
   /** Currently active settings tab */
-  settingsTab: 'inputs' | 'outputs' | 'other' = 'inputs';
+  settingsTab: 'inputs' | 'outputs' | 'practice' | 'other' = 'inputs';
 
   @ViewChild('settingsDialog') private settingsDialog?: ElementRef<HTMLElement>;
   @ViewChild('scanDialog') private scanDialog?: ElementRef<HTMLElement>;
@@ -359,7 +361,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Move between Settings tabs with the standard horizontal tab keyboard pattern. */
-  onTabKeydown(event: KeyboardEvent, currentTab: 'inputs' | 'outputs' | 'other'): void {
+  onTabKeydown(event: KeyboardEvent, currentTab: 'inputs' | 'outputs' | 'practice' | 'other'): void {
     const currentIndex = this.tabOrder.indexOf(currentTab);
     let nextIndex: number | null = null;
     if (event.key === 'ArrowRight') {
@@ -454,7 +456,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
   }
 
   /** Tab order used for keyboard navigation */
-  private readonly tabOrder: ('inputs' | 'outputs' | 'other')[] = ['inputs', 'outputs', 'other'];
+  private readonly tabOrder: ('inputs' | 'outputs' | 'practice' | 'other')[] = ['inputs', 'outputs', 'practice', 'other'];
 
   // ---- Revert ----
 

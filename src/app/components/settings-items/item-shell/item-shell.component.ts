@@ -9,6 +9,18 @@ import { CollapseDirective } from '../../collapse.directive';
 import { AlignSelectLabelsDirective } from './align-select-labels.directive';
 import { CardAccordionService } from './card-accordion.service';
 
+/** A little longer than the slide of `CollapseDirective` (220 ms) */
+const OPEN_SETTLE_MS = 260;
+
+/** The nearest ancestor that scrolls vertically */
+function scrollParent(el: HTMLElement): HTMLElement | null {
+  for (let node = el.parentElement; node; node = node.parentElement) {
+    const overflowY = getComputedStyle(node).overflowY;
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) return node;
+  }
+  return null;
+}
+
 /**
  * Frame around a settings item.
  *
@@ -66,6 +78,29 @@ export class ItemShellComponent implements OnDestroy {
     window.requestAnimationFrame(() => {
       this.host.nativeElement.querySelector('.settings-card-header')?.scrollIntoView({ block: 'nearest' });
     });
+    // Once the body has slid open (and the other cards have closed), fit the whole card in view
+    window.setTimeout(() => this.revealOpenCard(), OPEN_SETTLE_MS);
+  }
+
+  /**
+   * Scroll so the whole open card is visible; when it is taller than the visible area, so its header
+   * touches the top. Never scrolls up unless the card starts above the visible area.
+   */
+  private revealOpenCard(): void {
+    if (!this.expanded) return;
+    const card = this.host.nativeElement.querySelector<HTMLElement>('.settings-card');
+    const scroller = card ? scrollParent(card) : null;
+    if (!card || !scroller) return;
+    const box = card.getBoundingClientRect();
+    const view = scroller.getBoundingClientRect();
+    const above = box.top - view.top;
+    const below = box.bottom - view.bottom;
+    let delta = 0;
+    if (above < 0 || box.height > view.height) delta = above;
+    else if (below > 0) delta = below;
+    if (delta === 0) return;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    scroller.scrollBy({ top: delta, behavior: reduced ? 'auto' : 'smooth' });
   }
 
   ngOnDestroy(): void {
