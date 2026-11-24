@@ -85,6 +85,11 @@ export function replayChoiceLabel(unit: ReplayUnit, settings: AppSettings, midWo
   }
 }
 
+/** Whether the sidetone is on and plays what the encoder sends (practice is played through it), not only the other direction. */
+export function sidetonePlaysEncoder(s: Pick<AppSettings, 'sidetoneEnabled' | 'sidetoneForward' | 'encoderSource'>): boolean {
+  return s.sidetoneEnabled && (s.sidetoneForward === 'both' || s.sidetoneForward === s.encoderSource);
+}
+
 /**
  * Whether a replay would be heard, felt or sent anywhere: the sidetone, optocoupler or vibration that plays the
  * encoder's source, or, unless the replay stays on this device (Copy practice on "This device only", Hear it

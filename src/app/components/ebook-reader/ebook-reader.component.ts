@@ -23,7 +23,9 @@ interface WordView {
   offs: number[];
   /** One box per played character, in order; the unplayed rest stays plain text */
   spans: HTMLElement[];
+  /** The unplayed rest of the word: a text node inside its own `.eb-r` span, so the main screen can give it its own font */
   rest: Text;
+  tail: HTMLElement;
   /** Index of the span marked as the current character, or -1 */
   cur: number;
   /** The prosign key (such as `<AR>`) when the word is a prosign */
@@ -246,11 +248,15 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
         typed = document.createElement('span');
         typed.className = ahead ? (gap ? 'eb-t eb-tp eb-tpg' : 'eb-t eb-tp') : gap ? 'eb-t eb-tg' : 'eb-t';
         typed.setAttribute('aria-hidden', 'true');
+        // The text sits in a span of its own so the main screen can give it its font without changing the line
+        const inner = document.createElement('span');
+        inner.className = 'eb-tx';
+        typed.appendChild(inner);
         box.appendChild(typed);
       }
       if (typed) {
         if (!cell.text) typed.remove();
-        else typed.textContent = ahead ? cell.text : lowerUnderLowercase(cell.text, box.firstElementChild?.textContent ?? '');
+        else (typed.firstElementChild ?? typed).textContent = ahead ? cell.text : lowerUnderLowercase(cell.text, box.firstElementChild?.textContent ?? '');
       }
       if (!gap && !ahead) {
         box.classList.toggle('eb-ok', cell.result === 'correct');
@@ -294,12 +300,15 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       const key = SIGN_WORD.test(text) ? text.slice(0, text.indexOf('>') + 1).toUpperCase() : '';
       const sign = MORSE_TABLE[key] ? key : undefined;
       const rest = document.createTextNode(text);
-      box.appendChild(rest);
+      const tail = document.createElement('span');
+      tail.className = 'eb-r';
+      tail.appendChild(rest);
+      box.appendChild(tail);
       el.appendChild(box);
       const chars = Array.from(text);
       const offs = [0];
       for (const c of chars) offs.push(offs[offs.length - 1] + c.length);
-      const word: WordView = { el: box, text, start: m.index, chars, offs, spans: [], rest, cur: -1, sign };
+      const word: WordView = { el: box, text, start: m.index, chars, offs, spans: [], rest, tail, cur: -1, sign };
       this.applySign(word);
       words.push(word);
     }
@@ -366,7 +375,7 @@ export class EbookReaderComponent implements OnInit, OnDestroy {
       glyph.className = 'eb-ch';
       glyph.textContent = word.chars[word.spans.length];
       span.appendChild(glyph);
-      word.el.insertBefore(span, word.rest);
+      word.el.insertBefore(span, word.tail);
       word.spans.push(span);
     }
     while (word.spans.length > want) word.spans.pop()?.remove();

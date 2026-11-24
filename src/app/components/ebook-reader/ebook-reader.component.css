@@ -257,6 +257,75 @@ app-ebook-reader {
   border-left-color: currentColor;
 }
 
+/*
+ * Main screen (.decoded-text): the book is Special Elite on the ruled lines of the other modes. Every line is exactly
+ * 1.35em high, as the lines are ruled (two of them in Type-along, one for the character and one for the typed text),
+ * and all spacing between blocks is a multiple of it, so the text stays on the lines as it scrolls.
+ * The text itself (.eb-r, .eb-ch, .eb-tx) is Special Elite with a zero line height inside boxes that keep the
+ * box's own font, so a line is as high as that font's strut says (the way .line-text does it) and the
+ * baseline is the same in every mode. The rules sit .2556em above the bottom of a line: the first line starts one row
+ * down (padding-top), which puts a rule at 1.0944em; a Type-along line is twice as high, so its first
+ * baseline is .675em lower and its rules move by that.
+ */
+.decoded-text .eb-scroll {
+  line-height: 1.35em;
+  background:
+    linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) calc(100% - 1px),
+      rgba(105, 85, 65, 0.18) 100%
+    );
+  background-size: 100% 1.35em;
+  background-position: 0 1.0944em;
+  background-attachment: local;
+}
+.decoded-text .eb-scroll.eb-typed {
+  line-height: 2.7em;
+  background-position: 0 .4194em;
+}
+.decoded-text .eb-content {
+  padding-block: 1.35em var(--eb-pad, 0px);
+}
+.decoded-text .eb-block {
+  margin: 0 0 1.35em;
+}
+.decoded-text .eb-h {
+  font-size: 1.15em;
+  margin: 0 0 1.1739em;
+}
+.decoded-text .eb-li {
+  margin-bottom: 0;
+}
+.decoded-text .eb-r,
+.decoded-text .eb-ch,
+.decoded-text .eb-tx {
+  font-family: 'Special Elite', 'Courier Prime', 'Courier New', monospace;
+  font-size: .95em;
+  font-weight: 400;
+  line-height: 0;
+  text-rendering: geometricPrecision;
+}
+.decoded-text .eb-ch,
+.decoded-text .eb-typed .eb-ch {
+  line-height: 1;
+}
+/* The typed text is one line below the character's baseline: the character sits in the middle of a double line, .675em below where a single line would put it */
+.decoded-text .eb-t {
+  top: 2.025em;
+  line-height: 1.35em;
+}
+/* No glow over the worn edges of Special Elite */
+.decoded-text .eb-scored .eb-ok .eb-ch,
+.decoded-text .eb-scored .eb-bad .eb-ch,
+.decoded-text .eb-scored .eb-miss .eb-ch,
+.decoded-text.blur-revealing .eb-scroll .eb-ok .eb-ch,
+.decoded-text.blur-revealing .eb-scroll .eb-bad .eb-ch,
+.decoded-text.blur-revealing .eb-scroll .eb-miss .eb-ch {
+  text-shadow: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .eb-ch {
     transition: none;

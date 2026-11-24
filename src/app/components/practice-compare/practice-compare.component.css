@@ -32,6 +32,20 @@
   color: var(--pc-typed, #8a3a0c);
 }
 
+/*
+ * On the main screen the text is Special Elite like the other modes. The row (.pc-r, .pc-t) keeps the box's own
+ * font for its line, and only the text inside (.pc-x) changes with a zero line height, so every row stays exactly one
+ * line high and the text sits on the ruled lines (the same way as .line-text). The full-screen view has no such box.
+ */
+.decoded-text .pc-x {
+  font-family: 'Special Elite', 'Courier Prime', 'Courier New', monospace;
+  font-size: .95em;
+  font-weight: 400;
+  line-height: 0;
+  text-shadow: none;
+  text-rendering: geometricPrecision;
+}
+
 /* Blurred and Type-along blur the challenge (the direction the box says); the typed text never is */
 .blur-rx .pc-rx .pc-r,
 .blur-tx .pc-tx .pc-r,

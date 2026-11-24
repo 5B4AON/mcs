@@ -21,7 +21,7 @@ import { MidiOutputService } from './services/midi-output.service';
 import { WinkeyerOutputService } from './services/winkeyer-output.service';
 import { FirebaseRtdbService } from './services/firebase-rtdb.service';
 import { DisplayBufferService } from './services/display-buffer.service';
-import { ReplayUnit, replayChoiceLabel, replayChoices, replayHasOutput, replayWordLabel } from './services/replay-units';
+import { ReplayUnit, replayChoiceLabel, replayChoices, replayHasOutput, replayWordLabel, sidetonePlaysEncoder } from './services/replay-units';
 import { LoopDetectionService } from './services/loop-detection.service';
 import { ModalBackService } from './services/modal-back.service';
 import { WhatsNewService } from './services/whats-new.service';
@@ -330,8 +330,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       const practice = s.encoderMode === 'practice' || s.encoderMode === 'send-practice';
       // A device profile that loads and lands in practice is not the user switching to it: no question then
       const fingerprint = this.settings.currentFingerprint();
-      const switched = this.wasPractice === false && practice && fingerprint === this.practiceFingerprint;
-      this.wasPractice = practice;
+      // Going from Copy to Send practice (or back) counts: the sidetone may have been kept off for the other one
+      const switched = this.practiceMode !== undefined && practice && s.encoderMode !== this.practiceMode
+        && fingerprint === this.practiceFingerprint;
+      this.practiceMode = practice ? s.encoderMode : null;
       this.practiceFingerprint = fingerprint;
       if (!practice) return;
       untracked(() => {
@@ -341,7 +343,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.settings.updateAndPersist({ cwDecoderActive: false });
           void this.cwInput.stop();
         }
-        if (switched || stopped) void this.offerAfterPracticeEntry(!s.sidetoneEnabled, stopped);
+        if (switched || stopped) void this.offerAfterPracticeEntry(!sidetonePlaysEncoder(s), stopped);
       });
     });
 
@@ -1164,8 +1166,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     return this.settings.settings().encoderMode === 'practice';
   }
 
-  /** Whether the previous look at the Mode was a practice mode (null before the first), and the device profile it was under */
-  private wasPractice: boolean | null = null;
+  /** The practice mode the previous look at the Mode was in (null when none, undefined before the first look), and the device profile it was under */
+  private practiceMode: string | null | undefined = undefined;
   private practiceFingerprint = '';
 
   /** Each disruptive prosign is asked about at most once per page session */
@@ -1235,16 +1237,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (decoderStopped) await this.cwControl.offerScreenOff();
   }
 
-  /** Switching to a practice mode with the sidetone off: practice is played through the sidetone, so offer to turn it on. */
+  /**
+   * Switching to a practice mode when the sidetone would not play it (off, or set to play only the other direction):
+   * practice is played through the sidetone, so offer to turn it on (and to play both directions).
+   */
   private async offerSidetoneForPractice(): Promise<void> {
+    const off = !this.settings.settings().sidetoneEnabled;
     const on = await this.confirmService.ask({
       title: 'Turn the sidetone on?',
-      message: 'Practice plays its Morse through the sidetone, and the sidetone is off, so you would hear nothing. '
-        + 'Turn it on? You can change it later in Settings → Outputs → Sidetone.',
-      confirmLabel: 'Turn sidetone on',
-      cancelLabel: 'Keep it off',
+      message: 'Practice plays its Morse through the sidetone, and '
+        + (off ? 'the sidetone is off' : 'the sidetone is set to play only the other direction')
+        + ', so you would hear nothing. Turn it on? You can change it later in Settings → Outputs → Sidetone.',
+      confirmLabel: off ? 'Turn sidetone on' : 'Play practice too',
+      cancelLabel: off ? 'Keep it off' : 'Keep it',
     });
-    if (on && !this.settings.settings().sidetoneEnabled) this.settings.updateAndPersist({ sidetoneEnabled: true });
+    if (!on) return;
+    const s = this.settings.settings();
+    const covers = s.sidetoneForward === 'both' || s.sidetoneForward === s.encoderSource;
+    this.settings.updateAndPersist({ sidetoneEnabled: true, sidetoneForward: covers ? s.sidetoneForward : 'both' });
   }
 
   /** The inputs whose key-down was ignored because they were hearing the app's own sound (their key-up is ignored too) */
@@ -2077,7 +2087,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       // Entering a practice mode asks its own sidetone question (see the practice effect); the screen question is asked here
       await this.cwControl.deactivate(this.audioRunning, value !== 'practice' && value !== 'send-practice');
     }
-    this.onSettingChange('encoderMode', event);
+    // The value chosen, not the select's: it was reset to the old mode while the decoder stopped
+    this.applySetting('encoderMode', value);
   }
 
   /** The Send on Enter / Live toggle sits in the input box (only those two modes have one). */
@@ -2673,6 +2684,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     if (el.type === 'number' || el.type === 'range') {
       value = parseFloat(el.value);
     }
+    this.applySetting(key, value);
+  }
+
+  private applySetting(key: keyof AppSettings, value: string | number): void {
     // When switching away from practice mode, reset practice state
     if (key === 'encoderMode' && this.settings.settings().encoderMode === 'practice' && value !== 'practice') {
       this.practice.reset();

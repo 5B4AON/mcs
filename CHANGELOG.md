@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.25.1] - 2026-11-24
+
+### Changed
+
+- **Special Elite in the practice modes** — On the main screen the Copy Practice Type-along challenge and the typed text under it, the Send Practice results and keyed marks, their Accuracy and WPM lines, and the e-book (Copy and Send practice, Type-along included) are now drawn in Special Elite on the ruled lines, like the other modes, in the same dark ink. The marks keep their green, red and grey colours without a glow. The e-book has the ruled lines again; its paragraphs are separated by one ruled row and its headings are larger instead of bold, so the text stays on the lines as it scrolls. The full-screen view is unchanged.
+
+### Fixed
+
+- **Sidetone offered when entering practice** — Choosing a practice mode from the CW Decoder could leave the Mode on the old choice, because the list was read again after the decoder stopped; the chosen mode is now used. The question "Turn the sidetone on?" is also asked when the sidetone is on but set to play only the other direction (RX/TX), and when moving between Copy and Send practice; Yes then plays both directions.
+
 ## [2.25.0] - 2026-11-23
 
 ### Added

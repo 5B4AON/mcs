@@ -446,7 +446,8 @@
 }
 
 /* Inner scrollable text area — sits inside the parchment wrapper */
-.decoded-text .line-text {
+.decoded-text .line-text,
+.decoded-text .fb-results {
   font-family: 'Special Elite', 'Courier Prime', 'Courier New', monospace;
   font-size: 0.95em;
   font-weight: 400;
@@ -563,10 +564,15 @@
   filter: blur(0) !important;
 }
 
-/* Practice feedback highlighting */
+/* Practice feedback highlighting (the text itself is Special Elite, see .line-text; no glow over its worn edges) */
 .fb-results {
   white-space: pre-wrap;
   word-wrap: break-word;
+}
+.decoded-text .fb-correct,
+.decoded-text .fb-incorrect,
+.decoded-text .fb-missed {
+  text-shadow: none;
 }
 .fb-correct {
   color: #2e7d32;
@@ -581,7 +587,8 @@
   text-shadow: 0 0 4px rgba(119, 119, 119, 0.4), 0 1px 2px rgba(0, 0, 0, 0.2);
 }
 .fb-accuracy {
-  font-size: 0.85em;
+  /* The same size as the other lines, so its text (a .line-text) sits on the ruled lines like theirs */
+  font-size: 1em;
   color: #1e1812;
 }
 /* CW decoder scope above the text: a fixed 5rem plus .4rem below it, taken from the text box so the typing box stays where it was */

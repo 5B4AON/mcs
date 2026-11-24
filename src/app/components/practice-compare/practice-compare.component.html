@@ -2,4 +2,4 @@
       [style.color]="color" [style.--pc-typed]="typedColor">@for (word of words(); track $index) {<span class="pc-w">@for (cell of word.cells; track $index) {<span class="pc-c"
       [class.pc-ok]="cell.result === 'correct'"
       [class.pc-bad]="cell.result === 'incorrect'"
-      [class.pc-miss]="cell.result === 'missed'"><span class="pc-r">{{ cell.ref }}</span><span class="pc-t">{{ cell.typed }}</span></span>}</span>@if (word.space) {&ngsp;}}</span>
+      [class.pc-miss]="cell.result === 'missed'"><span class="pc-r"><span class="pc-x">{{ cell.ref }}</span></span><span class="pc-t"><span class="pc-x">{{ cell.typed }}</span></span></span>}</span>@if (word.space) {&ngsp;}}</span>
