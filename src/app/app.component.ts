@@ -2371,6 +2371,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.replayMenuOpen = false;
       if (this.settings.settings().encoderMode === 'practice') this.practice.stopReplay();
       else this.encoder.stopReplay();
+      this.focusPracticeInput();
       return;
     }
     const choices = this.mainReplayChoices;
@@ -2383,6 +2384,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       this.controlsKebabOpen = false;
       this.clearMenuOpen = false;
       setTimeout(() => document.querySelector<HTMLElement>('.replay-menu-main .pill-btn')?.focus());
+    } else {
+      this.focusPracticeInput();
     }
   }
 
@@ -2391,6 +2394,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.replayMenuOpen = false;
     if (this.settings.settings().encoderMode === 'practice') {
       this.practice.replay(unit);
+      this.focusPracticeInput();
       return;
     }
     const part = this.displayBuffers.mainOutput.lastPart(unit);
