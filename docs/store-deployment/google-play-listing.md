@@ -31,21 +31,22 @@ Screenshots must show the real app. Do not create, redraw or composite app scree
 
 Play currently requires at least two screenshots for the listing. Phone screenshots must be JPEG or 24-bit PNG without alpha, at least 320px and at most 3,840px on each side; the longer side cannot exceed twice the shorter side. For eligibility in recommendation formats, Play recommends at least four portrait screenshots at 1080×1920px or larger. Confirm the requirements shown in Play Console before upload.
 
-The approved seven phone screenshots are in `store/images/play/screenshots/`; upload the ordered PNGs.
+The eight phone screenshots are in `store/images/play/screenshots/`; upload the ordered PNGs.
 
 | Order | File | Alt text |
 |---|---|---|
-| 1 | `01-main-screen.png` | Main Morse Code Studio screen with a CW exchange, encoder controls and a Morse key illustration. |
-| 2 | `02-send-practice.png` | Send Practice screen showing a Morse prompt, keyed pattern and practice instructions. |
+| 1 | `01-main-screen.png` | Main Morse Code Studio screen with decoded text, encoder controls and a Morse key illustration. |
+| 2 | `02-send-practice-ebook.png` | Send practice with an e-book: the text to key, its Morse pattern and an instruction note. |
 | 3 | `03-lens.png` | Lens view showing the letter R and its Morse pattern. |
 | 4 | `04-setup-wizard.png` | Setup Wizard goal list for typing, keying, practice, teaching and decoding Morse. |
-| 5 | `05-copy-practice-results.png` | Copy Practice results showing two round scores and an average. |
+| 5 | `05-copy-practice-koch.png` | Copy practice, Koch lesson 1: the new characters K and M with their dots and dashes. |
 | 6 | `06-fullscreen-conversation.png` | Full-screen Morse conversation with colour-coded messages and prosigns. |
-| 7 | `07-cw-tone-detection.png` | Main screen with the CW tone detector locked to a 601 Hz signal and displaying the live audio waveform. |
+| 7 | `07-cw-tone-detection.png` | CW tone decoder locked to a 750 Hz signal, showing the live audio waveform and decoded text. |
+| 8 | `08-vintage-look.png` | Decoded text in vintage look, with the player bar at the bottom. |
 
-These are real captures from the installed app, cropped without stretching or compositing. All seven meet Play's basic phone screenshot size and aspect-ratio limits. Five are 1080×2160 (2:1), and two are 1080×1880; the latter crop removes the lower touch-key area so it is not cut off. They do not use the exact 9:16 ratio recommended for certain recommendation placements. Seven is within Play's phone maximum of eight and exceeds the listing minimum of two.
+These are real captures from the installed app (1080×2340 on the owner's phone). Each was cropped, without stretching or compositing, to 1080×2160 (2:1) from the top: the Android navigation bar is removed and a few pixels at the bottom are trimmed so the longer side does not exceed twice the shorter. All are 24-bit PNG without alpha and meet Play's size and aspect-ratio limits. They do not use the exact 9:16 ratio recommended for certain recommendation placements. Eight is Play's phone maximum and exceeds the listing minimum of two.
 
-The owner approved the original six screenshots and added the CW tone detection capture as number seven. The full-screen conversation contains another operator's callsign; the owner confirmed its public use is authorised. Do not expose relay channel details, secrets or notifications. Add concise alt text (140 characters or fewer) for each screenshot in Play Console.
+The owner supplied the eight current screenshots. The full-screen conversation contains another operator's callsign; the owner confirmed its public use is authorised. Do not expose relay channel details, secrets or notifications. Add concise alt text (140 characters or fewer) for each screenshot in Play Console.
 
 ## Owner review and submission
 
