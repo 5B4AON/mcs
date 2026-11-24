@@ -25,7 +25,9 @@ import {
   ViewChild,
   AfterViewInit,
   OnDestroy,
+  inject,
 } from '@angular/core';
+import { ConfirmService } from '../../services/confirm.service';
 import { HelpChIntroComponent } from './help-ch-intro.component';
 import { HelpChDecoderComponent } from './help-ch-decoder.component';
 import { HelpChEncoderComponent } from './help-ch-encoder.component';
@@ -102,6 +104,8 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   private scrollListener: (() => void) | null = null;
   private readonly focusReturnTarget =
     document.activeElement instanceof HTMLElement ? document.activeElement : null;
+
+  private readonly confirm = inject(ConfirmService);
 
   constructor(private host: ElementRef<HTMLElement>) {}
 
@@ -199,10 +203,11 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * Handle the links inside the chapters: a `help-link` (`data-section`) scrolls to that section,
-   * and the app's own web address (`help-app-url`) opens in the browser rather than inside the
-   * installed Android app, which would otherwise claim it (the app is the verified handler of
-   * that address). The intent asks Chrome for it and falls back to the plain address.
+   * Handle the links inside the chapters: a `help-link` (`data-section`) scrolls to that section.
+   * The app's own web address (`help-app-url`) cannot open a browser from the installed Android
+   * app: the app is the verified handler of every address on its host, so Android and Chrome
+   * always hand it back to the app. There the tap copies the address instead, to paste into a
+   * browser or share.
    */
   onContentClick(event: MouseEvent): void {
     const link = (event.target as Element | null)?.closest?.('a');
@@ -214,14 +219,26 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
     } else if (link.classList.contains('help-app-url') && this.runsInInstalledAndroidApp()) {
       event.preventDefault();
       const url = link.getAttribute('href') ?? APP_URL;
-      const host = url.replace(/^https?:\/\//, '');
-      window.location.href = 'intent://' + host + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='
-        + encodeURIComponent(url) + ';end';
+      void this.copyAddress(url);
     }
   }
 
   private runsInInstalledAndroidApp(): boolean {
     return /Android/i.test(navigator.userAgent) && window.matchMedia('(display-mode: standalone)').matches;
+  }
+
+  private async copyAddress(url: string): Promise<void> {
+    let copied = false;
+    try {
+      await navigator.clipboard.writeText(url);
+      copied = true;
+    } catch { /* the address is still shown below */ }
+    await this.confirm.ask({
+      title: copied ? 'Address copied' : 'Web address',
+      message: (copied ? 'Paste it into your browser to open Morse Code Studio there, or share it: ' : 'Type it into your browser, or share it: ') + url,
+      confirmLabel: 'Got it',
+      singleAction: true,
+    });
   }
 
   /** Scroll to a given anchor ID within the document. */
