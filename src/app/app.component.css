@@ -1972,6 +1972,62 @@ select { max-width: 300px; }
   .touch-key-sprite-wrapper { display: none; }
 }
 
+/*
+ * Fill fit (`fillFit` puts `fill-fit` on the host): with no sprite on the main screen the output panel, the parchment
+ * and its text box grow to use the whole height of the screen. Every box keeps its own natural height (the `height`
+ * of .decoded-text, which is its flex basis here) as a minimum, so on a short screen the page scrolls as before.
+ */
+:host(.fill-fit) :is(.panel, .decoded-parchment) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+}
+:host(.fill-fit) .decoded-text {
+  flex: 1 0 auto;
+}
+
+/*
+ * Keyboard fit (`html.keyboard-open`, set by ViewportService while the on-screen keyboard is up): the main screen is
+ * exactly the visible part of the page (the visual viewport: fixed at --vv-top, --vv-h high, scrolling only when even
+ * that is too small), the parchment gives way (down to 6rem) so the input box or the Send practice prompt, and the
+ * Mode row below it, stay in view, and the sprite and the notes make room. When the keyboard goes away the normal
+ * layout (and the full-height parchment) comes back. Overrides the inline min-height set by correctHostHeight().
+ */
+:host-context(html.keyboard-open) {
+  position: fixed;
+  top: var(--vv-top);
+  left: 0;
+  right: 0;
+  height: var(--vv-h) !important;
+  min-height: 0 !important;
+  padding-bottom: .5rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+:host-context(html.keyboard-open) .app-container {
+  min-height: 0;
+}
+:host-context(html.keyboard-open) :is(.panel, .decoded-parchment) {
+  display: flex;
+  flex-direction: column;
+}
+:host-context(html.keyboard-open) .panel {
+  flex: 1 1 auto;
+  margin-bottom: 0;
+}
+:host-context(html.keyboard-open) .decoded-parchment {
+  flex: 1 1 0;
+  min-height: 6rem;
+}
+:host-context(html.keyboard-open) .decoded-text {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 0;
+}
+:host-context(html.keyboard-open) :is(.touch-key-sprite-wrapper, .practice-guide, .try-morse-guide) {
+  display: none;
+}
+
 /* ============================================================
    TOUCH IMPROVEMENTS — coarser pointer (phones/tablets)
    ============================================================ */

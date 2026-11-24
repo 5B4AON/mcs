@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.25.1';
+export const APP_VERSION = '2.26.0';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-24';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-24';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Copy and Send practice, e-book included, now use the Special Elite typewriter font on the main screen, plus smaller improvements.';
+export const WHATS_NEW = 'The text area now uses the whole screen and shrinks above the on-screen keyboard. Copy and Send practice, e-book included, use the Special Elite font.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {

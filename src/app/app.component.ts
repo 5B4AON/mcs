@@ -235,6 +235,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       && !this.showTryMorseGuide && this.spriteReady;
   }
 
+  /**
+   * True when no touch keyer sprite is meant to be on the main screen (the touch keyer is off, Copy practice, or the
+   * Try Morse guide is open). The CSS then lets the output panel and the text box grow to use the whole height of
+   * the screen (`fill-fit`); while the sprite is still waiting to appear the layout stays as it is, so nothing jumps.
+   */
+  @HostBinding('class.fill-fit')
+  get fillFit(): boolean {
+    return !(this.settings.settings().spriteButtonEnabled && !this.mainPracticeActive && !this.showTryMorseGuide);
+  }
+
   private subs: Subscription[] = [];
   private readonly helpLinks = inject(HelpLinkService);
   private readonly modalBack = inject(ModalBackService);
@@ -335,6 +345,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         && fingerprint === this.practiceFingerprint;
       this.practiceMode = practice ? s.encoderMode : null;
       this.practiceFingerprint = fingerprint;
+      // Chosen in the Mode list (not loaded with a profile or preset): offer the touch keyer when it is off
+      const offerKeyer = this.keyerOfferPending && s.encoderMode === 'send-practice' && !s.spriteButtonEnabled;
+      this.keyerOfferPending = false;
       if (!practice) return;
       untracked(() => {
         // Stopping a running decoder here (for example a reload that lands in practice) gives back what it asked for
@@ -343,18 +356,22 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           this.settings.updateAndPersist({ cwDecoderActive: false });
           void this.cwInput.stop();
         }
-        if (switched || stopped) void this.offerAfterPracticeEntry(!sidetonePlaysEncoder(s), stopped);
+        if (switched || stopped || offerKeyer) {
+          void this.offerAfterPracticeEntry((switched || stopped) && !sidetonePlaysEncoder(s), stopped, offerKeyer);
+        }
       });
     });
 
     // Auto-scroll the main decoder box when new text arrives
     effect(() => {
       this.displayBuffers.mainOutput.lines();
+      // The box shrinks and grows with the on-screen keyboard: the newest text stays in view
+      this.viewport.keyboardOpen();
       const el = this.decoderBoxRef?.nativeElement;
       if (el) {
         // While an audio file plays, glide so the text stays a row above the player
         const behavior: ScrollBehavior = this.audioFile.loaded() ? 'smooth' : 'auto';
-        requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior }));
+        requestAnimationFrame(() => requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior })));
       }
     });
 
@@ -1169,6 +1186,8 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** The practice mode the previous look at the Mode was in (null when none, undefined before the first look), and the device profile it was under */
   private practiceMode: string | null | undefined = undefined;
   private practiceFingerprint = '';
+  /** Send practice was just chosen in the Mode list: the practice effect then offers the touch keyer if it is off */
+  private keyerOfferPending = false;
 
   /** Each disruptive prosign is asked about at most once per page session */
   private prosignPrompted = new Set<string>();
@@ -1231,10 +1250,24 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
-  /** Entering a practice mode: offer the sidetone, then (when the decoder was stopped for it) the screen. */
-  private async offerAfterPracticeEntry(sidetoneOff: boolean, decoderStopped: boolean): Promise<void> {
+  /** Entering a practice mode: offer the sidetone, then (Send practice) the touch keyer, then (when the decoder was stopped for it) the screen. */
+  private async offerAfterPracticeEntry(sidetoneOff: boolean, decoderStopped: boolean, offerKeyer = false): Promise<void> {
     if (sidetoneOff) await this.offerSidetoneForPractice();
+    if (offerKeyer) await this.offerTouchKeyerForSendPractice();
     if (decoderStopped) await this.cwControl.offerScreenOff();
+  }
+
+  /** Choosing Send practice with the main screen touch keyer off: practice is keyed, so offer the on-screen key. */
+  private async offerTouchKeyerForSendPractice(): Promise<void> {
+    if (this.settings.settings().spriteButtonEnabled) return;
+    const on = await this.confirmService.ask({
+      title: 'Turn the touch keyer on?',
+      message: 'Send practice is keyed by you, and the main screen touch keyer is off, so there is no key to tap on this screen. '
+        + 'Turn it on? You can change it later in Settings → Inputs → Main Screen Touch Keyer.',
+      confirmLabel: 'Touch keyer on',
+      cancelLabel: 'Keep it off',
+    });
+    if (on) this.settings.updateAndPersist({ spriteButtonEnabled: true });
   }
 
   /**
@@ -2087,6 +2120,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
       // Entering a practice mode asks its own sidetone question (see the practice effect); the screen question is asked here
       await this.cwControl.deactivate(this.audioRunning, value !== 'practice' && value !== 'send-practice');
     }
+    this.keyerOfferPending = value === 'send-practice';
     // The value chosen, not the select's: it was reset to the old mode while the decoder stopped
     this.applySetting('encoderMode', value);
   }

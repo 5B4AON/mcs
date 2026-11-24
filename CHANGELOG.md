@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.0] - 2026-11-24
+
+### Added
+
+- **Touch keyer offered for Send practice** — Choosing Send practice in the main screen's Mode list while the Main Screen Touch Keyer is off now asks "Turn the touch keyer on?", after the sidetone question when that is asked too. Profiles, presets and the Setup Wizard that land in Send practice do not ask.
+
+### Changed
+
+- **Full-height text area** — When no touch keyer is on the main screen (it is switched off, Copy practice is chosen, or the Try Morse guide is open) the output panel and the parchment now grow to use the whole height of the screen. They keep their normal height as a minimum, so a short screen scrolls as before.
+- **On-screen keyboard** — While the keyboard is up, the main screen fits the visible part of the page: the parchment shrinks (down to 6rem) so the input box or the Send practice prompt and the Mode row stay in view, and the touch keyer, the practice notes and the Try Morse guide are hidden meanwhile. When the keyboard goes away the parchment grows back. The newest text stays in view.
+
 ## [2.25.1] - 2026-11-24
 
 ### Changed
