@@ -504,3 +504,10 @@
     padding: 0 3px;
   }
 }
+
+/* The app's web address on its own line, centred, never wider than the screen */
+::ng-deep .help-chapter .help-url {
+  text-align: center;
+  font-weight: bold;
+  overflow-wrap: anywhere;
+}

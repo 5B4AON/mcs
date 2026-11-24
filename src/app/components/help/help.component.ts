@@ -40,6 +40,9 @@ import { HelpChFirebaseComponent } from './help-ch-firebase.component';
 import { focusDialog, restoreDialogFocus, trapDialogTabKey } from '../modal-accessibility';
 import { DocumentSearch } from '../document-search';
 
+/** The app's canonical web address (the Android app is bound to it). */
+const APP_URL = 'https://morse-code-studio.web.app';
+
 @Component({
   selector: 'app-help',
   standalone: true,
@@ -64,6 +67,7 @@ import { DocumentSearch } from '../document-search';
     'aria-label': 'Morse Code Studio Help',
     tabindex: '-1',
     '(keydown)': 'onDialogKeydown($event)',
+    '(click)': 'onContentClick($event)',
   },
 })
 export class HelpComponent implements AfterViewInit, OnDestroy {
@@ -192,6 +196,32 @@ export class HelpComponent implements AfterViewInit, OnDestroy {
     if (event.key !== 'Enter') return;
     event.preventDefault();
     this.search.step(event.shiftKey ? -1 : 1);
+  }
+
+  /**
+   * Handle the links inside the chapters: a `help-link` (`data-section`) scrolls to that section,
+   * and the app's own web address (`help-app-url`) opens in the browser rather than inside the
+   * installed Android app, which would otherwise claim it (the app is the verified handler of
+   * that address). The intent asks Chrome for it and falls back to the plain address.
+   */
+  onContentClick(event: MouseEvent): void {
+    const link = (event.target as Element | null)?.closest?.('a');
+    if (!link) return;
+    if (link.classList.contains('help-link')) {
+      event.preventDefault();
+      const section = link.getAttribute('data-section');
+      if (section) this.scrollTo(section);
+    } else if (link.classList.contains('help-app-url') && this.runsInInstalledAndroidApp()) {
+      event.preventDefault();
+      const url = link.getAttribute('href') ?? APP_URL;
+      const host = url.replace(/^https?:\/\//, '');
+      window.location.href = 'intent://' + host + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url='
+        + encodeURIComponent(url) + ';end';
+    }
+  }
+
+  private runsInInstalledAndroidApp(): boolean {
+    return /Android/i.test(navigator.userAgent) && window.matchMedia('(display-mode: standalone)').matches;
   }
 
   /** Scroll to a given anchor ID within the document. */
