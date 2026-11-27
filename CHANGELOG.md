@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.1] - 2026-11-27
+
+### Fixed
+
+- **Start-up on Android** — The installed app could sometimes stay on its splash screen until it was opened once in Chrome. When audio was running last time, the app opened its audio output before the first screen was drawn, which can block the page while the phone's audio hardware wakes. The output is now opened after the first frame is drawn; the sound still wakes up while the app loads, and the audio start-up and stop code cancel a start that has not run yet, so no unused audio context is left behind.
+
 ## [2.26.0] - 2026-11-24
 
 ### Added

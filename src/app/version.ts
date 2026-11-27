@@ -1,15 +1,15 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.26.0';
+export const APP_VERSION = '2.26.1';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
-export const APP_RELEASE_DATE = '2026-11-24';
+export const APP_RELEASE_DATE = '2026-11-27';
 
 /**
  * A very short note (a phrase or one brief sentence; up to three short sentences when several very important changes ship together) about the main user-visible changes in APP_VERSION, shown once
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'The text area now uses the whole screen and shrinks above the on-screen keyboard. Copy and Send practice, e-book included, use the Special Elite font.';
+export const WHATS_NEW = 'Smoother start-up on Android.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {
@@ -30,6 +30,7 @@ export const VERSION_HISTORY_MAX = 20;
  * the oldest entry drops off the end. Keep each text to about 150 characters (the average length of the list; 160 at most). The owner approves every entry; draft them from CHANGELOG.md.
  */
 const EARLIER_VERSION_NOTES: VersionNote[] = [
+  { version: '2.26.0', date: '2026-11-24', text: 'The text area uses the whole screen and shrinks above the on-screen keyboard. Choosing Send practice offers to turn the touch keyer on.' },
   { version: '2.25.0', date: '2026-11-23', text: 'A Practice tab in Settings now holds Copy Practice, Farnsworth, Send Practice and Text Blurring. <SK> asks before it clears the screen.' },
   { version: '2.24.0', date: '2026-11-22', text: 'Vintage Look in full screen: dark ink on cream paper in the new Special Elite typewriter font, with nothing else on screen. <SK> can now clear the screen.' },
   { version: '2.23.0', date: '2026-11-21', text: 'CW Decoder is a choice in the Mode list, with a Send on Enter / Live switch beside the input box, and the CW scope now sits above the text.' },
