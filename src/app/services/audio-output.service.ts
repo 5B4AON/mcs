@@ -10,12 +10,14 @@ import { OutputKeepAlive } from '../components/settings-items/sidetone/sidetone-
 
 /**
  * Keep-alive signal per level: dither noise, a subsonic tone and an ultrasonic tone, as linear gains
- * (about -90/-84/-78 dB, -66/-54 dB and -80/-70 dB). Each is below what speakers and headphones show.
+ * (Normal: about -84 dB, -60 dB and -80 dB). The subsonic tone is the strongest part because it
+ * cannot be heard whatever the volume; High is meant for phones, whose volume setting scales the
+ * digital signal down before it reaches a USB sound card, where a weak signal rounds to silence.
  */
 const KEEP_ALIVE_LEVELS: Record<Exclude<OutputKeepAlive, 'off'>, { noise: number; sub: number; ultra: number }> = {
   low: { noise: 0.00003, sub: 0.0005, ultra: 0.0001 },
   normal: { noise: 0.00006, sub: 0.001, ultra: 0.0001 },
-  high: { noise: 0.00013, sub: 0.002, ultra: 0.0003 },
+  high: { noise: 0.0002, sub: 0.01, ultra: 0.0005 },
 };
 
 const KEEP_ALIVE_SUB_HZ = 10;
