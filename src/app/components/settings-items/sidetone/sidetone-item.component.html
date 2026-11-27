@@ -46,6 +46,22 @@
   <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
                label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 
+  @if (mode === 'card') {
+    <label>Sound card keep-alive:
+      <select [value]="s().outputKeepAlive" (change)="onSettingChange('outputKeepAlive', $event)">
+        <option value="off" [selected]="s().outputKeepAlive === 'off'">Off</option>
+        <option value="low" [selected]="s().outputKeepAlive === 'low'">Low</option>
+        <option value="normal" [selected]="s().outputKeepAlive === 'normal'">Normal</option>
+        <option value="high" [selected]="s().outputKeepAlive === 'high'">High</option>
+      </select>
+    </label>
+    <div class="keyer-hint">
+      An inaudible signal on every audio output while audio runs, so a USB sound card does not go to sleep
+      and lose the start of your first dot. Raise it if the first dot is still weak. Applies to the sidetone,
+      the key output and the pilot tone.
+    </div>
+  }
+
   @if (scope.isLive) {
     <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="pill-btn pill-block">
       Test Output (1s)

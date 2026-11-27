@@ -8,6 +8,11 @@ import { ItemDescriptor, labelledReview } from '../item-descriptor';
 /** Sidetone can also play on both stereo channels. */
 export type SidetoneChannel = AudioChannel | 'both';
 
+/** How strong the inaudible signal is that keeps a USB sound card from going to sleep. */
+export type OutputKeepAlive = 'off' | 'low' | 'normal' | 'high';
+
+export const OUTPUT_KEEP_ALIVES: readonly OutputKeepAlive[] = ['off', 'low', 'normal', 'high'];
+
 /** The settings the Sidetone item owns. */
 export interface SidetoneSettings {
   sidetoneOutputDeviceId: string;
@@ -16,6 +21,7 @@ export interface SidetoneSettings {
   sidetoneAmplitude: number;
   sidetoneEnabled: boolean;
   sidetoneForward: OutputForward;
+  outputKeepAlive: OutputKeepAlive;
 }
 
 export const SIDETONE_DEFAULTS: SidetoneSettings = {
@@ -25,12 +31,14 @@ export const SIDETONE_DEFAULTS: SidetoneSettings = {
   sidetoneAmplitude: 1,
   sidetoneEnabled: true,
   sidetoneForward: 'both',
+  outputKeepAlive: 'normal',
 };
 
 export const SIDETONE_FIELD_RULES: SettingsFieldRules = {
   enums: {
     sidetoneOutputChannel: [...AUDIO_CHANNELS, 'both'],
     sidetoneForward: OUTPUT_FORWARDS,
+    outputKeepAlive: OUTPUT_KEEP_ALIVES,
   },
 };
 
@@ -42,7 +50,7 @@ export const SIDETONE_DESCRIPTOR: ItemDescriptor = {
   id: 'sidetone',
   keys: [
     'sidetoneEnabled', 'sidetoneForward', 'sidetoneOutputDeviceId',
-    'sidetoneOutputChannel', 'sidetoneFrequency', 'sidetoneAmplitude',
+    'sidetoneOutputChannel', 'sidetoneFrequency', 'sidetoneAmplitude', 'outputKeepAlive',
   ],
   validate: settings => {
     const f = settings.sidetoneFrequency;
@@ -57,5 +65,6 @@ export const SIDETONE_DESCRIPTOR: ItemDescriptor = {
     sidetoneOutputChannel: 'Sidetone channel',
     sidetoneFrequency: 'Sidetone frequency (Hz)',
     sidetoneAmplitude: 'Sidetone amplitude',
+    outputKeepAlive: 'Sound card keep-alive',
   }),
 };

@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.2] - 2026-11-27
+
+### Added
+
+- **Sound card keep-alive** — A new **Sound card keep-alive** choice (Off, Low, Normal, High; Normal by default) in the Sidetone card under Settings → Outputs. While audio runs, the app plays an inaudible signal on every output so a USB sound card does not switch its amplifier off after a second or two of silence, which made the first dot of the next character weak or lost and the second one fade in. It is saved with the device profile and included in presets and settings files. Described in Help 7.5.
+
+### Changed
+
+- **Stronger keep-alive signal** — The old keep-alive was a single 20 kHz tone at about −80 dB on the left channel only, which a sound card or its resampler could filter away. It is now very quiet dither noise (about −84 dB at Normal), a 10 Hz tone below hearing and the 20 kHz tone, on both channels of every output context. A change of level applies at once while audio runs.
+
 ## [2.26.1] - 2026-11-27
 
 ### Fixed

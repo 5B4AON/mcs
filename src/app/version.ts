@@ -1,5 +1,5 @@
 /** Single source of truth for the application version displayed in the UI. */
-export const APP_VERSION = '2.26.1';
+export const APP_VERSION = '2.26.2';
 
 /** Release date of APP_VERSION (YYYY-MM-DD, as in CHANGELOG.md); shown in the "What's new" list. Update it on every version bump. */
 export const APP_RELEASE_DATE = '2026-11-27';
@@ -9,7 +9,7 @@ export const APP_RELEASE_DATE = '2026-11-27';
  * after an update in "What's new in vX.X.X" and again from Settings → Other → Updates.
  * Rewrite it on every version bump (the owner confirms or edits it).
  */
-export const WHATS_NEW = 'Smoother start-up on Android.';
+export const WHATS_NEW = 'A new Sound card keep-alive setting stops USB sound cards from going to sleep and weakening the first dot.';
 
 /** One entry of the "What's new" list: a version, its date and a short plain-language note about what a user can notice. */
 export interface VersionNote {

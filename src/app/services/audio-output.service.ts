@@ -6,6 +6,20 @@ import { Injectable, effect, signal } from '@angular/core';
 import { isContextPaused } from './audio-context-state';
 import { releasePrimedContext, takePrimedContext } from './audio-primer';
 import { SettingsService } from './settings.service';
+import { OutputKeepAlive } from '../components/settings-items/sidetone/sidetone-item.model';
+
+/**
+ * Keep-alive signal per level: dither noise, a subsonic tone and an ultrasonic tone, as linear gains
+ * (about -90/-84/-78 dB, -66/-54 dB and -80/-70 dB). Each is below what speakers and headphones show.
+ */
+const KEEP_ALIVE_LEVELS: Record<Exclude<OutputKeepAlive, 'off'>, { noise: number; sub: number; ultra: number }> = {
+  low: { noise: 0.00003, sub: 0.0005, ultra: 0.0001 },
+  normal: { noise: 0.00006, sub: 0.001, ultra: 0.0001 },
+  high: { noise: 0.00013, sub: 0.002, ultra: 0.0003 },
+};
+
+const KEEP_ALIVE_SUB_HZ = 10;
+const KEEP_ALIVE_ULTRA_HZ = 20000;
 
 /**
  * Audio Output Service � manages all audio output channels.
@@ -78,8 +92,9 @@ export class AudioOutputService {
 
   // ---- Keep-alive: prevents browser from suspending idle audio contexts ----
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
-  /** Inaudible ultrasonic oscillators that keep each context's audio graph active */
-  private keepAliveNodes: { osc: OscillatorNode; gain: GainNode }[] = [];
+  /** Inaudible signal sources (noise, subsonic and ultrasonic tones) that keep each context's sound card awake */
+  private keepAliveNodes: { src: AudioScheduledSourceNode; out: AudioNode[] }[] = [];
+  private keepAliveLevel: OutputKeepAlive | null = null;
   private visibilityHandler: (() => void) | null = null;
 
   private started = false;
@@ -583,6 +598,7 @@ export class AudioOutputService {
     if (this.optoOsc && s.optoMode === 'ac') this.optoOsc.frequency.value = s.optoFrequency;
     if (this.pilotOsc) this.pilotOsc.frequency.value = s.pilotFrequency;
     if (this.pilotGain) this.pilotGain.gain.value = s.pilotAmplitude;
+    if (s.outputKeepAlive !== this.keepAliveLevel) this.buildKeepAliveSignal(s.outputKeepAlive);
     if (!this.separateDevices && this.merger) {
       this.routeShared(s);
     }
@@ -746,13 +762,13 @@ export class AudioOutputService {
   }
 
   /**
-   * Keep-alive: prevent browser from suspending output AudioContexts.
+   * Keep-alive: prevent the browser and the sound card from going to sleep.
    *
    * Strategy (three layers):
-   * 1. **Ultrasonic oscillator**: A 20 kHz sine at -80 dB (gain 0.0001)
-   *    on each context. This is inaudible but produces real non-zero audio
-   *    samples, which prevents Chrome's silence-detection from auto-suspending.
-   *    (A zero-offset ConstantSourceNode gets optimised away by Chrome.)
+   * 1. **Inaudible signal** on every output context (see `buildKeepAliveSignal()`):
+   *    real, changing samples keep Chrome from suspending the context and keep a
+   *    USB sound card's amplifier from powering down after a second or two of
+   *    silence, which would swallow the start of the next dot.
    * 2. **onstatechange handler**: Immediately calls resume() if a context
    *    is unexpectedly suspended.
    * 3. **Polling timer (500 ms)** + **visibilitychange handler**: Catches
@@ -760,25 +776,10 @@ export class AudioOutputService {
    */
   private installKeepAlive(): void {
     this.clearKeepAlive();
+    this.buildKeepAliveSignal(this.settings.settings().outputKeepAlive);
 
     for (const ctx of this.allContexts()) {
       if (!ctx) continue;
-      try {
-        // Inaudible ultrasonic tone — real samples prevent suspension
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 20000;  // 20 kHz — at/above hearing limit
-        const g = ctx.createGain();
-        // -80 dB: about 3 steps of a 16-bit output, so the DAC / Bluetooth link sees real
-        // signal and stays awake (at -100 dB it rounds to digital silence and the amplifier
-        // can power down, then pops on the next tone). Still inaudible.
-        g.gain.value = 0.0001;
-        osc.connect(g);
-        g.connect(ctx.destination);
-        osc.start();
-        this.keepAliveNodes.push({ osc, gain: g });
-      } catch { /* context may be closed */ }
-
       ctx.onstatechange = () => {
         if (isContextPaused(ctx)) ctx.resume().catch(() => {});
         this.updatePaused();
@@ -807,6 +808,69 @@ export class AudioOutputService {
     this.watchReady();
   }
 
+  /**
+   * (Re)build the inaudible keep-alive signal on every context for a level. Three parts, both
+   * channels each: dither noise at about the last bit of a 16-bit output (a sound card or its
+   * resampler cannot filter it away like a single tone), a 10 Hz tone below hearing, and the
+   * 20 kHz tone. Zero samples are what lets a USB card's amplifier power down.
+   */
+  private buildKeepAliveSignal(level: OutputKeepAlive): void {
+    this.stopKeepAliveSignal();
+    this.keepAliveLevel = level;
+    if (level === 'off') return;
+    const gains = KEEP_ALIVE_LEVELS[level] ?? KEEP_ALIVE_LEVELS.normal;
+
+    for (const ctx of this.allContexts()) {
+      if (!ctx) continue;
+      try {
+        const noiseBuf = ctx.createBuffer(2, ctx.sampleRate * 2, ctx.sampleRate);
+        for (let ch = 0; ch < 2; ch++) {
+          const data = noiseBuf.getChannelData(ch);
+          // Triangular distribution (two uniform values) is the usual dither shape
+          for (let i = 0; i < data.length; i++) data[i] = Math.random() + Math.random() - 1;
+        }
+        const noise = ctx.createBufferSource();
+        noise.buffer = noiseBuf;
+        noise.loop = true;
+        const noiseGain = ctx.createGain();
+        noiseGain.gain.value = gains.noise;
+        noise.connect(noiseGain);
+        noiseGain.connect(ctx.destination);
+        noise.start();
+        this.keepAliveNodes.push({ src: noise, out: [noiseGain] });
+
+        // The destination is discrete stereo, so a mono source would only reach the left channel
+        const toneMerger = ctx.createChannelMerger(2);
+        toneMerger.connect(ctx.destination);
+        const tones: [number, number][] = [[KEEP_ALIVE_SUB_HZ, gains.sub], [KEEP_ALIVE_ULTRA_HZ, gains.ultra]];
+        for (const [hz, gain] of tones) {
+          const osc = ctx.createOscillator();
+          osc.type = 'sine';
+          osc.frequency.value = hz;
+          const g = ctx.createGain();
+          g.gain.value = gain;
+          osc.connect(g);
+          g.connect(toneMerger, 0, 0);
+          g.connect(toneMerger, 0, 1);
+          osc.start();
+          this.keepAliveNodes.push({ src: osc, out: [g, toneMerger] });
+        }
+      } catch { /* context may be closed */ }
+    }
+  }
+
+  private stopKeepAliveSignal(): void {
+    for (const node of this.keepAliveNodes) {
+      try { node.src.stop(); } catch { }
+      try { node.src.disconnect(); } catch { }
+      for (const out of node.out) {
+        try { out.disconnect(); } catch { }
+      }
+    }
+    this.keepAliveNodes = [];
+    this.keepAliveLevel = null;
+  }
+
   private clearKeepAlive(): void {
     this.paused.set(false);
     this.stalled.set(false);
@@ -824,11 +888,7 @@ export class AudioOutputService {
       clearInterval(this.keepAliveTimer);
       this.keepAliveTimer = null;
     }
-    for (const node of this.keepAliveNodes) {
-      try { node.osc.stop(); } catch { }
-      try { node.gain.disconnect(); } catch { }
-    }
-    this.keepAliveNodes = [];
+    this.stopKeepAliveSignal();
     if (this.visibilityHandler) {
       document.removeEventListener('visibilitychange', this.visibilityHandler);
       this.visibilityHandler = null;
