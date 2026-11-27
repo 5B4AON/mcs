@@ -6,13 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [2.26.2] - 2026-11-27
 
-### Added
+### Fixed
 
-- **Sound card keep-alive** — A new **Sound card keep-alive** choice (Off, Low, Normal, High; Normal by default on a computer, High on a phone or tablet) in the Sidetone card under Settings → Outputs. While audio runs, the app plays an inaudible signal on every output so a USB sound card does not switch its amplifier off after a second or two of silence, which made the first dot of the next character weak or lost and the second one fade in. It is saved with the device profile and included in presets and settings files. Described in Help 7.5.
-
-### Changed
-
-- **Stronger keep-alive signal** — The old keep-alive was a single 20 kHz tone at about −80 dB on the left channel only, which a sound card or its resampler could filter away. It is now very quiet dither noise (about −84 dB at Normal), a 10 Hz tone below hearing and the 20 kHz tone, on both channels of every output context. High is stronger, mainly in the 10 Hz tone (about −40 dB, still below hearing), because a phone's volume setting lowers the digital signal before it reaches a USB sound card and a weak keep-alive then rounds to silence. A change of level applies at once while audio runs.
+- **USB sound card going to sleep** — Some USB sound cards, on a computer and especially on a phone, switch their amplifier off after a second or two of silence, so the first dot of the next character was weak or lost and the second one faded in. While audio runs, the app now plays an inaudible signal on both channels of every output so the card stays awake: very quiet dither noise, a 10 Hz tone below hearing and a 20 kHz tone. It fades out just before a tone sounds and returns about half a second after the last one, so it never adds to the sidetone; the sidetone, key output and pilot tone are turned down by at most 1 dB to leave it room, and the steady pilot tone gets none. A new **Sound card keep-alive** choice in the Sidetone card under Settings → Outputs sets its strength: Off, Low, Normal (the default on a computer) or High (the default on a phone or tablet, strong enough to work at about 10% phone volume, because a phone's volume setting lowers the digital signal before it reaches the card). It applies at once while audio runs, is saved with the device profile and is included in presets and settings files. Described in Help 7.5.
 
 ## [2.26.1] - 2026-11-27
 

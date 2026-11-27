@@ -818,16 +818,18 @@
   <li><strong>Amplitude</strong> — Volume level. Start at 30–50% and adjust
       to taste.</li>
   <li><strong>Active on</strong> — TX only, RX only, or Both (see above).</li>
-  <li><strong>Sound card keep-alive</strong> — While audio runs, the app plays an
-      inaudible signal (a few steps of a 16-bit output: very quiet noise, a tone
-      below hearing and one above it) on every output. Some USB sound cards switch
-      their amplifier off after a second or two of silence and then lose or
-      fade in the start of the next dot. <strong>Normal</strong> is the default on a
-      computer and <strong>High</strong> on a phone or tablet, because a phone lowers
-      the digital signal with its volume setting and a weak keep-alive can then
-      round to silence on the way to the sound card. If the first dot is still weak,
-      raise the level or the phone's volume; choose <strong>Off</strong> if your card
-      or headphones react to it.</li>
+  <li><strong>Sound card keep-alive</strong> — Some USB sound cards switch their
+      amplifier off after a second or two of silence, and then lose or fade in
+      the start of the next dot. While audio runs, the app plays an inaudible
+      signal on every output (very quiet noise, a tone below hearing and one
+      above it) so the card stays awake. It fades out when a tone starts and
+      returns about half a second after the last one. Choose its strength:
+      <strong>Low</strong> (the quietest), <strong>Normal</strong> (the default on
+      a computer), <strong>High</strong> (the default on a phone or tablet, because
+      a phone lowers the digital signal with its volume setting and a weak
+      keep-alive can then round to silence on the way to the card) or
+      <strong>Off</strong> if your card or headphones react to it. If the first dot
+      is still weak, raise the level or the phone's volume.</li>
 </ul>
 
 <!-- 7.6 Vibration -->

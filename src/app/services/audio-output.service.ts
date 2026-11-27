@@ -10,15 +10,21 @@ import { OutputKeepAlive } from '../components/settings-items/sidetone/sidetone-
 
 /**
  * Keep-alive signal per level: dither noise, a subsonic tone and an ultrasonic tone, as linear gains
- * (Normal: about -84 dB, -60 dB and -80 dB). The subsonic tone is the strongest part because it
- * cannot be heard whatever the volume; High is meant for phones, whose volume setting scales the
- * digital signal down before it reaches a USB sound card, where a weak signal rounds to silence.
+ * (Low: about -84 dB, -60 dB and -80 dB; Normal -80, -40, -74; High -74, -20, -66). The subsonic
+ * tone is the strongest part because it cannot be heard whatever the volume. High is meant for
+ * phones, whose volume setting scales the digital signal down before it reaches a USB sound card,
+ * where a weak signal rounds to silence (Android's media volume is about -45 dB at 10% and -30 dB
+ * at 40%; a card stayed awake at -70 dBFS after the volume, not at -75).
  */
 const KEEP_ALIVE_LEVELS: Record<Exclude<OutputKeepAlive, 'off'>, { noise: number; sub: number; ultra: number }> = {
-  low: { noise: 0.00003, sub: 0.0005, ultra: 0.0001 },
-  normal: { noise: 0.00006, sub: 0.001, ultra: 0.0001 },
-  high: { noise: 0.0002, sub: 0.01, ultra: 0.0005 },
+  low: { noise: 0.00006, sub: 0.001, ultra: 0.0001 },
+  normal: { noise: 0.0001, sub: 0.01, ultra: 0.0002 },
+  high: { noise: 0.0002, sub: 0.1, ultra: 0.0005 },
 };
+
+/** The keep-alive fades out this long before a placed tone and this long after the last tone (seconds) */
+const KEEP_ALIVE_LEAD_S = 0.06;
+const KEEP_ALIVE_HOLD_S = 0.4;
 
 const KEEP_ALIVE_SUB_HZ = 10;
 const KEEP_ALIVE_ULTRA_HZ = 20000;
@@ -95,8 +101,12 @@ export class AudioOutputService {
   // ---- Keep-alive: prevents browser from suspending idle audio contexts ----
   private keepAliveTimer: ReturnType<typeof setInterval> | null = null;
   /** Inaudible signal sources (noise, subsonic and ultrasonic tones) that keep each context's sound card awake */
-  private keepAliveNodes: { src: AudioScheduledSourceNode; out: AudioNode[] }[] = [];
+  private keepAliveNodes: { src: AudioScheduledSourceNode | null; out: AudioNode[] }[] = [];
   private keepAliveLevel: OutputKeepAlive | null = null;
+  /** Last gain stage before each context's destination; it leaves room for the keep-alive signal */
+  private signalStages = new WeakMap<AudioContext, GainNode>();
+  /** Gain every keep-alive source of a context goes through; it is closed while a tone sounds */
+  private keepAliveBuses = new WeakMap<AudioContext, GainNode>();
   private visibilityHandler: (() => void) | null = null;
 
   private started = false;
@@ -184,7 +194,7 @@ export class AudioOutputService {
 
     this.merger = ctx.createChannelMerger(2);
     this.routeShared(s);
-    this.merger.connect(ctx.destination);
+    this.merger.connect(this.signalOut(ctx));
   }
 
   // ---------- Separate devices (two mono contexts) ----------
@@ -210,7 +220,7 @@ export class AudioOutputService {
     for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
       this.sidetoneGain.connect(this.sidetoneMerger, 0, idx);
     }
-    this.sidetoneMerger.connect(this.sidetoneCtx.destination);
+    this.sidetoneMerger.connect(this.signalOut(this.sidetoneCtx));
     this.sidetoneOsc.start();
 
     // --- Opto context ---
@@ -237,7 +247,7 @@ export class AudioOutputService {
     this.optoMerger = this.optoCtx.createChannelMerger(2);
     const optoChIdx = s.optoOutputChannel === 'left' ? 0 : 1;
     this.optoGain.connect(this.optoMerger, 0, optoChIdx);
-    this.optoMerger.connect(this.optoCtx.destination);
+    this.optoMerger.connect(this.signalOut(this.optoCtx));
   }
 
   /** Test the opto output � plays the opto tone for a short burst regardless of key/enabled state */
@@ -252,6 +262,7 @@ export class AudioOutputService {
     this.optoGain.gain.cancelScheduledValues(now);
     this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
     this.releaseGain(this.optoGain.gain, now + dur, ramp);
+    this.duckKeepAlive(ctx, now, now + dur);
   }
 
   /** Test the sidetone output � plays a short burst */
@@ -266,6 +277,7 @@ export class AudioOutputService {
     this.sidetoneGain.gain.cancelScheduledValues(now);
     this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
     this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+    this.duckKeepAlive(ctx, now, now + dur);
   }
 
   /**
@@ -303,12 +315,14 @@ export class AudioOutputService {
       const now = ctx.currentTime;
       this.sidetoneGain.gain.cancelScheduledValues(now);
       this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
+      this.duckKeepAlive(ctx, now, null);
     }
     if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
       const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
       const now = ctx.currentTime;
       this.optoGain.gain.cancelScheduledValues(now);
       this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
+      this.duckKeepAlive(ctx, now, null);
     }
   }
 
@@ -336,12 +350,14 @@ export class AudioOutputService {
       const now = ctx.currentTime;
       this.sidetoneGain.gain.cancelScheduledValues(now);
       this.releaseGain(this.sidetoneGain.gain, now, ramp);
+      this.duckKeepAlive(ctx, now, now);
     }
     if (this.optoGain) {
       const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
       const now = ctx.currentTime;
       this.optoGain.gain.cancelScheduledValues(now);
       this.releaseGain(this.optoGain.gain, now, ramp);
+      this.duckKeepAlive(ctx, now, now);
     }
   }
 
@@ -362,6 +378,7 @@ export class AudioOutputService {
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+        this.duckKeepAlive(ctx, now, now + dur);
       }
       if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
         const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
@@ -369,6 +386,7 @@ export class AudioOutputService {
         this.optoGain.gain.cancelScheduledValues(now);
         this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
         this.releaseGain(this.optoGain.gain, now + dur, ramp);
+        this.duckKeepAlive(ctx, now, now + dur);
       }
     };
 
@@ -445,6 +463,7 @@ export class AudioOutputService {
       gain.gain.setTargetAtTime(amplitude, start, ramp);
       gain.gain.setTargetAtTime(0, start + dur, ramp);
       if (snapToZero) gain.gain.setValueAtTime(0, start + dur + ramp * 10);
+      this.duckKeepAlive(ctx, start - KEEP_ALIVE_LEAD_S, start + dur);
     };
     if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
       place(this.sidetoneGain, this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!, s.sidetoneAmplitude);
@@ -462,11 +481,13 @@ export class AudioOutputService {
       const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
       this.sidetoneGain.gain.cancelScheduledValues(ctx.currentTime);
       this.releaseGain(this.sidetoneGain.gain, ctx.currentTime, ramp);
+      this.duckKeepAlive(ctx, ctx.currentTime, ctx.currentTime);
     }
     if (this.optoGain) {
       const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
       this.optoGain.gain.cancelScheduledValues(ctx.currentTime);
       this.releaseGain(this.optoGain.gain, ctx.currentTime, ramp);
+      this.duckKeepAlive(ctx, ctx.currentTime, ctx.currentTime);
     }
   }
 
@@ -492,6 +513,7 @@ export class AudioOutputService {
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
+        this.duckKeepAlive(ctx, now, now + dur);
       }
     };
 
@@ -578,7 +600,7 @@ export class AudioOutputService {
     this.pilotMerger = this.pilotCtx.createChannelMerger(2);
     const chIdx = s.pilotOutputChannel === 'left' ? 0 : 1;
     this.pilotGain.connect(this.pilotMerger, 0, chIdx);
-    this.pilotMerger.connect(this.pilotCtx.destination);
+    this.pilotMerger.connect(this.signalOut(this.pilotCtx));
 
     this.pilotOsc.start();
   }
@@ -811,6 +833,50 @@ export class AudioOutputService {
   }
 
   /**
+   * Close a context's keep-alive while a tone sounds and open it again `KEEP_ALIVE_HOLD_S` after the tone
+   * has ended. A tone keeps the sound card awake by itself, and next to a loud tone the keep-alive's
+   * strong subsonic part makes a speaker or amplifier distort, so it is only there in the quiet. `from`
+   * is when it starts to close (a placed tone closes it a little before it starts); `until` is the end
+   * of the tone, or null while a key is held (`applyKeyUp` then opens it again). The hold lets the
+   * following elements of a character keep it closed.
+   */
+  private duckKeepAlive(ctx: AudioContext, from: number, until: number | null): void {
+    const bus = this.keepAliveBuses.get(ctx);
+    if (!bus) return;
+    const at = Math.max(ctx.currentTime, from);
+    // Drops the opening that follows the previous tone
+    bus.gain.cancelScheduledValues(at);
+    if (until === null || until > at) bus.gain.setTargetAtTime(0, at, 0.015);
+    if (until !== null) bus.gain.setTargetAtTime(1, Math.max(until, at) + KEEP_ALIVE_HOLD_S, 0.08);
+  }
+
+  /** Largest value the keep-alive signal reaches at a level (peaks of its parts added) */
+  private keepAlivePeak(level: OutputKeepAlive): number {
+    if (level === 'off') return 0;
+    const g = KEEP_ALIVE_LEVELS[level] ?? KEEP_ALIVE_LEVELS.normal;
+    return g.noise * 2 + g.sub + g.ultra;
+  }
+
+  /**
+   * The input a context's sidetone, key or pilot signal goes to instead of the destination. The
+   * keep-alive adds to it, so a full-scale tone plus the keep-alive would clip and sound distorted;
+   * this stage turns the signal down by the keep-alive's own peak (at most 1 dB) so the sum fits.
+   */
+  private signalOut(ctx: AudioContext): GainNode {
+    let stage = this.signalStages.get(ctx);
+    if (!stage) {
+      stage = ctx.createGain();
+      stage.channelCountMode = 'explicit';
+      stage.channelCount = 2;
+      stage.channelInterpretation = 'discrete';
+      stage.connect(ctx.destination);
+      this.signalStages.set(ctx, stage);
+    }
+    stage.gain.value = ctx === this.pilotCtx ? 1 : 1 - this.keepAlivePeak(this.settings.settings().outputKeepAlive);
+    return stage;
+  }
+
+  /**
    * (Re)build the inaudible keep-alive signal on every context for a level. Three parts, both
    * channels each: dither noise at about the last bit of a 16-bit output (a sound card or its
    * resampler cannot filter it away like a single tone), a 10 Hz tone below hearing, and the
@@ -819,12 +885,21 @@ export class AudioOutputService {
   private buildKeepAliveSignal(level: OutputKeepAlive): void {
     this.stopKeepAliveSignal();
     this.keepAliveLevel = level;
+    for (const ctx of this.allContexts()) {
+      const stage = ctx && ctx !== this.pilotCtx && this.signalStages.get(ctx);
+      if (stage) stage.gain.value = 1 - this.keepAlivePeak(level);
+    }
     if (level === 'off') return;
     const gains = KEEP_ALIVE_LEVELS[level] ?? KEEP_ALIVE_LEVELS.normal;
 
     for (const ctx of this.allContexts()) {
-      if (!ctx) continue;
+      // The pilot tone is a steady signal that keeps its card awake by itself
+      if (!ctx || ctx === this.pilotCtx) continue;
       try {
+        const bus = ctx.createGain();
+        bus.connect(ctx.destination);
+        this.keepAliveBuses.set(ctx, bus);
+        this.keepAliveNodes.push({ src: null, out: [bus] });
         const noiseBuf = ctx.createBuffer(2, ctx.sampleRate * 2, ctx.sampleRate);
         for (let ch = 0; ch < 2; ch++) {
           const data = noiseBuf.getChannelData(ch);
@@ -837,13 +912,13 @@ export class AudioOutputService {
         const noiseGain = ctx.createGain();
         noiseGain.gain.value = gains.noise;
         noise.connect(noiseGain);
-        noiseGain.connect(ctx.destination);
+        noiseGain.connect(bus);
         noise.start();
         this.keepAliveNodes.push({ src: noise, out: [noiseGain] });
 
         // The destination is discrete stereo, so a mono source would only reach the left channel
         const toneMerger = ctx.createChannelMerger(2);
-        toneMerger.connect(ctx.destination);
+        toneMerger.connect(bus);
         const tones: [number, number][] = [[KEEP_ALIVE_SUB_HZ, gains.sub], [KEEP_ALIVE_ULTRA_HZ, gains.ultra]];
         for (const [hz, gain] of tones) {
           const osc = ctx.createOscillator();
@@ -863,8 +938,8 @@ export class AudioOutputService {
 
   private stopKeepAliveSignal(): void {
     for (const node of this.keepAliveNodes) {
-      try { node.src.stop(); } catch { }
-      try { node.src.disconnect(); } catch { }
+      try { node.src?.stop(); } catch { }
+      try { node.src?.disconnect(); } catch { }
       for (const out of node.out) {
         try { out.disconnect(); } catch { }
       }
