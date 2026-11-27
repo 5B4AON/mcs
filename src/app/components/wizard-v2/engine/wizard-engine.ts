@@ -4,7 +4,6 @@
 
 import { Signal, computed, signal } from '@angular/core';
 import { AppSettings, DEFAULT_SETTINGS } from '../../../services/settings.service';
-import { findChannelConflicts } from '../../../services/audio-channel-conflicts';
 import { ExternalRouteChange, compareExternalRoutes } from '../../../services/output-change-checker';
 import { ItemDescriptor, ItemReviewLine } from '../../settings-items/item-descriptor';
 import { DraftSettingsScope } from '../../settings-items/draft-settings-scope';
@@ -533,19 +532,10 @@ export class WizardEngine {
     return compareExternalRoutes(base, { ...base, ...this.applyPatch() } as AppSettings);
   }
 
-  /** Audio channel conflicts the patch would introduce (existing ones are not repeated). */
-  newConflicts(): string[] {
-    const base = this.scope.base();
-    const before = new Set(findChannelConflicts(base) ?? []);
-    return (findChannelConflicts({ ...base, ...this.applyPatch() } as AppSettings) ?? [])
-      .filter(message => !before.has(message));
-  }
-
   /** True when there is something to apply and nothing blocks it. */
   canApply(): boolean {
     return Object.keys(this.applyPatch()).length > 0 &&
-      this.validateFlow().length === 0 &&
-      this.newConflicts().length === 0;
+      this.validateFlow().length === 0;
   }
 }
 

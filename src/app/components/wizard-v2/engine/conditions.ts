@@ -9,7 +9,7 @@ import { Condition } from './flow-types';
 /*
  * Named conditions for `WizardStep.when`. Compose them rather than writing
  * ad-hoc functions in flows, so a flow reads like a sentence:
- *   when: all(answerIncludes('scenarios', 'sending'), not(settingIs('optoEnabled', true)))
+ *   when: all(answerIncludes('scenarios', 'sending'), not(settingIs('sidetoneEnabled', true)))
  */
 
 /** True when the draft setting has exactly this value. */

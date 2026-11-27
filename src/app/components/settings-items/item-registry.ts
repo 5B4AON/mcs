@@ -12,8 +12,6 @@ import { FarnsworthItemComponent } from './farnsworth/farnsworth-item.component'
 import { FARNSWORTH_DESCRIPTOR } from './farnsworth/farnsworth-item.model';
 import { SpeedItemComponent } from './speed/speed-item.component';
 import { ENCODER_SPEED_DESCRIPTOR, KEYER_SPEED_DESCRIPTOR, RX_SPEED_DESCRIPTOR, TX_SPEED_DESCRIPTOR, SPEEDS_DESCRIPTOR } from './speed/speed-item.model';
-import { AudioOutputItemComponent } from './audio-output/audio-output-item.component';
-import { AUDIO_OUTPUT_DESCRIPTOR } from './audio-output/audio-output-item.model';
 import { VibrationItemComponent } from './vibration/vibration-item.component';
 import { VIBRATION_DESCRIPTOR } from './vibration/vibration-item.model';
 import { EncoderItemComponent } from './encoder/encoder-item.component';
@@ -53,8 +51,6 @@ import { RtdbOutputItemComponent } from './rtdb-output/rtdb-output-item.componen
 import {
   RTDB_OUTPUT_CONNECT_DESCRIPTOR, RTDB_OUTPUT_DESCRIPTOR, RTDB_OUTPUT_IDENTITY_DESCRIPTOR, RTDB_OUTPUT_RELAY_DESCRIPTOR, RTDB_OUTPUT_SEND_DESCRIPTOR,
 } from './rtdb-output/rtdb-output-item.model';
-import { MicItemComponent } from './mic/mic-item.component';
-import { MIC_DESCRIPTOR } from './mic/mic-item.model';
 import { CwDetectorItemComponent } from './cw-detector/cw-detector-item.component';
 import { CW_DETECTOR_DESCRIPTOR } from './cw-detector/cw-detector-item.model';
 import { MidiOutputItemComponent } from './midi-output/midi-output-item.component';
@@ -77,7 +73,6 @@ export interface RegisteredItem {
 /** All settings items by id. Wizard flows refer to items by these ids. */
 export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   sidetone: { component: SidetoneItemComponent, descriptor: SIDETONE_DESCRIPTOR, needsAudio: true },
-  'audio-output': { component: AudioOutputItemComponent, descriptor: AUDIO_OUTPUT_DESCRIPTOR, needsAudio: true },
   vibration: { component: VibrationItemComponent, descriptor: VIBRATION_DESCRIPTOR },
   encoder: { component: EncoderItemComponent, descriptor: ENCODER_DESCRIPTOR },
   'encoder-source': { component: EncoderItemComponent, descriptor: ENCODER_SOURCE_DESCRIPTOR, inputs: { part: 'source' } },
@@ -123,7 +118,6 @@ export const ITEM_REGISTRY: Record<string, RegisteredItem> = {
   'winkeyer-port': { component: WinkeyerItemComponent, descriptor: WINKEYER_PORT_DESCRIPTOR, inputs: { part: 'port' } },
   'winkeyer-send': { component: WinkeyerItemComponent, descriptor: WINKEYER_SEND_DESCRIPTOR, inputs: { part: 'send' } },
   'winkeyer-speed': { component: WinkeyerItemComponent, descriptor: WINKEYER_SPEED_DESCRIPTOR, inputs: { part: 'speed' } },
-  mic: { component: MicItemComponent, descriptor: MIC_DESCRIPTOR, needsAudio: true },
   'cw-detector': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, needsAudio: true },
   'cw-detector-tune': { component: CwDetectorItemComponent, descriptor: CW_DETECTOR_DESCRIPTOR, inputs: { tuneOnly: true }, needsAudio: true },
   'audio-feedback-guard': { component: AudioFeedbackGuardItemComponent, descriptor: AUDIO_FEEDBACK_GUARD_DESCRIPTOR },

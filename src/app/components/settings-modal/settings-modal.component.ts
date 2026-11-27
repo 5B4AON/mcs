@@ -39,8 +39,6 @@ import {
 } from '../../services/settings-snapshot';
 import { PresetService } from '../../services/preset.service';
 import { PracticeService } from '../../services/practice.service';
-import { AudioInputService } from '../../services/audio-input.service';
-import { AudioOutputService } from '../../services/audio-output.service';
 import { CwInputService } from '../../services/cw-input.service';
 import { cwDecoderOn } from '../../services/cw-decoder-state';
 import { WakeLockService } from '../../services/wake-lock.service';
@@ -240,8 +238,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     private serialOutput: SerialKeyOutputService,
     private winkeyerOutput: WinkeyerOutputService,
     private practice: PracticeService,
-    private audioInput: AudioInputService,
-    private audioOutput: AudioOutputService,
     private cwInput: CwInputService,
     private wakeLock: WakeLockService,
     private autoFullscreen: AutoFullscreenService,
@@ -490,7 +486,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
    * Do what each Settings card does when its switch changes, for every channel
    * that differs after a revert. The confirmation named the routes it would
    * switch on, so the click is the user's explicit action; failures show in the cards.
-   * Services driven by their own effects (sidetone, opto, serial input) need nothing here.
+   * Services driven by their own effects (sidetone, serial input) need nothing here.
    */
   private async syncLiveServices(before: AppSettings, restored: AppSettings): Promise<void> {
     // RTDB: stop what is switched off or pointed elsewhere, then start what should run
@@ -540,23 +536,8 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
       else if (before.winkeyerWpm !== restored.winkeyerWpm) await this.winkeyerOutput.setSpeed(restored.winkeyerWpm);
     }
 
-    // Microphone and CW detector only run while audio is running
+    // The CW detector only runs while audio is running
     if (this.audioRunning) {
-      const micMoved = before.micInputEnabled && restored.micInputEnabled
-        && (before.inputDeviceId !== restored.inputDeviceId || before.pilotOutputDeviceId !== restored.pilotOutputDeviceId);
-      if (before.micInputEnabled && (!restored.micInputEnabled || micMoved)) {
-        await this.audioInput.stop();
-        await this.audioOutput.stopPilot();
-      }
-      if (restored.micInputEnabled) {
-        if (!before.micInputEnabled || micMoved) {
-          await this.audioInput.start();
-          await this.audioOutput.startPilot();
-        } else {
-          this.audioInput.updateParams();
-        }
-      }
-
       const cwBefore = cwDecoderOn(before), cwNow = cwDecoderOn(restored);
       const cwMoved = cwBefore && cwNow
         && (before.cwInputDeviceId !== restored.cwInputDeviceId || before.cwInputChannel !== restored.cwInputChannel);
@@ -933,10 +914,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     const settings = this.transferReview?.settings;
     if (!settings) return route.type;
 
-    if (route.id === 'opto') {
-      const device = this.devices.outputDevices().find(item => item.deviceId === settings.optoOutputDeviceId);
-      return `${device?.label || 'Unverified audio device'}, ${settings.optoOutputChannel} channel; forwards ${settings.optoForward.toUpperCase()}`;
-    }
     if (route.id.startsWith('serial-')) {
       const isInput = route.id.startsWith('serial-input-');
       const index = Number(route.id.slice(isInput ? 'serial-input-'.length : 'serial-'.length));
@@ -1015,7 +992,6 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
       cw: 'CW',
       id: 'ID',
       midi: 'MIDI',
-      opto: 'Optocoupler',
       rtdb: 'RTDB',
       rx: 'RX',
       tx: 'TX',
@@ -1024,7 +1000,7 @@ export class SettingsModalComponent implements AfterViewInit, OnDestroy {
     };
     return field
       .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
-      .replace(/\b(cw|id|midi|opto|rtdb|rx|tx|winkeyer|wpm)\b/gi, term => acronyms[term.toLowerCase()]);
+      .replace(/\b(cw|id|midi|rtdb|rx|tx|winkeyer|wpm)\b/gi, term => acronyms[term.toLowerCase()]);
   }
 
   private clearMessages(): void {

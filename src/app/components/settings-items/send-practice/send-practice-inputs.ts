@@ -5,8 +5,8 @@
 import type { AppSettings } from '../../../services/settings.service';
 import { formatKeyCode } from '../mapping/keyboard-mapping-editor/keyboard-mapping-editor.component';
 
-/** Picker ids: `keyboard-straight`, `keyboard:N`, `midi:N`, `serial:N` (N = mapping index), `mouse`, `touch`, `mic`. */
-const INPUT_ID = /^(?:keyboard-straight|mouse|touch|mic|(?:keyboard|midi|serial):\d+)$/;
+/** Picker ids: `keyboard-straight`, `keyboard:N`, `midi:N`, `serial:N` (N = mapping index), `mouse`, `touch`. */
+const INPUT_ID = /^(?:keyboard-straight|mouse|touch|(?:keyboard|midi|serial):\d+)$/;
 
 /** Whether a stored picker id has a known shape (it may still point at a mapping that no longer exists). */
 export function isValidSendPracticeInputId(id: string): boolean {
@@ -23,7 +23,6 @@ export function sendPracticeInputId(inputPath: string | undefined): string | nul
   if (inputPath === 'keyboardStraightKey') return 'keyboard-straight';
   if (inputPath === 'mouseStraightKey' || inputPath === 'mousePaddle') return 'mouse';
   if (inputPath === 'touchStraightKey' || inputPath === 'touchPaddle') return 'touch';
-  if (inputPath === 'mic') return 'mic';
   const mapped = /^(keyboard|midi|serial)(?:Paddle|StraightKey):(\d+)$/.exec(inputPath);
   return mapped ? `${mapped[1]}:${mapped[2]}` : null;
 }
@@ -31,7 +30,7 @@ export function sendPracticeInputId(inputPath: string | undefined): string | nul
 /** One line of the "Keys used for Send Practice" picker. */
 export interface SendPracticeInputRow {
   id: string;
-  group: 'Keyboard' | 'MIDI' | 'Serial' | 'Mouse' | 'Touch' | 'Microphone';
+  group: 'Keyboard' | 'MIDI' | 'Serial' | 'Mouse' | 'Touch';
   label: string;
   /** Mapping colour, or '' for the default */
   color: string;
@@ -71,7 +70,6 @@ export function sendPracticeInputRows(s: AppSettings): SendPracticeInputRow[] {
     id: 'touch', group: 'Touch', label: 'Fullscreen and main screen touch keyers', color: '',
     available: s.touchKeyerEnabled || s.spriteButtonEnabled,
   });
-  rows.push({ id: 'mic', group: 'Microphone', label: 'Straight key via microphone', color: '', available: s.micInputEnabled });
   return rows;
 }
 

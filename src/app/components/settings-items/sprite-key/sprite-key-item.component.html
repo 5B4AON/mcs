@@ -133,14 +133,5 @@
     {{ paddle ? 'Serial paddle' : 'Serial straight key' }}
   </label>
 </div>
-@if (!paddle) {
-  <div class="settings-row">
-    <label class="settings-checkbox">
-      <input type="checkbox" [checked]="s().spriteAnimateMic"
-             (change)="onAnimateChange('spriteAnimateMic', $event)">
-      Straight key via mic
-    </label>
-  </div>
-}
 }
 </app-item-shell>

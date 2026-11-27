@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Component, Input, computed, inject } from '@angular/core';
+import { Component, Input, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AppSettings } from '../../../services/settings.service';
 import { AudioDeviceService } from '../../../services/audio-device.service';
@@ -49,16 +49,6 @@ export class CwDetectorItemComponent {
 
   /** Current values from the scope */
   readonly s = this.scope.value;
-
-  /** The CW input and the pilot-tone mic key must not share one mic device */
-  readonly cwInputConflict = computed<string | null>(() => {
-    const s = this.s();
-    if (!s.micInputEnabled) return null;
-    const norm = (id: string) => id || 'default';
-    return norm(s.cwInputDeviceId) === norm(s.inputDeviceId)
-      ? 'CW audio input and Pilot tone detection both use the same mic device. Use a different device for CW input, or disable one.'
-      : null;
-  });
 
   /** Handle a string or numeric setting change */
   onSettingChange(key: keyof AppSettings, event: Event): void {

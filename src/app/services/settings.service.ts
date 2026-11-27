@@ -5,17 +5,14 @@
 import { Injectable, signal, computed, effect } from '@angular/core';
 import { timingsFromWpm, registerCustomProsigns } from '../morse-table';
 import { DEFAULT_FULLSCREEN_FONT, FULLSCREEN_FONTS, FullscreenFontId } from '../fullscreen-fonts';
-import { findChannelConflicts } from './audio-channel-conflicts';
 import {
   mergeFieldRules, PADDLE_MODES, PaddleMode, SettingsFieldRules,
 } from './settings-common';
-import { AUDIO_OUTPUT_DEFAULTS, AUDIO_OUTPUT_FIELD_RULES, AudioOutputSettings } from '../components/settings-items/audio-output/audio-output-item.model';
 import { CW_DETECTOR_DEFAULTS, CW_DETECTOR_FIELD_RULES, CwDetectorSettings } from '../components/settings-items/cw-detector/cw-detector-item.model';
 import { EMOJIS_DEFAULTS, EMOJIS_FIELD_RULES, EmojisSettings } from '../components/settings-items/emojis/emojis-item.model';
 import { ENCODER_DEFAULTS, ENCODER_FIELD_RULES, EncoderSettings } from '../components/settings-items/encoder/encoder-item.model';
 import { FARNSWORTH_DEFAULTS, FARNSWORTH_FIELD_RULES, FarnsworthSettings } from '../components/settings-items/farnsworth/farnsworth-item.model';
 import { KEYBOARD_KEYER_DEFAULTS, KEYBOARD_KEYER_FIELD_RULES, KeyboardKeyerSettings } from '../components/settings-items/keyboard-keyer/keyboard-keyer-item.model';
-import { MIC_DEFAULTS, MIC_FIELD_RULES, MicSettings } from '../components/settings-items/mic/mic-item.model';
 import { MIDI_INPUT_DEFAULTS, MIDI_INPUT_FIELD_RULES, MidiInputSettings } from '../components/settings-items/midi-input/midi-input-item.model';
 import { MIDI_OUTPUT_DEFAULTS, MIDI_OUTPUT_FIELD_RULES, MidiOutputSettings } from '../components/settings-items/midi-output/midi-output-item.model';
 import { MOUSE_KEYER_DEFAULTS, MOUSE_KEYER_FIELD_RULES, MouseKeyerSettings } from '../components/settings-items/mouse-keyer/mouse-keyer-item.model';
@@ -45,7 +42,6 @@ export type SettingsSaveResult = 'saved' | 'no-profile' | 'storage-error';
  * they can run autonomously without corrupting each other's decode state.
  */
 export type InputPath =
-  | 'mic'                   // Pilot tone detection (straight key via mic)
   | 'cwAudio'               // CW tone detection (straight key via audio channel)
   | 'keyboardStraightKey'   // Keyboard straight key
   | 'keyboardPaddle'        // Keyboard iambic/ultimatic paddle (external callers)
@@ -161,16 +157,14 @@ const COMMON_FIELD_RULES: SettingsFieldRules = {
  * All settings are persisted per-device-configuration (see StoredProfile).
  */
 export interface AppSettings extends
-  MicSettings, CwDetectorSettings, AudioOutputSettings, SerialOutputSettings, SerialInputSettings,
+  CwDetectorSettings, SerialOutputSettings, SerialInputSettings,
   WinkeyerSettings, RtdbOutputSettings, SidetoneSettings, VibrationSettings, EncoderSettings,
   KeyboardKeyerSettings, MouseKeyerSettings, TouchKeyerSettings, MidiInputSettings, MidiOutputSettings,
   RtdbInputSettings, SpriteKeySettings, TextBlurSettings, ShowProsignsSettings, ProsignActionsSettings,
   FarnsworthSettings, PracticeSettings, SendPracticeSettings, EmojisSettings, CommonSettings {}
 
 export const DEFAULT_SETTINGS: AppSettings = {
-  ...MIC_DEFAULTS,
   ...CW_DETECTOR_DEFAULTS,
-  ...AUDIO_OUTPUT_DEFAULTS,
   ...SERIAL_OUTPUT_DEFAULTS,
   ...SERIAL_INPUT_DEFAULTS,
   ...WINKEYER_DEFAULTS,
@@ -197,7 +191,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 /** How preset and settings-file values are checked, combined from every item. */
 export const SETTINGS_FIELD_RULES = mergeFieldRules(
-  MIC_FIELD_RULES, CW_DETECTOR_FIELD_RULES, AUDIO_OUTPUT_FIELD_RULES, SERIAL_OUTPUT_FIELD_RULES,
+  CW_DETECTOR_FIELD_RULES, SERIAL_OUTPUT_FIELD_RULES,
   SERIAL_INPUT_FIELD_RULES, WINKEYER_FIELD_RULES, RTDB_OUTPUT_FIELD_RULES, SIDETONE_FIELD_RULES,
   VIBRATION_FIELD_RULES, ENCODER_FIELD_RULES, KEYBOARD_KEYER_FIELD_RULES, MOUSE_KEYER_FIELD_RULES,
   TOUCH_KEYER_FIELD_RULES, MIDI_INPUT_FIELD_RULES, MIDI_OUTPUT_FIELD_RULES, RTDB_INPUT_FIELD_RULES,
@@ -219,10 +213,7 @@ interface StoredProfile {
 
 /** Settings keys that contain device IDs (need label-based remapping) */
 const DEVICE_SETTINGS_KEYS: (keyof AppSettings)[] = [
-  'inputDeviceId',
-  'pilotOutputDeviceId',
   'cwInputDeviceId',
-  'optoOutputDeviceId',
   'sidetoneOutputDeviceId',
 ];
 
@@ -338,25 +329,6 @@ export class SettingsService {
   readonly txDecoderTimings = computed(() => timingsFromWpm(this.settings().txDecoderWpm));
   readonly encoderTimings = computed(() => timingsFromWpm(this.settings().encoderWpm));
   readonly keyerTimings = computed(() => timingsFromWpm(this.settings().keyerWpm));
-
-  /**
-   * Detect stereo channel conflicts on shared audio devices.
-   *
-   * A stereo sound card has only two channels (L+R). If sidetone, opto,
-   * and pilot all target the same device, at most two can coexist.
-   * This computed signal returns warning messages for any detected conflicts.
-   *
-   * Pilot tone conflicts are only checked when mic input is enabled.
-   */
-  readonly channelConflict = computed<string[] | null>(() => findChannelConflicts(this.settings()));
-
-  /** True when all outputs target the same device */
-  readonly singleCardGuide = computed(() => {
-    const s = this.settings();
-    const norm = (id: string) => id || 'default';
-    return norm(s.sidetoneOutputDeviceId) === norm(s.optoOutputDeviceId) &&
-      norm(s.optoOutputDeviceId) === norm(s.pilotOutputDeviceId);
-  });
 
   /**
    * Update fullscreen display settings in memory. Like other settings they are
@@ -476,7 +448,7 @@ export class SettingsService {
         if (!did || did === 'default') {
           deviceLabels[key] = 'System Default';
         } else {
-          const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
+          const isInput = key === 'cwInputDeviceId';
           const devices = isInput ? currentInputs : currentOutputs;
           deviceLabels[key] = devices.find(d => d.deviceId === did)?.label ?? 'Unknown';
         }
@@ -504,7 +476,7 @@ export class SettingsService {
     for (const key of DEVICE_SETTINGS_KEYS) {
       const savedLabel = profile.deviceLabels[key];
       if (savedLabel && savedLabel !== 'System Default') {
-        const isInput = key === 'inputDeviceId' || key === 'cwInputDeviceId';
+        const isInput = key === 'cwInputDeviceId';
         const devices = isInput ? currentInputs : currentOutputs;
         const match = devices.find(d => d.label === savedLabel);
         (remapped as any)[key] = match ? match.deviceId : 'default';

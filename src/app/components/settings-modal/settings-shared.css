@@ -6,7 +6,7 @@
  * component-specific stylesheet.
  *
  * Includes: card layout, toggle switches, source badges, form controls,
- * calibration rows, hints, serial/test buttons, responsive rules, and
+ * hints, serial/test buttons, responsive rules, and
  * touch-target sizing.
  */
 
@@ -101,16 +101,6 @@
 }
 .settings-card.disabled-card .settings-card-name {
   color: #8899aa;
-}
-.experimental-banner {
-  font-size: .78rem;
-  color: #f5c542;
-  background: #3a2e10;
-  border: 1px solid #f5c54266;
-  border-radius: 6px;
-  padding: 6px 10px;
-  margin-bottom: 10px;
-  line-height: 1.4;
 }
 .settings-card-subtitle {
   font-size: .78rem;
@@ -245,10 +235,7 @@
 
 /* Visual separation between items inside card body */
 .settings-card-body > label,
-.settings-card-body > .pilot-settings,
-.settings-card-body > .calibration-row,
 .settings-card-body > .cw-hint,
-.settings-card-body > .opto-wiring-hint,
 .settings-card-body > .serial-port-row,
 .settings-card-body > .conflict-warning,
 .settings-card-body > .keyer-hint,
@@ -509,30 +496,6 @@ select.midi-octave-select {
   height: 16px;
 }
 
-/* Calibration row */
-.calibration-row {
-  display: flex;
-  align-items: center;
-  gap: .5rem;
-  flex-wrap: wrap;
-  margin: .5rem 0 .25rem;
-  padding: .5rem;
-  background: #1a1a28;
-  border: 1px solid #335;
-  border-radius: 4px;
-  container-type: inline-size;
-}
-.calibration-label {
-  font-size: .8rem;
-  color: #8cf;
-  font-weight: 600;
-}
-.calibration-values {
-  font-size: .78rem;
-  font-family: 'Courier New', monospace;
-  color: #adf;
-}
-
 /* Conflict banner (used inside card bodies) */
 .conflict-warning {
   background: #a33;
@@ -578,38 +541,6 @@ select.midi-octave-select {
 .key-capture-clear:hover {
   background: #442222;
   border-color: #f66;
-}
-
-/* Pilot tone settings sub-group */
-.pilot-settings {
-  margin: .4rem 0;
-  padding: .5rem .7rem;
-  background: #161630;
-  border: 1px solid #335;
-  border-radius: 4px;
-}
-.pilot-settings label {
-  margin-bottom: .35rem;
-}
-.pilot-wiring-hint {
-  font-size: .75rem;
-  color: #8ab;
-  line-height: 1.4;
-  margin-top: .35rem;
-  padding: .3rem .5rem;
-  background: #1a1a30;
-  border-left: 3px solid #468;
-  border-radius: 2px;
-}
-.opto-wiring-hint {
-  font-size: .75rem;
-  color: #8ab;
-  line-height: 1.4;
-  margin-top: .35rem;
-  padding: .3rem .5rem;
-  background: #1a1a30;
-  border-left: 3px solid #864;
-  border-radius: 2px;
 }
 
 /* Serial port styles */
@@ -711,7 +642,7 @@ select.midi-octave-select {
 /* Help "?" in a hint: reserved column at the right, so the text wraps beside it and the
    button never drops onto a line of its own. The button is centred on the box and the text
    block gets matching vertical padding, so a one-line hint sits level with the button. */
-:is(.cw-hint, .keyer-hint, .pilot-wiring-hint):has(> app-help-link-button),
+:is(.cw-hint, .keyer-hint):has(> app-help-link-button),
 .settings-card-body > :is(.cw-hint, .keyer-hint):has(> app-help-link-button) {
   position: relative;
   display: block;
@@ -719,7 +650,7 @@ select.midi-octave-select {
   padding-right: 3rem;
   min-height: calc(32px + .5rem);
 }
-:is(.cw-hint, .keyer-hint, .pilot-wiring-hint) > app-help-link-button {
+:is(.cw-hint, .keyer-hint) > app-help-link-button {
   position: absolute;
   top: 50%;
   right: .3rem;
@@ -973,8 +904,6 @@ select { max-width: 300px; }
     flex-direction: column;
     align-items: stretch;
   }
-  .pilot-wiring-hint,
-  .opto-wiring-hint,
   .cw-hint,
   .keyer-hint {
     font-size: 0.72rem;

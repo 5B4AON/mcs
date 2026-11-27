@@ -67,7 +67,7 @@ export interface TaggedEntry {
 /**
  * Per-input decoder pipeline state.
  *
- * Each input path (e.g. 'mic', 'keyboardStraightKey', 'midiPaddle') gets
+ * Each input path (e.g. 'cwAudio', 'keyboardStraightKey', 'midiPaddle') gets
  * its own independent pipeline with timing state and pattern buffer. This
  * prevents simultaneous inputs from corrupting each other's decode state.
  */
@@ -118,7 +118,7 @@ interface DecoderPipeline {
  *  This means simultaneous inputs do not corrupt each other's decode state.
  *
  * **Two shared calibration pools:**
- *  - **RX pool**: for incoming morse from audio inputs (mic pilot, CW tone).
+ *  - **RX pool**: for incoming morse from the CW tone decoder.
  *    Auto-calibrates to the sender's speed using rolling averages of
  *    dit/dah durations and silence gaps.
  *  - **TX pool**: for locally-generated morse from keyboard / mouse / touch
@@ -330,7 +330,7 @@ export class MorseDecoderService {
     // Local keyer pipelines (keyboard, mouse, touch) represent operator
     // intent to transmit and activate ALL outputs.
     if (!this.loopDetection.isSuppressed) {
-      const isReceive = path === 'mic' || path === 'cwAudio' || pipeline.fromMidi || pipeline.fromSerial;
+      const isReceive = path === 'cwAudio' || pipeline.fromMidi || pipeline.fromSerial;
 
       // Sidetone / audio: all pipelines (monitoring), except a file that is heard by itself
       if (!pipeline.fromFile) {

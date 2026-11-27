@@ -56,8 +56,8 @@
       keyboard, mouse, or touchscreen. Supports straight key and four
       paddle modes (Iambic A, Iambic B, Ultimatic, Single Lever).</li>
   <li><strong>Key your radio</strong> — Drive your transmitter's keying line
-      through an Arduino MIDI optocoupler, USB-serial adapter (DTR/RTS),
-      WinKeyer, or sound card optocoupler (experimental).</li>
+      through an Arduino MIDI optocoupler, USB-serial adapter (DTR/RTS)
+      or WinKeyer.</li>
 </ul>
 
 <h3>Connecting Your Key and Radio</h3>
@@ -84,12 +84,10 @@
       convenient for practice and portable use. The main limitation is that the
       browser tab must be in focus to receive these events, so they are not
       suitable for background operation.</li>
-  <li><strong>Sound card (experimental)</strong> — A sound card optocoupler can
-      key the transmitter via the headphone jack, and microphone input with
-      ultrasonic pilot-tone detection can read key closures. The keying input
-      side is experimental and sensitive to audio hardware latency; MIDI or
-      serial is more robust for key input. CW tone decoding of received audio
-      (the primary decode path) works well and is not experimental.</li>
+  <li><strong>Sound card</strong> — CW tone decoding of received audio
+      (the primary decode path) works through any sound card input. The sound
+      card plays the sidetone; MIDI or serial is used for keys and radio
+      keying.</li>
 </ol>
 
 <p>
@@ -125,8 +123,7 @@
       <em>Mode</em> list on the main screen to start listening.</li>
   <li><strong>Choose your outputs</strong> — Enable the output(s) you need:
       <em>MIDI Output</em> (Arduino optocoupler), <em>Serial Output</em>
-      (DTR/RTS), <em>WinKeyer Output</em>, <em>Sidetone</em> (speaker),
-      and/or <em>Audio Output</em> (sound card optocoupler, experimental).</li>
+      (DTR/RTS), <em>WinKeyer Output</em> and/or <em>Sidetone</em> (speaker).</li>
   <li><strong>Save</strong> — Click "Save" at the bottom. Your
       settings are saved per device configuration and persist across
       sessions.</li>

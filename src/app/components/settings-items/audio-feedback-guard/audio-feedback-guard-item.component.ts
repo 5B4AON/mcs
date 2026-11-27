@@ -10,7 +10,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
 /**
  * Wizard item: explains the loop-back risk of listening with the CW Tone
  * Detector while the speakers play Morse, and offers one button that turns the
- * audio outputs off in the draft. It is a wizard aid only; Settings does not use it.
+ * sidetone off in the draft. It is a wizard aid only; Settings does not use it.
  */
 @Component({
   selector: 'app-audio-feedback-guard-item',
@@ -34,6 +34,6 @@ export class AudioFeedbackGuardItemComponent {
   readonly risky = computed(() => feedbackRiskOutputs(this.scope.value()));
 
   turnOff(): void {
-    this.scope.update({ sidetoneEnabled: false, optoEnabled: false });
+    this.scope.update({ sidetoneEnabled: false });
   }
 }

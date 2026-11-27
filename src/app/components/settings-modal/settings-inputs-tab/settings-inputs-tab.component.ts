@@ -3,7 +3,6 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { MicItemComponent } from '../../settings-items/mic/mic-item.component';
 import { CwDetectorItemComponent } from '../../settings-items/cw-detector/cw-detector-item.component';
 import { KeyboardKeyerItemComponent } from '../../settings-items/keyboard-keyer/keyboard-keyer-item.component';
 import { EncoderItemComponent } from '../../settings-items/encoder/encoder-item.component';
@@ -17,7 +16,7 @@ import { RtdbInputItemComponent } from '../../settings-items/rtdb-input/rtdb-inp
 /**
  * Settings — Inputs tab.
  *
- * Thin shell that renders the ten input settings cards as independent
+ * Thin shell that renders the nine input settings cards as independent
  * child components. Each card encapsulates its own expand/collapse state,
  * service injections, subscriptions, and event handlers.
  */
@@ -25,7 +24,6 @@ import { RtdbInputItemComponent } from '../../settings-items/rtdb-input/rtdb-inp
   selector: 'app-settings-inputs-tab',
   standalone: true,
   imports: [
-    MicItemComponent,
     CwDetectorItemComponent,
     KeyboardKeyerItemComponent,
     EncoderItemComponent,

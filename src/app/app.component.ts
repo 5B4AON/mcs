@@ -3,7 +3,6 @@ import { FormsModule } from '@angular/forms';
 import { Subscription, merge } from 'rxjs';
 import type { PaddleContactEvent } from './services/paddle-contacts';
 import { SettingsService, AppSettings } from './services/settings.service';
-import { AudioInputService } from './services/audio-input.service';
 import { AudioOutputService } from './services/audio-output.service';
 import { AUDIO_RUNNING_KEY } from './services/audio-primer';
 import { CwInputService } from './services/cw-input.service';
@@ -81,7 +80,6 @@ import * as sendPracticeUi from './components/settings-items/send-practice/send-
  *  - Fullscreen modal: large-text conversation view for RX/TX
  *
  * Service wiring:
- *  - AudioInputService key events → MorseDecoderService (source per micInputSource setting)
  *  - CwInputService key events → MorseDecoderService (source per cwInputSource setting)
  *  - KeyerService key events → MorseDecoderService (source per input's *KeyerSource setting)
  *    - Paddle mode: perfectTiming = true (no calibration, uses keyer WPM threshold)
@@ -113,9 +111,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   audioStatusMessage = 'Audio is stopped. Press the speaker button above to begin.';
   audioFailureMessage: string | null = null;
   /** Current mic input level for the level meter bar */
-  micLevel = 0;
-  /** True when the mic-based key detector reports key-down */
-  micKeyDown = false;
   /** Whether the settings modal is open */
   showSettings = false;
   /** Landing chosen in the Setup Wizard, opened as soon as Settings appears */
@@ -145,7 +140,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   cwKeyDown = false;
 
   /** Auto-scaling maximum for the mic level meter display */
-  levelMeterMax = 0.01;
 
   // ---- Fullscreen modal state ----
   /** Whether the fullscreen conversation modal is open. */
@@ -286,7 +280,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   constructor(
     private hostRef: ElementRef,
     public settings: SettingsService,
-    public audioInput: AudioInputService,
     public audioOutput: AudioOutputService,
     public cwInput: CwInputService,
     public audioFile: AudioFileService,
@@ -675,23 +668,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.refreshDeviceConfig();
     window.setTimeout(() => this.whatsNew.showOnce(), 800);
 
-    // Wire mic key events into decoder — use configured source (RX or TX)
-    this.subs.push(
-      this.audioInput.keyEvent$.subscribe(evt => {
-        this.micKeyDown = evt.down;
-        // The lesson help is played through the sidetone: a mic that hears it must not key the sidetone again
-        if (this.ignoreOwnSoundEdge('mic', evt.down)) return;
-        const s = this.settings.settings();
-        const source = s.micInputSource;
-        const opts = { name: s.micInputName || undefined, color: s.micInputColor || undefined };
-        if (evt.down) {
-          this.decoder.onKeyDown('mic', source, opts);
-        } else {
-          this.decoder.onKeyUp('mic', source, opts);
-        }
-      })
-    );
-
     // Keying with audio stopped: draw attention to the audio button and notice
     this.subs.push(
       this.decoder.keyDown$.subscribe(evt => {
@@ -701,16 +677,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           if (this.audioAttentionTimer !== null) clearTimeout(this.audioAttentionTimer);
           this.audioAttentionTimer = window.setTimeout(() => this.clearAudioAttention(), 3000);
         });
-      })
-    );
-
-    // Mic level meter � auto-scale the max
-    this.subs.push(
-      this.audioInput.level$.subscribe(level => {
-        this.micLevel = level;
-        if (level > this.levelMeterMax) {
-          this.levelMeterMax = level * 1.5;
-        }
       })
     );
 
@@ -823,17 +789,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
           }
           this.setSpriteHold('encoder', shown, evt.down);
         });
-      })
-    );
-
-    // Straight key sprite — react to mic straight key events
-    this.subs.push(
-      this.audioInput.keyEvent$.subscribe(evt => {
-        if (evt.down) this.releaseTextFocus();
-        const s = this.settings.settings();
-        if (s.spriteButtonEnabled && s.spriteKeyerMode === 'straight' && s.spriteAnimateMic) {
-          this.spriteKeyDown = evt.down;
-        }
       })
     );
 
@@ -1291,16 +1246,16 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   }
 
   /** The inputs whose key-down was ignored because they were hearing the app's own sound (their key-up is ignored too) */
-  private ignoredOwnSoundDown = { mic: false, cw: false };
+  private ignoredOwnSoundDown = { cw: false };
 
   /**
-   * True when a mic or CW detector key edge should not reach the decoder because what the input hears is the app's
+   * True when a CW detector key edge should not reach the decoder because what the input hears is the app's
    * own sidetone, which would key the sidetone again and latch it on: while the Koch lesson help plays, and for the
    * CW detector in Copy and Send practice (it listens to the air, the practice never uses it, and the keying or
    * playback of the practice sounds the sidetone). A key-down ignored this way also drops its key-up, so the decoder
    * never sees a lone key-up, and an edge that began before carries on to its own key-up.
    */
-  private ignoreOwnSoundEdge(input: 'mic' | 'cw', down: boolean): boolean {
+  private ignoreOwnSoundEdge(input: 'cw', down: boolean): boolean {
     if (down) {
       const mode = this.settings.settings().encoderMode;
       this.ignoredOwnSoundDown[input] = this.kochHelp.playing()
@@ -1470,7 +1425,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * recovered it. On iOS any context (autostart after a refresh, a phone call, an
    * app switch). Elsewhere only the inputs: after a reload audio restarts without a
    * click, and browsers keep such a context suspended until the user interacts. The
-   * output resumes with the first key press, but the CW detector and the mic key
+   * output resumes with the first key press, but the CW detector
    * must listen before anyone touches the page. On a touch screen a paused output
    * is reported too once it has stayed paused for a moment (`stalled`): a phone that
    * has been idle can take a while to wake, and a context started without a tap stays
@@ -1478,7 +1433,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    */
   get audioNeedsTap(): boolean {
     if (!this.audioRunning) return false;
-    const inputPaused = this.audioInput.paused() || this.cwInput.paused();
+    const inputPaused = this.cwInput.paused();
     if (this.viewport.iosLayout) return inputPaused || this.audioOutput.paused();
     return inputPaused || (isTouchDevice() && this.audioOutput.stalled());
   }
@@ -1495,7 +1450,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   /** Words for the paused-audio notice: the input and the output wait for different things. */
   get audioNeedsTapMessage(): string {
     if (this.viewport.iosLayout) return 'Audio is paused.';
-    return this.audioInput.paused() || this.cwInput.paused()
+    return this.cwInput.paused()
       ? 'Audio input is waiting for a click.'
       : 'Audio output is waiting for a tap.';
   }
@@ -1510,7 +1465,7 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
    * outside Angular's zone, so it adds no change detection.
    */
   private readonly gestureResumeHandler = (): void => {
-    if (this.audioOutput.paused() || this.audioInput.paused() || this.cwInput.paused()) {
+    if (this.audioOutput.paused() || this.cwInput.paused()) {
       void this.resumeAudio();
     }
   };
@@ -1518,7 +1473,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
   async resumeAudio(): Promise<void> {
     await Promise.allSettled([
       this.audioOutput.resumeFromGesture(),
-      this.audioInput.resumeFromGesture(),
       this.cwInput.resumeFromGesture(),
     ]);
   }
@@ -1544,11 +1498,11 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     this.audioStatusMessage = 'Starting audio...';
     this.audioFailureMessage = null;
     this.audioRunning = false;
-    let stage = 'microphone input';
+    let stage = 'CW input';
 
     try {
       const settings = this.settings.settings();
-      const needsInput = settings.micInputEnabled || cwDecoderOn(settings);
+      const needsInput = cwDecoderOn(settings);
       if (typeof AudioContext === 'undefined' || (needsInput && !navigator.mediaDevices?.getUserMedia)) {
         const unsupportedError = new Error();
         unsupportedError.name = 'UnsupportedAudioError';
@@ -1562,11 +1516,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
         try { audioSession.type = 'playback'; } catch { /* not settable here */ }
       }
 
-      if (settings.micInputEnabled) {
-        await this.audioInput.start();
-      }
-
-      stage = 'CW input';
       await this.cwInput.start();
 
       stage = 'audio output';
@@ -1577,8 +1526,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
       // After a reload the device profile loads only now (settings were defaults
       // above), so start the inputs it enables; both calls do nothing if already running
-      stage = 'microphone input';
-      await this.audioInput.start();
       stage = 'CW input';
       await this.cwInput.start();
 
@@ -1589,7 +1536,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     } catch (error) {
       this.clearRememberedAudioRunning();
       const cleanupFailures = await this.stopAudioServices();
-      this.micKeyDown = false;
       this.cwKeyDown = false;
       this.audioRunning = cleanupFailures.length > 0;
       this.audioState = 'failed';
@@ -1609,10 +1555,9 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     await this.warnErasingProsignsBeforeMic();
     if (!this.audioRunning) return;
     try {
-      if (this.settings.settings().micInputEnabled) await this.audioInput.start();
       await this.cwInput.start();
     } catch (error) {
-      this.audioFailureMessage = this.audioStartFailureMessage(error, 'microphone input');
+      this.audioFailureMessage = this.audioStartFailureMessage(error, 'CW input');
     }
   }
 
@@ -1646,7 +1591,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     try {
       const cleanupFailures = await this.stopAudioServices();
-      this.micKeyDown = false;
       this.cwKeyDown = false;
       this.audioRunning = cleanupFailures.length > 0;
       if (cleanupFailures.length > 0) {
@@ -1668,7 +1612,6 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private async stopAudioServices(): Promise<string[]> {
     const services: { name: string; stop: () => Promise<void> }[] = [
-      { name: 'microphone input', stop: () => this.audioInput.stop() },
       { name: 'CW input', stop: () => this.cwInput.stop() },
       { name: 'audio output', stop: () => this.audioOutput.stop() },
     ];
@@ -1703,10 +1646,10 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
   private audioStartFailureMessage(error: unknown, stage: string): string {
     const errorName = (error as { name?: string } | null)?.name;
-    const inputEnabled = this.settings.settings().micInputEnabled || cwDecoderOn(this.settings.settings());
+    const inputEnabled = cwDecoderOn(this.settings.settings());
 
     if (errorName === 'NotAllowedError' || errorName === 'SecurityError') {
-      if (stage === 'microphone input' || stage === 'CW input') {
+      if (stage === 'CW input') {
         return 'Microphone access was denied. Allow microphone access for this site in your browser settings, then retry.';
       }
       return "The browser blocked audio playback. Select Start Audio to retry, and check this site's audio permissions if needed.";

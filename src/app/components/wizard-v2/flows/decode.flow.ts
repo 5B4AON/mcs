@@ -40,7 +40,7 @@ export const DECODE_FLOW: WizardFlow = {
       id: 'before',
       title: 'Before you listen',
       intro: 'This guide never starts listening. Your browser may ask for the microphone later.',
-      helpSection: 's7-7',
+      helpSection: 's7-6',
       items: [{ item: 'audio-feedback-guard' }],
     },
     {

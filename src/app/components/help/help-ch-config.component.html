@@ -2,47 +2,8 @@
 <!-- Chapter 8 — Configuration & Display                            -->
 <!-- ================================================================ -->
 
-<!-- 8.1 Sound Card Channel Routing -->
-<h2 id="s8-1">8.1 &nbsp;Sound Card Channel Routing</h2>
-
-<p>
-  Each stereo sound card has two channels: <strong>Left</strong> and
-  <strong>Right</strong>. Morse Code Studio routes each output (sidetone,
-  opto, pilot) to a specific channel on a specific device. This lets you
-  use a single sound card for multiple purposes.
-</p>
-
-<p>
-  <strong>The rule:</strong> Two outputs must not share the same channel on the
-  same device. If there is a conflict, the application shows a warning.
-</p>
-
-<figure class="diagram-figure">
-  <figcaption>Single Sound Card &mdash; Channel Allocation Example</figcaption>
-  <img src="help/diagrams/single-soundcard.svg"
-       alt="Single Sound Card — Channel Allocation Example"
-       class="diagram-img"
-       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
-  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>single-soundcard.mmd</code></p>
-</figure>
-
-<p>
-  <strong>Single sound card — choose 2 of 3:</strong> A stereo card has only
-  two channels but there are three possible outputs (sidetone, opto, pilot).
-  You can enable any two. To use all three, add a second USB sound card.
-</p>
-
-<figure class="diagram-figure">
-  <figcaption>Two Sound Cards &mdash; Full Setup</figcaption>
-  <img src="help/diagrams/dual-soundcard.svg"
-       alt="Two Sound Cards — Full Setup"
-       class="diagram-img"
-       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
-  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>dual-soundcard.mmd</code></p>
-</figure>
-
-<!-- 8.2 Device Profiles -->
-<h2 id="s8-2">8.2 &nbsp;Device Profiles</h2>
+<!-- 8.1 Device Profiles -->
+<h2 id="s8-1">8.1 &nbsp;Device Profiles</h2>
 
 <p>
   When you save settings, they are stored against the current set of audio
@@ -125,15 +86,15 @@
 <div class="example-box">
   <div class="example-title">Example — Home vs. portable</div>
   <p>
-    At home: desktop PC with a built-in sound card plus a USB card for keying.
+    At home: desktop PC with a USB sound card for the sidetone.
     Portable: laptop with only its built-in audio. Each setup has different
     device IDs, so Morse Code Studio saves and loads the correct settings
     automatically.
   </p>
 </div>
 
-<!-- 8.3 Fullscreen Mode -->
-<h2 id="s8-3">8.3 &nbsp;Fullscreen Mode</h2>
+<!-- 8.2 Fullscreen Mode -->
+<h2 id="s8-2">8.2 &nbsp;Fullscreen Mode</h2>
 
 <p>
   The main toolbar has a <strong>⛶</strong> button that opens the
@@ -229,8 +190,8 @@
   Key, Lens off, Typewriter, 24 px.
 </p>
 
-<!-- 8.4 Text Blurring -->
-<h2 id="s8-4">8.4 &nbsp;Text Blurring</h2>
+<!-- 8.3 Text Blurring -->
+<h2 id="s8-3">8.3 &nbsp;Text Blurring</h2>
 
 <p>
   Found in <strong>Settings &rarr; Practice</strong>. When this is on, text is
@@ -287,7 +248,7 @@
       as it was.</li>
   <li><strong>Same outputs as typed text</strong> &mdash; the replay is sent at
       the Encoder speed (with Farnsworth timing if enabled) through every
-      output you use: sidetone, opto/key output, serial, MIDI, WinKeyer, RTDB
+      output you use: sidetone, serial, MIDI, WinKeyer, RTDB
       and vibration. When it would key or relay externally, the usual
       <em>Confirm external send</em> dialog appears first (in Copy Practice the
       practice pipeline setting decides, as for normal practice).</li>
@@ -309,14 +270,14 @@
       when the input area holds a new draft and no send is paused. It is also
       disabled, with a tooltip saying why, while an audio file is playing
       (pause it first) and while no output would play it: no sidetone,
-      opto/key output, vibration, serial, MIDI, WinKeyer or relay output is on
+      vibration, serial, MIDI, WinKeyer or relay output is on
       for the Encoder's source (in Copy Practice on <em>This device
-      only</em> and in Send Practice, only the sidetone, opto/key output and
+      only</em> and in Send Practice, only the sidetone and
       vibration count).</li>
 </ul>
 
-<!-- 8.5 Farnsworth / Wordsworth Timing -->
-<h2 id="s8-5">8.5 &nbsp;Farnsworth / Wordsworth Timing</h2>
+<!-- 8.4 Farnsworth / Wordsworth Timing -->
+<h2 id="s8-4">8.4 &nbsp;Farnsworth / Wordsworth Timing</h2>
 
 <p>
   Found in <strong>Settings &rarr; Practice</strong>. Farnsworth timing is a way
@@ -361,7 +322,7 @@
 
 <p>
   Farnsworth timing applies to every output that synthesises element timing:
-  sidetone, vibration, MIDI, serial, Firebase RTDB, and audio key.
+  sidetone, vibration, MIDI, serial and Firebase RTDB.
   WinKeyer output is <strong>not affected</strong> because the WinKeyer
   hardware generates its own timing. Keyer input (straight key or paddle)
   is not affected either: the keyer only sets the dit length, and you
@@ -379,8 +340,8 @@
   </p>
 </div>
 
-<!-- 8.6 Show Prosigns -->
-<h2 id="s8-6">8.6 &nbsp;Show Prosigns</h2>
+<!-- 8.5 Show Prosigns -->
+<h2 id="s8-5">8.5 &nbsp;Show Prosigns</h2>
 
 <p>
   Found in <strong>Settings &rarr; Other</strong>. Some prosigns (procedural
@@ -410,8 +371,8 @@
   shown as prosigns.
 </p>
 
-<!-- 8.7 Prosign Actions -->
-<h2 id="s8-7">8.7 &nbsp;Prosign Actions</h2>
+<!-- 8.6 Prosign Actions -->
+<h2 id="s8-6">8.6 &nbsp;Prosign Actions</h2>
 
 <p>
   Found in <strong>Settings &rarr; Other</strong>. When this is on, a decoded
@@ -518,8 +479,8 @@
   new lines start without a leading space.
 </p>
 
-<!-- 8.8 Emoji Replacements -->
-<h2 id="s8-8">8.8 &nbsp;Emoji Replacements</h2>
+<!-- 8.7 Emoji Replacements -->
+<h2 id="s8-7">8.7 &nbsp;Emoji Replacements</h2>
 
 <p>
   When this is on, common Morse short forms, prosigns, Q-codes and 92 codes

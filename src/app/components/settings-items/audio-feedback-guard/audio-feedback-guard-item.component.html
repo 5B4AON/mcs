@@ -1,11 +1,11 @@
 <div class="keyer-hint">
-  Turn the sidetone and any audio key output off first, or the sound can loop back.
-  <app-help-link-button section="s7-7" label="Help: sound loops" />
+  Turn the sidetone off first, or the sound can loop back.
+  <app-help-link-button section="s7-6" label="Help: sound loops" />
 </div>
 @if (risky().length) {
   <div class="guard-warning" role="status">
     <p>Audio output is on: {{ risky().join(', ') }}.</p>
-    <button type="button" class="pill-btn" (click)="turnOff()">Turn audio output off</button>
+    <button type="button" class="pill-btn" (click)="turnOff()">Turn the sidetone off</button>
   </div>
 } @else {
   <p class="guard-note">No audio output that could cause a loop is on.</p>

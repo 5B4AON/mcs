@@ -1,6 +1,6 @@
 <!-- CW Tone Decoder -->
 <app-item-shell cardId="cw-detector-card" title="CW Tone Decoder" [mode]="mode"
-                [enabled]="s().cwInputEnabled" [toggleDisabled]="!!cwInputConflict()"
+                [enabled]="s().cwInputEnabled"
                 (enabledChange)="onCwEnabledChange($event)">
   <span item-badges>
     <span class="source-badge" [class.source-rx]="s().cwInputSource === 'rx'" [class.source-tx]="s().cwInputSource === 'tx'">{{ s().cwInputSource === 'rx' ? 'RX' : 'TX' }}</span>
@@ -16,7 +16,7 @@
 
   @if (mode === 'embedded' && !tuneOnly) {
     <label class="checkbox-label">
-      <input type="checkbox" [checked]="s().cwInputEnabled" [disabled]="!!cwInputConflict()"
+      <input type="checkbox" [checked]="s().cwInputEnabled"
              (change)="onCwEnabledChange($any($event.target).checked)">
       Decode CW tones from an audio input
     </label>
@@ -27,16 +27,9 @@
         Tick the box to set it up.
       }
     </div>
-    @if (!s().cwInputEnabled && cwInputConflict()) {
-      <div class="conflict-warning">{{ cwInputConflict() }}</div>
-    }
   }
 
   @if (mode === 'card' || tuneOnly || s().cwInputEnabled) {
-    @if (cwInputConflict()) {
-      <div class="conflict-warning">{{ cwInputConflict() }}</div>
-    }
-
     <label>Used for:
       <select [value]="s().cwInputSource" (change)="onSettingChange('cwInputSource', $event)">
         <option value="rx">RX &mdash; received morse</option>
@@ -47,8 +40,8 @@
 
     <label>Audio Input Device:
       <select [value]="s().cwInputDeviceId" (change)="onCwInputChange('cwInputDeviceId', $event)">
-        <option value="default" [selected]="s().cwInputDeviceId === 'default'">System Default</option>
-        @for (dev of devices.inputDevices(); track dev.deviceId) {
+        <option value="default" [selected]="s().cwInputDeviceId === 'default'">{{ devices.inputDefaultLabel() }}</option>
+        @for (dev of devices.inputChoices(); track dev.deviceId) {
           <option [value]="dev.deviceId" [selected]="dev.deviceId === s().cwInputDeviceId">{{ dev.label }}</option>
         }
       </select>

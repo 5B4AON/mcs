@@ -449,7 +449,6 @@ export class SetupWizardV2Component implements OnInit, AfterViewInit, OnDestroy 
       case 'Serial key/paddle input': return d.replace(/^Serial port/, 'Serial input, port');
       case 'Serial radio keying': return d.replace(/^Serial port/, 'Serial output, port');
       case 'WinKeyer radio keying': return d.replace(/^Serial port/, 'WinKeyer, port');
-      case 'Radio keying through audio optocoupler': return d.replace(/^Audio device/, 'Opto output, audio device');
       case 'Firebase RTDB input': return d.replace(/^Shared channel/, 'Firebase input, channel');
       case 'Firebase RTDB output': return d.replace(/^Shared channel/, 'Firebase output, channel');
       default: return `${route.type}: ${d}`;

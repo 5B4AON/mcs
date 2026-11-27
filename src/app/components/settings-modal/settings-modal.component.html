@@ -29,11 +29,6 @@
       </div>
     }
 
-    <!-- Conflict warnings -->
-    @for (warn of settings.channelConflict() ?? []; track $index) {
-      <div class="conflict-warning">{{ warn }}</div>
-    }
-
     <!-- Tab navigation -->
     <div class="settings-tabs" role="tablist" aria-label="Settings categories">
       <button id="settings-tab-inputs" class="settings-tab" role="tab"

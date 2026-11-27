@@ -529,7 +529,7 @@ export class FsConversationViewComponent implements OnInit, OnDestroy, OnChanges
     else this.sendPractice.playPrompt();
   }
 
-  /** Whether "Hear it first" has nothing to play it on: it stays on this device (sidetone, opto, vibration). */
+  /** Whether "Hear it first" has nothing to play it on: it stays on this device (sidetone, vibration). */
   get promptSilent(): boolean {
     return !replayHasOutput(this.settings.settings(), true);
   }

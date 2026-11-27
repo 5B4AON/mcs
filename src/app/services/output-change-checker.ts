@@ -40,18 +40,6 @@ function activeExternalRoutes(
   settings: AppSettings,
 ): Omit<ExternalRouteChange, 'change'>[] {
   const routes: Omit<ExternalRouteChange, 'change'>[] = [];
-  if (settings.optoEnabled) {
-    routes.push({
-      id: 'opto',
-      type: 'Radio keying through audio optocoupler',
-      target: JSON.stringify([settings.optoOutputDeviceId, settings.optoOutputChannel, settings.optoForward]),
-      destination: `Audio device ${settings.optoOutputDeviceId}, channel ${settings.optoOutputChannel}`,
-      enabled: true,
-      forwarding: settings.optoForward.toUpperCase(),
-      requirements: 'A specific available audio output, the selected channel, and an optocoupler keying interface.',
-      acknowledgementRequired: true,
-    });
-  }
   if (settings.serialEnabled) {
     settings.serialOutputMappings.forEach((mapping, index) => {
       if (!mapping.enabled) return;

@@ -95,7 +95,7 @@ const STREAM_COMPACT_AT = 600;
  *
  * The encoder sends each character by:
  *  - Looking up its morse pattern in MORSE_TABLE
- *  - Playing audio tones (sidetone + opto) via AudioOutputService
+ *  - Playing the sidetone via AudioOutputService
  *  - Toggling serial port pin via SerialKeyOutputService
  *  - Timing dits, dahs, and gaps according to the configured WPM speed
  *
@@ -492,7 +492,7 @@ export class MorseEncoderService {
    * the previous length, computed in audio time, so tones, gaps, letter gaps, word gaps and pauses are exact
    * whatever the page is doing. Tokens are placed about `TIMELINE_LEAD_S` ahead of the one sounding; the
    * timers here only wake the loop and move the sent index (the highlight) just before a token starts. The
-   * sidetone and the opto output are placed on the audio clock and the serial pulses at the page-clock
+   * sidetone is placed on the audio clock and the serial pulses at the page-clock
    * times that belong to it; WinKeyer and the relay are handed each character then, and MIDI with its exact
    * start time, from which it places its notes with Web MIDI timestamps. A stop drops what is placed, and the
    * token that was sounding is played again in full on resume; a pause (`pauseTx`) stops placing, lets the
@@ -600,7 +600,7 @@ export class MorseEncoderService {
   }
 
   /**
-   * Place the dits and dahs of a character at `at`: sidetone and opto on the audio clock, and, when `serial`
+   * Place the dits and dahs of a character at `at`: the sidetone on the audio clock, and, when `serial`
    * is set, the serial pulses at the matching page-clock times. Returns each element's start offset and length.
    */
   private placeElements(

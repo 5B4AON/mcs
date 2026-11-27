@@ -34,8 +34,6 @@ export interface SpriteKeySettings {
   spriteAnimateMidi: boolean;
   /** Animate the sprite when a serial straight key or paddle is pressed */
   spriteAnimateSerial: boolean;
-  /** Animate the straight-key sprite when the straight key via mic is pressed (no paddle equivalent) */
-  spriteAnimateMic: boolean;
 }
 
 export const SPRITE_KEY_DEFAULTS: SpriteKeySettings = {
@@ -51,7 +49,6 @@ export const SPRITE_KEY_DEFAULTS: SpriteKeySettings = {
   spriteAnimateMouse: false,
   spriteAnimateMidi: false,
   spriteAnimateSerial: false,
-  spriteAnimateMic: false,
 };
 
 export const SPRITE_KEY_FIELD_RULES: SettingsFieldRules = {
@@ -71,13 +68,12 @@ const REVIEW_LABELS = {
   spriteAnimateMouse: 'Main screen touch keyer animates on mouse',
   spriteAnimateMidi: 'Main screen touch keyer animates on MIDI',
   spriteAnimateSerial: 'Main screen touch keyer animates on serial',
-  spriteAnimateMic: 'Main screen touch keyer animates on microphone',
 };
 
 /** What the main-screen touch keyer item edits and says in a review. */
 export const SPRITE_KEY_DESCRIPTOR: ItemDescriptor = {
   id: 'sprite-key',
-  keys: ['spriteButtonEnabled', 'spriteKeyerMode', 'spriteReversePaddles', 'spritePaddleMode', 'spriteSource', 'spriteName', 'spriteColor', 'spriteAnimateKeyboard', 'spriteAnimateEncoder', 'spriteAnimateMouse', 'spriteAnimateMidi', 'spriteAnimateSerial', 'spriteAnimateMic'],
+  keys: ['spriteButtonEnabled', 'spriteKeyerMode', 'spriteReversePaddles', 'spritePaddleMode', 'spriteSource', 'spriteName', 'spriteColor', 'spriteAnimateKeyboard', 'spriteAnimateEncoder', 'spriteAnimateMouse', 'spriteAnimateMidi', 'spriteAnimateSerial'],
   validate: () => [],
   review: labelledReview(REVIEW_LABELS),
 };
@@ -92,4 +88,4 @@ export const SPRITE_KEY_PADDLE_DESCRIPTOR = partDescriptor('sprite-key-paddle', 
 export const SPRITE_KEY_IDENTITY_DESCRIPTOR = partDescriptor('sprite-key-identity', ['spriteName', 'spriteColor'], REVIEW_LABELS);
 
 /** Which other inputs also move the sprite, on their own wizard step. */
-export const SPRITE_KEY_ANIMATE_DESCRIPTOR = partDescriptor('sprite-key-animate', ['spriteAnimateKeyboard', 'spriteAnimateEncoder', 'spriteAnimateMouse', 'spriteAnimateMidi', 'spriteAnimateSerial', 'spriteAnimateMic'], REVIEW_LABELS);
+export const SPRITE_KEY_ANIMATE_DESCRIPTOR = partDescriptor('sprite-key-animate', ['spriteAnimateKeyboard', 'spriteAnimateEncoder', 'spriteAnimateMouse', 'spriteAnimateMidi', 'spriteAnimateSerial'], REVIEW_LABELS);

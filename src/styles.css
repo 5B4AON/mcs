@@ -387,7 +387,7 @@ input[type="color"].color-pill::-moz-color-swatch {
 /* Text pills are the height of the kebab menu pills (.kebab-help-btn): .45rem padding, .78rem text, on touch screens too */
 /* Several pills of one action group: equal width (the widest text), no wider than needed,
    side by side while the row fits and stacked when it does not (the nearest container
-   query box is the row that holds the group, see .calibration-row / .serial-port-row) */
+   query box is the row that holds the group, see .serial-port-row) */
 .pill-group {
   display: grid;
   grid-auto-flow: column;

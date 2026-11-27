@@ -11,7 +11,7 @@ import { Injectable, signal } from '@angular/core';
  * A feedback loop can occur when hardware or software routes an output
  * signal back into an input. For example:
  *  - Serial port key output → radio transmitter → radio receiver → CW audio input
- *  - Opto key output → radio → remote RTDB station → RTDB input
+ *  - Serial key output → radio → remote RTDB station → RTDB input
  *
  * Detection strategy:
  *  Maintains two sliding windows of recently output and recently input
@@ -80,7 +80,7 @@ export class LoopDetectionService {
   /**
    * Record a character that was sent to an output.
    * Call this whenever a decoded character is forwarded to any output
-   * (WinKeyer, RTDB, serial, opto, sidetone).
+   * (WinKeyer, RTDB, serial, sidetone).
    */
   recordOutput(char: string, source: string): void {
     if (char === ' ') return; // ignore spaces — too common

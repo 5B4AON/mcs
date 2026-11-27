@@ -3,7 +3,6 @@
  */
 
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { AudioOutputItemComponent } from '../../settings-items/audio-output/audio-output-item.component';
 import { SerialOutputItemComponent } from '../../settings-items/serial-output/serial-output-item.component';
 import { WinkeyerItemComponent } from '../../settings-items/winkeyer/winkeyer-item.component';
 import { RtdbOutputItemComponent } from '../../settings-items/rtdb-output/rtdb-output-item.component';
@@ -14,7 +13,7 @@ import { VibrationItemComponent } from '../../settings-items/vibration/vibration
 /**
  * Settings — Outputs tab.
  *
- * Thin shell that renders the seven output settings cards as independent
+ * Thin shell that renders the six output settings cards as independent
  * child components. Each card encapsulates its own expand/collapse state,
  * service injections, and event handlers.
  */
@@ -22,7 +21,6 @@ import { VibrationItemComponent } from '../../settings-items/vibration/vibration
   selector: 'app-settings-outputs-tab',
   standalone: true,
   imports: [
-    AudioOutputItemComponent,
     SerialOutputItemComponent,
     WinkeyerItemComponent,
     RtdbOutputItemComponent,

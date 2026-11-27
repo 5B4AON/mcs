@@ -68,16 +68,7 @@ export function prepareSettingsImport(
   const unresolvedTargets: string[] = [];
 
   prepareAudioTarget(
-    proposed, current, 'inputDeviceId', devices, 'Microphone input', unresolvedTargets,
-  );
-  prepareAudioTarget(
     proposed, current, 'cwInputDeviceId', devices, 'CW audio input', unresolvedTargets,
-  );
-  prepareAudioTarget(
-    proposed, current, 'pilotOutputDeviceId', devices, 'Pilot audio output', unresolvedTargets,
-  );
-  prepareAudioTarget(
-    proposed, current, 'optoOutputDeviceId', devices, 'Optocoupler output', unresolvedTargets,
   );
   prepareAudioTarget(
     proposed, current, 'sidetoneOutputDeviceId', devices, 'Sidetone output', unresolvedTargets,
@@ -141,11 +132,6 @@ export function prepareSettingsImport(
     unresolvedTargets.push('WinKeyer port index is a source hint; the destination port selection was left unchanged.');
   }
 
-  if (proposed.micInputEnabled && !current.micInputEnabled
-    && !hasUniqueAudioDevice(devices, imported.inputDeviceId, true)) {
-    proposed.micInputEnabled = false;
-    unresolvedTargets.push('Microphone input was not enabled because its target could not be verified.');
-  }
   if (proposed.cwInputEnabled && !current.cwInputEnabled
     && !hasUniqueAudioDevice(devices, imported.cwInputDeviceId, true)) {
     proposed.cwInputEnabled = false;
@@ -169,13 +155,6 @@ export function prepareSettingsImport(
     unresolvedTargets.push('MIDI input was not enabled because an imported device could not be verified.');
   }
 
-  preserveUnverifiedOutput(
-    proposed, current, 'optoEnabled',
-    proposed.optoEnabled && !hasUniqueAudioDevice(devices, proposed.optoOutputDeviceId, false),
-    'Optocoupler keying target could not be verified; its destination route was left unchanged.',
-    unresolvedTargets,
-    ['optoEnabled', 'optoOutputDeviceId', 'optoOutputChannel', 'optoMode', 'optoFrequency', 'optoAmplitude', 'optoForward'],
-  );
   preserveUnverifiedOutput(
     proposed, current, 'serialEnabled',
     proposed.serialEnabled && proposed.serialOutputMappings.some(mapping =>
@@ -255,13 +234,13 @@ export function listSettingChanges(before: AppSettings, after: AppSettings): Set
 function prepareAudioTarget(
   proposed: AppSettings,
   current: AppSettings,
-  field: 'inputDeviceId' | 'cwInputDeviceId' | 'pilotOutputDeviceId' | 'optoOutputDeviceId' | 'sidetoneOutputDeviceId',
+  field: 'cwInputDeviceId' | 'sidetoneOutputDeviceId',
   devices: SettingsSnapshotDevices,
   label: string,
   unresolved: string[],
 ): void {
   if (proposed[field] === current[field]) return;
-  const inputs = field === 'inputDeviceId' || field === 'cwInputDeviceId';
+  const inputs = field === 'cwInputDeviceId';
   if (!hasUniqueAudioDevice(devices, proposed[field], inputs)) {
     proposed[field] = current[field];
     unresolved.push(`${label} target could not be verified; its destination device was left unchanged.`);
@@ -328,7 +307,7 @@ function hasMatchingSerialTarget<T extends { portIndex: number }>(
 function preserveUnverifiedOutput(
   proposed: AppSettings,
   current: AppSettings,
-  enabledField: 'optoEnabled' | 'serialEnabled' | 'winkeyerEnabled' | 'midiOutputEnabled',
+  enabledField: 'serialEnabled' | 'winkeyerEnabled' | 'midiOutputEnabled',
   unresolved: boolean,
   message: string,
   unresolvedTargets: string[],
@@ -380,14 +359,14 @@ function cloneMidiOutputMapping(mapping: MidiOutputMapping): MidiOutputMapping {
 }
 
 function settingGroup(field: keyof PortableAppSettings): SettingChange['group'] {
-  if (field.startsWith('mic') || field.startsWith('cwInput') || field.startsWith('serialInput')
+  if (field.startsWith('cwInput') || field.startsWith('serialInput')
     || field.startsWith('midiInput') || field.startsWith('rtdbInput')) {
     return 'Inputs';
   }
   if (field === 'serialEnabled' || field === 'midiOutputEnabled'
-    || field.startsWith('opto') || field.startsWith('serialOutput') || field.startsWith('winkeyer')
+    || field.startsWith('serialOutput') || field.startsWith('winkeyer')
     || field.startsWith('rtdbOutput') || field.startsWith('rtdbAllow') || field.startsWith('rtdbRelay')
-    || field.startsWith('sidetone') || field.startsWith('vibrate') || field.startsWith('pilot')) {
+    || field.startsWith('sidetone') || field.startsWith('vibrate')) {
     return 'Outputs';
   }
   if (field.startsWith('encoder') || field.startsWith('keyboard') || field.startsWith('keyer')

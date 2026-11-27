@@ -16,8 +16,7 @@ import { SETTINGS_SCOPE } from '../settings-scope';
  * space is available: a straight key or two paddles (the same choices as the Fullscreen
  * Touch Keyer card, including Reverse Paddles and the paddle mode). It can be tapped or
  * clicked to key Morse and can optionally animate in response to the same kind of key
- * from other input sources (keyboard, encoder, mouse, MIDI, serial; the mic only for a
- * straight key).
+ * from other input sources (keyboard, encoder, mouse, MIDI, serial).
  */
 @Component({
   selector: 'app-sprite-key-item',
@@ -56,7 +55,7 @@ export class SpriteKeyItemComponent {
   }
 
   /** Toggle a sprite animation association */
-  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateEncoder' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateSerial' | 'spriteAnimateMic', event: Event): void {
+  onAnimateChange(key: 'spriteAnimateKeyboard' | 'spriteAnimateEncoder' | 'spriteAnimateMouse' | 'spriteAnimateMidi' | 'spriteAnimateSerial', event: Event): void {
     const checked = (event.target as HTMLInputElement).checked;
     this.scope.update({ [key]: checked });
   }

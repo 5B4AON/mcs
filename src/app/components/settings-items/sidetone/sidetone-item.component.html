@@ -7,7 +7,7 @@
   @if (mode === 'card') {
     <div class="cw-hint">
       The beep you hear while Morse is sent or played.
-      <app-help-link-button section="s7-5" label="Help: sidetone" />
+      <app-help-link-button section="s7-4" label="Help: sidetone" />
     </div>
   }
 
@@ -23,12 +23,19 @@
 
   <label>Audio Device:
     <select [value]="s().sidetoneOutputDeviceId" (change)="onSettingChange('sidetoneOutputDeviceId', $event)">
-      <option value="default" [selected]="s().sidetoneOutputDeviceId === 'default'">System Default</option>
-      @for (dev of devices.outputDevices(); track dev.deviceId) {
+      <option value="default" [selected]="s().sidetoneOutputDeviceId === 'default'">{{ devices.outputDefaultLabel() }}</option>
+      @for (dev of devices.outputChoices(); track dev.deviceId) {
         <option [value]="dev.deviceId" [selected]="dev.deviceId === s().sidetoneOutputDeviceId">{{ dev.label }}</option>
       }
     </select>
   </label>
+
+  @if (devices.isAndroid) {
+    <div class="keyer-hint">
+      Android decides where sound goes: while a USB sound card is plugged in, everything plays through it.
+      Unplug it to use the phone speaker.
+    </div>
+  }
 
   <label>Channel:
     <select [value]="s().sidetoneOutputChannel" (change)="onSettingChange('sidetoneOutputChannel', $event)">
@@ -46,21 +53,18 @@
   <app-stepper [value]="amplitudePercent" [min]="0" [max]="100" [step]="5"
                label="Sidetone amplitude" (valueChange)="setAmplitudePercent($event)" />
 
-  @if (mode === 'card') {
-    <label>Sound card keep-alive:
-      <select [value]="s().outputKeepAlive" (change)="onSettingChange('outputKeepAlive', $event)">
-        <option value="off" [selected]="s().outputKeepAlive === 'off'">Off</option>
-        <option value="low" [selected]="s().outputKeepAlive === 'low'">Low</option>
-        <option value="normal" [selected]="s().outputKeepAlive === 'normal'">Normal</option>
-        <option value="high" [selected]="s().outputKeepAlive === 'high'">High</option>
-      </select>
-    </label>
-    <div class="keyer-hint">
-      An inaudible signal on every audio output while audio runs, so a USB sound card does not go to sleep
-      and lose the start of your first dot. Raise it if the first dot is still weak. Applies to the sidetone,
-      the key output and the pilot tone.
-    </div>
-  }
+  <label>Keep-alive:
+    <select [value]="s().outputKeepAlive" (change)="onSettingChange('outputKeepAlive', $event)">
+      <option value="off" [selected]="s().outputKeepAlive === 'off'">Off</option>
+      <option value="low" [selected]="s().outputKeepAlive === 'low'">Low</option>
+      <option value="normal" [selected]="s().outputKeepAlive === 'normal'">Normal</option>
+      <option value="high" [selected]="s().outputKeepAlive === 'high'">High</option>
+    </select>
+  </label>
+  <div class="keyer-hint">
+    An inaudible signal on every audio output while audio runs, so a USB sound card does not go to sleep
+    and lose the start of your first dot. Off by default; raise it if the first dot is still weak.
+  </div>
 
   @if (scope.isLive) {
     <button type="button" [disabled]="!audioRunning" (click)="audioOutput.testSidetone()" class="pill-btn pill-block">

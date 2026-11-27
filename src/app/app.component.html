@@ -207,19 +207,6 @@
       </div>
     </div>
 
-    <!-- Level meters -->
-    @if (settings.settings().micInputEnabled) {
-      <div class="level-meter-group">
-        <span class="level-label">Key:</span>
-        <div class="level-meter-track">
-          <div class="level-meter-fill" [style.width.%]="micLevel * 100 / levelMeterMax"></div>
-          <div class="level-meter-threshold"
-               [style.left.%]="settings.settings().inputThreshold * 100 / levelMeterMax"
-               title="Threshold"></div>
-        </div>
-      </div>
-    }
-
     <!-- The CW decoder's scope sits above the text (not drawn behind the full screen); the typing box stays where it was -->
     @if (cwScopeShown && !activeModal) {
       <app-cw-scope class="main-cw-scope" />

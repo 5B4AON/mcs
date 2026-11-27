@@ -30,57 +30,23 @@ const KEEP_ALIVE_SUB_HZ = 10;
 const KEEP_ALIVE_ULTRA_HZ = 20000;
 
 /**
- * Audio Output Service � manages all audio output channels.
+ * Audio Output Service — manages the sidetone audio output.
  *
- * Handles three independent audio outputs that can be routed to
- * different sound cards and stereo channels:
- *
- *  1. **Sidetone** � audible feedback tone (sine wave, 500�800 Hz)
- *     played through headphones/speakers when keying.
- *
- *  2. **Key Output (Opto)** � drives an optocoupler to physically key
- *     a radio transmitter. Two modes:
- *     - DC: ConstantSourceNode producing a steady DC voltage when keyed
- *     - AC: Square wave oscillator (100�20000 Hz) for AC-coupled circuits
- *
- *  3. **Pilot Tone** � always-on high-frequency tone (18 kHz) used for
- *     mic-based key detection (see AudioInputService).
- *
- * Device routing:
- *  - Same device: single stereo AudioContext + ChannelMergerNode routes
- *    sidetone and opto to separate L/R channels.
- *  - Different devices: separate AudioContexts with setSinkId() targeting
- *    different sound cards, each with their own ChannelMergerNode.
- *
- * All contexts use `channelInterpretation: 'discrete'` to prevent the
- * browser from up-mixing mono sources to both stereo channels.
+ * The sidetone is an audible feedback tone (sine wave, 500–800 Hz) played through
+ * headphones/speakers when keying, on the left channel, the right channel or both,
+ * of the sound card the user picked (AudioContext.setSinkId()). The context uses
+ * `channelInterpretation: 'discrete'` so the browser does not up-mix the mono source
+ * to both stereo channels.
  */
 @Injectable({ providedIn: 'root' })
 export class AudioOutputService {
-  // ---- Shared mode: single stereo context ----
   private sharedCtx: AudioContext | null = null;
-  /** Stereo merger for routing sidetone and opto to separate L/R channels */
+  /** Stereo merger that routes the sidetone to the left, the right or both channels */
   private merger: ChannelMergerNode | null = null;
-
-  // ---- Separate mode: two independent contexts ----
-  private sidetoneCtx: AudioContext | null = null;
-  private optoCtx: AudioContext | null = null;
-  /** Per-context mergers for channel routing in separate device mode */
-  private sidetoneMerger: ChannelMergerNode | null = null;
-  private optoMerger: ChannelMergerNode | null = null;
 
   // ---- Audio source nodes ----
   private sidetoneOsc: OscillatorNode | null = null;   // Sine wave sidetone
   private sidetoneGain: GainNode | null = null;        // Sidetone volume envelope
-  private optoOsc: OscillatorNode | null = null;       // Square wave for AC opto mode
-  private optoSource: ConstantSourceNode | null = null; // DC offset for DC opto mode
-  private optoGain: GainNode | null = null;            // Opto key-on/key-off envelope
-
-  // ---- Pilot tone (always-on, own context) ----
-  private pilotCtx: AudioContext | null = null;
-  private pilotOsc: OscillatorNode | null = null;
-  private pilotGain: GainNode | null = null;
-  private pilotMerger: ChannelMergerNode | null = null;
 
   /** True while any output context is paused (suspended, or interrupted on iOS) and has not recovered */
   readonly paused = signal(false);
@@ -110,8 +76,6 @@ export class AudioOutputService {
   private visibilityHandler: (() => void) | null = null;
 
   private started = false;
-  /** True when sidetone and opto use different sound cards */
-  private separateDevices = false;
 
   constructor(private settings: SettingsService) {
     effect(() => {
@@ -122,41 +86,12 @@ export class AudioOutputService {
 
   get isStarted(): boolean { return this.started; }
 
-  /**
-   * Start all audio output contexts and oscillators.
-   * Determines whether sidetone and opto share a device or use separate
-   * devices, then initialises the appropriate audio graph topology.
-   * Also starts the pilot tone if mic input is enabled.
-   */
+  /** Start the sidetone output context and oscillator on the chosen sound card. */
   async start(): Promise<void> {
     if (this.started) return;
     const s = this.settings.settings();
-    const sideDevId = s.sidetoneOutputDeviceId || 'default';
-    const optoDevId = s.optoOutputDeviceId || 'default';
-    this.separateDevices = sideDevId !== optoDevId;
+    const deviceId = s.sidetoneOutputDeviceId || 'default';
 
-    if (this.separateDevices) {
-      await this.startSeparate(sideDevId, optoDevId, s);
-    } else {
-      await this.startShared(sideDevId, s);
-    }
-    // A warmed-up context nobody adopted (another output device) is no longer needed
-    await releasePrimedContext();
-
-    // Start pilot tone for key detection (only when mic input is enabled)
-    if (s.micInputEnabled) {
-      await this.startPilot(s);
-    }
-
-    this.installKeepAlive();
-    this.started = true;
-  }
-
-  // ---------- Shared device (stereo merge) ----------
-  private async startShared(
-    deviceId: string,
-    s: ReturnType<typeof this.settings.settings>
-  ): Promise<void> {
     // The default output may already be open and awake (see audio-primer.ts)
     const primed = !deviceId || deviceId === 'default' ? takePrimedContext() : null;
     this.sharedCtx = primed ?? new AudioContext({ sampleRate: 48000 });
@@ -176,93 +111,15 @@ export class AudioOutputService {
     this.sidetoneOsc.connect(this.sidetoneGain);
     this.sidetoneOsc.start();
 
-    // Opto output: AC (oscillator) or DC (constant source)
-    this.optoGain = ctx.createGain();
-    this.optoGain.gain.value = 0;
-    if (s.optoMode === 'dc') {
-      this.optoSource = ctx.createConstantSource();
-      this.optoSource.offset.value = 1.0;
-      this.optoSource.connect(this.optoGain);
-      this.optoSource.start();
-    } else {
-      this.optoOsc = ctx.createOscillator();
-      this.optoOsc.type = 'square';
-      this.optoOsc.frequency.value = s.optoFrequency;
-      this.optoOsc.connect(this.optoGain);
-      this.optoOsc.start();
-    }
-
     this.merger = ctx.createChannelMerger(2);
-    this.routeShared(s);
+    this.routeSidetone(s);
     this.merger.connect(this.signalOut(ctx));
-  }
 
-  // ---------- Separate devices (two mono contexts) ----------
-  private async startSeparate(
-    sideDevId: string,
-    optoDevId: string,
-    s: ReturnType<typeof this.settings.settings>
-  ): Promise<void> {
-    // --- Sidetone context ---
-    this.sidetoneCtx = new AudioContext({ sampleRate: 48000 });
-    await this.trySetSinkId(this.sidetoneCtx, sideDevId);
-    this.sidetoneCtx.destination.channelCount = 2;
-    this.sidetoneCtx.destination.channelCountMode = 'explicit';
-    this.sidetoneCtx.destination.channelInterpretation = 'discrete';
+    // A warmed-up context nobody adopted (another output device) is no longer needed
+    await releasePrimedContext();
 
-    this.sidetoneOsc = this.sidetoneCtx.createOscillator();
-    this.sidetoneOsc.type = 'sine';
-    this.sidetoneOsc.frequency.value = s.sidetoneFrequency;
-    this.sidetoneGain = this.sidetoneCtx.createGain();
-    this.sidetoneGain.gain.value = 0;
-    this.sidetoneOsc.connect(this.sidetoneGain);
-    this.sidetoneMerger = this.sidetoneCtx.createChannelMerger(2);
-    for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
-      this.sidetoneGain.connect(this.sidetoneMerger, 0, idx);
-    }
-    this.sidetoneMerger.connect(this.signalOut(this.sidetoneCtx));
-    this.sidetoneOsc.start();
-
-    // --- Opto context ---
-    this.optoCtx = new AudioContext({ sampleRate: 48000 });
-    await this.trySetSinkId(this.optoCtx, optoDevId);
-    this.optoCtx.destination.channelCount = 2;
-    this.optoCtx.destination.channelCountMode = 'explicit';
-    this.optoCtx.destination.channelInterpretation = 'discrete';
-
-    this.optoGain = this.optoCtx.createGain();
-    this.optoGain.gain.value = 0;
-    if (s.optoMode === 'dc') {
-      this.optoSource = this.optoCtx.createConstantSource();
-      this.optoSource.offset.value = 1.0;
-      this.optoSource.connect(this.optoGain);
-      this.optoSource.start();
-    } else {
-      this.optoOsc = this.optoCtx.createOscillator();
-      this.optoOsc.type = 'square';
-      this.optoOsc.frequency.value = s.optoFrequency;
-      this.optoOsc.connect(this.optoGain);
-      this.optoOsc.start();
-    }
-    this.optoMerger = this.optoCtx.createChannelMerger(2);
-    const optoChIdx = s.optoOutputChannel === 'left' ? 0 : 1;
-    this.optoGain.connect(this.optoMerger, 0, optoChIdx);
-    this.optoMerger.connect(this.signalOut(this.optoCtx));
-  }
-
-  /** Test the opto output � plays the opto tone for a short burst regardless of key/enabled state */
-  async testOpto(durationMs: number = 1000): Promise<void> {
-    if (!this.started || !this.optoGain) return;
-    await this.ensureResumedAsync();
-    const s = this.settings.settings();
-    const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
-    const now = ctx.currentTime;
-    const dur = durationMs / 1000;
-    const ramp = 0.003;
-    this.optoGain.gain.cancelScheduledValues(now);
-    this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
-    this.releaseGain(this.optoGain.gain, now + dur, ramp);
-    this.duckKeepAlive(ctx, now, now + dur);
+    this.installKeepAlive();
+    this.started = true;
   }
 
   /** Test the sidetone output � plays a short burst */
@@ -270,7 +127,7 @@ export class AudioOutputService {
     if (!this.started || !this.sidetoneGain) return;
     await this.ensureResumedAsync();
     const s = this.settings.settings();
-    const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+    const ctx = this.sharedCtx!;
     const now = ctx.currentTime;
     const dur = durationMs / 1000;
     const ramp = 0.003;
@@ -311,17 +168,10 @@ export class AudioOutputService {
     source: 'rx' | 'tx' = 'tx'
   ): void {
     if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
-      const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+      const ctx = this.sharedCtx!;
       const now = ctx.currentTime;
       this.sidetoneGain.gain.cancelScheduledValues(now);
       this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
-      this.duckKeepAlive(ctx, now, null);
-    }
-    if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
-      const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
-      const now = ctx.currentTime;
-      this.optoGain.gain.cancelScheduledValues(now);
-      this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
       this.duckKeepAlive(ctx, now, null);
     }
   }
@@ -346,22 +196,15 @@ export class AudioOutputService {
 
   private applyKeyUp(ramp: number): void {
     if (this.sidetoneGain) {
-      const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+      const ctx = this.sharedCtx!;
       const now = ctx.currentTime;
       this.sidetoneGain.gain.cancelScheduledValues(now);
       this.releaseGain(this.sidetoneGain.gain, now, ramp);
       this.duckKeepAlive(ctx, now, now);
     }
-    if (this.optoGain) {
-      const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
-      const now = ctx.currentTime;
-      this.optoGain.gain.cancelScheduledValues(now);
-      this.releaseGain(this.optoGain.gain, now, ramp);
-      this.duckKeepAlive(ctx, now, now);
-    }
   }
 
-  /** Timed tone for encoder — plays sidetone + opto (radio keying), filtered by forward mode */
+  /** Timed tone for the encoder: the sidetone, filtered by forward mode */
   scheduleTone(durationMs: number, source: 'rx' | 'tx' = 'tx'): Promise<void> {
     if (!this.started) return Promise.resolve();
     const begun = performance.now();
@@ -373,19 +216,11 @@ export class AudioOutputService {
       const dur = (durationMs - (performance.now() - begun)) / 1000;
       if (dur < 0.02) return;
       if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
-        const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+        const ctx = this.sharedCtx!;
         const now = ctx.currentTime;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
         this.releaseGain(this.sidetoneGain.gain, now + dur, ramp);
-        this.duckKeepAlive(ctx, now, now + dur);
-      }
-      if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
-        const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
-        const now = ctx.currentTime;
-        this.optoGain.gain.cancelScheduledValues(now);
-        this.optoGain.gain.setTargetAtTime(s.optoAmplitude, now, ramp);
-        this.releaseGain(this.optoGain.gain, now + dur, ramp);
         this.duckKeepAlive(ctx, now, now + dur);
       }
     };
@@ -396,10 +231,9 @@ export class AudioOutputService {
 
   // ---------- Tones placed on the audio clock ----------
 
-  /** The master audio context: the clock that `scheduleToneAt` times are on (sidetone, else the opto output). */
+  /** The master audio context: the clock that `scheduleToneAt` times are on. */
   private masterCtx(): AudioContext | null {
-    if (!this.started) return null;
-    return this.separateDevices ? (this.sidetoneCtx ?? this.optoCtx) : this.sharedCtx;
+    return this.started ? this.sharedCtx : null;
   }
 
   /** The audio clock in seconds, or null when audio is not running (the caller then keeps time on the page clock). */
@@ -445,7 +279,7 @@ export class AudioOutputService {
   }
 
   /**
-   * Place a tone on the audio clock: sidetone and opto, filtered by forward mode, starting at `time`
+   * Place a tone on the audio clock: the sidetone, filtered by forward mode, starting at `time`
    * (seconds on `clockTime()`) and lasting `durationMs`. Unlike `scheduleTone` it does not clear what is
    * already scheduled, so a whole character, or several, can be queued ahead with exact gaps whatever
    * the page is doing. `snapToZero` adds the final snap to silence; leave it out when another tone
@@ -466,10 +300,7 @@ export class AudioOutputService {
       this.duckKeepAlive(ctx, start - KEEP_ALIVE_LEAD_S, start + dur);
     };
     if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
-      place(this.sidetoneGain, this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!, s.sidetoneAmplitude);
-    }
-    if (s.optoEnabled && this.optoGain && (s.optoForward === 'both' || s.optoForward === source)) {
-      place(this.optoGain, this.separateDevices ? this.optoCtx! : this.sharedCtx!, s.optoAmplitude);
+      place(this.sidetoneGain, this.sharedCtx!, s.sidetoneAmplitude);
     }
   }
 
@@ -478,22 +309,15 @@ export class AudioOutputService {
     if (!this.started) return;
     const ramp = 0.003;
     if (this.sidetoneGain) {
-      const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+      const ctx = this.sharedCtx!;
       this.sidetoneGain.gain.cancelScheduledValues(ctx.currentTime);
       this.releaseGain(this.sidetoneGain.gain, ctx.currentTime, ramp);
-      this.duckKeepAlive(ctx, ctx.currentTime, ctx.currentTime);
-    }
-    if (this.optoGain) {
-      const ctx = this.separateDevices ? this.optoCtx! : this.sharedCtx!;
-      this.optoGain.gain.cancelScheduledValues(ctx.currentTime);
-      this.releaseGain(this.optoGain.gain, ctx.currentTime, ramp);
       this.duckKeepAlive(ctx, ctx.currentTime, ctx.currentTime);
     }
   }
 
   /**
-   * Sidetone-only tone — plays the audible sidetone WITHOUT keying
-   * the opto/radio output, filtered by forward mode.
+   * Sidetone-only tone, filtered by forward mode.
    * Used for received RTDB characters so the user hears the incoming
    * morse without retransmitting it.
    * @deprecated Use scheduleTone(duration, source) instead — forward settings now control routing.
@@ -508,7 +332,7 @@ export class AudioOutputService {
       if (dur < 0.02) return;
       if (s.sidetoneEnabled && this.sidetoneGain && (s.sidetoneForward === 'both' || s.sidetoneForward === source)) {
         const ramp = 0.003;
-        const ctx = this.separateDevices ? this.sidetoneCtx! : this.sharedCtx!;
+        const ctx = this.sharedCtx!;
         const now = ctx.currentTime;
         this.sidetoneGain.gain.cancelScheduledValues(now);
         this.sidetoneGain.gain.setTargetAtTime(s.sidetoneAmplitude, now, ramp);
@@ -525,15 +349,9 @@ export class AudioOutputService {
     this.clearKeepAlive();
     await releasePrimedContext();
     try { this.sidetoneOsc?.stop(); } catch { }
-    try { this.optoOsc?.stop(); } catch { }
-    try { this.optoSource?.stop(); } catch { }
-    try { this.pilotOsc?.stop(); } catch { }
     try { this.merger?.disconnect(); } catch { }
-    try { this.sidetoneMerger?.disconnect(); } catch { }
-    try { this.optoMerger?.disconnect(); } catch { }
-    try { this.pilotMerger?.disconnect(); } catch { }
 
-    const contexts = [this.sharedCtx, this.sidetoneCtx, this.optoCtx, this.pilotCtx];
+    const contexts = [this.sharedCtx];
     const closeFailures: AudioContext[] = [];
     for (const ctx of contexts) {
       if (!ctx) continue;
@@ -545,87 +363,22 @@ export class AudioOutputService {
     }
 
     this.sharedCtx = this.sharedCtx && closeFailures.includes(this.sharedCtx) ? this.sharedCtx : null;
-    this.sidetoneCtx = this.sidetoneCtx && closeFailures.includes(this.sidetoneCtx) ? this.sidetoneCtx : null;
-    this.optoCtx = this.optoCtx && closeFailures.includes(this.optoCtx) ? this.optoCtx : null;
-    this.pilotCtx = this.pilotCtx && closeFailures.includes(this.pilotCtx) ? this.pilotCtx : null;
     this.merger = null;
-    this.sidetoneMerger = null;
-    this.optoMerger = null;
-    this.pilotMerger = null;
     this.sidetoneOsc = null;
     this.sidetoneGain = null;
-    this.optoOsc = null;
-    this.optoSource = null;
-    this.optoGain = null;
-    this.pilotOsc = null;
-    this.pilotGain = null;
     this.started = closeFailures.length > 0;
     if (closeFailures.length > 0) {
-      throw new Error('One or more audio output contexts could not be closed.');
+      throw new Error('The audio output context could not be closed.');
     }
   }
 
   // ---- internal ----
 
-  /**
-   * Start the always-on pilot tone oscillator.
-   * Creates its own AudioContext so it can target a specific device/channel
-   * independently of the sidetone/opto contexts.
-   */
-  async startPilot(
-    s?: ReturnType<typeof this.settings.settings>
-  ): Promise<void> {
-    // Stop any existing pilot first
-    await this.stopPilot();
-    if (!s) s = this.settings.settings();
-    const deviceId = s.pilotOutputDeviceId || 'default';
-    this.pilotCtx = new AudioContext({ sampleRate: 48000 });
-    await this.trySetSinkId(this.pilotCtx, deviceId);
-
-    // Force destination to stereo-discrete so channel routing works
-    this.pilotCtx.destination.channelCount = 2;
-    this.pilotCtx.destination.channelCountMode = 'explicit';
-    this.pilotCtx.destination.channelInterpretation = 'discrete';
-
-    this.pilotOsc = this.pilotCtx.createOscillator();
-    this.pilotOsc.type = 'sine';
-    this.pilotOsc.frequency.value = s.pilotFrequency;
-
-    this.pilotGain = this.pilotCtx.createGain();
-    this.pilotGain.gain.value = s.pilotAmplitude;
-
-    this.pilotOsc.connect(this.pilotGain);
-
-    // Route to the chosen channel via a stereo merger
-    this.pilotMerger = this.pilotCtx.createChannelMerger(2);
-    const chIdx = s.pilotOutputChannel === 'left' ? 0 : 1;
-    this.pilotGain.connect(this.pilotMerger, 0, chIdx);
-    this.pilotMerger.connect(this.signalOut(this.pilotCtx));
-
-    this.pilotOsc.start();
-  }
-
-  /** Stop the pilot tone if running */
-  async stopPilot(): Promise<void> {
-    try { this.pilotOsc?.stop(); } catch { }
-    this.pilotMerger?.disconnect();
-    await this.pilotCtx?.close().catch(() => {});
-    this.pilotCtx = null;
-    this.pilotMerger = null;
-    this.pilotOsc = null;
-    this.pilotGain = null;
-  }
-
   private applySettings(s: ReturnType<typeof this.settings.settings>): void {
     if (!this.started) return;
     if (this.sidetoneOsc) this.sidetoneOsc.frequency.value = s.sidetoneFrequency;
-    if (this.optoOsc && s.optoMode === 'ac') this.optoOsc.frequency.value = s.optoFrequency;
-    if (this.pilotOsc) this.pilotOsc.frequency.value = s.pilotFrequency;
-    if (this.pilotGain) this.pilotGain.gain.value = s.pilotAmplitude;
     if (s.outputKeepAlive !== this.keepAliveLevel) this.buildKeepAliveSignal(s.outputKeepAlive);
-    if (!this.separateDevices && this.merger) {
-      this.routeShared(s);
-    }
+    if (this.merger) this.routeSidetone(s);
   }
 
   /** Merger input indexes for the sidetone channel choice (0 = left, 1 = right). */
@@ -633,18 +386,12 @@ export class AudioOutputService {
     return channel === 'both' ? [0, 1] : [channel === 'left' ? 0 : 1];
   }
 
-  private routeShared(s: ReturnType<typeof this.settings.settings>): void {
+  private routeSidetone(s: ReturnType<typeof this.settings.settings>): void {
     if (!this.merger) return;
     this.sidetoneGain?.disconnect();
-    this.optoGain?.disconnect();
-
-    // merger input 0 = left, 1 = right
-    const optoIdx = s.optoOutputChannel === 'left' ? 0 : 1;
-
     for (const idx of this.sidetoneChannelIndexes(s.sidetoneOutputChannel)) {
       this.sidetoneGain?.connect(this.merger, 0, idx);
     }
-    this.optoGain?.connect(this.merger, 0, optoIdx);
   }
 
   private async trySetSinkId(ctx: AudioContext, deviceId: string): Promise<void> {
@@ -782,7 +529,7 @@ export class AudioOutputService {
 
   /** All active AudioContexts */
   private allContexts(): (AudioContext | null)[] {
-    return [this.sharedCtx, this.sidetoneCtx, this.optoCtx, this.pilotCtx];
+    return [this.sharedCtx];
   }
 
   /**
@@ -858,7 +605,7 @@ export class AudioOutputService {
   }
 
   /**
-   * The input a context's sidetone, key or pilot signal goes to instead of the destination. The
+   * The input a context's sidetone signal goes to instead of the destination. The
    * keep-alive adds to it, so a full-scale tone plus the keep-alive would clip and sound distorted;
    * this stage turns the signal down by the keep-alive's own peak (at most 1 dB) so the sum fits.
    */
@@ -872,7 +619,7 @@ export class AudioOutputService {
       stage.connect(ctx.destination);
       this.signalStages.set(ctx, stage);
     }
-    stage.gain.value = ctx === this.pilotCtx ? 1 : 1 - this.keepAlivePeak(this.settings.settings().outputKeepAlive);
+    stage.gain.value = 1 - this.keepAlivePeak(this.settings.settings().outputKeepAlive);
     return stage;
   }
 
@@ -886,15 +633,14 @@ export class AudioOutputService {
     this.stopKeepAliveSignal();
     this.keepAliveLevel = level;
     for (const ctx of this.allContexts()) {
-      const stage = ctx && ctx !== this.pilotCtx && this.signalStages.get(ctx);
+      const stage = ctx && this.signalStages.get(ctx);
       if (stage) stage.gain.value = 1 - this.keepAlivePeak(level);
     }
     if (level === 'off') return;
     const gains = KEEP_ALIVE_LEVELS[level] ?? KEEP_ALIVE_LEVELS.normal;
 
     for (const ctx of this.allContexts()) {
-      // The pilot tone is a steady signal that keeps its card awake by itself
-      if (!ctx || ctx === this.pilotCtx) continue;
+      if (!ctx) continue;
       try {
         const bus = ctx.createGain();
         bus.connect(ctx.destination);

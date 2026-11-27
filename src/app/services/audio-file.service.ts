@@ -4,7 +4,6 @@
 
 import { Injectable, computed, effect, signal } from '@angular/core';
 import { Subject } from 'rxjs';
-import { AudioInputService } from './audio-input.service';
 import { ConfirmService } from './confirm.service';
 import { CwInputService } from './cw-input.service';
 import { EbookService } from './ebook.service';
@@ -97,7 +96,6 @@ export class AudioFileService {
   constructor(
     private settings: SettingsService,
     private cwInput: CwInputService,
-    private audioInput: AudioInputService,
     private confirm: ConfirmService,
     private viewport: ViewportService,
     private ebook: EbookService,
@@ -167,11 +165,9 @@ export class AudioFileService {
       }
 
       try {
-        await this.audioInput.hold(true);
         await this.cwInput.startFile(element);
       } catch {
         URL.revokeObjectURL(url);
-        await this.audioInput.hold(false);
         this.unloaded$.next();
         await this.confirm.ask({
           title: 'Audio could not be started',
@@ -264,7 +260,6 @@ export class AudioFileService {
     this.duration.set(0);
     this.fileName.set('');
     await this.cwInput.stopFile();
-    await this.audioInput.hold(false);
     this.setIosSession('auto');
     this.unloaded$.next();
   }

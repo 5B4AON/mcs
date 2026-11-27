@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.26.3] - 2026-11-28
+
+### Removed
+
+- **Straight Key via Mic and Key Output via an audio channel** — Both experimental sound card features are gone. The pilot-tone mic key (a straight key read through the microphone input) and the sound card optocoupler key output did not work reliably: many sound cards, USB headset adapters and operating systems squash a steady tone, so the key was not seen, and the audio key output was never dependable either. Keys and radio keying use MIDI, the serial port or WinKeyer; the sound card plays the sidetone and feeds the CW Tone Decoder. Removed with them: their Settings cards (Inputs has nine cards and Outputs six), the detector and its Key meter on the main screen, the "Straight key via microphone" choice in Send Practice's key list, the "animate on microphone" option of the Main Screen Touch Keyer, the channel conflict warnings (only the sidetone is left on the sound card), and every mention in the Setup Wizard and the Help. Help sections 6.4, 7.1 and 8.1 and their wiring diagrams are removed, so Help chapters 7 and 8 are renumbered (7.1 is now Serial Port, 8.1 is Device Profiles). Saved profiles, presets and settings files that still hold the old settings load without trouble; the old values are ignored.
+
+### Changed
+
+- **Keep-alive for USB sound cards** — The setting is now called **Keep-alive** (it was Sound card keep-alive) and is **Off by default** on computers and phones alike; before, it was Normal on a computer and High on a phone. A device with a saved profile keeps the strength it saved. The control now also shows in the Setup Wizard's sidetone card, not only in Settings, and the Help (7.4) says it is off by default.
+- **One "System Default" in the audio device lists** — The device pickers (sidetone, CW Tone Decoder input) no longer list the browser's own "Default" entry next to the app's "System Default"; the app's entry shows the name of the device the browser says it is. On Android, where Chrome lists only one output, the Sidetone card now explains that Android chooses where sound goes (a plugged-in USB sound card takes all of it).
+
+### Fixed
+
+- **Setup Wizard sidetone test** — Test Output in the wizard's sidetone card could sound distorted, unlike the Settings card. It now plays through the same kind of audio setup as the live sidetone (48 kHz, a stereo output that is not mixed, soft rise and fall) with a little headroom so a full-scale tone cannot clip.
+
 ## [2.26.2] - 2026-11-27
 
 ### Fixed

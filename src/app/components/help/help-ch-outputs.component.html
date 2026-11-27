@@ -2,113 +2,8 @@
 <!-- Chapter 7 — Key & Audio Outputs                                -->
 <!-- ================================================================ -->
 
-<!-- 7.1 Optocoupler -->
-<h2 id="s7-1">7.1 &nbsp;Key via Audio Channel (Optocoupler) <span class="help-experimental">Experimental</span></h2>
-
-<p>
-  This output keys your transmitter through an <strong>optocoupler</strong>
-  driven by a sound card audio channel. The optocoupler provides electrical
-  isolation between your computer and radio &mdash; important for safety and
-  to prevent ground loops.
-  This feature is <strong>experimental</strong> &mdash; AC coupling on many
-  sound cards distorts the DC component of the keying signal, which can
-  produce unreliable timing. USB-serial keying (&sect;7.2) is generally
-  more reliable.
-</p>
-
-<h3>Drive Modes</h3>
-<table>
-  <tr><th>Mode</th><th>Signal</th><th>Best for</th></tr>
-  <tr>
-    <td><strong>DC Offset</strong></td>
-    <td>Steady DC voltage when keyed, zero when not keyed.</td>
-    <td>Sound cards that pass DC (rare). Simplest wiring.</td>
-  </tr>
-  <tr>
-    <td><strong>AC Tone</strong></td>
-    <td>Square wave at the configured frequency when keyed.</td>
-    <td>Most sound cards. They block DC, so use this mode.</td>
-  </tr>
-</table>
-
-<figure class="diagram-figure">
-  <figcaption>Optocoupler Key Output &mdash; DC Mode</figcaption>
-  <img src="help/diagrams/opto-dc-mode.svg"
-       alt="Optocoupler Key Output — DC Mode"
-       class="diagram-img"
-       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
-  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>opto-dc-mode.mmd</code></p>
-</figure>
-
-<figure class="diagram-figure">
-  <figcaption>Optocoupler Key Output &mdash; AC Mode with Bridge Rectifier</figcaption>
-  <img src="help/diagrams/opto-ac-bridge.svg"
-       alt="Optocoupler Key Output — AC Mode with Bridge Rectifier"
-       class="diagram-img"
-       (error)="$any($event).target.hidden = true; $any($event).target.parentElement.classList.add('img-missing')" />
-  <p class="diagram-placeholder">&#9888; Diagram not yet generated &mdash; see <code>opto-ac-bridge.mmd</code></p>
-</figure>
-
-<h3>Settings</h3>
-<ul>
-  <li><strong>Audio Device</strong> — The sound card driving the
-      optocoupler.</li>
-  <li><strong>Channel</strong> — Left or Right. Must not conflict with sidetone
-      or pilot tone on the same device.</li>
-  <li><strong>Mode</strong> — DC Offset or AC Tone.</li>
-  <li><strong>Frequency</strong> — (AC mode only) Square wave frequency.
-      400–1000 Hz usually works well.</li>
-  <li><strong>Amplitude</strong> — Set to 100% for maximum drive voltage.</li>
-  <li><strong>Forward</strong> — Controls which signals activate the
-      optocoupler:
-    <ul>
-      <li><strong>TX only</strong> (default) — Fires only for transmitted
-          morse (encoder, keyer inputs tagged as TX).</li>
-      <li><strong>RX only</strong> — Fires only for received morse
-          (decoded audio inputs, Firebase RTDB).</li>
-      <li><strong>Both</strong> — Fires for all morse activity.</li>
-    </ul>
-  </li>
-  <li><strong>Test Output</strong> — Keys the output for 1 second to verify
-      wiring.</li>
-</ul>
-
-<h3 id="s7-1-wiring">Wiring and low voltage</h3>
-<ul>
-  <li><strong>AC Tone wiring</strong> — Connect the sound card channel to the
-      optocoupler LED anode. Connect the cathode to the sound card ground.
-      Set the amplitude to 100%.</li>
-  <li><strong>Only 100–200 mV in DC Offset mode?</strong> Most sound cards
-      block DC with a small capacitor, so the output fades to nearly zero. This
-      is the hardware, not the app. Switch to AC Tone mode.</li>
-  <li><strong>Low voltage in AC Tone mode (under 2 V)?</strong> Headphone outputs
-      are often only 1–2 V, and the LED needs about 1.1 V. These steps help:
-    <ul>
-      <li>Remove any series resistor. The sound card already limits the
-          current, so connect the LED directly.</li>
-      <li>Add a bridge of four small Schottky diodes (for example BAT43). It
-          uses both halves of the wave and is the best fix.</li>
-      <li>Or use a transistor (2N2222 or BC547): base through 1&nbsp;kΩ from the
-          audio output, collector to the LED, then to a 5&nbsp;V supply, emitter
-          to ground. It works at any audio voltage.</li>
-      <li>A 1N4148 diode across the LED, facing the other way, protects it.</li>
-    </ul>
-  </li>
-</ul>
-
-<div class="example-box">
-  <div class="example-title">Example — Simple DC wiring</div>
-  <p>
-    Get a PC817 or 4N25 optocoupler. Connect the sound card's audio output
-    to the LED anode (pin 1) and GND to the cathode (pin 2). Connect the
-    phototransistor pins (4 and 5) to your radio's key jack. Set the mode to
-    AC Tone (or DC Offset if your card passes DC) and the amplitude to 100%.
-    Click "Test Output" — your radio should key.
-  </p>
-</div>
-
-<!-- 7.2 Serial Port -->
-<h2 id="s7-2">7.2 &nbsp;Key via Serial Port (DTR/RTS)</h2>
+<!-- 7.1 Serial Port -->
+<h2 id="s7-1">7.1 &nbsp;Key via Serial Port (DTR/RTS)</h2>
 
 <p>
   This output keys your transmitter using the <strong>DTR</strong> or
@@ -144,7 +39,7 @@
 <h3>Multiple Mappings</h3>
 <p>
   Serial Output supports <strong>multiple independent mappings</strong> in a
-  table-based interface (the same pattern as MIDI Output &sect;7.4). Each
+  table-based interface (the same pattern as MIDI Output &sect;7.3). Each
   mapping defines its own serial port, output pin (DTR or RTS), invert
   setting, and <strong>forward selector</strong>. You can:
 </p>
@@ -299,7 +194,7 @@
   character forwarding path to MIDI output.
 </p>
 <p>
-  This dual-layer approach (same as MIDI Output &sect;7.5) eliminates
+  This dual-layer approach (same as MIDI Output &sect;7.3) eliminates
   both hardware cross-talk loops and software routing loops.
 </p>
 <h4>Per-mapping relay override</h4>
@@ -333,8 +228,8 @@
   an application issue.
 </p>
 
-<!-- 7.3 WinKeyer -->
-<h2 id="s7-3">7.3 &nbsp;WinKeyer Output (K1EL WinKeyer)</h2>
+<!-- 7.2 WinKeyer -->
+<h2 id="s7-2">7.2 &nbsp;WinKeyer Output (K1EL WinKeyer)</h2>
 
 <p>
   This output forwards decoded text to a
@@ -356,7 +251,7 @@
 </p>
 <ul>
   <li><strong>RX only</strong> — Only characters decoded from incoming audio
-      inputs (mic pilot tone, CW tone decoder) or inputs configured as RX.</li>
+      inputs (the CW tone decoder) or inputs configured as RX.</li>
   <li><strong>TX only</strong> — Only characters from the encoder (typed text)
       and from keyer inputs (keyboard, mouse, touch) configured as TX.</li>
   <li><strong>Both</strong> — All decoded characters regardless of source.</li>
@@ -365,12 +260,6 @@
 <h3>Input Sources in Detail</h3>
 <table>
   <tr><th>Input</th><th>Straight Key</th><th>Paddle</th><th>Tag</th></tr>
-  <tr>
-    <td><strong>Mic (Pilot Tone)</strong></td>
-    <td>Key events decoded → tagged text</td>
-    <td>N/A</td>
-    <td>Per <em>micInputSource</em> setting (RX or TX)</td>
-  </tr>
   <tr>
     <td><strong>CW Audio Input</strong></td>
     <td>Goertzel tone detection → tagged text</td>
@@ -469,8 +358,8 @@
   <em>+ Add serial port&hellip;</em> dropdown option.
 </p>
 
-<!-- 7.4 MIDI Output -->
-<h2 id="s7-4">7.4 &nbsp;MIDI Output (Key via MIDI)</h2>
+<!-- 7.3 MIDI Output -->
+<h2 id="s7-3">7.3 &nbsp;MIDI Output (Key via MIDI)</h2>
 
 <p>
   The MIDI output sends <strong>note-on</strong> and <strong>note-off</strong>
@@ -479,7 +368,7 @@
   MIDI output is <strong>character-based</strong> &mdash; it receives decoded
   characters and <em>plays them back</em> as individual dits and dahs using
   the <strong>Encoder WPM</strong> timing setting. This is similar to how
-  WinKeyer output (&sect;7.3) works: the application sends characters, and
+  WinKeyer output (&sect;7.2) works: the application sends characters, and
   the output produces properly timed morse elements.
 </p>
 
@@ -538,7 +427,7 @@
       The operator's raw keying is decoded into characters, which are then
       played back as clean dits and dahs at encoder WPM &mdash; effectively
       "cleaning up" the timing.</li>
-  <li><strong>Audio inputs</strong> (mic pilot tone, CW tone decoder)
+  <li><strong>Audio input</strong> (CW tone decoder)
       &mdash; Decoded characters are played back at encoder WPM.</li>
   <li><strong>MIDI input</strong> &mdash; Decoded characters from incoming
       MIDI are played back on the MIDI output.</li>
@@ -679,7 +568,7 @@
   keyDown/keyUp path. Characters decoded from MIDI input are also
   tagged <code>fromMidi</code> and excluded from the character forwarding
   path to MIDI output. This dual-layer design (same as Serial Output
-  &sect;7.2) eliminates both hardware bus echoes and software routing
+  &sect;7.1) eliminates both hardware bus echoes and software routing
   loops.
 </p>
 <h4>Per-mapping relay override</h4>
@@ -791,8 +680,8 @@
   </p>
 </div>
 
-<!-- 7.5 Sidetone -->
-<h2 id="s7-5">7.5 &nbsp;Sidetone (Speaker Audio)</h2>
+<!-- 7.4 Sidetone -->
+<h2 id="s7-4">7.4 &nbsp;Sidetone (Speaker Audio)</h2>
 
 <p>
   The sidetone is the audible tone you hear through your speakers or
@@ -818,22 +707,23 @@
   <li><strong>Amplitude</strong> — Volume level. Start at 30–50% and adjust
       to taste.</li>
   <li><strong>Active on</strong> — TX only, RX only, or Both (see above).</li>
-  <li><strong>Sound card keep-alive</strong> — Some USB sound cards switch their
+  <li><strong>Keep-alive</strong> — Some USB sound cards switch their
       amplifier off after a second or two of silence, and then lose or fade in
       the start of the next dot. While audio runs, the app plays an inaudible
       signal on every output (very quiet noise, a tone below hearing and one
       above it) so the card stays awake. It fades out when a tone starts and
-      returns about half a second after the last one. Choose its strength:
-      <strong>Low</strong> (the quietest), <strong>Normal</strong> (the default on
-      a computer), <strong>High</strong> (the default on a phone or tablet, because
-      a phone lowers the digital signal with its volume setting and a weak
-      keep-alive can then round to silence on the way to the card) or
-      <strong>Off</strong> if your card or headphones react to it. If the first dot
-      is still weak, raise the level or the phone's volume.</li>
+      returns about half a second after the last one. It is
+      <strong>Off</strong> by default. If the first dot is still weak, choose its
+      strength: <strong>Low</strong> (the quietest), <strong>Normal</strong> or
+      <strong>High</strong> (a phone lowers the digital signal with its volume
+      setting, so a weak keep-alive can round to silence on the way to the
+      card; High is the strongest). Switch it off again if your card or
+      headphones react to it. If the first dot is still weak, raise the level
+      or the phone's volume.</li>
 </ul>
 
-<!-- 7.6 Vibration -->
-<h2 id="s7-6">7.6 &nbsp;Vibration (Haptic Feedback)</h2>
+<!-- 7.5 Vibration -->
+<h2 id="s7-5">7.5 &nbsp;Vibration (Haptic Feedback)</h2>
 
 <p>
   The vibration output mirrors the sidetone: the device vibrates while the
@@ -878,8 +768,8 @@
   </p>
 </div>
 
-<!-- 7.7 Loop Detection -->
-<h2 id="s7-7">7.7 &nbsp;Loop Detection</h2>
+<!-- 7.6 Loop Detection -->
+<h2 id="s7-6">7.6 &nbsp;Loop Detection</h2>
 
 <p>
   When an output is configured to activate on RX signals, and the resulting
@@ -921,7 +811,7 @@
   Characters arriving from a <strong>relay-allowed</strong> input path are
   excluded from loop detection. An input path is relay-allowed when the
   input mapping appears in at least one output mapping&rsquo;s
-  <strong>Relay from&hellip;</strong> list (&sect;7.2 for Serial, &sect;7.5
+  <strong>Relay from&hellip;</strong> list (&sect;7.1 for Serial, &sect;7.3
   for MIDI). This means deliberately relayed traffic &mdash; e.g. a MIDI
   input on one device being replayed on a MIDI output on a different
   device &mdash; will not trigger the loop detector, even if the same
@@ -932,7 +822,7 @@
 <ul>
   <li>Use <strong>TX only</strong> on outputs that feed back into an input
       you are monitoring (e.g. if your radio's sidetone goes into the CW
-      audio input, set the optocoupler or serial output to TX only).</li>
+      audio input, set the serial output to TX only).</li>
   <li>When using Firebase RTDB, ensure the channel is configured so that
       received characters are not re-published back to the same channel.</li>
   <li>When re-keying received morse through a WinKeyer or serial port,

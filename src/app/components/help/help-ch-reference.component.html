@@ -17,8 +17,7 @@
 <div class="example-box">
   <div class="example-title">On-Air CW — Computer-Keyed Transmission</div>
   <p>
-    Connect a USB sound card to your radio via an optocoupler, or use a
-    USB-serial adapter. Type messages in the encoder and let the computer send
+    Connect an Arduino MIDI interface or a USB-serial adapter to your radio. Type messages in the encoder and let the computer send
     perfect CW. Use the CW audio input to decode incoming signals.
   </p>
 </div>
@@ -26,7 +25,8 @@
 <div class="example-box">
   <div class="example-title">On-Air CW — Manual Key with Computer Decode</div>
   <p>
-    Build the pilot tone circuit and connect your straight key. The computer
+    Connect your straight key through an Arduino MIDI interface or a USB-serial
+    adapter. The computer
     decodes your sending and displays it. Incoming CW from the radio is fed
     into the CW audio input and decoded alongside. Both sides of the QSO
     appear on screen with RX/TX colour coding.
@@ -88,12 +88,6 @@
       page.</td>
   </tr>
   <tr>
-    <td>Key level meter stays at zero</td>
-    <td>Verify the pilot tone output channel and device. Check external
-        circuit wiring. Try pilot amplitude 1.0. Run the calibration
-        sequence.</td>
-  </tr>
-  <tr>
     <td>CW scope stays flat or keeps saying &ldquo;Searching&rdquo;</td>
     <td>Check that audio is started and the input device and channel are
         right. Raise the radio volume or move the phone closer to the
@@ -108,12 +102,6 @@
         extra dits from contact bounce.</td>
   </tr>
   <tr>
-    <td>Opto does not key the radio</td>
-    <td>Check wiring polarity. Try DC mode if AC doesn't work (or vice
-        versa). Set amplitude to 100%. Use "Test Output". Consider a
-        transistor buffer if sound card voltage is too low.</td>
-  </tr>
-  <tr>
     <td>Serial port not available</td>
     <td>Web Serial API requires Chrome or Edge on a <strong>desktop</strong>
         operating system (Windows, macOS, Linux or ChromeOS). Click
@@ -121,11 +109,6 @@
         remembers granted ports across sessions.
         <strong>Android is not supported</strong> — Chrome on Android does
         not provide access to USB-serial adapters even via USB OTG.</td>
-  </tr>
-  <tr>
-    <td>Channel conflict warning</td>
-    <td>Two outputs are on the same channel on the same device. Change one
-        to a different channel or device, or disable it.</td>
   </tr>
   <tr>
     <td>Audio cuts out or is choppy</td>

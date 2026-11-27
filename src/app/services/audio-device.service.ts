@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { Injectable, signal } from '@angular/core';
+import { Injectable, computed, signal } from '@angular/core';
 
 /**
  * Simplified representation of a browser audio device.
@@ -39,6 +39,21 @@ export class AudioDeviceService {
   readonly inputDevices = signal<AudioDeviceInfo[]>([]);
   /** Audio output devices (speakers, headphones, USB sound cards) */
   readonly outputDevices = signal<AudioDeviceInfo[]>([]);
+
+  /** True on an Android browser, where the output is always the one the system chose */
+  readonly isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
+
+  /**
+   * What the pickers list after their own "System Default" choice. Browsers also list
+   * their own `default` entry, which has the same id as that choice and would show twice,
+   * so it is left out. Profiles and fingerprints still use the full lists above.
+   */
+  readonly inputChoices = computed(() => this.withoutDefault(this.inputDevices()));
+  readonly outputChoices = computed(() => this.withoutDefault(this.outputDevices()));
+
+  /** "System Default", plus the device the browser says it is when that is known */
+  readonly inputDefaultLabel = computed(() => this.defaultLabel(this.inputDevices()));
+  readonly outputDefaultLabel = computed(() => this.defaultLabel(this.outputDevices()));
 
   /** Whether we've successfully enumerated devices with readable labels */
   readonly hasPermission = signal(false);
@@ -81,6 +96,15 @@ export class AudioDeviceService {
     } catch (err) {
       console.error('Failed to enumerate audio devices:', err);
     }
+  }
+
+  private withoutDefault(list: AudioDeviceInfo[]): AudioDeviceInfo[] {
+    return list.filter(d => d.deviceId !== 'default');
+  }
+
+  private defaultLabel(list: AudioDeviceInfo[]): string {
+    const name = list.find(d => d.deviceId === 'default')?.label.replace(/^default\s*[-:]?\s*/i, '').trim();
+    return name && !/^(microphone|speaker) \d+$/i.test(name) ? `System Default (${name})` : 'System Default';
   }
 
   /**

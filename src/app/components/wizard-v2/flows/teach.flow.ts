@@ -403,7 +403,7 @@ const TYPED_STEPS: WizardStep[] = [
     id: 'reveal',
     title: 'Hide the text until you reveal it?',
     intro: 'Everyone works it out first: by listening and writing on paper, or from the dots and dashes. Holding the reveal button shows everyone the answer.',
-    helpSection: 's8-4',
+    helpSection: 's8-3',
     when: ctx => !!scenarioOf(ctx)?.blur,
     questions: [{
       id: 'reveal', label: 'Typed text', kind: 'single', default: 'hide',
@@ -520,7 +520,7 @@ const PAUSES_STEP: WizardStep = {
   level: 'intermediate',
   title: 'Extra pauses between letters?',
   intro: 'Longer pauses between letters and words make Morse easier to follow, because each letter has time to sink in. With no extra pauses, letters and words follow each other at the full speed you chose, which is harder to follow.',
-  helpSection: 's8-5',
+  helpSection: 's8-4',
   when: all(inScenario, playsMorse),
   questions: [{
     id: 'pauses', label: 'Pauses', kind: 'single', default: 'recommended',
@@ -585,7 +585,7 @@ const FUN_STEPS: WizardStep[] = [
     id: 'rewardOpt',
     title: 'Add a reward?',
     intro: 'A reward is a word that makes the screen show a picture or message when someone keys or types it. It is a fun way to celebrate success.',
-    helpSection: 's8-8',
+    helpSection: 's8-7',
     when: ctx => scenarioOf(ctx)?.rewards === 'optional' && !scenarioOf(ctx)?.lens,
     questions: [{ id: 'rewardOpt', label: 'Rewards', kind: 'multi', default: [], optionsFrom: rewardOptions, hint: 'Tick as many as you like, or none to keep it simple.' }],
     validate: rewardProblems,
@@ -594,7 +594,7 @@ const FUN_STEPS: WizardStep[] = [
     id: 'rewardReq',
     title: 'Choose the reward words',
     intro: 'This session works with a word that wins a reward: when someone keys or types it, the screen shows the reward. Tick one or more. Tell people the words, or keep them secret.',
-    helpSection: 's8-8',
+    helpSection: 's8-7',
     when: ctx => scenarioOf(ctx)?.rewards === 'required',
     questions: [{ id: 'rewardReq', label: 'Rewards', kind: 'multi', default: ['good'], optionsFrom: rewardOptions }],
     validate: ctx => (rewardPicks(ctx, 'rewardReq').length ? [] : ['Tick at least one reward.']).concat(rewardProblems(ctx)),
@@ -603,7 +603,7 @@ const FUN_STEPS: WizardStep[] = [
     id: 'rewardCustom',
     title: 'Your own reward',
     intro: 'Type the word people must key (letters or numbers, 2 to 12 long) and what the screen shows. The reward can be text, an emoji, or both.',
-    helpSection: 's8-8',
+    helpSection: 's8-7',
     when: ctx => (rewardPicks(ctx, 'rewardOpt').includes('custom') && scenarioOf(ctx)?.rewards === 'optional' && !scenarioOf(ctx)?.lens)
       || (rewardPicks(ctx, 'rewardReq').includes('custom') && scenarioOf(ctx)?.rewards === 'required'),
     questions: [
@@ -635,7 +635,7 @@ const FUN_STEPS: WizardStep[] = [
     id: 'signals',
     title: 'Special signals',
     intro: 'Special signals let the person at the key control the screen: AR clears it, BK starts a new paragraph and HH erases the last word. They are switched off at the moment. They are handy when people take turns.',
-    helpSection: 's8-7',
+    helpSection: 's8-6',
     when: all(inFamily('keyed'), knowsMorse, settingIs('prosignActionsEnabled', false)),
     questions: [{
       id: 'signals', label: 'Special signals', kind: 'single', default: 'on',

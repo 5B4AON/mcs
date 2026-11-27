@@ -46,9 +46,6 @@ export const LANDINGS: Record<string, GoalLanding> = {
   'touch-keyer': {
     tab: 'inputs', cardId: 'settings-card-touch-keyer-card',
   },
-  'mic': {
-    tab: 'inputs', cardId: 'settings-card-mic-card',
-  },
   'encoder': {
     tab: 'inputs', cardId: 'settings-card-encoder-card',
   },
@@ -69,9 +66,6 @@ export const LANDINGS: Record<string, GoalLanding> = {
   },
   'midi-output': {
     tab: 'outputs', cardId: 'settings-card-midi-output-card',
-  },
-  'opto-output': {
-    tab: 'outputs', cardId: 'settings-card-audio-output-card',
   },
   'serial-output': {
     tab: 'outputs', cardId: 'settings-card-serial-output-card',

@@ -2,7 +2,7 @@
  * Morse Code Studio
  */
 
-import { AudioChannel, isMobileDevice, OUTPUT_FORWARDS, OutputForward, AUDIO_CHANNELS, SettingsFieldRules } from '../../../services/settings-common';
+import { AudioChannel, OUTPUT_FORWARDS, OutputForward, AUDIO_CHANNELS, SettingsFieldRules } from '../../../services/settings-common';
 import { ItemDescriptor, labelledReview } from '../item-descriptor';
 
 /** Sidetone can also play on both stereo channels. */
@@ -31,8 +31,7 @@ export const SIDETONE_DEFAULTS: SidetoneSettings = {
   sidetoneAmplitude: 1,
   sidetoneEnabled: true,
   sidetoneForward: 'both',
-  // A phone lowers the digital signal with its volume setting, which can round a weak keep-alive to silence
-  outputKeepAlive: isMobileDevice() ? 'high' : 'normal',
+  outputKeepAlive: 'off',
 };
 
 export const SIDETONE_FIELD_RULES: SettingsFieldRules = {
@@ -66,6 +65,6 @@ export const SIDETONE_DESCRIPTOR: ItemDescriptor = {
     sidetoneOutputChannel: 'Sidetone channel',
     sidetoneFrequency: 'Sidetone frequency (Hz)',
     sidetoneAmplitude: 'Sidetone amplitude',
-    outputKeepAlive: 'Sound card keep-alive',
+    outputKeepAlive: 'Keep-alive',
   }),
 };

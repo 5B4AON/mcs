@@ -61,14 +61,7 @@ export const CW_DETECTOR_DESCRIPTOR: ItemDescriptor = {
     'cwInputEnabled', 'cwDecoderActive', 'cwInputSource', 'cwInputDeviceId', 'cwInputChannel', 'cwInputName', 'cwInputColor',
     'cwOutputPipeline',
   ],
-  validate: s => {
-    if (!s.cwInputEnabled) return [];
-    const errors: string[] = [];
-    if (s.micInputEnabled && (s.cwInputDeviceId || 'default') === (s.inputDeviceId || 'default')) {
-      errors.push('CW detector and mic key both use the same mic device. Use a different device or turn one off.');
-    }
-    return errors;
-  },
+  validate: () => [],
   review: labelledReview({
     cwInputEnabled: 'CW tone decoder in the Mode list',
     cwDecoderActive: 'CW tone decoder listening',
